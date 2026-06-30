@@ -31,8 +31,10 @@ Im Projektordner liegt die Datei `LFZQ8a-Workshop-starten.cmd`. Sie kann per Dop
 Der Starter:
 
 - wechselt automatisch in den Ordner `desktop-app`
-- nutzt die vorhandene Electron-Installation
-- fuehrt bei fehlender Installation einmalig `pnpm install` oder `npm install` aus
+- sucht direkt die installierte `electron.exe` und benoetigt dafuer kein globales `node`
+- installiert bei fehlender Electron-Installation automatisch die Abhaengigkeiten
+- installiert bei Bedarf Node.js LTS ueber `winget`
+- fuehrt danach einmalig `pnpm install` oder `npm install` aus
 - startet danach die Desktop-App
 
 Fuer eine reine Pruefung ohne App-Start:
