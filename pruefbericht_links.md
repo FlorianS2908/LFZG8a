@@ -1,9 +1,10 @@
 # Pruefbericht Links
 
-- Gepruefte HTML-Dateien: 89
-- Gepruefte href-/src-Verweise: 415
+- Gepruefte HTML-Dateien: 95
+- Gepruefte href-/src-Verweise: 418
 - Gefundene kaputte Links: 0
 - Gefundene und korrigierte kaputte Links: keine verbleibenden kaputten lokalen Links in der statischen Pruefung.
+- Teilnehmerbereich ohne Links zur Hauptuebersicht oder Dozentenuebersicht: True
 - Teilnehmerseiten ohne konkrete Loesungs-, Dozenten-, Bewertungs- oder Erwartungshorizont-Links: True
 - Keine LESS-Bezuege im Textscan gefunden: True
 - Keine Prompt-/KI-/Duktus-Bezuege im Textscan gefunden: True
