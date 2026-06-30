@@ -23,7 +23,7 @@
   </header>
   <nav class="day-nav" aria-label="Tagesnavigation"><div class="wrap"><a href="#tag1">Tag 1: HTML-Grundstruktur und CSS-Basics</a><a href="#tag2">Tag 2: Navigation, Buttons und Flexbox</a><a href="#tag3">Tag 3: Struktur, Karten und Grid</a><a href="#tag4">Tag 4: Responsive HTML-Elemente</a><a href="#tag5">Tag 5: Formulare, Webfonts und saubere CSS-Struktur</a></div></nav>
   <main>
-    <section class="intro"><div class="wrap intro-card"><strong>So funktioniert die Übersicht:</strong> Öffne eine Tag-Karte, wähle eine CSS-Variante über die Tabs und vergleiche Vorschau und Code. Die Umschaltung erfolgt nur mit HTML und CSS.</div><div class="wrap intro-card parallel-note"><strong>Parallel nutzbar:</strong> Dozenteninfos öffnen sich in einem eigenen Browserfenster oder Tab mit dem Namen <code>dozenteninfo_screen</code>. Dieses Fenster kann auf einen zweiten Bildschirm gelegt werden; weitere Dozenteninfo-Buttons aktualisieren denselben zweiten Screen.</div></section>
+    <section class="intro"><div class="wrap intro-card"><strong>So funktioniert die Übersicht:</strong> Öffne eine Tag-Karte, wähle eine CSS-Variante über die Tabs und vergleiche Vorschau und Code. Die Varianten-Umschaltung erfolgt mit HTML und CSS; die Dozenteninfo öffnet per Klick in einem separaten Fenster.</div><div class="wrap intro-card parallel-note"><strong>Parallel nutzbar:</strong> Dozenteninfos öffnen sich in einem eigenen Browserfenster mit dem Namen <code>dozenteninfo_screen</code>. Ziehe dieses Fenster einmal auf den zweiten Bildschirm; weitere Dozenteninfo-Buttons aktualisieren dann genau dieses Fenster.</div></section>
 
 <section class="day-section" id="tag1"><div class="wrap"><div class="day-head"><span class="kicker">Tag 1</span><h2>Tag 1: HTML-Grundstruktur und CSS-Basics</h2><p>Der erste Tag legt das Fundament: HTML-Dokumente werden sauber aufgebaut, Inhalte semantisch gegliedert und mit grundlegenden CSS-Eigenschaften gestaltet.</p><p><strong>CSS-Schwerpunkte:</strong> Elementselektoren, Klassen, IDs, Farben, Schrift, Abstände, Rahmen, Breiten, Box-Modell und Custom Properties.</p><div class="tag-list"><span>&lt;html&gt;</span><span>&lt;head&gt;</span><span>&lt;title&gt;</span><span>&lt;meta&gt;</span><span>&lt;link&gt;</span><span>&lt;body&gt;</span><span>&lt;header&gt;</span><span>&lt;main&gt;</span><span>&lt;section&gt;</span><span>&lt;article&gt;</span><span>&lt;footer&gt;</span><span>&lt;h1&gt;</span><span>&lt;h2&gt;</span><span>&lt;p&gt;</span><span>&lt;ul&gt;</span><span>&lt;ol&gt;</span><span>&lt;li&gt;</span><span>&lt;a&gt;</span><span>&lt;img&gt;</span><span>&lt;div&gt;</span><span>&lt;span&gt;</span></div></div><div class="tag-grid">
 <details class="tag-card" id="tag-01-html-card">
@@ -56,7 +56,7 @@
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Das lang-Attribut hilft Screenreadern, Suchmaschinen und Übersetzungsfunktionen.</p>
-    <a class="teacher-open" href="#dozent-tag-01-html" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-html" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-html" class="teacher-screen" aria-label="Dozenteninfo zu html">
@@ -103,7 +103,7 @@
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Im head steht normalerweise kein sichtbarer Seiteninhalt.</p>
-    <a class="teacher-open" href="#dozent-tag-01-head" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-head" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-head" class="teacher-screen" aria-label="Dozenteninfo zu head">
@@ -147,7 +147,7 @@
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Jede Seite sollte einen eindeutigen title besitzen.</p>
-    <a class="teacher-open" href="#dozent-tag-01-title" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-title" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-title" class="teacher-screen" aria-label="Dozenteninfo zu title">
@@ -192,7 +192,7 @@
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Der Viewport-Eintrag ist für mobile Darstellung besonders wichtig.</p>
-    <a class="teacher-open" href="#dozent-tag-01-meta" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-meta" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-meta" class="teacher-screen" aria-label="Dozenteninfo zu meta">
@@ -236,7 +236,7 @@
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Für diese Übersicht wird kein echtes externes Stylesheet eingebunden.</p>
-    <a class="teacher-open" href="#dozent-tag-01-link" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-link" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-link" class="teacher-screen" aria-label="Dozenteninfo zu link">
@@ -284,7 +284,7 @@ body &gt; main</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Globale Grundgestaltung wie Schrift und Hintergrund wird häufig am body gesetzt.</p>
-    <a class="teacher-open" href="#dozent-tag-01-body" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-body" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-body" class="teacher-screen" aria-label="Dozenteninfo zu body">
@@ -332,7 +332,7 @@ section &gt; header</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Ein header kann für die ganze Seite oder für einen Abschnitt stehen.</p>
-    <a class="teacher-open" href="#dozent-tag-01-header" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-header" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-header" class="teacher-screen" aria-label="Dozenteninfo zu header">
@@ -379,7 +379,7 @@ section &gt; header</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>main hilft dabei, Hauptinhalt von Navigation und Fußbereich zu trennen.</p>
-    <a class="teacher-open" href="#dozent-tag-01-main" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-main" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-main" class="teacher-screen" aria-label="Dozenteninfo zu main">
@@ -428,7 +428,7 @@ section &gt; header</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Eine section sollte in der Regel eine passende Überschrift besitzen.</p>
-    <a class="teacher-open" href="#dozent-tag-01-section" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-section" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-section" class="teacher-screen" aria-label="Dozenteninfo zu section">
@@ -477,7 +477,7 @@ section &gt; header</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>article eignet sich gut für wiederverwendbare Inhaltskarten.</p>
-    <a class="teacher-open" href="#dozent-tag-01-article" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-article" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-article" class="teacher-screen" aria-label="Dozenteninfo zu article">
@@ -524,7 +524,7 @@ section &gt; header</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Ein footer kann zur ganzen Seite oder zu einem article gehören.</p>
-    <a class="teacher-open" href="#dozent-tag-01-footer" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-footer" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-footer" class="teacher-screen" aria-label="Dozenteninfo zu footer">
@@ -570,7 +570,7 @@ main h1</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Die h1 nicht nur wegen der Schriftgröße wählen, sondern wegen der Bedeutung.</p>
-    <a class="teacher-open" href="#dozent-tag-01-h1" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-h1" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-h1" class="teacher-screen" aria-label="Dozenteninfo zu h1">
@@ -616,7 +616,7 @@ section h2</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Überschriften sollten eine nachvollziehbare Reihenfolge behalten.</p>
-    <a class="teacher-open" href="#dozent-tag-01-h2" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-h2" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-h2" class="teacher-screen" aria-label="Dozenteninfo zu h2">
@@ -662,7 +662,7 @@ section h2</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Lesbarkeit entsteht durch Zeilenhöhe, Breite und ausreichende Abstände.</p>
-    <a class="teacher-open" href="#dozent-tag-01-p" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-p" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-p" class="teacher-screen" aria-label="Dozenteninfo zu p">
@@ -711,7 +711,7 @@ ul li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Listen sind semantischer als Absätze mit Bindestrichen.</p>
-    <a class="teacher-open" href="#dozent-tag-01-ul" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-ul" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-ul" class="teacher-screen" aria-label="Dozenteninfo zu ul">
@@ -760,7 +760,7 @@ ol li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Für Arbeitsabläufe ist ol oft aussagekräftiger als ul.</p>
-    <a class="teacher-open" href="#dozent-tag-01-ol" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-ol" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-ol" class="teacher-screen" aria-label="Dozenteninfo zu ol">
@@ -806,7 +806,7 @@ ol &gt; li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>li erhält Bedeutung durch den Listentyp, in dem es steht.</p>
-    <a class="teacher-open" href="#dozent-tag-01-li" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-li" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-li" class="teacher-screen" aria-label="Dozenteninfo zu li">
@@ -853,7 +853,7 @@ a:hover</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Ein Linktext sollte sagen, wohin der Link führt.</p>
-    <a class="teacher-open" href="#dozent-tag-01-a" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-a" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-a" class="teacher-screen" aria-label="Dozenteninfo zu a">
@@ -899,7 +899,7 @@ img.responsive</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Bilder sollten mit max-width:100% und height:auto flexibel bleiben.</p>
-    <a class="teacher-open" href="#dozent-tag-01-img" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-img" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-img" class="teacher-screen" aria-label="Dozenteninfo zu img">
@@ -945,7 +945,7 @@ img.responsive</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>div sollte nicht jedes semantische Element ersetzen.</p>
-    <a class="teacher-open" href="#dozent-tag-01-div" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-div" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-div" class="teacher-screen" aria-label="Dozenteninfo zu div">
@@ -991,7 +991,7 @@ p span</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>span eignet sich für kleine Hervorhebungen ohne Blockumbruch.</p>
-    <a class="teacher-open" href="#dozent-tag-01-span" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-01-span" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-01-span" class="teacher-screen" aria-label="Dozenteninfo zu span">
@@ -1040,7 +1040,7 @@ nav a</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Nicht jede Linkliste muss nav sein; nav ist für zentrale Navigation gedacht.</p>
-    <a class="teacher-open" href="#dozent-tag-02-nav" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-02-nav" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-02-nav" class="teacher-screen" aria-label="Dozenteninfo zu nav">
@@ -1088,7 +1088,7 @@ section &gt; header</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Ein header kann für die ganze Seite oder für einen Abschnitt stehen.</p>
-    <a class="teacher-open" href="#dozent-tag-02-header" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-02-header" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-02-header" class="teacher-screen" aria-label="Dozenteninfo zu header">
@@ -1135,7 +1135,7 @@ button:focus-visible</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Ein button sollte immer einen passenden type besitzen.</p>
-    <a class="teacher-open" href="#dozent-tag-02-button" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-02-button" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-02-button" class="teacher-screen" aria-label="Dozenteninfo zu button">
@@ -1182,7 +1182,7 @@ a:hover</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Ein Linktext sollte sagen, wohin der Link führt.</p>
-    <a class="teacher-open" href="#dozent-tag-02-a" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-02-a" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-02-a" class="teacher-screen" aria-label="Dozenteninfo zu a">
@@ -1231,7 +1231,7 @@ ul li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Listen sind semantischer als Absätze mit Bindestrichen.</p>
-    <a class="teacher-open" href="#dozent-tag-02-ul" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-02-ul" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-02-ul" class="teacher-screen" aria-label="Dozenteninfo zu ul">
@@ -1277,7 +1277,7 @@ ol &gt; li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>li erhält Bedeutung durch den Listentyp, in dem es steht.</p>
-    <a class="teacher-open" href="#dozent-tag-02-li" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-02-li" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-02-li" class="teacher-screen" aria-label="Dozenteninfo zu li">
@@ -1323,7 +1323,7 @@ ol &gt; li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>div sollte nicht jedes semantische Element ersetzen.</p>
-    <a class="teacher-open" href="#dozent-tag-02-div" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-02-div" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-02-div" class="teacher-screen" aria-label="Dozenteninfo zu div">
@@ -1372,7 +1372,7 @@ ol &gt; li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Eine section sollte in der Regel eine passende Überschrift besitzen.</p>
-    <a class="teacher-open" href="#dozent-tag-02-section" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-02-section" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-02-section" class="teacher-screen" aria-label="Dozenteninfo zu section">
@@ -1421,7 +1421,7 @@ ol &gt; li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>article eignet sich gut für wiederverwendbare Inhaltskarten.</p>
-    <a class="teacher-open" href="#dozent-tag-02-article" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-02-article" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-02-article" class="teacher-screen" aria-label="Dozenteninfo zu article">
@@ -1469,7 +1469,7 @@ ol &gt; li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>main hilft dabei, Hauptinhalt von Navigation und Fußbereich zu trennen.</p>
-    <a class="teacher-open" href="#dozent-tag-03-main" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-03-main" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-03-main" class="teacher-screen" aria-label="Dozenteninfo zu main">
@@ -1517,7 +1517,7 @@ ol &gt; li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>aside ist ergänzend, nicht der zentrale Hauptinhalt.</p>
-    <a class="teacher-open" href="#dozent-tag-03-aside" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-03-aside" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-03-aside" class="teacher-screen" aria-label="Dozenteninfo zu aside">
@@ -1566,7 +1566,7 @@ ol &gt; li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Eine section sollte in der Regel eine passende Überschrift besitzen.</p>
-    <a class="teacher-open" href="#dozent-tag-03-section" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-03-section" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-03-section" class="teacher-screen" aria-label="Dozenteninfo zu section">
@@ -1615,7 +1615,7 @@ ol &gt; li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>article eignet sich gut für wiederverwendbare Inhaltskarten.</p>
-    <a class="teacher-open" href="#dozent-tag-03-article" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-03-article" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-03-article" class="teacher-screen" aria-label="Dozenteninfo zu article">
@@ -1661,7 +1661,7 @@ ol &gt; li</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>div sollte nicht jedes semantische Element ersetzen.</p>
-    <a class="teacher-open" href="#dozent-tag-03-div" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-03-div" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-03-div" class="teacher-screen" aria-label="Dozenteninfo zu div">
@@ -1709,7 +1709,7 @@ section &gt; header</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Ein header kann für die ganze Seite oder für einen Abschnitt stehen.</p>
-    <a class="teacher-open" href="#dozent-tag-03-header" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-03-header" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-03-header" class="teacher-screen" aria-label="Dozenteninfo zu header">
@@ -1756,7 +1756,7 @@ section &gt; header</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Ein footer kann zur ganzen Seite oder zu einem article gehören.</p>
-    <a class="teacher-open" href="#dozent-tag-03-footer" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-03-footer" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-03-footer" class="teacher-screen" aria-label="Dozenteninfo zu footer">
@@ -1805,7 +1805,7 @@ figure img</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>figure und figcaption halten Bild und Beschreibung zusammen.</p>
-    <a class="teacher-open" href="#dozent-tag-03-figure" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-03-figure" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-03-figure" class="teacher-screen" aria-label="Dozenteninfo zu figure">
@@ -1850,7 +1850,7 @@ figure figcaption</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Die Beschriftung sollte kurz und hilfreich sein.</p>
-    <a class="teacher-open" href="#dozent-tag-03-figcaption" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-03-figcaption" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-03-figcaption" class="teacher-screen" aria-label="Dozenteninfo zu figcaption">
@@ -1895,7 +1895,7 @@ figure figcaption</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Ohne Viewport-Meta-Tag wirken mobile Seiten oft künstlich verkleinert.</p>
-    <a class="teacher-open" href="#dozent-tag-04-meta-viewport" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-04-meta-viewport" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-04-meta-viewport" class="teacher-screen" aria-label="Dozenteninfo zu meta viewport">
@@ -1943,7 +1943,7 @@ picture img</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>picture ersetzt nicht das alt-Attribut am img-Element.</p>
-    <a class="teacher-open" href="#dozent-tag-04-picture" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-04-picture" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-04-picture" class="teacher-screen" aria-label="Dozenteninfo zu picture">
@@ -1987,7 +1987,7 @@ picture img</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>source selbst ist nicht sichtbar; sichtbar bleibt das img-Element.</p>
-    <a class="teacher-open" href="#dozent-tag-04-source" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-04-source" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-04-source" class="teacher-screen" aria-label="Dozenteninfo zu source">
@@ -2033,7 +2033,7 @@ img.responsive</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Bilder sollten mit max-width:100% und height:auto flexibel bleiben.</p>
-    <a class="teacher-open" href="#dozent-tag-04-img" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-04-img" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-04-img" class="teacher-screen" aria-label="Dozenteninfo zu img">
@@ -2081,7 +2081,7 @@ nav a</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Nicht jede Linkliste muss nav sein; nav ist für zentrale Navigation gedacht.</p>
-    <a class="teacher-open" href="#dozent-tag-04-nav" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-04-nav" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-04-nav" class="teacher-screen" aria-label="Dozenteninfo zu nav">
@@ -2128,7 +2128,7 @@ button:focus-visible</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Ein button sollte immer einen passenden type besitzen.</p>
-    <a class="teacher-open" href="#dozent-tag-04-button" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-04-button" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-04-button" class="teacher-screen" aria-label="Dozenteninfo zu button">
@@ -2177,7 +2177,7 @@ button:focus-visible</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Eine section sollte in der Regel eine passende Überschrift besitzen.</p>
-    <a class="teacher-open" href="#dozent-tag-04-section" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-04-section" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-04-section" class="teacher-screen" aria-label="Dozenteninfo zu section">
@@ -2224,7 +2224,7 @@ button:focus-visible</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>main hilft dabei, Hauptinhalt von Navigation und Fußbereich zu trennen.</p>
-    <a class="teacher-open" href="#dozent-tag-04-main" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-04-main" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-04-main" class="teacher-screen" aria-label="Dozenteninfo zu main">
@@ -2271,7 +2271,7 @@ button:focus-visible</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Für große Projekte ist externe CSS-Struktur oft übersichtlicher.</p>
-    <a class="teacher-open" href="#dozent-tag-05-style" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-05-style" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-05-style" class="teacher-screen" aria-label="Dozenteninfo zu style">
@@ -2315,7 +2315,7 @@ button:focus-visible</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Für diese Übersicht wird kein echtes externes Stylesheet eingebunden.</p>
-    <a class="teacher-open" href="#dozent-tag-05-link" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-05-link" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-05-link" class="teacher-screen" aria-label="Dozenteninfo zu link">
@@ -2364,7 +2364,7 @@ form input</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Formulare brauchen klare Labels und sichtbare Fokuszustände.</p>
-    <a class="teacher-open" href="#dozent-tag-05-form" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-05-form" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-05-form" class="teacher-screen" aria-label="Dozenteninfo zu form">
@@ -2411,7 +2411,7 @@ label.required</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Ein Klick auf das Label fokussiert das passende Feld.</p>
-    <a class="teacher-open" href="#dozent-tag-05-label" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-05-label" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-05-label" class="teacher-screen" aria-label="Dozenteninfo zu label">
@@ -2457,7 +2457,7 @@ input[aria-invalid=&quot;true&quot;]</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Passende Typen verbessern Bedienbarkeit und Validierung.</p>
-    <a class="teacher-open" href="#dozent-tag-05-input" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-05-input" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-05-input" class="teacher-screen" aria-label="Dozenteninfo zu input">
@@ -2502,7 +2502,7 @@ textarea:focus</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Die Höhe sollte zur erwarteten Eingabe passen.</p>
-    <a class="teacher-open" href="#dozent-tag-05-textarea" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-05-textarea" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-05-textarea" class="teacher-screen" aria-label="Dozenteninfo zu textarea">
@@ -2549,7 +2549,7 @@ select:focus</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Bei sehr wenigen Optionen können Radio-Buttons übersichtlicher sein.</p>
-    <a class="teacher-open" href="#dozent-tag-05-select" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-05-select" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-05-select" class="teacher-screen" aria-label="Dozenteninfo zu select">
@@ -2593,7 +2593,7 @@ select:focus</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>option wird zusammen mit select verwendet.</p>
-    <a class="teacher-open" href="#dozent-tag-05-option" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-05-option" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-05-option" class="teacher-screen" aria-label="Dozenteninfo zu option">
@@ -2640,7 +2640,7 @@ button:focus-visible</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>Ein button sollte immer einen passenden type besitzen.</p>
-    <a class="teacher-open" href="#dozent-tag-05-button" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-05-button" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-05-button" class="teacher-screen" aria-label="Dozenteninfo zu button">
@@ -2688,7 +2688,7 @@ button:focus-visible</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>fieldset eignet sich gut für thematische Formulargruppen.</p>
-    <a class="teacher-open" href="#dozent-tag-05-fieldset" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-05-fieldset" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-05-fieldset" class="teacher-screen" aria-label="Dozenteninfo zu fieldset">
@@ -2733,7 +2733,7 @@ fieldset legend</code></pre>
   box-shadow: 0 14px 30px rgba(0,57,100,.14);
 }</code></pre></div>
     <h4>Praxishinweis</h4><p>legend sollte kurz und eindeutig sein.</p>
-    <a class="teacher-open" href="#dozent-tag-05-legend" target="dozenteninfo_screen">Dozenteninfo auf zweitem Screen öffnen</a>
+    <a class="teacher-open" href="#dozent-tag-05-legend" target="dozenteninfo_screen" onclick="return openTeacherInfo(this.href);">Dozenteninfo im zweiten Fenster öffnen</a>
   </div>
 </details>
 <section id="dozent-tag-05-legend" class="teacher-screen" aria-label="Dozenteninfo zu legend">
@@ -2752,5 +2752,23 @@ fieldset legend</code></pre>
 </section></div><div class="exercise"><strong>Kurze Übungsidee:</strong> Baue ein Kontaktformular mit Labels, Eingabefeldern, Auswahlfeld und Button. Gestalte Fokuszustände sichtbar und gruppiere Felder sinnvoll.</div></div></section>
     <section class="obsolete"><div class="wrap obsolete-box"><h2>Veraltete HTML-Tags</h2><p>Diese Tags sollten heute nicht mehr für neue Seiten verwendet werden:</p><ul><li>font</li><li>center</li><li>marquee</li><li>blink</li><li>applet</li><li>big</li><li>strike</li><li>tt</li><li>xmp</li></ul></div></section>
   </main>
-</body>
+  <script>
+    function openTeacherInfo(url) {
+      var dualScreenLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX;
+      var dualScreenTop = window.screenTop !== undefined ? window.screenTop : window.screenY;
+      var availableWidth = window.screen && window.screen.availWidth ? window.screen.availWidth : 1200;
+      var availableHeight = window.screen && window.screen.availHeight ? window.screen.availHeight : 900;
+      var width = Math.min(1120, Math.max(860, Math.floor(availableWidth * 0.48)));
+      var height = Math.min(920, Math.max(700, Math.floor(availableHeight * 0.9)));
+      var left = dualScreenLeft + Math.max(40, availableWidth - width - 40);
+      var top = dualScreenTop + 40;
+      var features = 'popup=yes,resizable=yes,scrollbars=yes,width=' + width + ',height=' + height + ',left=' + left + ',top=' + top;
+      var teacherWindow = window.open(url, 'dozenteninfo_screen', features);
+      if (!teacherWindow) {
+        return true;
+      }
+      teacherWindow.focus();
+      return false;
+    }
+  </script></body>
 </html>
