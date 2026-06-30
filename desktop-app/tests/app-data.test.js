@@ -25,6 +25,23 @@ test('app data creates default settings and empty history', () => {
   }
 });
 
+test('app data can disable history file creation for wizard tests', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-app-data-'));
+  const appData = createAppData(dir, { disableHistory: true });
+
+  try {
+    appData.ensureDataFiles();
+
+    assert.equal(fs.existsSync(appData.settingsPath), true);
+    assert.equal(fs.existsSync(appData.historyPath), false);
+    assert.deepEqual(appData.listHistory(), []);
+    assert.deepEqual(appData.addHistoryEntry({ title: 'Test' }), []);
+    assert.equal(fs.existsSync(appData.historyPath), false);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('app data saves setup without losing existing settings', () => {
   const { appData, cleanup } = createTempAppData();
 

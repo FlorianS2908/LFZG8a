@@ -12,6 +12,8 @@ const projectRoot = path.resolve(__dirname, '..', '..');
 const contentFile = path.join(projectRoot, 'dozent', 'tools', 'html-tags-css-dozenteninfo.html');
 const preloadFile = path.join(__dirname, 'preload.js');
 const wizardFile = path.join(__dirname, 'renderer', 'wizard.html');
+const forceWizard = process.argv.includes('--wizard') || process.argv.includes('--wizard-test');
+const disableHistory = process.argv.includes('--no-history') || process.argv.includes('--wizard-test');
 
 let mainWindow = null;
 let teacherWindow = null;
@@ -19,7 +21,7 @@ let appData = null;
 
 function getAppData() {
   if (!appData) {
-    appData = createAppData(app.getPath('userData'));
+    appData = createAppData(app.getPath('userData'), { disableHistory });
   }
   return appData;
 }
@@ -93,11 +95,13 @@ function openTeacherInfo(url) {
 
   teacherWindow.loadURL(url);
   teacherWindow.focus();
-  getAppData().addHistoryEntry({
-    type: 'teacher-info',
-    title: decodeURIComponent((new URL(url)).hash.replace('#', '')) || 'Dozenteninfo',
-    target: url
-  });
+  if (!disableHistory) {
+    getAppData().addHistoryEntry({
+      type: 'teacher-info',
+      title: decodeURIComponent((new URL(url)).hash.replace('#', '')) || 'Dozenteninfo',
+      target: url
+    });
+  }
 }
 
 ipcMain.handle('setup:get-state', () => {
@@ -143,7 +147,9 @@ ipcMain.handle('app:open-data-dir', () => {
 
 app.whenReady().then(() => {
   getAppData().ensureDataFiles();
-  if (getAppData().getSettings().configured) {
+  if (forceWizard) {
+    createWizardWindow();
+  } else if (getAppData().getSettings().configured) {
     createWorkshopWindow();
   } else {
     createWizardWindow();
@@ -151,7 +157,9 @@ app.whenReady().then(() => {
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      if (getAppData().getSettings().configured) {
+      if (forceWizard) {
+        createWizardWindow();
+      } else if (getAppData().getSettings().configured) {
         createWorkshopWindow();
       } else {
         createWizardWindow();

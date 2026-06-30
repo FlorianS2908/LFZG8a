@@ -7,7 +7,8 @@ const defaultSettings = {
   openTeacherOnSecondMonitor: true
 };
 
-function createAppData(baseDir) {
+function createAppData(baseDir, options = {}) {
+  const disableHistory = options.disableHistory === true;
   const dataDir = path.join(baseDir, 'data');
   const settingsPath = path.join(dataDir, 'settings.json');
   const historyPath = path.join(dataDir, 'history.json');
@@ -17,7 +18,7 @@ function createAppData(baseDir) {
     if (!readJson(settingsPath, null)) {
       writeJson(settingsPath, defaultSettings);
     }
-    if (!readJson(historyPath, null)) {
+    if (!disableHistory && !readJson(historyPath, null)) {
       writeJson(historyPath, []);
     }
   }
@@ -39,11 +40,17 @@ function createAppData(baseDir) {
 
   function listHistory() {
     ensureDataFiles();
+    if (disableHistory) {
+      return [];
+    }
     return readJson(historyPath, []);
   }
 
   function addHistoryEntry(entry, now = new Date()) {
     ensureDataFiles();
+    if (disableHistory) {
+      return [];
+    }
     const history = listHistory();
     const nextHistory = [{
       id: `${now.getTime()}-${Math.random().toString(16).slice(2)}`,
@@ -56,6 +63,9 @@ function createAppData(baseDir) {
 
   function resetHistory() {
     ensureDataFiles();
+    if (disableHistory) {
+      return [];
+    }
     writeJson(historyPath, []);
     return [];
   }
