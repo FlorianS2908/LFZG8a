@@ -10,7 +10,7 @@ const {
 } = require('./lib/display');
 
 const projectRoot = path.resolve(__dirname, '..', '..');
-const contentFile = path.join(projectRoot, 'uebersicht_html_tags_css_only_dozenteninfo.html');
+const contentFile = path.join(projectRoot, 'dozent', 'tools', 'html-tags-css-dozenteninfo.html');
 const preloadFile = path.join(__dirname, 'preload.js');
 const wizardFile = path.join(__dirname, 'renderer', 'wizard.html');
 const supportMail = 'jlploglan@gmail.com';

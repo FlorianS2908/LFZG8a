@@ -1,22 +1,32 @@
 # LFZQ8a HTML & CSS
 
-Dieses Repository enthaelt statisch nutzbare Kursmaterialien fuer LFZQ8a HTML & CSS. Die Unterlagen sind in einen eigenstaendigen Dozentenbereich und einen eigenstaendigen Teilnehmerbereich gegliedert.
+Dieses Repository enthaelt die Kursmaterialien fuer LFZQ8a HTML & CSS.
 
 ## Einstieg
 
-Oeffnen Sie `index.html` direkt im Browser, wenn beide Bereiche sichtbar sein sollen. Fuer die getrennte Nutzung koennen auch `dozent/index_dozent.html` oder `teilnehmer/index_teilnehmer.html` direkt geoeffnet werden.
+- `index.html`: zentrale Uebersicht fuer Dozenten- und Teilnehmerbereich
+- `LFZQ8a-Workshop-starten.cmd`: Start der Electron-Desktop-App per Doppelklick
 
-## Ordnerstruktur
+## Aktive Struktur
 
-- dozent/ - eigenstaendige Dozentenstruktur mit Leitfaeden, Tagesmaterial, Loesungen, Bewertung, Quizuebersichten, Projektdateien und eigenen Assets
-- teilnehmer/ - eigenstaendige Teilnehmerstruktur mit Webvarianten, Aufgaben, Starterdateien, Quizpools, Projektmaterial, Abgabehinweisen und eigenen Assets
-- shared/ - optionale gemeinsame Ablage; die Standalone-Bereiche sind nicht darauf angewiesen
-- _review/ - alte, bereinigte Arbeitsstaende ohne direkte Kursverlinkung
+- `dozent/`: eigenstaendige Dozentenstruktur mit Leitfaeden, Tagesmaterial, Loesungen, Bewertung, Quizdaten, Projektdateien und Standalone-Tools
+- `teilnehmer/`: eigenstaendige Teilnehmerstruktur mit Webvarianten, Aufgaben, Starterdateien, Quizdaten, Projektmaterial, Abgabehinweisen und Standalone-Tools
+- `desktop-app/`: Electron-Projekt fuer die Desktop-App
+- `_archiv/`: alte Root-Dubletten, Zwischenstaende und nicht mehr direkt benoetigte Dateien
+
+## Standalone-Tools
+
+- Dozenten-Tool: `dozent/tools/html-tags-css-dozenteninfo.html`
+- Teilnehmer-Tool: `teilnehmer/tools/html-tags-css-uebersicht.html`
 
 ## Nutzung
 
-Die Dateien funktionieren ohne Server. Beide Ordner `dozent/` und `teilnehmer/` koennen separat weitergegeben oder geoeffnet werden. JavaScript wird nur fuer bestehende Foliennavigation und Quizfunktionen verwendet.
+Die Bereiche `dozent/` und `teilnehmer/` sind bewusst getrennt aufgebaut und koennen separat weitergegeben oder geoeffnet werden. Die Desktop-App bleibt daneben als technische Start- und Fensterlogik erhalten.
 
-## Erweiterbarkeit
+## Aufraeumregel
 
-Neue Tage, Aufgaben, Quizpools oder Webvarianten werden in der passenden Rollenstruktur ergaenzt und in den Index-Dateien verlinkt.
+Neue Kursdateien gehoeren in die passende Rollenstruktur:
+
+- Aufgaben, Starterdateien und Teilnehmermaterial nach `teilnehmer/`
+- Loesungen, Leitfaeden und Dozentenmaterial nach `dozent/`
+- alte oder nicht mehr benoetigte Arbeitsstaende nach `_archiv/`
