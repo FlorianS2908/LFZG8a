@@ -2,3 +2,5 @@ node_modules/
 dist/
 release/
 *.log
+vitest.config.js
+_tmp_*

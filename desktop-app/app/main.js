@@ -1,6 +1,12 @@
 const { app, BrowserWindow, ipcMain, screen, shell } = require('electron');
-const fs = require('fs');
 const path = require('path');
+const { createAppData } = require('./lib/app-data');
+const {
+  chooseTargetDisplay,
+  createFullDisplayBounds,
+  createWindowOptions,
+  getDisplaySummaries: summarizeDisplays
+} = require('./lib/display');
 
 const projectRoot = path.resolve(__dirname, '..', '..');
 const contentFile = path.join(projectRoot, 'uebersicht_html_tags_css_only_dozenteninfo.html');
@@ -9,110 +15,36 @@ const wizardFile = path.join(__dirname, 'renderer', 'wizard.html');
 
 let mainWindow = null;
 let teacherWindow = null;
+let appData = null;
 
-function getDataDir() {
-  return path.join(app.getPath('userData'), 'data');
-}
-
-function getSettingsPath() {
-  return path.join(getDataDir(), 'settings.json');
-}
-
-function getHistoryPath() {
-  return path.join(getDataDir(), 'history.json');
-}
-
-function ensureDataFiles() {
-  fs.mkdirSync(getDataDir(), { recursive: true });
-  if (!fs.existsSync(getSettingsPath())) {
-    writeJson(getSettingsPath(), {
-      configured: false,
-      monitorIndex: 1,
-      openTeacherOnSecondMonitor: true
-    });
+function getAppData() {
+  if (!appData) {
+    appData = createAppData(app.getPath('userData'));
   }
-  if (!fs.existsSync(getHistoryPath())) {
-    writeJson(getHistoryPath(), []);
-  }
-}
-
-function readJson(filePath, fallback) {
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  } catch (error) {
-    return fallback;
-  }
-}
-
-function writeJson(filePath, value) {
-  fs.writeFileSync(filePath, JSON.stringify(value, null, 2), 'utf8');
-}
-
-function getSettings() {
-  ensureDataFiles();
-  return readJson(getSettingsPath(), {
-    configured: false,
-    monitorIndex: 1,
-    openTeacherOnSecondMonitor: true
-  });
-}
-
-function saveSettings(nextSettings) {
-  const current = getSettings();
-  const merged = {
-    ...current,
-    ...nextSettings,
-    configured: true
-  };
-  writeJson(getSettingsPath(), merged);
-  return merged;
+  return appData;
 }
 
 function getDisplaySummaries() {
-  return screen.getAllDisplays().map((display, index) => ({
-    id: display.id,
-    index,
-    label: index === 0 ? 'Monitor 1' : `Monitor ${index + 1}`,
-    primary: display.id === screen.getPrimaryDisplay().id,
-    bounds: display.bounds,
-    workArea: display.workArea,
-    scaleFactor: display.scaleFactor
-  }));
+  return summarizeDisplays(screen.getAllDisplays(), screen.getPrimaryDisplay());
 }
 
 function getTargetDisplay() {
   const displays = screen.getAllDisplays();
-  const settings = getSettings();
-  return displays[settings.monitorIndex] || displays[1] || screen.getPrimaryDisplay();
+  const settings = getAppData().getSettings();
+  return chooseTargetDisplay(displays, screen.getPrimaryDisplay(), settings.monitorIndex);
 }
 
 function getMainDisplay() {
   return screen.getPrimaryDisplay();
 }
 
-function createWindowOptions(display, extra = {}) {
-  const area = display.workArea || display.bounds;
-  return {
-    x: area.x,
-    y: area.y,
-    width: Math.max(900, Math.floor(area.width * 0.95)),
-    height: Math.max(700, Math.floor(area.height * 0.95)),
-    minWidth: 900,
-    minHeight: 650,
-    show: false,
-    backgroundColor: '#f3f8fb',
-    webPreferences: {
-      preload: preloadFile,
-      contextIsolation: true,
-      nodeIntegration: false
-    },
-    ...extra
-  };
+function getWindowOptions(display, extra = {}) {
+  return createWindowOptions(display, preloadFile, extra);
 }
 
 function createWizardWindow() {
   const display = getMainDisplay();
-  mainWindow = new BrowserWindow(createWindowOptions(display, {
+  mainWindow = new BrowserWindow(getWindowOptions(display, {
     title: 'LFZQ8a Einrichtung',
     width: 1040,
     height: 760
@@ -124,7 +56,7 @@ function createWizardWindow() {
 
 function createWorkshopWindow() {
   const display = getMainDisplay();
-  mainWindow = new BrowserWindow(createWindowOptions(display, {
+  mainWindow = new BrowserWindow(getWindowOptions(display, {
     title: 'LFZQ8a Workshop'
   }));
 
@@ -138,8 +70,8 @@ function createWorkshopWindow() {
 
 function openTeacherInfo(url) {
   const display = getTargetDisplay();
-  const area = display.workArea || display.bounds;
-  const options = createWindowOptions(display, {
+  const area = createFullDisplayBounds(display);
+  const options = getWindowOptions(display, {
     title: 'LFZQ8a Dozenteninfo',
     width: area.width,
     height: area.height,
@@ -161,44 +93,27 @@ function openTeacherInfo(url) {
 
   teacherWindow.loadURL(url);
   teacherWindow.focus();
-  addHistoryEntry({
+  getAppData().addHistoryEntry({
     type: 'teacher-info',
     title: decodeURIComponent((new URL(url)).hash.replace('#', '')) || 'Dozenteninfo',
     target: url
   });
 }
 
-function addHistoryEntry(entry) {
-  ensureDataFiles();
-  const history = readJson(getHistoryPath(), []);
-  history.unshift({
-    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    createdAt: new Date().toISOString(),
-    ...entry
-  });
-  writeJson(getHistoryPath(), history.slice(0, 500));
-}
-
-function resetHistory() {
-  ensureDataFiles();
-  writeJson(getHistoryPath(), []);
-  return [];
-}
-
 ipcMain.handle('setup:get-state', () => {
-  ensureDataFiles();
+  getAppData().ensureDataFiles();
   return {
-    settings: getSettings(),
+    settings: getAppData().getSettings(),
     displays: getDisplaySummaries(),
-    history: readJson(getHistoryPath(), []),
+    history: getAppData().listHistory(),
     contentFile
   };
 });
 
-ipcMain.handle('setup:save', (event, settings) => saveSettings(settings));
+ipcMain.handle('setup:save', (event, settings) => getAppData().saveSettings(settings));
 
 ipcMain.handle('setup:start-workshop', () => {
-  saveSettings({ configured: true });
+  getAppData().saveSettings({ configured: true });
   const setupWindow = mainWindow;
   createWorkshopWindow();
   if (setupWindow && !setupWindow.isDestroyed()) {
@@ -207,16 +122,14 @@ ipcMain.handle('setup:start-workshop', () => {
 });
 
 ipcMain.handle('history:list', () => {
-  ensureDataFiles();
-  return readJson(getHistoryPath(), []);
+  return getAppData().listHistory();
 });
 
 ipcMain.handle('history:add', (event, entry) => {
-  addHistoryEntry(entry);
-  return readJson(getHistoryPath(), []);
+  return getAppData().addHistoryEntry(entry);
 });
 
-ipcMain.handle('history:reset', () => resetHistory());
+ipcMain.handle('history:reset', () => getAppData().resetHistory());
 
 ipcMain.handle('teacher:open', (event, url) => {
   openTeacherInfo(url);
@@ -224,13 +137,13 @@ ipcMain.handle('teacher:open', (event, url) => {
 });
 
 ipcMain.handle('app:open-data-dir', () => {
-  ensureDataFiles();
-  shell.openPath(getDataDir());
+  getAppData().ensureDataFiles();
+  shell.openPath(getAppData().dataDir);
 });
 
 app.whenReady().then(() => {
-  ensureDataFiles();
-  if (getSettings().configured) {
+  getAppData().ensureDataFiles();
+  if (getAppData().getSettings().configured) {
     createWorkshopWindow();
   } else {
     createWizardWindow();
@@ -238,7 +151,7 @@ app.whenReady().then(() => {
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      if (getSettings().configured) {
+      if (getAppData().getSettings().configured) {
         createWorkshopWindow();
       } else {
         createWizardWindow();

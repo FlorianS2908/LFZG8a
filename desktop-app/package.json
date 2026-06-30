@@ -6,7 +6,11 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "check": "node --check app/main.js && node --check app/preload.js && node --check app/renderer/wizard.js"
+    "dev": "electron .",
+    "check": "node --check app/main.js && node --check app/preload.js && node --check app/renderer/wizard.js && node --check app/lib/app-data.js && node --check app/lib/display.js && node --check app/lib/json-store.js",
+    "test": "node tests/run-tests.js",
+    "test:watch": "node tests/run-tests.js",
+    "verify": "node --check app/main.js && node --check app/preload.js && node --check app/renderer/wizard.js && node --check app/lib/app-data.js && node --check app/lib/display.js && node --check app/lib/json-store.js && node tests/run-tests.js"
   },
   "devDependencies": {
     "electron": "^31.7.7"
