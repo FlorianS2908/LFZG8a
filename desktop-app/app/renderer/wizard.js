@@ -1,6 +1,7 @@
 const state = {
   selectedMonitorIndex: 1,
-  displays: []
+  displays: [],
+  diagnosticReport: null
 };
 
 function formatBounds(bounds) {
@@ -86,6 +87,43 @@ document.querySelector('#resetHistory').addEventListener('click', async () => {
 
 document.querySelector('#openDataDir').addEventListener('click', () => {
   window.lfzq8aDesktop.openDataDir();
+});
+
+document.querySelector('#createDiagnosticReport').addEventListener('click', async () => {
+  const consent = document.querySelector('#diagnosticConsent').checked;
+  const status = document.querySelector('#diagnosticStatus');
+  const preview = document.querySelector('#diagnosticPreview');
+  const sendButton = document.querySelector('#sendDiagnosticReport');
+
+  if (!consent) {
+    status.textContent = 'Bitte zuerst die Einwilligung aktivieren.';
+    return;
+  }
+
+  status.textContent = 'Testprotokoll wird erzeugt...';
+  sendButton.disabled = true;
+  preview.hidden = true;
+
+  try {
+    state.diagnosticReport = await window.lfzq8aDesktop.createDiagnosticReport();
+    preview.textContent = state.diagnosticReport.summary;
+    preview.hidden = false;
+    sendButton.disabled = false;
+    status.textContent = `Testprotokoll gespeichert: ${state.diagnosticReport.htmlPath}`;
+  } catch (error) {
+    status.textContent = `Testprotokoll konnte nicht erzeugt werden: ${error.message}`;
+  }
+});
+
+document.querySelector('#sendDiagnosticReport').addEventListener('click', async () => {
+  const status = document.querySelector('#diagnosticStatus');
+  if (!state.diagnosticReport) {
+    status.textContent = 'Bitte zuerst ein Testprotokoll erzeugen.';
+    return;
+  }
+
+  await window.lfzq8aDesktop.sendDiagnosticMail(state.diagnosticReport);
+  status.textContent = 'Mail wurde im lokalen Mailprogramm vorbereitet. Berichtdateien bei Bedarf manuell anhaengen.';
 });
 
 loadState();

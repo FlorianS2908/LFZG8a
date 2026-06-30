@@ -5,6 +5,7 @@ global.test = function test(name, fn) {
 };
 
 require('./app-data.test');
+require('./diagnostics.test');
 require('./display.test');
 
 let failed = 0;

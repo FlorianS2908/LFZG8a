@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, screen, shell } = require('electron');
 const path = require('path');
 const { createAppData } = require('./lib/app-data');
+const { createDiagnosticReport } = require('./lib/diagnostics');
 const {
   chooseTargetDisplay,
   createFullDisplayBounds,
@@ -12,6 +13,7 @@ const projectRoot = path.resolve(__dirname, '..', '..');
 const contentFile = path.join(projectRoot, 'uebersicht_html_tags_css_only_dozenteninfo.html');
 const preloadFile = path.join(__dirname, 'preload.js');
 const wizardFile = path.join(__dirname, 'renderer', 'wizard.html');
+const supportMail = 'jlploglan@gmail.com';
 
 let mainWindow = null;
 let teacherWindow = null;
@@ -139,6 +141,33 @@ ipcMain.handle('teacher:open', (event, url) => {
 ipcMain.handle('app:open-data-dir', () => {
   getAppData().ensureDataFiles();
   shell.openPath(getAppData().dataDir);
+});
+
+ipcMain.handle('diagnostics:create-report', async () => {
+  getAppData().ensureDataFiles();
+  return createDiagnosticReport({
+    appVersion: app.getVersion(),
+    displays: getDisplaySummaries(),
+    reportsDir: path.join(getAppData().dataDir, 'reports')
+  });
+});
+
+ipcMain.handle('diagnostics:send-mail', async (event, report) => {
+  const subject = encodeURIComponent(`LFZQ8a Testprotokoll ${report.id || ''}`.trim());
+  const body = encodeURIComponent([
+    'Hallo,',
+    '',
+    'anbei die Zusammenfassung des LFZQ8a-Testprotokolls.',
+    '',
+    report.summary || 'Keine Zusammenfassung vorhanden.',
+    '',
+    report.htmlPath ? `HTML-Bericht lokal: ${report.htmlPath}` : '',
+    report.jsonPath ? `JSON-Bericht lokal: ${report.jsonPath}` : '',
+    '',
+    'Hinweis: Das lokale Mailprogramm kann Dateien je nach System nicht automatisch anhaengen. Bitte die gespeicherten Berichtdateien bei Bedarf manuell anhaengen.'
+  ].filter(Boolean).join('\n'));
+  await shell.openExternal(`mailto:${supportMail}?subject=${subject}&body=${body}`);
+  return true;
 });
 
 app.whenReady().then(() => {
