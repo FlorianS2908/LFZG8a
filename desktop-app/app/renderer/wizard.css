@@ -148,33 +148,8 @@ button.danger {
   gap: 0.55rem;
 }
 
-.consent-line {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.65rem;
-  align-items: start;
-  margin: 0.9rem 0;
-  padding: 0.85rem;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fbfdfe;
-  font-weight: 700;
-}
-
 .status-text {
   margin-top: 0.75rem;
-}
-
-.report-preview {
-  max-height: 280px;
-  overflow: auto;
-  margin: 0.75rem 0 0;
-  padding: 1rem;
-  border-radius: 6px;
-  background: #0b1725;
-  color: #e8fbff;
-  font: 0.9rem/1.45 Consolas, monospace;
-  white-space: pre-wrap;
 }
 
 .history-item {

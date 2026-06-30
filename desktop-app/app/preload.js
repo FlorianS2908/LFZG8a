@@ -8,9 +8,7 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
   listHistory: () => ipcRenderer.invoke('history:list'),
   addHistory: (entry) => ipcRenderer.invoke('history:add', entry),
   resetHistory: () => ipcRenderer.invoke('history:reset'),
-  openDataDir: () => ipcRenderer.invoke('app:open-data-dir'),
-  createDiagnosticReport: () => ipcRenderer.invoke('diagnostics:create-report'),
-  sendDiagnosticMail: (report) => ipcRenderer.invoke('diagnostics:send-mail', report)
+  openDataDir: () => ipcRenderer.invoke('app:open-data-dir')
 });
 
 window.addEventListener('DOMContentLoaded', () => {

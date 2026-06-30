@@ -19,6 +19,10 @@ Dieses Repository enthaelt die Kursmaterialien fuer LFZQ8a HTML & CSS.
 - Dozenten-Tool: `dozent/tools/html-tags-css-dozenteninfo.html`
 - Teilnehmer-Tool: `teilnehmer/tools/html-tags-css-uebersicht.html`
 
+## DSGVO-relevante Funktionen
+
+Diagnosefunktionen mit technischen Geraetedaten, Netzwerkdaten und Mailvorbereitung wurden aus `electronDesktop` entfernt und liegen separat im Branch `dsgvo-diagnosefunktionen`.
+
 ## Nutzung
 
 Die Bereiche `dozent/` und `teilnehmer/` sind bewusst getrennt aufgebaut und koennen separat weitergegeben oder geoeffnet werden. Die Desktop-App bleibt daneben als technische Start- und Fensterlogik erhalten.
