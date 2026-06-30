@@ -1,0 +1,1262 @@
+{
+  "id": "lf_zq8a_tag_02_50_fragen_70_minuten_modernes_css",
+  "name": "LF ZQ8a · Tag 02 · Flexbox und Komponenten · 50 Fragen · 70 Minuten",
+  "description": "50 thematisch passende Fragen zu Tag 02. Enthalten sind Code-Lesen-und-Verstehen, Zuordnungsfragen mit Post-its sowie Theoriefragen als Single Choice und Multiple Choice. Die Antworten sind gemischt und die drei Schwierigkeitsstufen sind enthalten.",
+  "durationMinutes": 70,
+  "timeLimitMinutes": 70,
+  "questionCount": 50,
+  "topics": {
+    "201": "Flexbox-Grundlagen und Achsen",
+    "202": "Ausrichtung, Abstände und Umbruch",
+    "203": "Flex-Items, Größenverhalten und Reihenfolge",
+    "204": "Navigationen, Karten und Formular-Komponenten",
+    "205": "Komponentenaufbau und CSS-Struktur"
+  },
+  "topicLabels": {
+    "201": "Flexbox-Grundlagen und Achsen",
+    "202": "Ausrichtung, Abstände und Umbruch",
+    "203": "Flex-Items, Größenverhalten und Reihenfolge",
+    "204": "Navigationen, Karten und Formular-Komponenten",
+    "205": "Komponentenaufbau und CSS-Struktur"
+  },
+  "difficultyLevels": {
+    "leicht": "Grundlagen, Begriffe und direkte Wiedererkennung",
+    "mittel": "Anwendung, Einordnung und typische Fehlerquellen",
+    "schwer": "Transfer, Codeverständnis und fachliche Begründung"
+  },
+  "difficultyLabels": {
+    "leicht": "Grundlagen, Begriffe und direkte Wiedererkennung",
+    "mittel": "Anwendung, Einordnung und typische Fehlerquellen",
+    "schwer": "Transfer, Codeverständnis und fachliche Begründung"
+  },
+  "questions": [
+    {
+      "type": "single-choice",
+      "topic": "203",
+      "difficulty": "schwer",
+      "text": "Tag 2: Warum sollte die Lösung nicht nur optisch, sondern auch strukturell geprüft werden?",
+      "options": [
+        "Weil nur die Dateigröße zählt.",
+        "Weil CSS sonst automatisch gelöscht wird.",
+        "Weil HTML dann keine Rolle spielt.",
+        "Weil Wartbarkeit, Kaskade, Responsivität und Bedienbarkeit fachlich relevant sind."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Weil Wartbarkeit, Kaskade, Responsivität und Bedienbarkeit fachlich relevant sind.",
+      "explanation": "Technische Qualität ist mehr als ein erster optischer Eindruck.",
+      "id": "T02-50-001"
+    },
+    {
+      "type": "single-choice",
+      "topic": "205",
+      "difficulty": "schwer",
+      "text": "Welche Vorgehensweise ist beim Aufbau einer Card-Komponente sinnvoll?",
+      "options": [
+        "Erst semantisches HTML, dann Basis-Styling, danach Varianten und Zustände ergänzen.",
+        "CSS-Regeln zufällig über die Datei verteilen.",
+        "Zuerst alle Elemente absolut positionieren.",
+        "Alle Inhalte als ein Bild einfügen."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Erst semantisches HTML, dann Basis-Styling, danach Varianten und Zustände ergänzen.",
+      "explanation": "Komponenten entstehen sinnvoll Schritt für Schritt.",
+      "id": "T02-50-002"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "204",
+      "difficulty": "mittel",
+      "text": "Tag 2: Welche Punkte sprechen für eine geordnete CSS-Datei? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Doppelte Deklarationen fallen eher auf",
+        "Komponenten können leichter gepflegt werden",
+        "Klassennamen sollten absichtlich unverständlich sein",
+        "Regeln lassen sich schneller finden"
+      ],
+      "correct": [
+        0,
+        1,
+        3
+      ],
+      "solution": "Regeln lassen sich schneller finden<br>Doppelte Deklarationen fallen eher auf<br>Komponenten können leichter gepflegt werden",
+      "explanation": "Ordnung in CSS unterstützt Wartbarkeit und Fehlersuche.",
+      "id": "T02-50-003"
+    },
+    {
+      "type": "single-choice",
+      "topic": "204",
+      "difficulty": "schwer",
+      "text": "Welche Aussage passt zum mobilen Verhalten?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">@media (max-width: 700px) {\n  .nav-list {\n    flex-direction: column;\n  }\n}</pre></div>",
+      "options": [
+        "Ab 700px werden alle Links gelöscht.",
+        "Die Regel wirkt nur auf Drucker.",
+        "Bis 700px Breite werden die Navigationseinträge untereinander dargestellt.",
+        "flex-direction kann nicht in Media Queries genutzt werden."
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Bis 700px Breite werden die Navigationseinträge untereinander dargestellt.",
+      "explanation": "max-width spricht kleine Viewports an.",
+      "id": "T02-50-004"
+    },
+    {
+      "type": "single-choice",
+      "topic": "201",
+      "difficulty": "mittel",
+      "text": "Welche Aussage zur Hauptachse ist korrekt?",
+      "options": [
+        "Sie hängt von flex-direction ab.",
+        "Sie ist immer die Schriftlinie.",
+        "Sie ist immer vertikal.",
+        "Sie existiert nur bei CSS Grid."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Sie hängt von flex-direction ab.",
+      "explanation": "Bei row ist die Hauptachse horizontal, bei column vertikal.",
+      "id": "T02-50-005"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "202",
+      "difficulty": "mittel",
+      "text": "Tag 2: Welche Vorgehensweise ist bei einer praktischen CSS-Umsetzung sinnvoll? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "im Browser testen",
+        "Anforderung lesen",
+        "passende CSS-Technik auswählen",
+        "ohne Kontrolle produktiv übernehmen"
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "solution": "Anforderung lesen<br>passende CSS-Technik auswählen<br>im Browser testen",
+      "explanation": "Eine saubere Umsetzung besteht aus Verstehen, Umsetzen und Prüfen.",
+      "id": "T02-50-006"
+    },
+    {
+      "type": "single-choice",
+      "topic": "201",
+      "difficulty": "schwer",
+      "text": "Warum ist Flexbox für Navigationsleisten gut geeignet?",
+      "options": [
+        "Weil Elemente auf einer Achse einfach verteilt und ausgerichtet werden können.",
+        "Weil es automatisch eine Datenbank erzeugt.",
+        "Weil Flexbox nur für Drucklayouts gedacht ist.",
+        "Weil alle Links dadurch semantisch korrekt werden."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Weil Elemente auf einer Achse einfach verteilt und ausgerichtet werden können.",
+      "explanation": "Flexbox ist stark für eindimensionale Layouts.",
+      "id": "T02-50-007"
+    },
+    {
+      "type": "single-choice",
+      "topic": "201",
+      "difficulty": "mittel",
+      "text": "Welche Aussage passt zum Layout?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.nav {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}</pre></div>",
+      "options": [
+        "Alle Items werden untereinander als Grid dargestellt.",
+        "Die Items werden auf der Hauptachse verteilt und auf der Querachse zentriert.",
+        "justify-content wirkt hier auf die Schriftfarbe.",
+        "Die Navigation wird unsichtbar."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Die Items werden auf der Hauptachse verteilt und auf der Querachse zentriert.",
+      "explanation": "Bei row verteilt justify-content horizontal, align-items vertikal.",
+      "id": "T02-50-008"
+    },
+    {
+      "type": "single-choice",
+      "topic": "202",
+      "difficulty": "leicht",
+      "text": "Welche Eigenschaft steuert die Ausrichtung entlang der Querachse?",
+      "options": [
+        "align-items",
+        "justify-content",
+        "grid-area",
+        "text-decoration"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "align-items",
+      "explanation": "align-items wirkt auf der Querachse.",
+      "id": "T02-50-009"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "203",
+      "difficulty": "mittel",
+      "text": "Ordne Teile der Kurzschreibweise <code>flex: 1 1 250px</code> zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l5",
+          "text": "shrink"
+        },
+        {
+          "id": "l4",
+          "text": "grow"
+        },
+        {
+          "id": "l3",
+          "text": "250px"
+        },
+        {
+          "id": "l2",
+          "text": "zweite 1"
+        },
+        {
+          "id": "l1",
+          "text": "erste 1"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r1",
+          "text": "flex-grow",
+          "match": "l1"
+        },
+        {
+          "id": "r2",
+          "text": "flex-shrink",
+          "match": "l2"
+        },
+        {
+          "id": "r5",
+          "text": "Verkleinern bei Platzmangel",
+          "match": "l5"
+        },
+        {
+          "id": "r4",
+          "text": "Nutzung freier Fläche",
+          "match": "l4"
+        },
+        {
+          "id": "r3",
+          "text": "flex-basis",
+          "match": "l3"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        }
+      ],
+      "solution": "erste 1 → flex-grow<br>zweite 1 → flex-shrink<br>250px → flex-basis<br>grow → Nutzung freier Fläche<br>shrink → Verkleinern bei Platzmangel",
+      "explanation": "Die flex-Kurzschreibweise fasst Größenverhalten zusammen.",
+      "id": "T02-50-010"
+    },
+    {
+      "type": "single-choice",
+      "topic": "205",
+      "difficulty": "mittel",
+      "text": "Welche Namensgebung hilft bei wartbaren Komponenten?",
+      "options": [
+        ".x, .x2, .x3 ohne Bedeutung",
+        ".card, .card__title, .card--featured",
+        "alle Klassen heißen gleich",
+        ".rot-ganz-gross-nochmal"
+      ],
+      "correct": [
+        1
+      ],
+      "solution": ".card, .card__title, .card--featured",
+      "explanation": "Konsistente Namen erleichtern Lesen und Warten.",
+      "id": "T02-50-011"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "204",
+      "difficulty": "mittel",
+      "text": "Ordne UI-Komponenten passenden Flexbox-Einsätzen zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l4",
+          "text": "Formularzeile"
+        },
+        {
+          "id": "l5",
+          "text": "Toolbar"
+        },
+        {
+          "id": "l2",
+          "text": "Card-Liste"
+        },
+        {
+          "id": "l1",
+          "text": "Navigation"
+        },
+        {
+          "id": "l3",
+          "text": "Button-Leiste"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r2",
+          "text": "Karten umbrechen lassen",
+          "match": "l2"
+        },
+        {
+          "id": "r3",
+          "text": "Aktionen gleichmäßig ausrichten",
+          "match": "l3"
+        },
+        {
+          "id": "r4",
+          "text": "Label und Eingabe nebeneinander stellen",
+          "match": "l4"
+        },
+        {
+          "id": "r5",
+          "text": "Werkzeuge mit Abstand gruppieren",
+          "match": "l5"
+        },
+        {
+          "id": "r1",
+          "text": "Einträge horizontal oder vertikal anordnen",
+          "match": "l1"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        }
+      ],
+      "solution": "Navigation → Einträge horizontal oder vertikal anordnen<br>Card-Liste → Karten umbrechen lassen<br>Button-Leiste → Aktionen gleichmäßig ausrichten<br>Formularzeile → Label und Eingabe nebeneinander stellen<br>Toolbar → Werkzeuge mit Abstand gruppieren",
+      "explanation": "Flexbox ist besonders für lineare Komponenten geeignet.",
+      "id": "T02-50-012"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "204",
+      "difficulty": "mittel",
+      "text": "Welche Punkte sind bei einer Flexbox-Navigation fachlich sinnvoll? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Links nur als Hintergrundbilder verstecken",
+        "aktive Zustände sichtbar gestalten",
+        "Abstände über gap steuern",
+        "Liste semantisch als ul/li/a aufbauen"
+      ],
+      "correct": [
+        1,
+        2,
+        3
+      ],
+      "solution": "Liste semantisch als ul/li/a aufbauen<br>Abstände über gap steuern<br>aktive Zustände sichtbar gestalten",
+      "explanation": "Semantik und Gestaltung sollten zusammenpassen.",
+      "id": "T02-50-013"
+    },
+    {
+      "type": "single-choice",
+      "topic": "203",
+      "difficulty": "leicht",
+      "text": "Welche Kurzschreibweise kombiniert <code>flex-grow</code>, <code>flex-shrink</code> und <code>flex-basis</code>?",
+      "options": [
+        "basis",
+        "flex",
+        "item-size",
+        "grow-shrink"
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "flex",
+      "explanation": "Die flex-Shorthand fasst drei Werte zusammen.",
+      "id": "T02-50-014"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "203",
+      "difficulty": "mittel",
+      "text": "Welche Aussagen zu <code>flex-grow</code> sind korrekt? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Es beschreibt, ob und wie stark freie Fläche genutzt wird.",
+        "0 bedeutet: nicht aktiv wachsen.",
+        "Es wirkt auf Flex-Items.",
+        "Es ersetzt immer die Breite des Viewports."
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "solution": "Es beschreibt, ob und wie stark freie Fläche genutzt wird.<br>0 bedeutet: nicht aktiv wachsen.<br>Es wirkt auf Flex-Items.",
+      "explanation": "flex-grow betrifft Größenverhalten im Flex-Container.",
+      "id": "T02-50-015"
+    },
+    {
+      "type": "single-choice",
+      "topic": "203",
+      "difficulty": "schwer",
+      "text": "Wann kann <code>flex-shrink: 0</code> problematisch werden?",
+      "options": [
+        "Wenn keine HTML-Datei vorhanden ist.",
+        "Wenn es automatisch alle Medienabfragen entfernt.",
+        "Wenn Elemente nicht schrumpfen dürfen und dadurch horizontales Scrollen entsteht.",
+        "Wenn es die Schrift unsichtbar macht."
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Wenn Elemente nicht schrumpfen dürfen und dadurch horizontales Scrollen entsteht.",
+      "explanation": "Nicht schrumpfende Items können Layouts sprengen.",
+      "id": "T02-50-016"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "202",
+      "difficulty": "mittel",
+      "text": "Welche Werte passen zu <code>justify-content</code>? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "space-between",
+        "flex-end",
+        "center",
+        "bold"
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "solution": "center<br>space-between<br>flex-end",
+      "explanation": "justify-content verteilt Flex-Items auf der Hauptachse.",
+      "id": "T02-50-017"
+    },
+    {
+      "type": "single-choice",
+      "topic": "202",
+      "difficulty": "mittel",
+      "text": "Welche Aussage ist korrekt?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.cards {\n  display: flex;\n  flex-wrap: wrap;\n}\n.card { flex: 1 1 260px; }</pre></div>",
+      "options": [
+        "Der Code funktioniert nur mit LESS-Compiler.",
+        "Karten können umbrechen und starten mit einer Basis von 260px.",
+        "flex-wrap verhindert jeden Umbruch.",
+        "Karten sind immer exakt 1px breit."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Karten können umbrechen und starten mit einer Basis von 260px.",
+      "explanation": "Das ist ein typisches flexibles Kartenlayout.",
+      "id": "T02-50-018"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "205",
+      "difficulty": "mittel",
+      "text": "Welche Aussagen zu Utility-Klassen sind korrekt? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Sie können kleine wiederkehrende Einzelregeln kapseln.",
+        "Sie können z. B. Abstände oder Textausrichtung steuern.",
+        "Sie sollten bewusst und nicht chaotisch genutzt werden.",
+        "Sie ersetzen immer jede Komponente vollständig."
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "solution": "Sie können kleine wiederkehrende Einzelregeln kapseln.<br>Sie sollten bewusst und nicht chaotisch genutzt werden.<br>Sie können z. B. Abstände oder Textausrichtung steuern.",
+      "explanation": "Utility-Klassen sind hilfreich, brauchen aber Struktur.",
+      "id": "T02-50-019"
+    },
+    {
+      "type": "single-choice",
+      "topic": "205",
+      "difficulty": "leicht",
+      "text": "Tag 2: Was sollte nach einer CSS-Änderung mindestens kontrolliert werden?",
+      "options": [
+        "Die Darstellung im Browser",
+        "Nur die ZIP-Größe",
+        "Der Inhalt einer SQL-Tabelle",
+        "Nur der Dateiname"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Die Darstellung im Browser",
+      "explanation": "CSS-Änderungen müssen sichtbar geprüft werden.",
+      "id": "T02-50-020"
+    },
+    {
+      "type": "single-choice",
+      "topic": "204",
+      "difficulty": "schwer",
+      "text": "Welche Eigenschaft kann in einer Navigation genutzt werden, um ein Element nach rechts zu schieben?",
+      "options": [
+        "margin-left: auto",
+        "font-size: auto",
+        "order: database",
+        "display: none"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "margin-left: auto",
+      "explanation": "Auto-Margins können freien Platz im Flexlayout aufnehmen.",
+      "id": "T02-50-021"
+    },
+    {
+      "type": "single-choice",
+      "topic": "202",
+      "difficulty": "leicht",
+      "text": "Welche Eigenschaft setzt Abstände zwischen Flex-Items?",
+      "options": [
+        "gap",
+        "margin-collapse",
+        "space",
+        "item-gap-only"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "gap",
+      "explanation": "gap funktioniert auch in Flexbox.",
+      "id": "T02-50-022"
+    },
+    {
+      "type": "single-choice",
+      "topic": "204",
+      "difficulty": "mittel",
+      "text": "Welche Aussage passt zu diesem Navigationscode?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.nav { display: flex; gap: 1rem; }\n.nav .login { margin-left: auto; }</pre></div>",
+      "options": [
+        ".login wird auf der Hauptachse nach rechts geschoben.",
+        "margin-left:auto löscht die Navigation.",
+        "Alle Links werden linksbündig ohne Abstand gestapelt.",
+        "gap wirkt nur auf .login."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": ".login wird auf der Hauptachse nach rechts geschoben.",
+      "explanation": "auto margin nimmt freien Platz ein.",
+      "id": "T02-50-023"
+    },
+    {
+      "type": "single-choice",
+      "topic": "205",
+      "difficulty": "mittel",
+      "text": "Welche Aussage passt zu diesem Komponentenstil?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.button { padding: .75rem 1rem; }\n.button--primary { background: var(--primary); }\n.button--ghost { background: transparent; }</pre></div>",
+      "options": [
+        "CSS-Variablen sind nur mit LESS erlaubt.",
+        "Es gibt eine Basisklasse und zwei Varianten.",
+        "Der Code ist SQL.",
+        "Alle Buttons sind identisch ohne Varianten."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Es gibt eine Basisklasse und zwei Varianten.",
+      "explanation": "Eine Basisklasse plus Modifier ist wartbar.",
+      "id": "T02-50-024"
+    },
+    {
+      "type": "single-choice",
+      "topic": "202",
+      "difficulty": "schwer",
+      "text": "Was passiert bei folgendem Code in einer Spalten-Flexbox?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.panel {\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n}</pre></div>",
+      "options": [
+        "column ist nur in Grid gültig.",
+        "Die Items werden automatisch nebeneinander sortiert.",
+        "Die Items werden auf der vertikalen Hauptachse zentriert.",
+        "justify-content wirkt dann auf die horizontale Achse."
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Die Items werden auf der vertikalen Hauptachse zentriert.",
+      "explanation": "Bei column ist die Hauptachse vertikal.",
+      "id": "T02-50-025"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "202",
+      "difficulty": "mittel",
+      "text": "Tag 2: Welche Vorgehensweise ist bei einer praktischen CSS-Umsetzung sinnvoll? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Anforderung lesen",
+        "im Browser testen",
+        "passende CSS-Technik auswählen",
+        "ohne Kontrolle produktiv übernehmen"
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "solution": "Anforderung lesen<br>passende CSS-Technik auswählen<br>im Browser testen",
+      "explanation": "Eine saubere Umsetzung besteht aus Verstehen, Umsetzen und Prüfen.",
+      "id": "T02-50-026"
+    },
+    {
+      "type": "single-choice",
+      "topic": "204",
+      "difficulty": "schwer",
+      "text": "Warum sollte ein Button nicht nur über Farbe als Zustand erkennbar sein?",
+      "options": [
+        "Weil Flexbox Farben verbietet.",
+        "Weil Barrierefreiheit und Erkennbarkeit auch Kontrast, Form, Text oder Fokus benötigen können.",
+        "Weil CSS keine Farben kennt.",
+        "Weil Buttons grundsätzlich keine Zustände haben."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Weil Barrierefreiheit und Erkennbarkeit auch Kontrast, Form, Text oder Fokus benötigen können.",
+      "explanation": "Zustände sollten robust und zugänglich dargestellt werden.",
+      "id": "T02-50-027"
+    },
+    {
+      "type": "single-choice",
+      "topic": "201",
+      "difficulty": "leicht",
+      "text": "Tag 2: Welche Aussage passt grundsätzlich zu diesem Themenbereich?",
+      "options": [
+        "Die Umsetzung benötigt zwingend LESS.",
+        "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden.",
+        "Der Themenbereich darf nicht getestet werden.",
+        "Die Regel muss grundsätzlich zufällig gewählt werden."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden.",
+      "explanation": "Auch bei kleinen CSS-Aufgaben zählt die fachliche Passung.",
+      "id": "T02-50-028"
+    },
+    {
+      "type": "single-choice",
+      "topic": "202",
+      "difficulty": "mittel",
+      "text": "Welche Eigenschaft erlaubt Umbruch in die nächste Zeile?",
+      "options": [
+        "flex-direction: no-wrap",
+        "gap: wrap",
+        "flex-wrap: wrap",
+        "align-items: wrap"
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "flex-wrap: wrap",
+      "explanation": "wrap erlaubt, dass Flex-Items umbrechen.",
+      "id": "T02-50-029"
+    },
+    {
+      "type": "single-choice",
+      "topic": "201",
+      "difficulty": "leicht",
+      "text": "Welche Eigenschaft macht ein Element zum Flex-Container?",
+      "options": [
+        "layout: flexbox",
+        "flex-container: true",
+        "position: flex",
+        "display: flex"
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "display: flex",
+      "explanation": "Flexbox wird über display:flex aktiviert.",
+      "id": "T02-50-030"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "204",
+      "difficulty": "mittel",
+      "text": "Tag 2: Welche Punkte sprechen für eine geordnete CSS-Datei? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Regeln lassen sich schneller finden",
+        "Komponenten können leichter gepflegt werden",
+        "Doppelte Deklarationen fallen eher auf",
+        "Klassennamen sollten absichtlich unverständlich sein"
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "solution": "Regeln lassen sich schneller finden<br>Doppelte Deklarationen fallen eher auf<br>Komponenten können leichter gepflegt werden",
+      "explanation": "Ordnung in CSS unterstützt Wartbarkeit und Fehlersuche.",
+      "id": "T02-50-031"
+    },
+    {
+      "type": "single-choice",
+      "topic": "202",
+      "difficulty": "leicht",
+      "text": "Welche Eigenschaft steuert die Verteilung entlang der Hauptachse?",
+      "options": [
+        "align-items",
+        "font-weight",
+        "justify-content",
+        "border-color"
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "justify-content",
+      "explanation": "justify-content wirkt entlang der Hauptachse.",
+      "id": "T02-50-032"
+    },
+    {
+      "type": "single-choice",
+      "topic": "203",
+      "difficulty": "schwer",
+      "text": "Tag 2: Warum sollte die Lösung nicht nur optisch, sondern auch strukturell geprüft werden?",
+      "options": [
+        "Weil HTML dann keine Rolle spielt.",
+        "Weil Wartbarkeit, Kaskade, Responsivität und Bedienbarkeit fachlich relevant sind.",
+        "Weil CSS sonst automatisch gelöscht wird.",
+        "Weil nur die Dateigröße zählt."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Weil Wartbarkeit, Kaskade, Responsivität und Bedienbarkeit fachlich relevant sind.",
+      "explanation": "Technische Qualität ist mehr als ein erster optischer Eindruck.",
+      "id": "T02-50-033"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "205",
+      "difficulty": "schwer",
+      "text": "Ordne Komponentenbegriffe zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l1",
+          "text": "Basisklasse"
+        },
+        {
+          "id": "l4",
+          "text": "State-Klasse"
+        },
+        {
+          "id": "l2",
+          "text": "Modifier"
+        },
+        {
+          "id": "l5",
+          "text": "Semantik"
+        },
+        {
+          "id": "l3",
+          "text": "Utility-Klasse"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r5",
+          "text": "passende HTML-Struktur vor Gestaltung",
+          "match": "l5"
+        },
+        {
+          "id": "r3",
+          "text": "kleine wiederverwendbare Einzelregel",
+          "match": "l3"
+        },
+        {
+          "id": "r2",
+          "text": "Variante oder Zustand einer Komponente",
+          "match": "l2"
+        },
+        {
+          "id": "r4",
+          "text": "sichtbarer Zustand wie aktiv oder Fehler",
+          "match": "l4"
+        },
+        {
+          "id": "r1",
+          "text": "gemeinsames Styling einer Komponente",
+          "match": "l1"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        }
+      ],
+      "solution": "Basisklasse → gemeinsames Styling einer Komponente<br>Modifier → Variante oder Zustand einer Komponente<br>Utility-Klasse → kleine wiederverwendbare Einzelregel<br>State-Klasse → sichtbarer Zustand wie aktiv oder Fehler<br>Semantik → passende HTML-Struktur vor Gestaltung",
+      "explanation": "Komponenten brauchen Struktur in HTML und CSS.",
+      "id": "T02-50-034"
+    },
+    {
+      "type": "single-choice",
+      "topic": "203",
+      "difficulty": "mittel",
+      "text": "Welche Eigenschaft kann ein einzelnes Flex-Item abweichend auf der Querachse ausrichten?",
+      "options": [
+        "flex-direction",
+        "align-self",
+        "justify-content",
+        "gap"
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "align-self",
+      "explanation": "align-self überschreibt align-items für ein Item.",
+      "id": "T02-50-035"
+    },
+    {
+      "type": "single-choice",
+      "topic": "203",
+      "difficulty": "mittel",
+      "text": "Was bedeutet <code>flex: 1 1 250px</code> grob?",
+      "options": [
+        "Das Item ist immer exakt 1px breit.",
+        "Das Item wird immer ausgeblendet.",
+        "Das Item darf wachsen und schrumpfen und startet mit einer Basis von 250px.",
+        "Der Container bekommt 250 Spalten."
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Das Item darf wachsen und schrumpfen und startet mit einer Basis von 250px.",
+      "explanation": "grow=1, shrink=1, basis=250px.",
+      "id": "T02-50-036"
+    },
+    {
+      "type": "single-choice",
+      "topic": "205",
+      "difficulty": "leicht",
+      "text": "Was ist eine Komponentenklasse im CSS-Kontext?",
+      "options": [
+        "Eine wiederverwendbare Klasse für ein UI-Element wie Karte, Button oder Badge.",
+        "Eine Datei, die nur Kommentare enthält.",
+        "Eine Java-Klasse im Backend.",
+        "Eine Datenbanktabelle ohne Attribute."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Eine wiederverwendbare Klasse für ein UI-Element wie Karte, Button oder Badge.",
+      "explanation": "Komponentenklassen strukturieren wiederkehrende UI-Bausteine.",
+      "id": "T02-50-037"
+    },
+    {
+      "type": "single-choice",
+      "topic": "201",
+      "difficulty": "leicht",
+      "text": "Welche Elemente werden bei Flexbox zu Flex-Items?",
+      "options": [
+        "Nur Elemente mit ID",
+        "Alle Elemente der gesamten Webseite",
+        "Die direkten Kind-Elemente des Flex-Containers",
+        "Nur Bilder"
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Die direkten Kind-Elemente des Flex-Containers",
+      "explanation": "Nur direkte Kinder sind Flex-Items.",
+      "id": "T02-50-038"
+    },
+    {
+      "type": "single-choice",
+      "topic": "204",
+      "difficulty": "leicht",
+      "text": "Welche typische UI-Komponente eignet sich gut für Flexbox?",
+      "options": [
+        "horizontale Navigation",
+        "SQL-Index",
+        "ZIP-Archiv",
+        "relationale Zwischentabelle"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "horizontale Navigation",
+      "explanation": "Navigationen sind klassische eindimensionale Layouts.",
+      "id": "T02-50-039"
+    },
+    {
+      "type": "single-choice",
+      "topic": "202",
+      "difficulty": "leicht",
+      "text": "Was bewirkt der Code?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.cards {\n  display: flex;\n  gap: 1rem;\n}</pre></div>",
+      "options": [
+        "Die direkten Kinder von .cards werden als Flex-Items mit Abstand dargestellt.",
+        "gap verändert nur die Schriftart.",
+        "Alle Cards werden gelöscht.",
+        "Die Cards werden automatisch zu Tabellen."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Die direkten Kinder von .cards werden als Flex-Items mit Abstand dargestellt.",
+      "explanation": "display:flex aktiviert Flexbox, gap setzt Abstände.",
+      "id": "T02-50-040"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "201",
+      "difficulty": "leicht",
+      "text": "Ordne Flexbox-Begriffe zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l1",
+          "text": "Flex-Container"
+        },
+        {
+          "id": "l4",
+          "text": "Querachse"
+        },
+        {
+          "id": "l2",
+          "text": "Flex-Item"
+        },
+        {
+          "id": "l5",
+          "text": "gap"
+        },
+        {
+          "id": "l3",
+          "text": "Hauptachse"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r3",
+          "text": "Richtung aus flex-direction",
+          "match": "l3"
+        },
+        {
+          "id": "r5",
+          "text": "Abstand zwischen Items",
+          "match": "l5"
+        },
+        {
+          "id": "r2",
+          "text": "direktes Kind des Flex-Containers",
+          "match": "l2"
+        },
+        {
+          "id": "r4",
+          "text": "Achse senkrecht zur Hauptachse",
+          "match": "l4"
+        },
+        {
+          "id": "r1",
+          "text": "Element mit display:flex",
+          "match": "l1"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        }
+      ],
+      "solution": "Flex-Container → Element mit display:flex<br>Flex-Item → direktes Kind des Flex-Containers<br>Hauptachse → Richtung aus flex-direction<br>Querachse → Achse senkrecht zur Hauptachse<br>gap → Abstand zwischen Items",
+      "explanation": "Flexbox arbeitet mit Container, Items und Achsen.",
+      "id": "T02-50-041"
+    },
+    {
+      "type": "single-choice",
+      "topic": "201",
+      "difficulty": "leicht",
+      "text": "Tag 2: Welche Aussage passt grundsätzlich zu diesem Themenbereich?",
+      "options": [
+        "Die Regel muss grundsätzlich zufällig gewählt werden.",
+        "Die Umsetzung benötigt zwingend LESS.",
+        "Der Themenbereich darf nicht getestet werden.",
+        "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden.",
+      "explanation": "Auch bei kleinen CSS-Aufgaben zählt die fachliche Passung.",
+      "id": "T02-50-042"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "202",
+      "difficulty": "mittel",
+      "text": "Ordne Eigenschaften ihrer Wirkung zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l5",
+          "text": "align-self"
+        },
+        {
+          "id": "l1",
+          "text": "justify-content"
+        },
+        {
+          "id": "l3",
+          "text": "flex-wrap"
+        },
+        {
+          "id": "l4",
+          "text": "gap"
+        },
+        {
+          "id": "l2",
+          "text": "align-items"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r3",
+          "text": "Umbruch erlauben oder verhindern",
+          "match": "l3"
+        },
+        {
+          "id": "r1",
+          "text": "Verteilung auf der Hauptachse",
+          "match": "l1"
+        },
+        {
+          "id": "r4",
+          "text": "Abstand zwischen Items",
+          "match": "l4"
+        },
+        {
+          "id": "r5",
+          "text": "Ausrichtung eines einzelnen Items",
+          "match": "l5"
+        },
+        {
+          "id": "r2",
+          "text": "Ausrichtung auf der Querachse",
+          "match": "l2"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        }
+      ],
+      "solution": "justify-content → Verteilung auf der Hauptachse<br>align-items → Ausrichtung auf der Querachse<br>flex-wrap → Umbruch erlauben oder verhindern<br>gap → Abstand zwischen Items<br>align-self → Ausrichtung eines einzelnen Items",
+      "explanation": "Die Eigenschaften greifen an unterschiedlichen Stellen im Flexlayout.",
+      "id": "T02-50-043"
+    },
+    {
+      "type": "single-choice",
+      "topic": "203",
+      "difficulty": "schwer",
+      "text": "Welche Aussage zu <code>order</code> ist wichtig?",
+      "options": [
+        "order löscht Screenreader-Reihenfolgen immer automatisch korrekt.",
+        "order ändert nur die visuelle Reihenfolge, nicht die HTML-Struktur.",
+        "order ist nur für Tabellen gültig.",
+        "order sortiert automatisch nach Alphabet."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "order ändert nur die visuelle Reihenfolge, nicht die HTML-Struktur.",
+      "explanation": "Visuelle und semantische Reihenfolge sollten nicht widersprüchlich werden.",
+      "id": "T02-50-044"
+    },
+    {
+      "type": "single-choice",
+      "topic": "202",
+      "difficulty": "schwer",
+      "text": "Warum ist <code>gap</code> oft sauberer als viele einzelne Margins auf Flex-Items?",
+      "options": [
+        "gap ersetzt HTML-Semantik.",
+        "gap funktioniert nur mit LESS.",
+        "gap löscht alle Flex-Items.",
+        "Der Abstand wird zentral am Container gesteuert und bleibt konsistenter."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Der Abstand wird zentral am Container gesteuert und bleibt konsistenter.",
+      "explanation": "Zentrale Abstandssteuerung ist besser wartbar.",
+      "id": "T02-50-045"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "201",
+      "difficulty": "mittel",
+      "text": "Welche Werte sind für <code>flex-direction</code> gültig? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "row",
+        "column",
+        "center-only",
+        "row-reverse"
+      ],
+      "correct": [
+        0,
+        1,
+        3
+      ],
+      "solution": "row<br>column<br>row-reverse",
+      "explanation": "Flexrichtung kann horizontal, vertikal oder umgekehrt sein.",
+      "id": "T02-50-046"
+    },
+    {
+      "type": "single-choice",
+      "topic": "203",
+      "difficulty": "schwer",
+      "text": "Welche Ausgabe/Anordnung ist zu erwarten?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.item-a { order: 2; }\n.item-b { order: 1; }</pre></div>",
+      "options": [
+        "order wirkt nur auf Grid-Container.",
+        "item-a wird aus dem DOM gelöscht.",
+        "Die HTML-Reihenfolge ändert sich dauerhaft.",
+        "item-b wird visuell vor item-a dargestellt."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "item-b wird visuell vor item-a dargestellt.",
+      "explanation": "Kleinere order-Werte stehen visuell früher.",
+      "id": "T02-50-047"
+    },
+    {
+      "type": "single-choice",
+      "topic": "201",
+      "difficulty": "leicht",
+      "text": "Welche Eigenschaft legt die Hauptachse fest?",
+      "options": [
+        "flex-direction",
+        "font-size",
+        "grid-template-columns",
+        "justify-items"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "flex-direction",
+      "explanation": "flex-direction bestimmt Haupt- und Querachse.",
+      "id": "T02-50-048"
+    },
+    {
+      "type": "single-choice",
+      "topic": "203",
+      "difficulty": "schwer",
+      "text": "Welche Aussage ist korrekt?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.card:first-child {\n  flex-grow: 2;\n}\n.card {\n  flex-grow: 1;\n}</pre></div>",
+      "options": [
+        "Die erste Card wird ausgeblendet.",
+        "Die erste Card wächst stärker, weil .card:first-child spezifischer ist.",
+        "Alle Cards werden gleich stark wachsen, weil die spätere Regel immer gewinnt.",
+        "flex-grow funktioniert nur mit Grid."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Die erste Card wächst stärker, weil .card:first-child spezifischer ist.",
+      "explanation": "Die Pseudoklasse erhöht die Spezifität gegenüber .card.",
+      "id": "T02-50-049"
+    },
+    {
+      "type": "single-choice",
+      "topic": "204",
+      "difficulty": "mittel",
+      "text": "Welche CSS-Regel ist für ein flexibles Kartenlayout typisch?",
+      "options": [
+        ".cards { select: all; }",
+        ".cards { font-type: flex; }",
+        ".cards { display: database; }",
+        ".cards { display: flex; flex-wrap: wrap; gap: 1rem; }"
+      ],
+      "correct": [
+        3
+      ],
+      "solution": ".cards { display: flex; flex-wrap: wrap; gap: 1rem; }",
+      "explanation": "display:flex, wrap und gap bilden ein einfaches responsives Kartenlayout.",
+      "id": "T02-50-050"
+    }
+  ]
+}

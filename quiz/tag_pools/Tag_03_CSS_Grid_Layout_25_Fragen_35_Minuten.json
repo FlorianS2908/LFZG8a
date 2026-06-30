@@ -1,0 +1,738 @@
+{
+  "id": "lf_zq8a_tag_03_25_fragen_35_minuten_modernes_css",
+  "name": "LF ZQ8a · Tag 03 · CSS Grid und Layoutsysteme · 25 Fragen · 35 Minuten",
+  "description": "25 thematisch passende Fragen zu Tag 03. Enthalten sind Code-Lesen-und-Verstehen, Zuordnungsfragen mit Post-its sowie Theoriefragen als Single Choice und Multiple Choice. Die Antworten sind gemischt und die drei Schwierigkeitsstufen sind enthalten.",
+  "durationMinutes": 35,
+  "timeLimitMinutes": 35,
+  "questionCount": 25,
+  "topics": {
+    "301": "CSS-Grid-Grundlagen",
+    "302": "Spalten, Zeilen, Gaps und fr-Einheit",
+    "303": "Grid-Areas und Platzierung",
+    "304": "Responsive Grids mit auto-fit und minmax",
+    "305": "Grid, Flexbox und Layoutentscheidung"
+  },
+  "topicLabels": {
+    "301": "CSS-Grid-Grundlagen",
+    "302": "Spalten, Zeilen, Gaps und fr-Einheit",
+    "303": "Grid-Areas und Platzierung",
+    "304": "Responsive Grids mit auto-fit und minmax",
+    "305": "Grid, Flexbox und Layoutentscheidung"
+  },
+  "difficultyLevels": {
+    "leicht": "Grundlagen, Begriffe und direkte Wiedererkennung",
+    "mittel": "Anwendung, Einordnung und typische Fehlerquellen",
+    "schwer": "Transfer, Codeverständnis und fachliche Begründung"
+  },
+  "difficultyLabels": {
+    "leicht": "Grundlagen, Begriffe und direkte Wiedererkennung",
+    "mittel": "Anwendung, Einordnung und typische Fehlerquellen",
+    "schwer": "Transfer, Codeverständnis und fachliche Begründung"
+  },
+  "questions": [
+    {
+      "type": "single-choice",
+      "topic": "303",
+      "difficulty": "leicht",
+      "text": "Welche Eigenschaft kann einem Grid-Item einen benannten Bereich zuweisen?",
+      "options": [
+        "area-template",
+        "grid-area",
+        "grid-name",
+        "position-area"
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "grid-area",
+      "explanation": "grid-area platziert Items in benannten Bereichen.",
+      "id": "T03-25-001"
+    },
+    {
+      "type": "single-choice",
+      "topic": "301",
+      "difficulty": "leicht",
+      "text": "Tag 3: Welche Aussage passt grundsätzlich zu diesem Themenbereich?",
+      "options": [
+        "Die Umsetzung benötigt zwingend LESS.",
+        "Der Themenbereich darf nicht getestet werden.",
+        "Die Regel muss grundsätzlich zufällig gewählt werden.",
+        "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden.",
+      "explanation": "Auch bei kleinen CSS-Aufgaben zählt die fachliche Passung.",
+      "id": "T03-25-002"
+    },
+    {
+      "type": "single-choice",
+      "topic": "302",
+      "difficulty": "schwer",
+      "text": "Welche Aussage zu <code>minmax(240px, 1fr)</code> ist korrekt?",
+      "options": [
+        "1fr wird dabei ignoriert.",
+        "Ein Track ist mindestens 240px groß und kann bis 1fr wachsen.",
+        "Der Track ist immer exakt 240px.",
+        "minmax ist nur eine LESS-Funktion."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Ein Track ist mindestens 240px groß und kann bis 1fr wachsen.",
+      "explanation": "minmax ist zentral für flexible Grid-Spalten.",
+      "id": "T03-25-003"
+    },
+    {
+      "type": "single-choice",
+      "topic": "301",
+      "difficulty": "schwer",
+      "text": "Wann ist Grid gegenüber Flexbox meist die bessere Wahl?",
+      "options": [
+        "Wenn ein Layout gleichzeitig in Zeilen und Spalten gesteuert werden soll.",
+        "Wenn nur ein Button zentriert werden soll und keine weitere Struktur besteht.",
+        "Wenn die Reihenfolge ausschließlich zufällig sein soll.",
+        "Wenn CSS gar nicht genutzt werden soll."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Wenn ein Layout gleichzeitig in Zeilen und Spalten gesteuert werden soll.",
+      "explanation": "Grid ist zweidimensional, Flexbox eher eindimensional.",
+      "id": "T03-25-004"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "301",
+      "difficulty": "leicht",
+      "text": "Ordne Grid-Grundbegriffe zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l1",
+          "text": "Grid-Container"
+        },
+        {
+          "id": "l4",
+          "text": "Grid-Linie"
+        },
+        {
+          "id": "l2",
+          "text": "Grid-Item"
+        },
+        {
+          "id": "l3",
+          "text": "Track"
+        },
+        {
+          "id": "l5",
+          "text": "Gap"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r1",
+          "text": "Element mit display:grid",
+          "match": "l1"
+        },
+        {
+          "id": "r2",
+          "text": "direktes Kind des Grid-Containers",
+          "match": "l2"
+        },
+        {
+          "id": "r5",
+          "text": "Abstand zwischen Tracks",
+          "match": "l5"
+        },
+        {
+          "id": "r3",
+          "text": "Zeile oder Spalte",
+          "match": "l3"
+        },
+        {
+          "id": "r4",
+          "text": "Begrenzungslinie im Raster",
+          "match": "l4"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        }
+      ],
+      "solution": "Grid-Container → Element mit display:grid<br>Grid-Item → direktes Kind des Grid-Containers<br>Track → Zeile oder Spalte<br>Grid-Linie → Begrenzungslinie im Raster<br>Gap → Abstand zwischen Tracks",
+      "explanation": "Grid hat eine eigene Begriffswelt.",
+      "id": "T03-25-005"
+    },
+    {
+      "type": "single-choice",
+      "topic": "304",
+      "difficulty": "schwer",
+      "text": "Welche Aussage passt zu folgendem Grid?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.cards {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));\n  gap: 1rem;\n}</pre></div>",
+      "options": [
+        "Es entsteht ein responsives Kartenraster mit mindestens 240px breiten Spalten.",
+        "auto-fit funktioniert nur mit LESS.",
+        "gap steuert die Schriftgröße.",
+        "Es entstehen immer exakt 240 Karten."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Es entsteht ein responsives Kartenraster mit mindestens 240px breiten Spalten.",
+      "explanation": "Diese Technik ist ein Kernmuster moderner Grid-Layouts.",
+      "id": "T03-25-006"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "305",
+      "difficulty": "mittel",
+      "text": "Ordne Layoutaufgaben einem passenden Werkzeug zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l3",
+          "text": "Kartenraster mit Spalten und Zeilen"
+        },
+        {
+          "id": "l2",
+          "text": "Button-Gruppe auf einer Achse"
+        },
+        {
+          "id": "l4",
+          "text": "Navigationseinträge verteilen"
+        },
+        {
+          "id": "l5",
+          "text": "Formularzeile Label plus Eingabe"
+        },
+        {
+          "id": "l1",
+          "text": "Seitenraster mit Sidebar"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r3",
+          "text": "CSS Grid",
+          "match": "l3"
+        },
+        {
+          "id": "r4",
+          "text": "Flexbox",
+          "match": "l4"
+        },
+        {
+          "id": "r5",
+          "text": "Flexbox",
+          "match": "l5"
+        },
+        {
+          "id": "r1",
+          "text": "CSS Grid",
+          "match": "l1"
+        },
+        {
+          "id": "r2",
+          "text": "Flexbox",
+          "match": "l2"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        }
+      ],
+      "solution": "Seitenraster mit Sidebar → CSS Grid<br>Button-Gruppe auf einer Achse → Flexbox<br>Kartenraster mit Spalten und Zeilen → CSS Grid<br>Navigationseinträge verteilen → Flexbox<br>Formularzeile Label plus Eingabe → Flexbox",
+      "explanation": "Die Wahl hängt von der Layoutaufgabe ab.",
+      "id": "T03-25-007"
+    },
+    {
+      "type": "single-choice",
+      "topic": "302",
+      "difficulty": "schwer",
+      "text": "Welche Spalte ist breiter?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.grid {\n  display: grid;\n  grid-template-columns: 1fr 3fr;\n}</pre></div>",
+      "options": [
+        "Die zweite Spalte",
+        "Beide immer gleich",
+        "Keine, weil fr ungültig ist",
+        "Die erste Spalte"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Die zweite Spalte",
+      "explanation": "3fr erhält dreimal so viel Anteil wie 1fr.",
+      "id": "T03-25-008"
+    },
+    {
+      "type": "single-choice",
+      "topic": "304",
+      "difficulty": "schwer",
+      "text": "Was ist ein Vorteil von <code>auto-fit</code> gegenüber starren Spaltenzahlen?",
+      "options": [
+        "Es macht alle Bilder automatisch kleiner als 1px.",
+        "Das Layout kann sich besser an unterschiedliche Containerbreiten anpassen.",
+        "Es verhindert jede Responsivität.",
+        "Es benötigt zwingend einen LESS-Compiler."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Das Layout kann sich besser an unterschiedliche Containerbreiten anpassen.",
+      "explanation": "starre Spaltenzahlen brechen auf kleinen Viewports schneller.",
+      "id": "T03-25-009"
+    },
+    {
+      "type": "single-choice",
+      "topic": "303",
+      "difficulty": "mittel",
+      "text": "Welche Aussage ist korrekt?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.sidebar { grid-area: nav; }</pre></div>",
+      "options": [
+        "grid-area setzt die Schriftgröße.",
+        "Das Element soll im benannten Grid-Bereich nav platziert werden.",
+        "Das Element wird zu einer Navigation umbenannt.",
+        "Der Code ist ungültiges HTML."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Das Element soll im benannten Grid-Bereich nav platziert werden.",
+      "explanation": "grid-area referenziert einen benannten Bereich.",
+      "id": "T03-25-010"
+    },
+    {
+      "type": "single-choice",
+      "topic": "303",
+      "difficulty": "mittel",
+      "text": "Welche Eigenschaft definiert benannte Layoutbereiche im Container?",
+      "options": [
+        "template-name",
+        "grid-area-name",
+        "layout-template-flex",
+        "grid-template-areas"
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "grid-template-areas",
+      "explanation": "Mit grid-template-areas können Layouts gut lesbar aufgebaut werden.",
+      "id": "T03-25-011"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "304",
+      "difficulty": "mittel",
+      "text": "Tag 3: Welche Punkte sprechen für eine geordnete CSS-Datei? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Komponenten können leichter gepflegt werden",
+        "Regeln lassen sich schneller finden",
+        "Doppelte Deklarationen fallen eher auf",
+        "Klassennamen sollten absichtlich unverständlich sein"
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "solution": "Regeln lassen sich schneller finden<br>Doppelte Deklarationen fallen eher auf<br>Komponenten können leichter gepflegt werden",
+      "explanation": "Ordnung in CSS unterstützt Wartbarkeit und Fehlersuche.",
+      "id": "T03-25-012"
+    },
+    {
+      "type": "single-choice",
+      "topic": "303",
+      "difficulty": "mittel",
+      "text": "Was bewirkt der Code?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.featured {\n  grid-column: span 2;\n}</pre></div>",
+      "options": [
+        "Das Element wird zweimal kopiert.",
+        "Die zweite Spalte wird gelöscht.",
+        "Das Element belegt zwei Spalten.",
+        "Das Element wird zu Flexbox."
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Das Element belegt zwei Spalten.",
+      "explanation": "span 2 überspannt zwei Spalten.",
+      "id": "T03-25-013"
+    },
+    {
+      "type": "single-choice",
+      "topic": "305",
+      "difficulty": "mittel",
+      "text": "Wann kann eine Kombination aus Grid und Flexbox sinnvoll sein?",
+      "options": [
+        "Wenn CSS vollständig vermieden werden soll.",
+        "Wenn alle Elemente absolut positioniert werden sollen.",
+        "Grid für das Seitenraster, Flexbox innerhalb einzelner Komponenten.",
+        "Nur wenn keine HTML-Struktur vorhanden ist."
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Grid für das Seitenraster, Flexbox innerhalb einzelner Komponenten.",
+      "explanation": "Grid und Flexbox ergänzen sich.",
+      "id": "T03-25-014"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "303",
+      "difficulty": "mittel",
+      "text": "Ordne Platzierungstechniken zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l5",
+          "text": "grid-template-areas"
+        },
+        {
+          "id": "l4",
+          "text": "span"
+        },
+        {
+          "id": "l2",
+          "text": "grid-column"
+        },
+        {
+          "id": "l3",
+          "text": "grid-row"
+        },
+        {
+          "id": "l1",
+          "text": "grid-area"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r4",
+          "text": "mehrere Tracks überspannen",
+          "match": "l4"
+        },
+        {
+          "id": "r2",
+          "text": "Spaltenposition oder Spannweite",
+          "match": "l2"
+        },
+        {
+          "id": "r3",
+          "text": "Zeilenposition oder Spannweite",
+          "match": "l3"
+        },
+        {
+          "id": "r1",
+          "text": "benannten Bereich zuweisen",
+          "match": "l1"
+        },
+        {
+          "id": "r5",
+          "text": "Layoutbereiche benennen",
+          "match": "l5"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        }
+      ],
+      "solution": "grid-area → benannten Bereich zuweisen<br>grid-column → Spaltenposition oder Spannweite<br>grid-row → Zeilenposition oder Spannweite<br>span → mehrere Tracks überspannen<br>grid-template-areas → Layoutbereiche benennen",
+      "explanation": "Grid erlaubt sehr genaue Platzierung.",
+      "id": "T03-25-015"
+    },
+    {
+      "type": "single-choice",
+      "topic": "301",
+      "difficulty": "leicht",
+      "text": "Tag 3: Welche Aussage passt grundsätzlich zu diesem Themenbereich?",
+      "options": [
+        "Die Umsetzung benötigt zwingend LESS.",
+        "Die Regel muss grundsätzlich zufällig gewählt werden.",
+        "Der Themenbereich darf nicht getestet werden.",
+        "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden.",
+      "explanation": "Auch bei kleinen CSS-Aufgaben zählt die fachliche Passung.",
+      "id": "T03-25-016"
+    },
+    {
+      "type": "single-choice",
+      "topic": "302",
+      "difficulty": "leicht",
+      "text": "Wie viele Spalten entstehen?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.layout {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n}</pre></div>",
+      "options": [
+        "3",
+        "2",
+        "1",
+        "abhängig von der Schriftgröße"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "3",
+      "explanation": "repeat(3, 1fr) erzeugt drei gleich breite Spalten.",
+      "id": "T03-25-017"
+    },
+    {
+      "type": "single-choice",
+      "topic": "305",
+      "difficulty": "schwer",
+      "text": "Welche Aussage ist fachlich sauber?",
+      "options": [
+        "Grid funktioniert nur für Desktopseiten.",
+        "Grid ist nicht besser als Flexbox, sondern für andere Layoutprobleme gedacht.",
+        "Flexbox darf nie innerhalb eines Grid-Items genutzt werden.",
+        "Grid ersetzt HTML-Semantik vollständig."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Grid ist nicht besser als Flexbox, sondern für andere Layoutprobleme gedacht.",
+      "explanation": "Werkzeuge werden passend zur Aufgabe gewählt.",
+      "id": "T03-25-018"
+    },
+    {
+      "type": "single-choice",
+      "topic": "302",
+      "difficulty": "leicht",
+      "text": "Welche Eigenschaft definiert Grid-Spalten?",
+      "options": [
+        "grid-template-rows",
+        "grid-template-columns",
+        "justify-content",
+        "font-columns"
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "grid-template-columns",
+      "explanation": "grid-template-columns legt Spalten fest.",
+      "id": "T03-25-019"
+    },
+    {
+      "type": "single-choice",
+      "topic": "304",
+      "difficulty": "leicht",
+      "text": "Welche Funktion wird häufig mit <code>auto-fit</code> kombiniert?",
+      "options": [
+        "darken()",
+        "print()",
+        "join()",
+        "minmax()"
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "minmax()",
+      "explanation": "auto-fit und minmax bilden responsive Grids.",
+      "id": "T03-25-020"
+    },
+    {
+      "type": "single-choice",
+      "topic": "305",
+      "difficulty": "leicht",
+      "text": "Tag 3: Was sollte nach einer CSS-Änderung mindestens kontrolliert werden?",
+      "options": [
+        "Die Darstellung im Browser",
+        "Nur der Dateiname",
+        "Nur die ZIP-Größe",
+        "Der Inhalt einer SQL-Tabelle"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Die Darstellung im Browser",
+      "explanation": "CSS-Änderungen müssen sichtbar geprüft werden.",
+      "id": "T03-25-021"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "304",
+      "difficulty": "mittel",
+      "text": "Tag 3: Welche Punkte sprechen für eine geordnete CSS-Datei? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Komponenten können leichter gepflegt werden",
+        "Klassennamen sollten absichtlich unverständlich sein",
+        "Regeln lassen sich schneller finden",
+        "Doppelte Deklarationen fallen eher auf"
+      ],
+      "correct": [
+        0,
+        2,
+        3
+      ],
+      "solution": "Regeln lassen sich schneller finden<br>Doppelte Deklarationen fallen eher auf<br>Komponenten können leichter gepflegt werden",
+      "explanation": "Ordnung in CSS unterstützt Wartbarkeit und Fehlersuche.",
+      "id": "T03-25-022"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "303",
+      "difficulty": "mittel",
+      "text": "Welche Werte können zur Platzierung genutzt werden? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "grid-row",
+        "grid-column",
+        "grid-area",
+        "font-weight"
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "solution": "grid-column<br>grid-row<br>grid-area",
+      "explanation": "Grid-Items werden über Spalten, Zeilen oder Areas platziert.",
+      "id": "T03-25-023"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "304",
+      "difficulty": "schwer",
+      "text": "Ordne responsive Grid-Bausteine zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l1",
+          "text": "auto-fit"
+        },
+        {
+          "id": "l3",
+          "text": "1fr"
+        },
+        {
+          "id": "l5",
+          "text": "min(90%, 1200px)"
+        },
+        {
+          "id": "l4",
+          "text": "gap"
+        },
+        {
+          "id": "l2",
+          "text": "minmax()"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r3",
+          "text": "Restplatz flexibel nutzen",
+          "match": "l3"
+        },
+        {
+          "id": "r5",
+          "text": "Containerbreite begrenzen und flexibel halten",
+          "match": "l5"
+        },
+        {
+          "id": "r4",
+          "text": "gleichmäßige Abstände",
+          "match": "l4"
+        },
+        {
+          "id": "r2",
+          "text": "Mindest- und Maximalgröße festlegen",
+          "match": "l2"
+        },
+        {
+          "id": "r1",
+          "text": "möglichst viele passende Spalten erzeugen",
+          "match": "l1"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        }
+      ],
+      "solution": "auto-fit → möglichst viele passende Spalten erzeugen<br>minmax() → Mindest- und Maximalgröße festlegen<br>1fr → Restplatz flexibel nutzen<br>gap → gleichmäßige Abstände<br>min(90%, 1200px) → Containerbreite begrenzen und flexibel halten",
+      "explanation": "Responsive Grids bestehen aus mehreren CSS-Bausteinen.",
+      "id": "T03-25-024"
+    },
+    {
+      "type": "single-choice",
+      "topic": "305",
+      "difficulty": "mittel",
+      "text": "Welche Aussage passt zur Kombination?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.page { display: grid; grid-template-columns: 280px 1fr; }\n.nav-list { display: flex; gap: .75rem; }</pre></div>",
+      "options": [
+        "Grid steuert das Seitenraster, Flexbox die Navigation.",
+        "Die Navigation wird zu einer Tabelle.",
+        "Flexbox überschreibt automatisch das Grid.",
+        "Beide Regeln sind ungültig."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Grid steuert das Seitenraster, Flexbox die Navigation.",
+      "explanation": "Diese Kombination ist in echten Projekten üblich.",
+      "id": "T03-25-025"
+    }
+  ]
+}

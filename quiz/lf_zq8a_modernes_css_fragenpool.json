@@ -1,0 +1,694 @@
+{
+  "title": "LF ZQ8a - Modernes CSS, Responsive Design, Flexbox und Grid",
+  "count": 48,
+  "questions": [
+    {
+      "id": "Q001",
+      "type": "single",
+      "question": "Welche CSS-Regel sorgt dafür, dass Padding und Border in die Breite eingerechnet werden?",
+      "options": [
+        "box-sizing: border-box",
+        "display: grid",
+        "font-display: swap",
+        "position: fixed"
+      ],
+      "answer": "box-sizing: border-box"
+    },
+    {
+      "id": "Q002",
+      "type": "single",
+      "question": "Welche CSS-Technik ersetzt im Unterricht Präprozessor-Variablen im modernen CSS?",
+      "options": [
+        "CSS Custom Properties",
+        "HTML Meta Tags",
+        "GET Parameter",
+        "SVG Sprites"
+      ],
+      "answer": "CSS Custom Properties"
+    },
+    {
+      "id": "Q003",
+      "type": "multiple",
+      "question": "Welche Eigenschaften gehören in der Praxis typischerweise zu Flexbox?",
+      "options": [
+        "justify-content",
+        "align-items",
+        "flex-wrap",
+        "grid-template-areas"
+      ],
+      "answer": [
+        "justify-content",
+        "align-items",
+        "flex-wrap"
+      ]
+    },
+    {
+      "id": "Q004",
+      "type": "single",
+      "question": "Welche Technik eignet sich besonders für ein zweidimensionales Seitenlayout?",
+      "options": [
+        "CSS Grid",
+        "Inline CSS",
+        "HTML Tabelle",
+        "mailto-Link"
+      ],
+      "answer": "CSS Grid"
+    },
+    {
+      "id": "Q005",
+      "type": "single",
+      "question": "Was ist mit Mobile First in diesem Lernfeld gemeint?",
+      "options": [
+        "CSS zuerst für kleine Bildschirme schreiben",
+        "nur Smartphone unterstützen",
+        "nur Apps entwickeln",
+        "Desktop zuerst gestalten"
+      ],
+      "answer": "CSS zuerst für kleine Bildschirme schreiben"
+    },
+    {
+      "id": "Q006",
+      "type": "multiple",
+      "question": "Welche CSS-Funktionen helfen bei responsivem Design?",
+      "options": [
+        "clamp()",
+        "min()",
+        "max()",
+        "print()"
+      ],
+      "answer": [
+        "clamp()",
+        "min()",
+        "max()"
+      ]
+    },
+    {
+      "id": "Q007",
+      "type": "single",
+      "question": "Welche Regel macht Bilder grundsätzlich responsiv?",
+      "options": [
+        "max-width: 100%; height: auto;",
+        "display: none",
+        "position: absolute",
+        "width: 2000px"
+      ],
+      "answer": "max-width: 100%; height: auto;"
+    },
+    {
+      "id": "Q008",
+      "type": "single",
+      "question": "Welche Achse wird mit justify-content in Flexbox beeinflusst?",
+      "options": [
+        "Hauptachse",
+        "Querachse",
+        "Z-Achse",
+        "Textgrundlinie"
+      ],
+      "answer": "Hauptachse"
+    },
+    {
+      "id": "Q009",
+      "type": "single",
+      "question": "Welche Eigenschaft definiert Grid-Spalten?",
+      "options": [
+        "grid-template-columns",
+        "flex-direction",
+        "font-weight",
+        "line-height"
+      ],
+      "answer": "grid-template-columns"
+    },
+    {
+      "id": "Q010",
+      "type": "multiple",
+      "question": "Was gehört zu einer sauberen CSS-only Projektstruktur?",
+      "options": [
+        "index.html",
+        "css/style.css",
+        "relative Pfade",
+        "zwingend variables.less"
+      ],
+      "answer": [
+        "index.html",
+        "css/style.css",
+        "relative Pfade"
+      ]
+    },
+    {
+      "id": "Q011",
+      "type": "matching",
+      "question": "Ordne die CSS-Technik der passenden Bedeutung zu.",
+      "pairs": [
+        [
+          "CSS Custom Properties",
+          "zentrale Werte im :root"
+        ],
+        [
+          "Flexbox",
+          "eindimensionale Ausrichtung"
+        ],
+        [
+          "Grid",
+          "zweidimensionales Layout"
+        ],
+        [
+          "Media Query",
+          "Regeln abhängig vom Viewport"
+        ],
+        [
+          "@font-face",
+          "lokale Schrift einbinden"
+        ]
+      ]
+    },
+    {
+      "id": "Q012",
+      "type": "matching",
+      "question": "Ordne die CSS-Technik der passenden Bedeutung zu.",
+      "pairs": [
+        [
+          "CSS Custom Properties",
+          "zentrale Werte im :root"
+        ],
+        [
+          "Flexbox",
+          "eindimensionale Ausrichtung"
+        ],
+        [
+          "Grid",
+          "zweidimensionales Layout"
+        ],
+        [
+          "Media Query",
+          "Regeln abhängig vom Viewport"
+        ],
+        [
+          "@font-face",
+          "lokale Schrift einbinden"
+        ]
+      ]
+    },
+    {
+      "id": "Q013",
+      "type": "matching",
+      "question": "Ordne die CSS-Technik der passenden Bedeutung zu.",
+      "pairs": [
+        [
+          "CSS Custom Properties",
+          "zentrale Werte im :root"
+        ],
+        [
+          "Flexbox",
+          "eindimensionale Ausrichtung"
+        ],
+        [
+          "Grid",
+          "zweidimensionales Layout"
+        ],
+        [
+          "Media Query",
+          "Regeln abhängig vom Viewport"
+        ],
+        [
+          "@font-face",
+          "lokale Schrift einbinden"
+        ]
+      ]
+    },
+    {
+      "id": "Q014",
+      "type": "matching",
+      "question": "Ordne die CSS-Technik der passenden Bedeutung zu.",
+      "pairs": [
+        [
+          "CSS Custom Properties",
+          "zentrale Werte im :root"
+        ],
+        [
+          "Flexbox",
+          "eindimensionale Ausrichtung"
+        ],
+        [
+          "Grid",
+          "zweidimensionales Layout"
+        ],
+        [
+          "Media Query",
+          "Regeln abhängig vom Viewport"
+        ],
+        [
+          "@font-face",
+          "lokale Schrift einbinden"
+        ]
+      ]
+    },
+    {
+      "id": "Q015",
+      "type": "matching",
+      "question": "Ordne die CSS-Technik der passenden Bedeutung zu.",
+      "pairs": [
+        [
+          "CSS Custom Properties",
+          "zentrale Werte im :root"
+        ],
+        [
+          "Flexbox",
+          "eindimensionale Ausrichtung"
+        ],
+        [
+          "Grid",
+          "zweidimensionales Layout"
+        ],
+        [
+          "Media Query",
+          "Regeln abhängig vom Viewport"
+        ],
+        [
+          "@font-face",
+          "lokale Schrift einbinden"
+        ]
+      ]
+    },
+    {
+      "id": "Q016",
+      "type": "matching",
+      "question": "Ordne die CSS-Technik der passenden Bedeutung zu.",
+      "pairs": [
+        [
+          "CSS Custom Properties",
+          "zentrale Werte im :root"
+        ],
+        [
+          "Flexbox",
+          "eindimensionale Ausrichtung"
+        ],
+        [
+          "Grid",
+          "zweidimensionales Layout"
+        ],
+        [
+          "Media Query",
+          "Regeln abhängig vom Viewport"
+        ],
+        [
+          "@font-face",
+          "lokale Schrift einbinden"
+        ]
+      ]
+    },
+    {
+      "id": "Q017",
+      "type": "matching",
+      "question": "Ordne die CSS-Technik der passenden Bedeutung zu.",
+      "pairs": [
+        [
+          "CSS Custom Properties",
+          "zentrale Werte im :root"
+        ],
+        [
+          "Flexbox",
+          "eindimensionale Ausrichtung"
+        ],
+        [
+          "Grid",
+          "zweidimensionales Layout"
+        ],
+        [
+          "Media Query",
+          "Regeln abhängig vom Viewport"
+        ],
+        [
+          "@font-face",
+          "lokale Schrift einbinden"
+        ]
+      ]
+    },
+    {
+      "id": "Q018",
+      "type": "matching",
+      "question": "Ordne die CSS-Technik der passenden Bedeutung zu.",
+      "pairs": [
+        [
+          "CSS Custom Properties",
+          "zentrale Werte im :root"
+        ],
+        [
+          "Flexbox",
+          "eindimensionale Ausrichtung"
+        ],
+        [
+          "Grid",
+          "zweidimensionales Layout"
+        ],
+        [
+          "Media Query",
+          "Regeln abhängig vom Viewport"
+        ],
+        [
+          "@font-face",
+          "lokale Schrift einbinden"
+        ]
+      ]
+    },
+    {
+      "id": "Q019",
+      "type": "single",
+      "question": "`gap` kann in Flexbox und Grid verwendet werden.",
+      "options": [
+        "richtig",
+        "falsch"
+      ],
+      "answer": "richtig"
+    },
+    {
+      "id": "Q020",
+      "type": "single",
+      "question": "Eine Media Query sollte immer exakt bei 768px stehen, egal wie der Inhalt aussieht.",
+      "options": [
+        "richtig",
+        "falsch"
+      ],
+      "answer": "falsch"
+    },
+    {
+      "id": "Q021",
+      "type": "single",
+      "question": "`repeat(auto-fit, minmax(220px, 1fr))` kann ein responsives Grid ohne zusätzlichen Breakpoint erzeugen.",
+      "options": [
+        "richtig",
+        "falsch"
+      ],
+      "answer": "richtig"
+    },
+    {
+      "id": "Q022",
+      "type": "single",
+      "question": "Lokale Webfonts sollten ohne Lizenzprüfung eingesetzt werden.",
+      "options": [
+        "richtig",
+        "falsch"
+      ],
+      "answer": "falsch"
+    },
+    {
+      "id": "Q023",
+      "type": "single",
+      "question": "Eine CSS-Datei darf im Projekt weiterhin `.less` importieren, wenn der Browser modern ist.",
+      "options": [
+        "richtig",
+        "falsch"
+      ],
+      "answer": "falsch"
+    },
+    {
+      "id": "Q024",
+      "type": "single",
+      "question": "`clamp()` kann eine Schriftgröße zwischen Minimum und Maximum flexibel machen.",
+      "options": [
+        "richtig",
+        "falsch"
+      ],
+      "answer": "richtig"
+    },
+    {
+      "id": "Q025",
+      "type": "single",
+      "question": "Flexbox ist oft sinnvoll für Navigationen und Toolbars.",
+      "options": [
+        "richtig",
+        "falsch"
+      ],
+      "answer": "richtig"
+    },
+    {
+      "id": "Q026",
+      "type": "single",
+      "question": "Grid eignet sich gut für Dashboards mit Zeilen und Spalten.",
+      "options": [
+        "richtig",
+        "falsch"
+      ],
+      "answer": "richtig"
+    },
+    {
+      "id": "Q027",
+      "type": "single",
+      "question": "Eine ID ist in der Spezifität schwächer als eine Klasse.",
+      "options": [
+        "richtig",
+        "falsch"
+      ],
+      "answer": "falsch"
+    },
+    {
+      "id": "Q028",
+      "type": "single",
+      "question": "`font-display: swap` kann helfen, Text schneller sichtbar zu machen.",
+      "options": [
+        "richtig",
+        "falsch"
+      ],
+      "answer": "richtig"
+    },
+    {
+      "id": "Q029",
+      "type": "single",
+      "question": "Welche CSS-Eigenschaft setzt den Außenabstand?",
+      "options": [
+        "margin",
+        "padding",
+        "border",
+        "display"
+      ],
+      "answer": "margin"
+    },
+    {
+      "id": "Q030",
+      "type": "single",
+      "question": "Welche CSS-Eigenschaft setzt den Innenabstand?",
+      "options": [
+        "padding",
+        "margin",
+        "outline",
+        "src"
+      ],
+      "answer": "padding"
+    },
+    {
+      "id": "Q031",
+      "type": "single",
+      "question": "Welche Einheit orientiert sich an der Root-Schriftgröße?",
+      "options": [
+        "rem",
+        "px",
+        "deg",
+        "s"
+      ],
+      "answer": "rem"
+    },
+    {
+      "id": "Q032",
+      "type": "single",
+      "question": "Welche Pseudoklasse beschreibt Maus-Überfahren?",
+      "options": [
+        ":hover",
+        ":root",
+        ":checked",
+        ":not"
+      ],
+      "answer": ":hover"
+    },
+    {
+      "id": "Q033",
+      "type": "single",
+      "question": "Welche Pseudoklasse ist für Tastaturfokus wichtig?",
+      "options": [
+        ":focus-visible",
+        ":after",
+        ":grid",
+        ":mobile"
+      ],
+      "answer": ":focus-visible"
+    },
+    {
+      "id": "Q034",
+      "type": "single",
+      "question": "Welche Regel begrenzt die Containerbreite sinnvoll?",
+      "options": [
+        "width: min(1120px, calc(100% - 2rem));",
+        "width: 5000px;",
+        "height: auto;",
+        "display: block;"
+      ],
+      "answer": "width: min(1120px, calc(100% - 2rem));"
+    },
+    {
+      "id": "Q035",
+      "type": "single",
+      "question": "Welche Eigenschaft steuert die Richtung in Flexbox?",
+      "options": [
+        "flex-direction",
+        "grid-area",
+        "font-style",
+        "object-fit"
+      ],
+      "answer": "flex-direction"
+    },
+    {
+      "id": "Q036",
+      "type": "single",
+      "question": "Welche Eigenschaft sorgt dafür, dass Bilder zugeschnitten aber gefüllt werden?",
+      "options": [
+        "object-fit: cover",
+        "text-align:center",
+        "font-weight:bold",
+        "border-collapse:collapse"
+      ],
+      "answer": "object-fit: cover"
+    },
+    {
+      "id": "Q037",
+      "type": "single",
+      "question": "Welche Eigenschaft kann ein Element über mehrere Grid-Spalten ziehen?",
+      "options": [
+        "grid-column",
+        "flex-wrap",
+        "line-height",
+        "font-display"
+      ],
+      "answer": "grid-column"
+    },
+    {
+      "id": "Q038",
+      "type": "single",
+      "question": "Welche Datei ist typischerweise die zentrale externe CSS-Datei?",
+      "options": [
+        "css/style.css",
+        "index.exe",
+        "README_Fonts.ttf",
+        "layout.less"
+      ],
+      "answer": "css/style.css"
+    },
+    {
+      "id": "Q039",
+      "type": "single",
+      "question": "Welche Aussage ist korrekt?",
+      "options": [
+        "Grid und Flexbox können kombiniert werden",
+        "Grid ersetzt HTML",
+        "Flexbox funktioniert nur mit Bootstrap",
+        "CSS braucht immer einen Compiler"
+      ],
+      "answer": "Grid und Flexbox können kombiniert werden"
+    },
+    {
+      "id": "Q040",
+      "type": "single",
+      "question": "Welche CSS-Technik ist für Farbthemen besonders geeignet?",
+      "options": [
+        "Custom Properties",
+        "HTML Tabellen",
+        "GET Forms",
+        "Absolute Pfade"
+      ],
+      "answer": "Custom Properties"
+    },
+    {
+      "id": "Q041",
+      "type": "single",
+      "question": "Welche Eigenschaft rundet Ecken ab?",
+      "options": [
+        "border-radius",
+        "box-shadow",
+        "grid-gap",
+        "font-size"
+      ],
+      "answer": "border-radius"
+    },
+    {
+      "id": "Q042",
+      "type": "single",
+      "question": "Welche Eigenschaft erzeugt einen Schatten?",
+      "options": [
+        "box-shadow",
+        "text-transform",
+        "overflow",
+        "srcset"
+      ],
+      "answer": "box-shadow"
+    },
+    {
+      "id": "Q043",
+      "type": "single",
+      "question": "Welche Angabe ist ein sinnvoller Breakpoint-Ansatz?",
+      "options": [
+        "wenn der Inhalt es braucht",
+        "immer exakt iPhone-Breite",
+        "nie Breakpoints",
+        "nur 4K Monitore"
+      ],
+      "answer": "wenn der Inhalt es braucht"
+    },
+    {
+      "id": "Q044",
+      "type": "single",
+      "question": "Welche Regel entfernt Standardseitenabstand?",
+      "options": [
+        "body { margin: 0; }",
+        "html { padding: 100px; }",
+        "img { display:none; }",
+        "h1 { border:0; }"
+      ],
+      "answer": "body { margin: 0; }"
+    },
+    {
+      "id": "Q045",
+      "type": "single",
+      "question": "Welche Eigenschaft setzt ein Element als Grid-Container?",
+      "options": [
+        "display: grid",
+        "display: text",
+        "grid: true",
+        "layout: grid"
+      ],
+      "answer": "display: grid"
+    },
+    {
+      "id": "Q046",
+      "type": "single",
+      "question": "Welche Eigenschaft setzt ein Element als Flex-Container?",
+      "options": [
+        "display: flex",
+        "flex: true",
+        "grid:flex",
+        "position:flex"
+      ],
+      "answer": "display: flex"
+    },
+    {
+      "id": "Q047",
+      "type": "single",
+      "question": "Welche Technik ist für wiederverwendbare Button-Gestaltung sinnvoll?",
+      "options": [
+        "Komponentenklasse `.button`",
+        "ID für jeden Button",
+        "Inline Style überall",
+        "Tabellenzelle"
+      ],
+      "answer": "Komponentenklasse `.button`"
+    },
+    {
+      "id": "Q048",
+      "type": "single",
+      "question": "Welche Aussage zu externen Fonts ist wichtig?",
+      "options": [
+        "Lizenz und Datenschutz beachten",
+        "immer ohne Prüfung einbinden",
+        "nur per LESS möglich",
+        "nie mit CSS möglich"
+      ],
+      "answer": "Lizenz und Datenschutz beachten"
+    }
+  ]
+}

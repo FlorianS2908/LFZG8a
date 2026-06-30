@@ -1,0 +1,3 @@
+/* Aufgabe: Mobile First gestalten. Ergänze Breakpoints ab 800px. */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; }

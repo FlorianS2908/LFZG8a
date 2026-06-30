@@ -1,0 +1,682 @@
+{
+  "id": "lf_zq8a_tag_05_25_fragen_35_minuten_modernes_css",
+  "name": "LF ZQ8a · Tag 05 · Webfonts, Refactoring und Abschlussprojekt · 25 Fragen · 35 Minuten",
+  "description": "25 thematisch passende Fragen zu Tag 05. Enthalten sind Code-Lesen-und-Verstehen, Zuordnungsfragen mit Post-its sowie Theoriefragen als Single Choice und Multiple Choice. Die Antworten sind gemischt und die drei Schwierigkeitsstufen sind enthalten.",
+  "durationMinutes": 35,
+  "timeLimitMinutes": 35,
+  "questionCount": 25,
+  "topics": {
+    "501": "Webfonts und @font-face",
+    "502": "Datenschutz, Lizenzen und Performance",
+    "503": "CSS statt LESS im Projekt",
+    "504": "Refactoring, Validierung und Qualitätssicherung",
+    "505": "Abschlussprojekt, Dokumentation und Abgabe"
+  },
+  "topicLabels": {
+    "501": "Webfonts und @font-face",
+    "502": "Datenschutz, Lizenzen und Performance",
+    "503": "CSS statt LESS im Projekt",
+    "504": "Refactoring, Validierung und Qualitätssicherung",
+    "505": "Abschlussprojekt, Dokumentation und Abgabe"
+  },
+  "difficultyLevels": {
+    "leicht": "Grundlagen, Begriffe und direkte Wiedererkennung",
+    "mittel": "Anwendung, Einordnung und typische Fehlerquellen",
+    "schwer": "Transfer, Codeverständnis und fachliche Begründung"
+  },
+  "difficultyLabels": {
+    "leicht": "Grundlagen, Begriffe und direkte Wiedererkennung",
+    "mittel": "Anwendung, Einordnung und typische Fehlerquellen",
+    "schwer": "Transfer, Codeverständnis und fachliche Begründung"
+  },
+  "questions": [
+    {
+      "type": "single-choice",
+      "topic": "501",
+      "difficulty": "leicht",
+      "text": "Tag 5: Welche Aussage passt grundsätzlich zu diesem Themenbereich?",
+      "options": [
+        "Die Umsetzung benötigt zwingend LESS.",
+        "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden.",
+        "Der Themenbereich darf nicht getestet werden.",
+        "Die Regel muss grundsätzlich zufällig gewählt werden."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden.",
+      "explanation": "Auch bei kleinen CSS-Aufgaben zählt die fachliche Passung.",
+      "id": "T05-25-001"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "503",
+      "difficulty": "mittel",
+      "text": "Ordne LESS-Konzepte den CSS-Alternativen zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l5",
+          "text": "LESS-Compiler"
+        },
+        {
+          "id": "l1",
+          "text": "LESS-Variable"
+        },
+        {
+          "id": "l2",
+          "text": "LESS-Mixin"
+        },
+        {
+          "id": "l3",
+          "text": "LESS-Operation"
+        },
+        {
+          "id": "l4",
+          "text": "LESS-Nesting"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r4",
+          "text": "klarer kombinierter CSS-Selektor",
+          "match": "l4"
+        },
+        {
+          "id": "r5",
+          "text": "entfällt bei reinem CSS",
+          "match": "l5"
+        },
+        {
+          "id": "r3",
+          "text": "calc() oder moderne CSS-Funktion",
+          "match": "l3"
+        },
+        {
+          "id": "r2",
+          "text": "Komponenten- oder Utility-Klasse",
+          "match": "l2"
+        },
+        {
+          "id": "r1",
+          "text": "CSS Custom Property",
+          "match": "l1"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        }
+      ],
+      "solution": "LESS-Variable → CSS Custom Property<br>LESS-Mixin → Komponenten- oder Utility-Klasse<br>LESS-Operation → calc() oder moderne CSS-Funktion<br>LESS-Nesting → klarer kombinierter CSS-Selektor<br>LESS-Compiler → entfällt bei reinem CSS",
+      "explanation": "Das Mapping ist der Kern des Lernfeldumbaus.",
+      "id": "T05-25-002"
+    },
+    {
+      "type": "single-choice",
+      "topic": "503",
+      "difficulty": "schwer",
+      "text": "Welche flache CSS-Struktur entspricht dem verschachtelten LESS-Code fachlich am ehesten?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.less</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.card {\n  .title { color: @primary; }\n}</pre></div>",
+      "options": [
+        ".card .title { color: var(--primary); }",
+        ".card + title { color: @primary; }",
+        "card.title = primary",
+        ".title .card { color: compile(primary); }"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": ".card .title { color: var(--primary); }",
+      "explanation": "Verschachtelung wird als kombinierter Selektor geschrieben.",
+      "id": "T05-25-003"
+    },
+    {
+      "type": "single-choice",
+      "topic": "504",
+      "difficulty": "mittel",
+      "text": "Welche Aussage passt zum Refactoring?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.box { color: #003964; }\n.card { color: #003964; }\n.hero { color: #003964; }</pre></div>",
+      "options": [
+        "Die Regeln müssen zwingend in LESS bleiben.",
+        "Der wiederholte Farbwert könnte als Custom Property zentralisiert werden.",
+        "Alle Klassen müssen gelöscht werden.",
+        "Die Farbe ist in CSS ungültig."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Der wiederholte Farbwert könnte als Custom Property zentralisiert werden.",
+      "explanation": "Wiederholte Designwerte sind Kandidaten für Variablen.",
+      "id": "T05-25-004"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "502",
+      "difficulty": "mittel",
+      "text": "Tag 5: Welche Vorgehensweise ist bei einer praktischen CSS-Umsetzung sinnvoll? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "ohne Kontrolle produktiv übernehmen",
+        "Anforderung lesen",
+        "im Browser testen",
+        "passende CSS-Technik auswählen"
+      ],
+      "correct": [
+        1,
+        2,
+        3
+      ],
+      "solution": "Anforderung lesen<br>passende CSS-Technik auswählen<br>im Browser testen",
+      "explanation": "Eine saubere Umsetzung besteht aus Verstehen, Umsetzen und Prüfen.",
+      "id": "T05-25-005"
+    },
+    {
+      "type": "single-choice",
+      "topic": "502",
+      "difficulty": "mittel",
+      "text": "Was bewirkt <code>font-display: swap</code> grob?",
+      "options": [
+        "Text wird grundsätzlich versteckt.",
+        "Text kann zunächst mit Fallback angezeigt und später durch die Webfont ersetzt werden.",
+        "Die Schrift wird in SQL gespeichert.",
+        "Alle Fonts werden gelöscht."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Text kann zunächst mit Fallback angezeigt und später durch die Webfont ersetzt werden.",
+      "explanation": "swap reduziert unsichtbaren Text während des Ladens.",
+      "id": "T05-25-006"
+    },
+    {
+      "type": "single-choice",
+      "topic": "505",
+      "difficulty": "schwer",
+      "text": "Warum sollte die Abgabe nicht nur optisch, sondern auch technisch geprüft werden?",
+      "options": [
+        "Weil Fonts automatisch alle Fehler beheben.",
+        "Weil saubere Struktur, Wartbarkeit, Responsivität und Zugänglichkeit über reine Optik hinausgehen.",
+        "Weil HTML unsichtbar ist und keine Rolle spielt.",
+        "Weil CSS nur in Word funktioniert."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Weil saubere Struktur, Wartbarkeit, Responsivität und Zugänglichkeit über reine Optik hinausgehen.",
+      "explanation": "Eine Webseite muss bedienbar, wartbar und robust sein.",
+      "id": "T05-25-007"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "504",
+      "difficulty": "mittel",
+      "text": "Welche Prüfschritte gehören zu einer CSS-Qualitätssicherung? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "nur im eigenen Kopf testen und nichts öffnen",
+        "Responsive Ansicht testen",
+        "Kontraste und Lesbarkeit prüfen",
+        "HTML/CSS validieren"
+      ],
+      "correct": [
+        1,
+        2,
+        3
+      ],
+      "solution": "HTML/CSS validieren<br>Responsive Ansicht testen<br>Kontraste und Lesbarkeit prüfen",
+      "explanation": "QS ist nicht nur eine optische Kontrolle.",
+      "id": "T05-25-008"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "502",
+      "difficulty": "mittel",
+      "text": "Ordne Datenschutz- und Lizenzaspekte zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l3",
+          "text": "Lizenz"
+        },
+        {
+          "id": "l1",
+          "text": "Lokale Fonts"
+        },
+        {
+          "id": "l4",
+          "text": "woff2"
+        },
+        {
+          "id": "l2",
+          "text": "Externe Fonts"
+        },
+        {
+          "id": "l5",
+          "text": "font-display"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r1",
+          "text": "keine externe Fontanfrage nötig",
+          "match": "l1"
+        },
+        {
+          "id": "r4",
+          "text": "kompaktes Webfontformat",
+          "match": "l4"
+        },
+        {
+          "id": "r2",
+          "text": "Datenschutz prüfen",
+          "match": "l2"
+        },
+        {
+          "id": "r3",
+          "text": "Nutzungsrechte der Schrift",
+          "match": "l3"
+        },
+        {
+          "id": "r5",
+          "text": "Ladeverhalten des Textes",
+          "match": "l5"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        }
+      ],
+      "solution": "Lokale Fonts → keine externe Fontanfrage nötig<br>Externe Fonts → Datenschutz prüfen<br>Lizenz → Nutzungsrechte der Schrift<br>woff2 → kompaktes Webfontformat<br>font-display → Ladeverhalten des Textes",
+      "explanation": "Fonts sind nicht nur Gestaltung, sondern auch Recht und Performance.",
+      "id": "T05-25-009"
+    },
+    {
+      "type": "single-choice",
+      "topic": "505",
+      "difficulty": "leicht",
+      "text": "Tag 5: Was sollte nach einer CSS-Änderung mindestens kontrolliert werden?",
+      "options": [
+        "Der Inhalt einer SQL-Tabelle",
+        "Nur der Dateiname",
+        "Die Darstellung im Browser",
+        "Nur die ZIP-Größe"
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Die Darstellung im Browser",
+      "explanation": "CSS-Änderungen müssen sichtbar geprüft werden.",
+      "id": "T05-25-010"
+    },
+    {
+      "type": "single-choice",
+      "topic": "501",
+      "difficulty": "leicht",
+      "text": "Tag 5: Welche Aussage passt grundsätzlich zu diesem Themenbereich?",
+      "options": [
+        "Die Umsetzung benötigt zwingend LESS.",
+        "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden.",
+        "Der Themenbereich darf nicht getestet werden.",
+        "Die Regel muss grundsätzlich zufällig gewählt werden."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden.",
+      "explanation": "Auch bei kleinen CSS-Aufgaben zählt die fachliche Passung.",
+      "id": "T05-25-011"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "504",
+      "difficulty": "mittel",
+      "text": "Tag 5: Welche Punkte sprechen für eine geordnete CSS-Datei? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Doppelte Deklarationen fallen eher auf",
+        "Komponenten können leichter gepflegt werden",
+        "Regeln lassen sich schneller finden",
+        "Klassennamen sollten absichtlich unverständlich sein"
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "solution": "Regeln lassen sich schneller finden<br>Doppelte Deklarationen fallen eher auf<br>Komponenten können leichter gepflegt werden",
+      "explanation": "Ordnung in CSS unterstützt Wartbarkeit und Fehlersuche.",
+      "id": "T05-25-012"
+    },
+    {
+      "type": "single-choice",
+      "topic": "501",
+      "difficulty": "leicht",
+      "text": "Welches Fontformat ist für moderne Webfonts häufig geeignet?",
+      "options": [
+        "exe",
+        "woff2",
+        "xlsx",
+        "sql"
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "woff2",
+      "explanation": "woff2 ist ein kompaktes Webfontformat.",
+      "id": "T05-25-013"
+    },
+    {
+      "type": "single-choice",
+      "topic": "503",
+      "difficulty": "schwer",
+      "text": "Welche Aussage zum Wechsel von LESS auf CSS ist korrekt?",
+      "options": [
+        "CSS kann keine Variablen nutzen.",
+        "Modernes CSS benötigt immer Prepros.",
+        "Nicht jeder LESS-Komfort wird eins zu eins ersetzt, aber viele Unterrichtsschwerpunkte lassen sich mit modernem CSS sinnvoll abbilden.",
+        "LESS-Dateien können einfach unverändert im Browser als CSS genutzt werden, auch wenn sie LESS-Syntax enthalten."
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Nicht jeder LESS-Komfort wird eins zu eins ersetzt, aber viele Unterrichtsschwerpunkte lassen sich mit modernem CSS sinnvoll abbilden.",
+      "explanation": "Der Wechsel braucht bewusste Ersatzstrategien.",
+      "id": "T05-25-014"
+    },
+    {
+      "type": "single-choice",
+      "topic": "503",
+      "difficulty": "schwer",
+      "text": "Tag 5: Warum sollte die Lösung nicht nur optisch, sondern auch strukturell geprüft werden?",
+      "options": [
+        "Weil Wartbarkeit, Kaskade, Responsivität und Bedienbarkeit fachlich relevant sind.",
+        "Weil HTML dann keine Rolle spielt.",
+        "Weil CSS sonst automatisch gelöscht wird.",
+        "Weil nur die Dateigröße zählt."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Weil Wartbarkeit, Kaskade, Responsivität und Bedienbarkeit fachlich relevant sind.",
+      "explanation": "Technische Qualität ist mehr als ein erster optischer Eindruck.",
+      "id": "T05-25-015"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "504",
+      "difficulty": "mittel",
+      "text": "Tag 5: Welche Punkte sprechen für eine geordnete CSS-Datei? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Klassennamen sollten absichtlich unverständlich sein",
+        "Komponenten können leichter gepflegt werden",
+        "Regeln lassen sich schneller finden",
+        "Doppelte Deklarationen fallen eher auf"
+      ],
+      "correct": [
+        1,
+        2,
+        3
+      ],
+      "solution": "Regeln lassen sich schneller finden<br>Doppelte Deklarationen fallen eher auf<br>Komponenten können leichter gepflegt werden",
+      "explanation": "Ordnung in CSS unterstützt Wartbarkeit und Fehlersuche.",
+      "id": "T05-25-016"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "501",
+      "difficulty": "leicht",
+      "text": "Ordne Webfont-Begriffe zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l2",
+          "text": "src"
+        },
+        {
+          "id": "l5",
+          "text": "Fallback"
+        },
+        {
+          "id": "l4",
+          "text": "font-weight"
+        },
+        {
+          "id": "l3",
+          "text": "font-family"
+        },
+        {
+          "id": "l1",
+          "text": "@font-face"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r3",
+          "text": "Name der Schriftfamilie",
+          "match": "l3"
+        },
+        {
+          "id": "r5",
+          "text": "Ersatzschrift, falls Font nicht geladen wird",
+          "match": "l5"
+        },
+        {
+          "id": "r4",
+          "text": "Schriftschnitt beziehungsweise Gewicht",
+          "match": "l4"
+        },
+        {
+          "id": "r2",
+          "text": "Quelle der Fontdatei",
+          "match": "l2"
+        },
+        {
+          "id": "r1",
+          "text": "Schriftfamilie im CSS definieren",
+          "match": "l1"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        }
+      ],
+      "solution": "@font-face → Schriftfamilie im CSS definieren<br>src → Quelle der Fontdatei<br>font-family → Name der Schriftfamilie<br>font-weight → Schriftschnitt beziehungsweise Gewicht<br>Fallback → Ersatzschrift, falls Font nicht geladen wird",
+      "explanation": "Webfonts brauchen CSS-Regel, Quelle und sinnvolle Fallbacks.",
+      "id": "T05-25-017"
+    },
+    {
+      "type": "single-choice",
+      "topic": "503",
+      "difficulty": "schwer",
+      "text": "Tag 5: Warum sollte die Lösung nicht nur optisch, sondern auch strukturell geprüft werden?",
+      "options": [
+        "Weil nur die Dateigröße zählt.",
+        "Weil HTML dann keine Rolle spielt.",
+        "Weil CSS sonst automatisch gelöscht wird.",
+        "Weil Wartbarkeit, Kaskade, Responsivität und Bedienbarkeit fachlich relevant sind."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Weil Wartbarkeit, Kaskade, Responsivität und Bedienbarkeit fachlich relevant sind.",
+      "explanation": "Technische Qualität ist mehr als ein erster optischer Eindruck.",
+      "id": "T05-25-018"
+    },
+    {
+      "type": "single-choice",
+      "topic": "503",
+      "difficulty": "schwer",
+      "text": "Tag 5: Warum sollte die Lösung nicht nur optisch, sondern auch strukturell geprüft werden?",
+      "options": [
+        "Weil CSS sonst automatisch gelöscht wird.",
+        "Weil HTML dann keine Rolle spielt.",
+        "Weil nur die Dateigröße zählt.",
+        "Weil Wartbarkeit, Kaskade, Responsivität und Bedienbarkeit fachlich relevant sind."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Weil Wartbarkeit, Kaskade, Responsivität und Bedienbarkeit fachlich relevant sind.",
+      "explanation": "Technische Qualität ist mehr als ein erster optischer Eindruck.",
+      "id": "T05-25-019"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "505",
+      "difficulty": "leicht",
+      "text": "Welche Bestandteile sollte die Abschlussabgabe enthalten? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "kurze Dokumentation der verwendeten Techniken",
+        "HTML-Dateien",
+        "CSS-Dateien",
+        "nur ein Screenshot ohne Quellcode"
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "solution": "HTML-Dateien<br>CSS-Dateien<br>kurze Dokumentation der verwendeten Techniken",
+      "explanation": "Die Abgabe muss nachvollziehbar und lauffähig sein.",
+      "id": "T05-25-020"
+    },
+    {
+      "type": "single-choice",
+      "topic": "502",
+      "difficulty": "leicht",
+      "text": "Warum werden externe Google Fonts im Unterricht kritisch betrachtet?",
+      "options": [
+        "Weil Google Fonts immer SQL-Dateien sind.",
+        "Weil Datenschutz und Einwilligung berücksichtigt werden müssen.",
+        "Weil CSS keine Fonts anzeigen kann.",
+        "Weil Fonts nur mit LESS funktionieren."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Weil Datenschutz und Einwilligung berücksichtigt werden müssen.",
+      "explanation": "Externe Fontaufrufe können personenbezogene Daten betreffen.",
+      "id": "T05-25-021"
+    },
+    {
+      "type": "single-choice",
+      "topic": "503",
+      "difficulty": "leicht",
+      "text": "Welche CSS-Variante ersetzt diese LESS-Variable am ehesten?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.less</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">@primary: #003964;</pre></div>",
+      "options": [
+        "var primary #003964",
+        ":root { --primary: #003964; }",
+        "@css primary #003964",
+        ".primary = #003964;"
+      ],
+      "correct": [
+        1
+      ],
+      "solution": ":root { --primary: #003964; }",
+      "explanation": "CSS Custom Properties werden mit -- definiert.",
+      "id": "T05-25-022"
+    },
+    {
+      "type": "single-choice",
+      "topic": "501",
+      "difficulty": "schwer",
+      "text": "Welche Aussage passt zur Regel?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">@font-face {\n  font-family: &quot;TrainingSans&quot;;\n  src: url(&quot;../fonts/training-sans-bold.woff2&quot;) format(&quot;woff2&quot;);\n  font-weight: 700;\n  font-display: swap;\n}</pre></div>",
+      "options": [
+        "Es wird ein fetter Schriftschnitt definiert und Text kann mit Fallback erscheinen, bis die Font geladen ist.",
+        "font-weight:700 bedeutet unsichtbar.",
+        "swap ist nur in LESS gültig.",
+        "Die Schrift wird automatisch aus Google Fonts geladen."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Es wird ein fetter Schriftschnitt definiert und Text kann mit Fallback erscheinen, bis die Font geladen ist.",
+      "explanation": "font-weight beschreibt Schriftschnitt, font-display das Ladeverhalten.",
+      "id": "T05-25-023"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "504",
+      "difficulty": "mittel",
+      "text": "Welche typischen CSS-Probleme sollte man beim Refactoring suchen? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "saubere Kommentare mit Zweck",
+        "unnötig hohe Spezifität",
+        "zu viele !important-Regeln",
+        "doppelte Regeln"
+      ],
+      "correct": [
+        1,
+        2,
+        3
+      ],
+      "solution": "doppelte Regeln<br>unnötig hohe Spezifität<br>zu viele !important-Regeln",
+      "explanation": "Dubletten und Spezifitätsprobleme erschweren Wartung.",
+      "id": "T05-25-024"
+    },
+    {
+      "type": "single-choice",
+      "topic": "503",
+      "difficulty": "mittel",
+      "text": "Welche CSS-Regel nutzt die Variable korrekt?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">:root { --space: 1rem; }</pre></div>",
+      "options": [
+        ".card { padding: var(--space); }",
+        ".card { padding: @space; }",
+        ".card { padding: get(space); }",
+        ".card { padding: $space; }"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": ".card { padding: var(--space); }",
+      "explanation": "var() liest Custom Properties.",
+      "id": "T05-25-025"
+    }
+  ]
+}

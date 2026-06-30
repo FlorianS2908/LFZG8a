@@ -1,0 +1,682 @@
+{
+  "id": "lf_zq8a_tag_04_25_fragen_35_minuten_modernes_css",
+  "name": "LF ZQ8a · Tag 04 · Responsive Design · 25 Fragen · 35 Minuten",
+  "description": "25 thematisch passende Fragen zu Tag 04. Enthalten sind Code-Lesen-und-Verstehen, Zuordnungsfragen mit Post-its sowie Theoriefragen als Single Choice und Multiple Choice. Die Antworten sind gemischt und die drei Schwierigkeitsstufen sind enthalten.",
+  "durationMinutes": 35,
+  "timeLimitMinutes": 35,
+  "questionCount": 25,
+  "topics": {
+    "401": "Mobile First und Breakpoints",
+    "402": "Media Queries und Viewport",
+    "403": "Responsive Bilder, Container und Typografie",
+    "404": "Navigation und Layoutanpassung",
+    "405": "Testing, Barrierefreiheit und typische Fehler"
+  },
+  "topicLabels": {
+    "401": "Mobile First und Breakpoints",
+    "402": "Media Queries und Viewport",
+    "403": "Responsive Bilder, Container und Typografie",
+    "404": "Navigation und Layoutanpassung",
+    "405": "Testing, Barrierefreiheit und typische Fehler"
+  },
+  "difficultyLevels": {
+    "leicht": "Grundlagen, Begriffe und direkte Wiedererkennung",
+    "mittel": "Anwendung, Einordnung und typische Fehlerquellen",
+    "schwer": "Transfer, Codeverständnis und fachliche Begründung"
+  },
+  "difficultyLabels": {
+    "leicht": "Grundlagen, Begriffe und direkte Wiedererkennung",
+    "mittel": "Anwendung, Einordnung und typische Fehlerquellen",
+    "schwer": "Transfer, Codeverständnis und fachliche Begründung"
+  },
+  "questions": [
+    {
+      "type": "single-choice",
+      "topic": "404",
+      "difficulty": "mittel",
+      "text": "Welche CSS-Regel kann eine zweispaltige Grid-Struktur auf Mobile einspaltig machen?",
+      "options": [
+        "font-template: mobile",
+        "display: sql",
+        "grid-template-columns: 1fr",
+        "grid-columns: none"
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "grid-template-columns: 1fr",
+      "explanation": "Eine Spalte ist auf kleinen Viewports oft sinnvoll.",
+      "id": "T04-25-001"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "404",
+      "difficulty": "mittel",
+      "text": "Ordne typische Layoutanpassungen zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l1",
+          "text": "Desktop-Grid"
+        },
+        {
+          "id": "l4",
+          "text": "Mobile-Navigation"
+        },
+        {
+          "id": "l3",
+          "text": "Desktop-Navigation"
+        },
+        {
+          "id": "l5",
+          "text": "Kartenlayout"
+        },
+        {
+          "id": "l2",
+          "text": "Mobile-Grid"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r2",
+          "text": "eine Spalte",
+          "match": "l2"
+        },
+        {
+          "id": "r4",
+          "text": "vertikal oder Menü",
+          "match": "l4"
+        },
+        {
+          "id": "r1",
+          "text": "mehrere Spalten",
+          "match": "l1"
+        },
+        {
+          "id": "r5",
+          "text": "automatisch umbrechende Spalten",
+          "match": "l5"
+        },
+        {
+          "id": "r3",
+          "text": "horizontal möglich",
+          "match": "l3"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        }
+      ],
+      "solution": "Desktop-Grid → mehrere Spalten<br>Mobile-Grid → eine Spalte<br>Desktop-Navigation → horizontal möglich<br>Mobile-Navigation → vertikal oder Menü<br>Kartenlayout → automatisch umbrechende Spalten",
+      "explanation": "Layouts werden je nach Platz angepasst.",
+      "id": "T04-25-002"
+    },
+    {
+      "type": "single-choice",
+      "topic": "401",
+      "difficulty": "leicht",
+      "text": "Tag 4: Welche Aussage passt grundsätzlich zu diesem Themenbereich?",
+      "options": [
+        "Die Umsetzung benötigt zwingend LESS.",
+        "Die Regel muss grundsätzlich zufällig gewählt werden.",
+        "Der Themenbereich darf nicht getestet werden.",
+        "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden.",
+      "explanation": "Auch bei kleinen CSS-Aufgaben zählt die fachliche Passung.",
+      "id": "T04-25-003"
+    },
+    {
+      "type": "single-choice",
+      "topic": "402",
+      "difficulty": "schwer",
+      "text": "Welche Aussage ist korrekt?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">@media (orientation: landscape) {\n  .hero { min-height: 70vh; }\n}</pre></div>",
+      "options": [
+        "vh ist eine Datenbankeinheit.",
+        "orientation ist eine CSS-Farbe.",
+        "Die Regel greift nur beim Drucken.",
+        "Die Regel greift bei Querformat."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Die Regel greift bei Querformat.",
+      "explanation": "Media Queries können Orientierung berücksichtigen.",
+      "id": "T04-25-004"
+    },
+    {
+      "type": "single-choice",
+      "topic": "403",
+      "difficulty": "schwer",
+      "text": "Tag 4: Warum sollte die Lösung nicht nur optisch, sondern auch strukturell geprüft werden?",
+      "options": [
+        "Weil CSS sonst automatisch gelöscht wird.",
+        "Weil HTML dann keine Rolle spielt.",
+        "Weil nur die Dateigröße zählt.",
+        "Weil Wartbarkeit, Kaskade, Responsivität und Bedienbarkeit fachlich relevant sind."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Weil Wartbarkeit, Kaskade, Responsivität und Bedienbarkeit fachlich relevant sind.",
+      "explanation": "Technische Qualität ist mehr als ein erster optischer Eindruck.",
+      "id": "T04-25-005"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "405",
+      "difficulty": "schwer",
+      "text": "Ordne Testaspekte zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l5",
+          "text": "DevTools"
+        },
+        {
+          "id": "l3",
+          "text": "Touch-Ziele"
+        },
+        {
+          "id": "l2",
+          "text": "Lesbarkeit"
+        },
+        {
+          "id": "l1",
+          "text": "Horizontales Scrollen"
+        },
+        {
+          "id": "l4",
+          "text": "Tastaturbedienung"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r1",
+          "text": "Layout sprengt Breite",
+          "match": "l1"
+        },
+        {
+          "id": "r3",
+          "text": "Klickflächen und Abstände prüfen",
+          "match": "l3"
+        },
+        {
+          "id": "r2",
+          "text": "Schriftgröße und Zeilenlänge prüfen",
+          "match": "l2"
+        },
+        {
+          "id": "r4",
+          "text": "Fokusreihenfolge kontrollieren",
+          "match": "l4"
+        },
+        {
+          "id": "r5",
+          "text": "Viewportbreiten simulieren",
+          "match": "l5"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        }
+      ],
+      "solution": "Horizontales Scrollen → Layout sprengt Breite<br>Lesbarkeit → Schriftgröße und Zeilenlänge prüfen<br>Touch-Ziele → Klickflächen und Abstände prüfen<br>Tastaturbedienung → Fokusreihenfolge kontrollieren<br>DevTools → Viewportbreiten simulieren",
+      "explanation": "Responsive Qualität muss getestet werden.",
+      "id": "T04-25-006"
+    },
+    {
+      "type": "single-choice",
+      "topic": "401",
+      "difficulty": "leicht",
+      "text": "Tag 4: Welche Aussage passt grundsätzlich zu diesem Themenbereich?",
+      "options": [
+        "Die Umsetzung benötigt zwingend LESS.",
+        "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden.",
+        "Die Regel muss grundsätzlich zufällig gewählt werden.",
+        "Der Themenbereich darf nicht getestet werden."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Die Regel sollte fachlich zur Aufgabe passen und im Browser geprüft werden.",
+      "explanation": "Auch bei kleinen CSS-Aufgaben zählt die fachliche Passung.",
+      "id": "T04-25-007"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "405",
+      "difficulty": "mittel",
+      "text": "Welche Punkte verbessern Bedienbarkeit auf Touch-Geräten? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "genug Abstand zwischen Bedienelementen",
+        "sichtbarer Fokus und klare Zustände",
+        "nur Hover-Effekte als einzige Bedienmöglichkeit",
+        "ausreichend große Klickflächen"
+      ],
+      "correct": [
+        0,
+        1,
+        3
+      ],
+      "solution": "ausreichend große Klickflächen<br>genug Abstand zwischen Bedienelementen<br>sichtbarer Fokus und klare Zustände",
+      "explanation": "Touch-Nutzung braucht größere und klare Ziele.",
+      "id": "T04-25-008"
+    },
+    {
+      "type": "single-choice",
+      "topic": "402",
+      "difficulty": "leicht",
+      "text": "Welche CSS-Regel spricht Viewports bis 600px Breite an?",
+      "options": [
+        "@query width > 600",
+        "@media (max-width: 600px)",
+        "@media (min-height: red)",
+        "@mobile 600px"
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "@media (max-width: 600px)",
+      "explanation": "max-width gilt bis zu dieser Breite.",
+      "id": "T04-25-009"
+    },
+    {
+      "type": "single-choice",
+      "topic": "405",
+      "difficulty": "mittel",
+      "text": "Welche Aussage passt zum Code?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">@media (prefers-reduced-motion: reduce) {\n  * { animation-duration: 0.01ms; }\n}</pre></div>",
+      "options": [
+        "Die Regel macht die Seite automatisch mehrspaltig.",
+        "Alle Elemente werden aus dem DOM gelöscht.",
+        "Der Code betrifft nur SQL.",
+        "Animationen werden für Nutzer mit Bewegungsreduktion stark verkürzt."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Animationen werden für Nutzer mit Bewegungsreduktion stark verkürzt.",
+      "explanation": "Solche Regeln können sensible Nutzer unterstützen.",
+      "id": "T04-25-010"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "404",
+      "difficulty": "mittel",
+      "text": "Tag 4: Welche Punkte sprechen für eine geordnete CSS-Datei? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Doppelte Deklarationen fallen eher auf",
+        "Regeln lassen sich schneller finden",
+        "Komponenten können leichter gepflegt werden",
+        "Klassennamen sollten absichtlich unverständlich sein"
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "solution": "Regeln lassen sich schneller finden<br>Doppelte Deklarationen fallen eher auf<br>Komponenten können leichter gepflegt werden",
+      "explanation": "Ordnung in CSS unterstützt Wartbarkeit und Fehlersuche.",
+      "id": "T04-25-011"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "405",
+      "difficulty": "mittel",
+      "text": "Welche Prüfpunkte gehören zu einem Responsive-Test? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Bilder sprengen den Container absichtlich",
+        "Navigation bedienbar",
+        "kein horizontales Scrollen",
+        "Texte lesbar"
+      ],
+      "correct": [
+        1,
+        2,
+        3
+      ],
+      "solution": "kein horizontales Scrollen<br>Navigation bedienbar<br>Texte lesbar",
+      "explanation": "Responsive Tests prüfen Nutzung, nicht nur Optik.",
+      "id": "T04-25-012"
+    },
+    {
+      "type": "single-choice",
+      "topic": "403",
+      "difficulty": "leicht",
+      "text": "Welche Aussage passt zu folgendem Code?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">img {\n  max-width: 100%;\n  height: auto;\n}</pre></div>",
+      "options": [
+        "Bilder werden gelöscht.",
+        "Bilder werden immer 100px breit.",
+        "Bilder werden nicht breiter als ihr Container und behalten ihr Seitenverhältnis.",
+        "height:auto verzerrt Bilder immer."
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Bilder werden nicht breiter als ihr Container und behalten ihr Seitenverhältnis.",
+      "explanation": "Eine Standardregel für responsive Bilder.",
+      "id": "T04-25-013"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "404",
+      "difficulty": "mittel",
+      "text": "Tag 4: Welche Punkte sprechen für eine geordnete CSS-Datei? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Klassennamen sollten absichtlich unverständlich sein",
+        "Regeln lassen sich schneller finden",
+        "Doppelte Deklarationen fallen eher auf",
+        "Komponenten können leichter gepflegt werden"
+      ],
+      "correct": [
+        1,
+        2,
+        3
+      ],
+      "solution": "Regeln lassen sich schneller finden<br>Doppelte Deklarationen fallen eher auf<br>Komponenten können leichter gepflegt werden",
+      "explanation": "Ordnung in CSS unterstützt Wartbarkeit und Fehlersuche.",
+      "id": "T04-25-014"
+    },
+    {
+      "type": "single-choice",
+      "topic": "402",
+      "difficulty": "schwer",
+      "text": "Welche Reihenfolge ist bei Mobile First meist sinnvoll?",
+      "options": [
+        "Alle Regeln in zufälliger Reihenfolge.",
+        "Desktop-CSS mit vielen max-width-Regeln und keine Tests.",
+        "Basis-CSS für kleine Viewports, danach Erweiterungen mit min-width.",
+        "Nur Inline-Styles ohne Media Queries."
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Basis-CSS für kleine Viewports, danach Erweiterungen mit min-width.",
+      "explanation": "Mobile First bleibt oft übersichtlicher.",
+      "id": "T04-25-015"
+    },
+    {
+      "type": "single-choice",
+      "topic": "401",
+      "difficulty": "leicht",
+      "text": "Was bedeutet Mobile First?",
+      "options": [
+        "CSS nur auf mobilen Geräten laden.",
+        "Zuerst für kleine Bildschirme gestalten und dann für größere erweitern.",
+        "Zuerst eine PDF erstellen.",
+        "Nur Smartphones unterstützen, Desktop ignorieren."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Zuerst für kleine Bildschirme gestalten und dann für größere erweitern.",
+      "explanation": "Mobile First ist ein Planungs- und Umsetzungsprinzip.",
+      "id": "T04-25-016"
+    },
+    {
+      "type": "single-choice",
+      "topic": "403",
+      "difficulty": "schwer",
+      "text": "Welche Schriftgröße erhält <code>h1</code> bei 1000px Viewportbreite, wenn 5vw = 50px und 1rem = 16px angenommen wird?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">h1 { font-size: clamp(2rem, 5vw, 4rem); }</pre></div>",
+      "options": [
+        "16px",
+        "32px",
+        "50px",
+        "64px"
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "50px",
+      "explanation": "2rem=32px, 4rem=64px; 50px liegt dazwischen.",
+      "id": "T04-25-017"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "401",
+      "difficulty": "leicht",
+      "text": "Ordne Responsive-Begriffe zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l2",
+          "text": "Breakpoint"
+        },
+        {
+          "id": "l1",
+          "text": "Mobile First"
+        },
+        {
+          "id": "l4",
+          "text": "Media Query"
+        },
+        {
+          "id": "l5",
+          "text": "Content First"
+        },
+        {
+          "id": "l3",
+          "text": "Viewport"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r5",
+          "text": "Breakpoints am Inhalt orientieren",
+          "match": "l5"
+        },
+        {
+          "id": "r4",
+          "text": "bedingte CSS-Regeln",
+          "match": "l4"
+        },
+        {
+          "id": "r1",
+          "text": "kleine Viewports als Basis",
+          "match": "l1"
+        },
+        {
+          "id": "r2",
+          "text": "Layoutwechsel bei bestimmter Bedingung",
+          "match": "l2"
+        },
+        {
+          "id": "r3",
+          "text": "sichtbarer Bereich des Browsers",
+          "match": "l3"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        }
+      ],
+      "solution": "Mobile First → kleine Viewports als Basis<br>Breakpoint → Layoutwechsel bei bestimmter Bedingung<br>Viewport → sichtbarer Bereich des Browsers<br>Media Query → bedingte CSS-Regeln<br>Content First → Breakpoints am Inhalt orientieren",
+      "explanation": "Responsive Design beginnt bei Inhalt und Nutzung.",
+      "id": "T04-25-018"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "404",
+      "difficulty": "mittel",
+      "text": "Tag 4: Welche Punkte sprechen für eine geordnete CSS-Datei? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Komponenten können leichter gepflegt werden",
+        "Regeln lassen sich schneller finden",
+        "Klassennamen sollten absichtlich unverständlich sein",
+        "Doppelte Deklarationen fallen eher auf"
+      ],
+      "correct": [
+        0,
+        1,
+        3
+      ],
+      "solution": "Regeln lassen sich schneller finden<br>Doppelte Deklarationen fallen eher auf<br>Komponenten können leichter gepflegt werden",
+      "explanation": "Ordnung in CSS unterstützt Wartbarkeit und Fehlersuche.",
+      "id": "T04-25-019"
+    },
+    {
+      "type": "single-choice",
+      "topic": "405",
+      "difficulty": "schwer",
+      "text": "Welche Aussage zu <code>prefers-reduced-motion</code> ist korrekt?",
+      "options": [
+        "Es kann genutzt werden, um Animationen für Nutzer mit reduzierter Bewegungspräferenz anzupassen.",
+        "Es ist ein SQL-Befehl.",
+        "Es funktioniert nur in LESS.",
+        "Es löscht alle Media Queries."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Es kann genutzt werden, um Animationen für Nutzer mit reduzierter Bewegungspräferenz anzupassen.",
+      "explanation": "Diese Media Query unterstützt Barrierefreiheit.",
+      "id": "T04-25-020"
+    },
+    {
+      "type": "single-choice",
+      "topic": "403",
+      "difficulty": "schwer",
+      "text": "Welche Containerbreite entsteht bei 1600px Viewportbreite?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.container { width: min(92%, 1180px); }</pre></div>",
+      "options": [
+        "1472px",
+        "92px",
+        "1600px",
+        "1180px"
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "1180px",
+      "explanation": "92% von 1600px sind 1472px; min wählt 1180px.",
+      "id": "T04-25-021"
+    },
+    {
+      "type": "single-choice",
+      "topic": "403",
+      "difficulty": "leicht",
+      "text": "Welche Regel macht Bilder flexibel, ohne das Seitenverhältnis zu zerstören?",
+      "options": [
+        "img { max-width: 100%; height: auto; }",
+        "img { width: 1000px; height: 1000px; }",
+        "img { display: sql; }",
+        "img { responsive: true; }"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "img { max-width: 100%; height: auto; }",
+      "explanation": "max-width verhindert Überlauf, height:auto erhält Proportionen.",
+      "id": "T04-25-022"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "404",
+      "difficulty": "mittel",
+      "text": "Welche Anpassungen sind bei kleinen Viewports oft sinnvoll? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Navigation umstrukturieren",
+        "Abstände anpassen",
+        "alle Texte auf 4px verkleinern",
+        "Spalten in eine einspaltige Darstellung überführen"
+      ],
+      "correct": [
+        0,
+        1,
+        3
+      ],
+      "solution": "Spalten in eine einspaltige Darstellung überführen<br>Abstände anpassen<br>Navigation umstrukturieren",
+      "explanation": "Responsive Design betrifft Layout, Abstand und Bedienung.",
+      "id": "T04-25-023"
+    },
+    {
+      "type": "single-choice",
+      "topic": "403",
+      "difficulty": "leicht",
+      "text": "Welche Funktion eignet sich für flexible Schriftgrößen?",
+      "options": [
+        "clamp()",
+        "darken-less()",
+        "delete()",
+        "compile()"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "clamp()",
+      "explanation": "clamp erlaubt fluid typography mit Grenzen.",
+      "id": "T04-25-024"
+    },
+    {
+      "type": "single-choice",
+      "topic": "404",
+      "difficulty": "mittel",
+      "text": "Welche Aussage passt zum Code?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.nav-list { display: flex; flex-direction: column; }\n@media (min-width: 800px) {\n  .nav-list { flex-direction: row; }\n}</pre></div>",
+      "options": [
+        "Die Liste ist immer unsichtbar.",
+        "Mobile nebeneinander, Desktop untereinander.",
+        "flex-direction wird ignoriert.",
+        "Mobile untereinander, ab 800px nebeneinander."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Mobile untereinander, ab 800px nebeneinander.",
+      "explanation": "Das ist ein typischer Mobile-First-Aufbau.",
+      "id": "T04-25-025"
+    }
+  ]
+}

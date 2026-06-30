@@ -1,0 +1,3 @@
+/* Aufgabe: Erzeuge ein Grid-Layout mit Header, Sidebar, Main und Info-Bereich. */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; }
