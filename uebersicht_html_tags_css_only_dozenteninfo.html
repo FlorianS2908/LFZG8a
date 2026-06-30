@@ -23,7 +23,7 @@
   </header>
   <nav class="day-nav" aria-label="Tagesnavigation"><div class="wrap"><a href="#tag1">Tag 1: HTML-Grundstruktur und CSS-Basics</a><a href="#tag2">Tag 2: Navigation, Buttons und Flexbox</a><a href="#tag3">Tag 3: Struktur, Karten und Grid</a><a href="#tag4">Tag 4: Responsive HTML-Elemente</a><a href="#tag5">Tag 5: Formulare, Webfonts und saubere CSS-Struktur</a></div></nav>
   <main>
-    <section class="intro"><div class="wrap intro-card"><strong>So funktioniert die Übersicht:</strong> Öffne eine Tag-Karte, wähle eine CSS-Variante über die Tabs und vergleiche Vorschau und Code. Die Varianten-Umschaltung erfolgt mit HTML und CSS; die Dozenteninfo öffnet per Klick in einem separaten Fenster.</div><div class="wrap intro-card parallel-note"><strong>Parallel nutzbar:</strong> Dozenteninfos öffnen sich in einem eigenen Browserfenster mit dem Namen <code>dozenteninfo_screen</code>. Ziehe dieses Fenster einmal auf den zweiten Bildschirm; weitere Dozenteninfo-Buttons aktualisieren dann genau dieses Fenster.</div></section>
+    <section class="intro"><div class="wrap intro-card"><strong>So funktioniert die Übersicht:</strong> Öffne eine Tag-Karte, wähle eine CSS-Variante über die Tabs und vergleiche Vorschau und Code. Die Varianten-Umschaltung erfolgt mit HTML und CSS; die Dozenteninfo öffnet per Klick in einem separaten Fenster.</div><div class="wrap intro-card parallel-note"><strong>Parallel nutzbar:</strong> Dozenteninfos öffnen sich in einem eigenen Browserfenster mit dem Namen <code>dozenteninfo_screen</code>. Wenn der Browser Multi-Screen-Fensterpositionierung erlaubt, wird ein weiterer Monitor direkt genutzt; sonst wird das Fenster rechts neben dem aktuellen Bildschirm platziert und danach immer wieder aktualisiert.</div></section>
 
 <section class="day-section" id="tag1"><div class="wrap"><div class="day-head"><span class="kicker">Tag 1</span><h2>Tag 1: HTML-Grundstruktur und CSS-Basics</h2><p>Der erste Tag legt das Fundament: HTML-Dokumente werden sauber aufgebaut, Inhalte semantisch gegliedert und mit grundlegenden CSS-Eigenschaften gestaltet.</p><p><strong>CSS-Schwerpunkte:</strong> Elementselektoren, Klassen, IDs, Farben, Schrift, Abstände, Rahmen, Breiten, Box-Modell und Custom Properties.</p><div class="tag-list"><span>&lt;html&gt;</span><span>&lt;head&gt;</span><span>&lt;title&gt;</span><span>&lt;meta&gt;</span><span>&lt;link&gt;</span><span>&lt;body&gt;</span><span>&lt;header&gt;</span><span>&lt;main&gt;</span><span>&lt;section&gt;</span><span>&lt;article&gt;</span><span>&lt;footer&gt;</span><span>&lt;h1&gt;</span><span>&lt;h2&gt;</span><span>&lt;p&gt;</span><span>&lt;ul&gt;</span><span>&lt;ol&gt;</span><span>&lt;li&gt;</span><span>&lt;a&gt;</span><span>&lt;img&gt;</span><span>&lt;div&gt;</span><span>&lt;span&gt;</span></div></div><div class="tag-grid">
 <details class="tag-card" id="tag-01-html-card">
@@ -2753,21 +2753,109 @@ fieldset legend</code></pre>
     <section class="obsolete"><div class="wrap obsolete-box"><h2>Veraltete HTML-Tags</h2><p>Diese Tags sollten heute nicht mehr für neue Seiten verwendet werden:</p><ul><li>font</li><li>center</li><li>marquee</li><li>blink</li><li>applet</li><li>big</li><li>strike</li><li>tt</li><li>xmp</li></ul></div></section>
   </main>
   <script>
+    function buildTeacherWindowFeatures(place) {
+      return 'popup=yes,resizable=yes,scrollbars=yes,width=' + place.width + ',height=' + place.height + ',left=' + place.left + ',top=' + place.top;
+    }
+
+    function getNumber(value, fallback) {
+      return typeof value === 'number' && !Number.isNaN(value) ? value : fallback;
+    }
+
+    function getFallbackTeacherPlacement() {
+      var currentLeft = window.screen && typeof window.screen.availLeft === 'number'
+        ? window.screen.availLeft
+        : getNumber(window.screenLeft, getNumber(window.screenX, 0));
+      var currentTop = window.screen && typeof window.screen.availTop === 'number'
+        ? window.screen.availTop
+        : getNumber(window.screenTop, getNumber(window.screenY, 0));
+      var currentWidth = window.screen && window.screen.availWidth ? window.screen.availWidth : 1200;
+      var currentHeight = window.screen && window.screen.availHeight ? window.screen.availHeight : 900;
+      var width = Math.min(1120, Math.max(860, Math.floor(currentWidth * 0.48)));
+      var height = Math.min(920, Math.max(700, Math.floor(currentHeight * 0.9)));
+
+      return {
+        width: width,
+        height: height,
+        left: currentLeft + currentWidth + 40,
+        top: currentTop + 40
+      };
+    }
+
+    function getScreenLeft(screen) {
+      return getNumber(screen.availLeft, getNumber(screen.left, 0));
+    }
+
+    function getScreenTop(screen) {
+      return getNumber(screen.availTop, getNumber(screen.top, 0));
+    }
+
+    function getScreenWidth(screen) {
+      return getNumber(screen.availWidth, getNumber(screen.width, 1200));
+    }
+
+    function getScreenHeight(screen) {
+      return getNumber(screen.availHeight, getNumber(screen.height, 900));
+    }
+
+    function getPlacementFromScreen(screen) {
+      var screenLeft = getScreenLeft(screen);
+      var screenTop = getScreenTop(screen);
+      var screenWidth = getScreenWidth(screen);
+      var screenHeight = getScreenHeight(screen);
+      var width = Math.min(1120, Math.max(860, Math.floor(screenWidth * 0.8)));
+      var height = Math.min(920, Math.max(700, Math.floor(screenHeight * 0.9)));
+
+      return {
+        width: width,
+        height: height,
+        left: screenLeft + Math.max(20, Math.floor((screenWidth - width) / 2)),
+        top: screenTop + Math.max(20, Math.floor((screenHeight - height) / 2))
+      };
+    }
+
+    function chooseSecondScreen(details) {
+      if (!details || !details.screens || details.screens.length < 2) {
+        return null;
+      }
+
+      var current = details.currentScreen;
+      var otherScreens = details.screens.filter(function(screen) {
+        return screen !== current;
+      });
+
+      return otherScreens.find(function(screen) {
+        return current && getScreenLeft(screen) > getScreenLeft(current);
+      }) || otherScreens[0] || null;
+    }
+
+    function moveTeacherWindow(teacherWindow, place) {
+      try {
+        teacherWindow.resizeTo(place.width, place.height);
+        teacherWindow.moveTo(place.left, place.top);
+      } catch (error) {
+        // Manche Browser erlauben das Verschieben externer Fenster nur eingeschränkt.
+      }
+      teacherWindow.focus();
+    }
+
     function openTeacherInfo(url) {
-      var dualScreenLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX;
-      var dualScreenTop = window.screenTop !== undefined ? window.screenTop : window.screenY;
-      var availableWidth = window.screen && window.screen.availWidth ? window.screen.availWidth : 1200;
-      var availableHeight = window.screen && window.screen.availHeight ? window.screen.availHeight : 900;
-      var width = Math.min(1120, Math.max(860, Math.floor(availableWidth * 0.48)));
-      var height = Math.min(920, Math.max(700, Math.floor(availableHeight * 0.9)));
-      var left = dualScreenLeft + Math.max(40, availableWidth - width - 40);
-      var top = dualScreenTop + 40;
-      var features = 'popup=yes,resizable=yes,scrollbars=yes,width=' + width + ',height=' + height + ',left=' + left + ',top=' + top;
-      var teacherWindow = window.open(url, 'dozenteninfo_screen', features);
+      var initialPlace = getFallbackTeacherPlacement();
+      var teacherWindow = window.open(url, 'dozenteninfo_screen', buildTeacherWindowFeatures(initialPlace));
       if (!teacherWindow) {
         return true;
       }
-      teacherWindow.focus();
+      moveTeacherWindow(teacherWindow, initialPlace);
+
+      if (typeof window.getScreenDetails === 'function') {
+        window.getScreenDetails().then(function(details) {
+          var secondScreen = chooseSecondScreen(details);
+          if (secondScreen) {
+            moveTeacherWindow(teacherWindow, getPlacementFromScreen(secondScreen));
+          }
+        }).catch(function() {
+          moveTeacherWindow(teacherWindow, initialPlace);
+        });
+      }
       return false;
     }
   </script></body>
