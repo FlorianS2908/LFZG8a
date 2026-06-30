@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LFZQ8a Einrichtung</title>
+  <link rel="stylesheet" href="wizard.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <span class="kicker">LFZQ8a Desktop</span>
+      <h1>Workshop-App einrichten</h1>
+    </div>
+    <button id="openDataDir" type="button">Datenordner</button>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <h2>1. Monitor fuer Dozenteninfo</h2>
+      <p class="muted">Waehle den Bildschirm, auf dem die Dozenteninfos automatisch erscheinen sollen.</p>
+      <div id="displayList" class="display-list"></div>
+    </section>
+
+    <section class="panel">
+      <h2>2. Inhalte pruefen</h2>
+      <dl class="meta-list">
+        <dt>Uebersicht</dt>
+        <dd id="contentFile">wird geladen...</dd>
+        <dt>Historie</dt>
+        <dd>Lokal in den App-Daten. Reset loescht nur diese Historie.</dd>
+      </dl>
+    </section>
+
+    <section class="panel">
+      <h2>3. Unterricht starten</h2>
+      <div class="actions">
+        <button id="saveSetup" type="button">Konfiguration speichern</button>
+        <button id="startWorkshop" class="primary" type="button">Workshop starten</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Historie</h2>
+      <div class="actions">
+        <button id="reloadHistory" type="button">Aktualisieren</button>
+        <button id="resetHistory" class="danger" type="button">Historie resetten</button>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </section>
+  </main>
+
+  <script src="wizard.js"></script>
+</body>
+</html>

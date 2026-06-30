@@ -1,0 +1,14 @@
+{
+  "name": "lfzq8a-workshop-desktop",
+  "version": "0.1.0",
+  "description": "Desktop-App fuer LFZQ8a Workshop-Materialien mit Dozentenfenster auf zweitem Monitor.",
+  "main": "app/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check app/main.js && node --check app/preload.js && node --check app/renderer/wizard.js"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7"
+  }
+}
