@@ -119,3 +119,17 @@ test('electron desktop app starts the teacher overview with a portable project-r
   assert.match(mainSource, /path\.join\(projectRoot,\s*'dozent',\s*'index_dozent\.html'\)/);
   assert.doesNotMatch(mainSource, /(?:^|[^A-Za-z0-9_])[A-Za-z]:[\\/][A-Za-z0-9_.-]|file:\/\//);
 });
+
+test('teacher workplace opens all dashboard links through the desktop window bridge', () => {
+  const teacherIndex = path.join(teacherRoot, 'index_dozent.html');
+  const content = fs.readFileSync(teacherIndex, 'utf8');
+  const anchors = [...content.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi)];
+  const dashboardLinksWithoutBridge = anchors
+    .filter((match) => !externalReferencePattern.test(match[1]))
+    .filter((match) => !/\bteacher-open\b/.test(match[0]))
+    .map((match) => match[1]);
+
+  assert.match(content, /href="tools\/html-tags-css-dozenteninfo\.html"/);
+  assert.match(content, /href="tag_01\/LFZQ8a_tag_01_Webvariante_Dozent\.html"/);
+  assert.deepEqual(dashboardLinksWithoutBridge, []);
+});
