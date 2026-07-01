@@ -120,6 +120,18 @@ test('electron desktop app starts the teacher overview with a portable project-r
   assert.doesNotMatch(mainSource, /(?:^|[^A-Za-z0-9_])[A-Za-z]:[\\/][A-Za-z0-9_.-]|file:\/\//);
 });
 
+test('electron desktop app closes all secondary windows when the app closes', () => {
+  const mainSource = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'main.js'), 'utf8');
+
+  assert.match(mainSource, /function closeAllApplicationWindows\(exceptWindow = null\)/);
+  assert.match(mainSource, /BrowserWindow\.getAllWindows\(\)\.forEach/);
+  assert.match(mainSource, /function registerMainWindow\(window\)/);
+  assert.match(mainSource, /mainWindow\.on\('closed'/);
+  assert.match(mainSource, /closeAllApplicationWindows\(window\)/);
+  assert.match(mainSource, /app\.on\('before-quit'/);
+  assert.match(mainSource, /isReplacingMainWindow/);
+});
+
 test('teacher workplace opens all dashboard links through the desktop window bridge', () => {
   const teacherIndex = path.join(teacherRoot, 'index_dozent.html');
   const content = fs.readFileSync(teacherIndex, 'utf8');

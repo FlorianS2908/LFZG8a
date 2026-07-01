@@ -18,6 +18,8 @@ const disableHistory = process.argv.includes('--no-history') || process.argv.inc
 let mainWindow = null;
 let teacherWindow = null;
 let appData = null;
+let isClosingAllWindows = false;
+let isReplacingMainWindow = false;
 
 function getAppData() {
   if (!appData) {
@@ -44,13 +46,40 @@ function getWindowOptions(display, extra = {}) {
   return createWindowOptions(display, preloadFile, extra);
 }
 
+function closeAllApplicationWindows(exceptWindow = null) {
+  if (isClosingAllWindows) {
+    return;
+  }
+
+  isClosingAllWindows = true;
+  BrowserWindow.getAllWindows().forEach((window) => {
+    if (window !== exceptWindow && !window.isDestroyed()) {
+      window.close();
+    }
+  });
+  isClosingAllWindows = false;
+}
+
+function registerMainWindow(window) {
+  mainWindow = window;
+  mainWindow.on('closed', () => {
+    if (mainWindow === window) {
+      mainWindow = null;
+    }
+
+    if (!isReplacingMainWindow) {
+      closeAllApplicationWindows(window);
+    }
+  });
+}
+
 function createWizardWindow() {
   const display = getMainDisplay();
-  mainWindow = new BrowserWindow(getWindowOptions(display, {
+  registerMainWindow(new BrowserWindow(getWindowOptions(display, {
     title: 'LFZQ8a Einrichtung',
     width: 1040,
     height: 760
-  }));
+  })));
 
   mainWindow.loadFile(wizardFile);
   mainWindow.once('ready-to-show', () => mainWindow.show());
@@ -58,9 +87,9 @@ function createWizardWindow() {
 
 function createWorkshopWindow() {
   const display = getMainDisplay();
-  mainWindow = new BrowserWindow(getWindowOptions(display, {
+  registerMainWindow(new BrowserWindow(getWindowOptions(display, {
     title: 'LFZQ8a Workshop'
-  }));
+  })));
 
   mainWindow.loadFile(contentFile);
   mainWindow.once('ready-to-show', () => mainWindow.show());
@@ -119,9 +148,15 @@ ipcMain.handle('setup:save', (event, settings) => getAppData().saveSettings(sett
 ipcMain.handle('setup:start-workshop', () => {
   getAppData().saveSettings({ configured: true });
   const setupWindow = mainWindow;
+  isReplacingMainWindow = true;
   createWorkshopWindow();
   if (setupWindow && !setupWindow.isDestroyed()) {
+    setupWindow.once('closed', () => {
+      isReplacingMainWindow = false;
+    });
     setupWindow.close();
+  } else {
+    isReplacingMainWindow = false;
   }
 });
 
@@ -166,6 +201,10 @@ app.whenReady().then(() => {
       }
     }
   });
+});
+
+app.on('before-quit', () => {
+  closeAllApplicationWindows();
 });
 
 app.on('window-all-closed', () => {
