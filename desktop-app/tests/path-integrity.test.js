@@ -47,7 +47,7 @@ function stripHashAndQuery(reference) {
 }
 
 function resolveReference(fromFile, reference) {
-  const cleanReference = stripHashAndQuery(reference.trim());
+  const cleanReference = decodeURI(stripHashAndQuery(reference.trim()));
   if (!cleanReference || cleanReference.includes('&') || externalReferencePattern.test(cleanReference)) {
     return null;
   }
@@ -140,4 +140,35 @@ test('teacher tag tool links back to the teacher overview', () => {
 
   assert.match(content, /href="\.\.\/index_dozent\.html"/);
   assert.match(content, /Zurück zur Dozentenübersicht/);
+});
+
+test('additional assignments are integrated by role and day', () => {
+  const participantIndex = fs.readFileSync(path.join(participantRoot, 'index_teilnehmer.html'), 'utf8');
+  const teacherIndex = fs.readFileSync(path.join(teacherRoot, 'index_dozent.html'), 'utf8');
+  const participantAdditionalIndex = path.join(participantRoot, 'zusatzaufgaben', 'index.html');
+  const teacherAdditionalIndex = path.join(teacherRoot, 'zusatzaufgaben', 'index.html');
+  const expectedDays = [
+    'tag_01_html_css_basis',
+    'tag_02_navigation_flexbox',
+    'tag_03_grid_layout_daten',
+    'tag_04_responsive_medien',
+    'tag_05_formulare_webfonts_projekt'
+  ];
+
+  assert.match(participantIndex, /href="zusatzaufgaben\/index\.html"/);
+  assert.match(teacherIndex, /href="zusatzaufgaben\/index\.html"/);
+  assert.equal(fs.existsSync(participantAdditionalIndex), true);
+  assert.equal(fs.existsSync(teacherAdditionalIndex), true);
+
+  expectedDays.forEach((day) => {
+    assert.equal(fs.existsSync(path.join(participantRoot, 'zusatzaufgaben', day, 'aufgaben')), true);
+    assert.equal(fs.existsSync(path.join(participantRoot, 'zusatzaufgaben', day, 'loesungen')), false);
+    assert.equal(fs.existsSync(path.join(teacherRoot, 'zusatzaufgaben', day, 'aufgaben')), true);
+    assert.equal(fs.existsSync(path.join(teacherRoot, 'zusatzaufgaben', day, 'loesungen')), true);
+  });
+
+  const participantSolutionFiles = walkFiles(path.join(participantRoot, 'zusatzaufgaben'), () => true)
+    .filter((filePath) => /l(ö|oe|o)sung/i.test(path.basename(filePath)));
+
+  assert.deepEqual(participantSolutionFiles.map((filePath) => path.relative(participantRoot, filePath)), []);
 });

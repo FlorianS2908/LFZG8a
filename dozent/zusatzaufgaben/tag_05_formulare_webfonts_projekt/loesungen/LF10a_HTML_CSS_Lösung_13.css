@@ -1,0 +1,25 @@
+input[type="text"], input[type="radio"], input[type="checkbox"] {
+    margin-bottom: 10px;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+}
+
+label {
+    display: block;
+}
+
+input[type="submit"] {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+}
+
+/* Hervorhebung ausgewählter Elemente */
+input[type="radio"]:checked + label, input[type="checkbox"]:checked + label {
+    font-weight: bold;
+}

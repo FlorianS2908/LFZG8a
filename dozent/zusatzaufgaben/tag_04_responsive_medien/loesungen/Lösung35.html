@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einbettung von Videos</title>
+    <style>
+        /* CSS für das Styling des Videos */
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            /* Maximalbreite des Videos */
+            margin: 0 auto;
+            /* Zentrieren des Videos */
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+        }
+
+        /* Optionales Styling für Video-Steuerelemente */
+        video::-webkit-media-controls {
+            display: none;
+            /* Verstecke Standard-Steuerelemente */
+        }
+
+        .custom-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="video-container">
+        <video controls>
+            <source src="video.mp4" type="video/mp4">
+            <!-- Fallback-Inhalt für Browser, die das Video-Tag nicht unterstützen -->
+            Dein Browser unterstützt das Video-Tag nicht.
+        </video>
+        <!-- Optionale benutzerdefinierte Steuerelemente -->
+        <div class="custom-controls">Benutzerdefinierte Steuerelemente hier einfügen</div>
+    </div>
+
+</body>
+
+</html>

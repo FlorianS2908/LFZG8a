@@ -14,6 +14,15 @@ Dieses Repository enthaelt die Kursmaterialien fuer LFZQ8a HTML & CSS.
 - `desktop-app/`: Electron-Projekt fuer die Desktop-App
 - `_archiv/`: alte Root-Dubletten, Zwischenstaende und nicht mehr direkt benoetigte Dateien
 
+## Zusatzaufgaben
+
+Ergaenzende LF10a-Aufgaben sind nach Kurstagen einsortiert:
+
+- Teilnehmer: `teilnehmer/zusatzaufgaben/index.html`
+- Dozenten: `dozent/zusatzaufgaben/index.html`
+
+Der Teilnehmerbereich enthaelt nur Aufgaben und benoetigte Medien. Loesungen liegen ausschliesslich im Dozentenbereich.
+
 ## Standalone-Tools
 
 - Dozenten-Tool: `dozent/tools/html-tags-css-dozenteninfo.html`
