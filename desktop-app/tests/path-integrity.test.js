@@ -175,6 +175,20 @@ test('teacher tag tool provides five css variants with richer demo content', () 
   });
 });
 
+test('opened tag cards use full grid width in teacher and participant tools', () => {
+  const tagTools = [
+    path.join(teacherRoot, 'tools', 'html-tags-css-dozenteninfo.html'),
+    path.join(participantRoot, 'tools', 'html-tags-css-uebersicht.html')
+  ];
+
+  tagTools.forEach((tagTool) => {
+    const content = fs.readFileSync(tagTool, 'utf8');
+
+    assert.match(content, /\.tag-card\[open\]\{grid-column:1\/-1\}/);
+    assert.doesNotMatch(content, /\.tag-card\[open\]\{grid-column:span [12]\}/);
+  });
+});
+
 test('additional assignments are integrated by role and day', () => {
   const participantIndex = fs.readFileSync(path.join(participantRoot, 'index_teilnehmer.html'), 'utf8');
   const teacherIndex = fs.readFileSync(path.join(teacherRoot, 'index_dozent.html'), 'utf8');
