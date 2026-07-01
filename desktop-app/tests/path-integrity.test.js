@@ -281,8 +281,14 @@ test('project materials are grouped by role, project, and difficulty', () => {
           const solutionHtml = path.join(taskDir, `${stem}_loesung.html`);
 
           assert.match(taskContent, /Was soll ich hier machen\?|Zielbild/);
-          assert.match(taskContent, /HTML-Tags/);
-          assert.match(taskContent, /CSS-Styles/);
+          assert.match(taskContent, /Benoetigte HTML-Tags/);
+          assert.match(taskContent, /CSS-Selektoren und Attribute/);
+          assert.match(taskContent, /class="info-card"/);
+          assert.match(taskContent, /Klick fuer Info/);
+          assert.match(taskContent, /Offizielle Doku oeffnen/);
+          assert.match(taskContent, /developer\.mozilla\.org/);
+          assert.match(taskContent, /class="code-sample"/);
+          assert.match(taskContent, /summary:hover/);
           assert.match(taskContent, /Ergebnis anzeigen/);
           assert.match(taskContent, new RegExp(`href="${stem}_aufgabe\\.html"`));
           assert.match(taskContent, new RegExp(`href="${stem}_aufgabe\\.css"`));
