@@ -231,3 +231,48 @@ test('additional assignments are integrated by role and day', () => {
 
   assert.deepEqual(participantSolutionFiles.map((filePath) => path.relative(participantRoot, filePath)), []);
 });
+
+test('project materials are grouped by role, project, and difficulty', () => {
+  const participantIndex = fs.readFileSync(path.join(participantRoot, 'index_teilnehmer.html'), 'utf8');
+  const teacherIndex = fs.readFileSync(path.join(teacherRoot, 'index_dozent.html'), 'utf8');
+  const expectedProjects = [
+    '01_ausgangssituation_responsive',
+    '02_wunderland',
+    '03_akkordeon'
+  ];
+
+  assert.match(participantIndex, /href="Projektmaterialien\/index\.html"/);
+  assert.match(participantIndex, /href="Projektmaterialien\/abgabe\/Abgabe_Checkliste\.html"/);
+  assert.match(teacherIndex, /href="Projektmaterialien\/index\.html"/);
+  assert.match(teacherIndex, /class="card teacher-open" href="Projektmaterialien\/index\.html"/);
+
+  [
+    { root: participantRoot, role: 'teilnehmer', hasSolutions: false },
+    { root: teacherRoot, role: 'dozent', hasSolutions: true }
+  ].forEach(({ root, role, hasSolutions }) => {
+    const materialRoot = path.join(root, 'Projektmaterialien');
+    const overview = fs.readFileSync(path.join(materialRoot, 'index.html'), 'utf8');
+
+    expectedProjects.forEach((project) => {
+      const projectRoot = path.join(materialRoot, project);
+      assert.equal(fs.existsSync(path.join(projectRoot, 'material', 'index.html')), true, `${role} ${project} material`);
+      ['einfach', 'schwer'].forEach((difficulty) => {
+        const taskDir = path.join(projectRoot, 'vorbereitende_aufgaben', difficulty);
+        const taskFiles = fs.readdirSync(taskDir).filter((fileName) => fileName.endsWith('.html'));
+        const sortedTaskFiles = [...taskFiles].sort((left, right) => left.localeCompare(right, 'de'));
+
+        assert.equal(taskFiles.length, 4, `${role} ${project} ${difficulty} task count`);
+        assert.deepEqual(taskFiles, sortedTaskFiles, `${role} ${project} ${difficulty} sorted`);
+        taskFiles.forEach((fileName, index) => {
+          assert.match(fileName, new RegExp(`^${String(index + 1).padStart(2, '0')}_`));
+          const taskContent = fs.readFileSync(path.join(taskDir, fileName), 'utf8');
+          assert.match(taskContent, /Projektbezug/);
+          assert.equal(/Loesungshinweise/.test(taskContent), hasSolutions);
+        });
+      });
+      assert.match(overview, new RegExp(`${project}/material/index\\.html`));
+      assert.match(overview, new RegExp(`${project}/vorbereitende_aufgaben/einfach/01_`));
+      assert.match(overview, new RegExp(`${project}/vorbereitende_aufgaben/schwer/01_`));
+    });
+  });
+});
