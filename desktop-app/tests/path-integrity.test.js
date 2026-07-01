@@ -133,3 +133,11 @@ test('teacher workplace opens all dashboard links through the desktop window bri
   assert.match(content, /href="tag_01\/LFZQ8a_tag_01_Webvariante_Dozent\.html"/);
   assert.deepEqual(dashboardLinksWithoutBridge, []);
 });
+
+test('teacher tag tool links back to the teacher overview', () => {
+  const tagTool = path.join(teacherRoot, 'tools', 'html-tags-css-dozenteninfo.html');
+  const content = fs.readFileSync(tagTool, 'utf8');
+
+  assert.match(content, /href="\.\.\/index_dozent\.html"/);
+  assert.match(content, /Zurück zur Dozentenübersicht/);
+});
