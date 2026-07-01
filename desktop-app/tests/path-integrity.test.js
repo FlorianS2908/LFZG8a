@@ -255,7 +255,13 @@ test('project materials are grouped by role, project, and difficulty', () => {
 
     expectedProjects.forEach((project) => {
       const projectRoot = path.join(materialRoot, project);
-      assert.equal(fs.existsSync(path.join(projectRoot, 'material', 'index.html')), true, `${role} ${project} material`);
+      const materialIndex = path.join(projectRoot, 'material', 'index.html');
+      const materialContent = fs.readFileSync(materialIndex, 'utf8');
+
+      assert.equal(fs.existsSync(materialIndex), true, `${role} ${project} material`);
+      assert.match(materialContent, /Was soll ich hier machen\?/);
+      assert.match(materialContent, /href="\.\.\/vorbereitende_aufgaben\/einfach\/01_/);
+      assert.match(materialContent, /href="\.\.\/vorbereitende_aufgaben\/schwer\/01_/);
       ['einfach', 'schwer'].forEach((difficulty) => {
         const taskDir = path.join(projectRoot, 'vorbereitende_aufgaben', difficulty);
         const taskFiles = fs.readdirSync(taskDir).filter((fileName) => fileName.endsWith('.html'));
