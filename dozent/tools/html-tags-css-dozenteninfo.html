@@ -2859,5 +2859,29 @@ fieldset legend</code></pre>
       }
       return false;
     }
+
+    function openTeacherInfoForCard(card) {
+      var teacherLink = card.querySelector('.teacher-open');
+      if (!teacherLink) {
+        return;
+      }
+
+      openTeacherInfo(teacherLink.href);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.tag-card').forEach(function(card) {
+        var summary = card.querySelector('summary');
+        if (!summary) {
+          return;
+        }
+
+        summary.addEventListener('click', function() {
+          if (!card.open) {
+            openTeacherInfoForCard(card);
+          }
+        });
+      });
+    });
   </script></body>
 </html>

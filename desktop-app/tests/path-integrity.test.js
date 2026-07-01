@@ -142,6 +142,16 @@ test('teacher tag tool links back to the teacher overview', () => {
   assert.match(content, /Zurück zur Dozentenübersicht/);
 });
 
+test('teacher tag tool opens teacher info automatically when a tag card is opened', () => {
+  const tagTool = path.join(teacherRoot, 'tools', 'html-tags-css-dozenteninfo.html');
+  const content = fs.readFileSync(tagTool, 'utf8');
+
+  assert.match(content, /function openTeacherInfoForCard\(card\)/);
+  assert.match(content, /summary\.addEventListener\('click'/);
+  assert.match(content, /if \(!card\.open\)/);
+  assert.match(content, /openTeacherInfoForCard\(card\)/);
+});
+
 test('additional assignments are integrated by role and day', () => {
   const participantIndex = fs.readFileSync(path.join(participantRoot, 'index_teilnehmer.html'), 'utf8');
   const teacherIndex = fs.readFileSync(path.join(teacherRoot, 'index_dozent.html'), 'utf8');
