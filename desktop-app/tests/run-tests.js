@@ -95,6 +95,7 @@ async function main() {
   require('./app-data.test');
   require('./display.test');
   require('./json-store.test');
+  require('./path-integrity.test');
 
   let failed = 0;
 

@@ -1078,7 +1078,7 @@
       "options": [
         "Nur eine PDF-Datei",
         "index.html, assets/css oder css/style.css, ggf. images und fonts",
-        "Alle Dateien ohne Namen direkt in C:\\Windows",
+        "Alle Dateien ungeordnet direkt in einem Systemordner",
         "style.CSS als einzige erlaubte Datei"
       ],
       "correct": [

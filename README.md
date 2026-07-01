@@ -4,12 +4,12 @@ Dieses Repository enthaelt die Kursmaterialien fuer LFZQ8a HTML & CSS.
 
 ## Einstieg
 
-- `index.html`: zentrale Uebersicht fuer Dozenten- und Teilnehmerbereich
+- `index.html`: statischer Einstieg fuer den Teilnehmerbereich
 - `LFZQ8a-Workshop-starten.cmd`: Start der Electron-Desktop-App per Doppelklick
 
 ## Aktive Struktur
 
-- `dozent/`: eigenstaendige Dozentenstruktur mit Leitfaeden, Tagesmaterial, Loesungen, Bewertung, Quizdaten, Projektdateien und Standalone-Tools
+- `dozent/`: Dozentenstruktur mit Leitfaeden, Tagesmaterial, Loesungen, Bewertung, Quizdaten, Projektdateien und Tools; Start erfolgt ueber die Electron-Desktop-App
 - `teilnehmer/`: eigenstaendige Teilnehmerstruktur mit Webvarianten, Aufgaben, Starterdateien, Quizdaten, Projektmaterial, Abgabehinweisen und Standalone-Tools
 - `desktop-app/`: Electron-Projekt fuer die Desktop-App
 - `_archiv/`: alte Root-Dubletten, Zwischenstaende und nicht mehr direkt benoetigte Dateien
@@ -25,7 +25,7 @@ Diagnosefunktionen mit technischen Geraetedaten, Netzwerkdaten und Mailvorbereit
 
 ## Nutzung
 
-Die Bereiche `dozent/` und `teilnehmer/` sind bewusst getrennt aufgebaut und koennen separat weitergegeben oder geoeffnet werden. Die Desktop-App bleibt daneben als technische Start- und Fensterlogik erhalten.
+Der Bereich `teilnehmer/` ist bewusst standalone aufgebaut und kann separat weitergegeben oder geoeffnet werden. Der Bereich `dozent/` wird nicht aus dem statischen Einstieg verlinkt und soll ueber die Electron-Desktop-App gestartet werden. Alle Projektpfade sind relativ aufgebaut, damit der Ordner auf unterschiedlichen Windows-Systemen lauffaehig bleibt.
 
 ## Aufraeumregel
 

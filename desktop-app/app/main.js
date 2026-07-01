@@ -9,7 +9,7 @@ const {
 } = require('./lib/display');
 
 const projectRoot = path.resolve(__dirname, '..', '..');
-const contentFile = path.join(projectRoot, 'dozent', 'tools', 'html-tags-css-dozenteninfo.html');
+const contentFile = path.join(projectRoot, 'dozent', 'index_dozent.html');
 const preloadFile = path.join(__dirname, 'preload.js');
 const wizardFile = path.join(__dirname, 'renderer', 'wizard.html');
 const forceWizard = process.argv.includes('--wizard') || process.argv.includes('--wizard-test');
