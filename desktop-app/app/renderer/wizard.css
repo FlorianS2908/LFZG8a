@@ -115,6 +115,29 @@ button.danger {
   background: #fbfdfe;
 }
 
+.check-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.7rem;
+  align-items: start;
+  margin-bottom: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fbfdfe;
+}
+
+.check-option strong {
+  display: block;
+  color: var(--navy);
+}
+
+.check-option small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+}
+
 .display-option strong {
   color: var(--navy);
 }

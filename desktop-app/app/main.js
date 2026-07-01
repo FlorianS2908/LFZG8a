@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, screen, shell } = require('electron');
+const os = require('os');
 const path = require('path');
 const { createAppData } = require('./lib/app-data');
 const {
@@ -40,6 +41,47 @@ function getTargetDisplay() {
 
 function getMainDisplay() {
   return screen.getPrimaryDisplay();
+}
+
+function getDeviceNetworkData() {
+  return Object.entries(os.networkInterfaces()).flatMap(([name, addresses]) => (
+    (addresses || [])
+      .filter((address) => !address.internal && address.family === 'IPv4')
+      .map((address) => ({
+        name,
+        address: address.address,
+        mac: address.mac
+      }))
+  ));
+}
+
+function createCurrentTestReport() {
+  return getAppData().saveTestReport({
+    device: {
+      hostname: os.hostname(),
+      network: getDeviceNetworkData()
+    },
+    results: {
+      status: 'ok',
+      checks: [
+        {
+          name: 'Konfiguration',
+          status: getAppData().getSettings().configured ? 'ok' : 'offen',
+          details: 'Lokale Einstellungen wurden gelesen.'
+        },
+        {
+          name: 'Dozentenuebersicht',
+          status: 'ok',
+          details: contentFile
+        },
+        {
+          name: 'Monitor-Erkennung',
+          status: 'ok',
+          details: `${screen.getAllDisplays().length} Bildschirm(e) erkannt.`
+        }
+      ]
+    }
+  });
 }
 
 function getWindowOptions(display, extra = {}) {
@@ -139,6 +181,7 @@ ipcMain.handle('setup:get-state', () => {
     settings: getAppData().getSettings(),
     displays: getDisplaySummaries(),
     history: getAppData().listHistory(),
+    testReports: getAppData().listTestReports(),
     contentFile
   };
 });
@@ -178,6 +221,19 @@ ipcMain.handle('teacher:open', (event, url) => {
 ipcMain.handle('app:open-data-dir', () => {
   getAppData().ensureDataFiles();
   shell.openPath(getAppData().dataDir);
+});
+
+ipcMain.handle('test-report:create', () => {
+  return createCurrentTestReport();
+});
+
+ipcMain.handle('test-report:list', () => {
+  return getAppData().listTestReports();
+});
+
+ipcMain.handle('test-report:open-dir', () => {
+  getAppData().ensureDataFiles();
+  shell.openPath(getAppData().testReportsDir);
 });
 
 app.whenReady().then(() => {

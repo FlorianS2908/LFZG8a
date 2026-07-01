@@ -1,6 +1,8 @@
 const state = {
   selectedMonitorIndex: 1,
-  displays: []
+  displays: [],
+  saveLocalTestReports: true,
+  includeDeviceNetworkData: false
 };
 
 function formatBounds(bounds) {
@@ -50,19 +52,44 @@ function renderHistory(history) {
   });
 }
 
+function renderTestReports(testReports) {
+  const testReportList = document.querySelector('#testReportList');
+  testReportList.innerHTML = '';
+
+  if (!testReports.length) {
+    testReportList.innerHTML = '<p class="muted">Noch keine Testprotokolle vorhanden.</p>';
+    return;
+  }
+
+  testReports.slice(0, 8).forEach((report) => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    const date = new Date(report.createdAt).toLocaleString('de-DE');
+    item.innerHTML = `<strong>${report.results.status} - ${date}</strong><small>JSON: ${report.files.json}<br>HTML: ${report.files.html}</small>`;
+    testReportList.append(item);
+  });
+}
+
 async function loadState() {
   const setupState = await window.lfzq8aDesktop.getSetupState();
   state.displays = setupState.displays;
   state.selectedMonitorIndex = setupState.settings.monitorIndex ?? (setupState.displays[1] ? 1 : 0);
+  state.saveLocalTestReports = setupState.settings.saveLocalTestReports !== false;
+  state.includeDeviceNetworkData = setupState.settings.includeDeviceNetworkData === true;
   document.querySelector('#contentFile').textContent = setupState.contentFile;
+  document.querySelector('#saveLocalTestReports').checked = state.saveLocalTestReports;
+  document.querySelector('#includeDeviceNetworkData').checked = state.includeDeviceNetworkData;
   renderDisplays();
   renderHistory(setupState.history);
+  renderTestReports(setupState.testReports);
 }
 
 async function saveSetup() {
   await window.lfzq8aDesktop.saveSetup({
     monitorIndex: state.selectedMonitorIndex,
-    openTeacherOnSecondMonitor: true
+    openTeacherOnSecondMonitor: true,
+    saveLocalTestReports: document.querySelector('#saveLocalTestReports').checked,
+    includeDeviceNetworkData: document.querySelector('#includeDeviceNetworkData').checked
   });
 }
 
@@ -82,6 +109,17 @@ document.querySelector('#resetHistory').addEventListener('click', async () => {
   if (confirmed) {
     renderHistory(await window.lfzq8aDesktop.resetHistory());
   }
+});
+
+document.querySelector('#createTestReport').addEventListener('click', async () => {
+  await saveSetup();
+  const report = await window.lfzq8aDesktop.createTestReport();
+  renderTestReports(await window.lfzq8aDesktop.listTestReports());
+  window.alert(`Testprotokoll gespeichert:\nJSON: ${report.files.json}\nHTML: ${report.files.html}`);
+});
+
+document.querySelector('#openTestReportDir').addEventListener('click', () => {
+  window.lfzq8aDesktop.openTestReportDir();
 });
 
 document.querySelector('#openDataDir').addEventListener('click', () => {

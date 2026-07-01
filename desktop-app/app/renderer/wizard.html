@@ -29,11 +29,30 @@
         <dd id="contentFile">wird geladen...</dd>
         <dt>Historie</dt>
         <dd>Lokal in den App-Daten. Reset loescht nur diese Historie.</dd>
+        <dt>Testprotokolle</dt>
+        <dd>JSON und HTML-Bericht werden lokal als referenziertes Dateipaar gespeichert.</dd>
       </dl>
     </section>
 
     <section class="panel">
-      <h2>3. Unterricht starten</h2>
+      <h2>3. Testprotokolle</h2>
+      <label class="check-option">
+        <input id="saveLocalTestReports" type="checkbox" checked>
+        <span><strong>Lokale Testprotokolle speichern</strong><small>Erzeugt JSON und HTML-Bericht im App-Datenordner.</small></span>
+      </label>
+      <label class="check-option">
+        <input id="includeDeviceNetworkData" type="checkbox">
+        <span><strong>IP- und MAC-Adresse lokal speichern</strong><small>Nur im lokalen Testprotokoll, wenn aktiv eingeschaltet.</small></span>
+      </label>
+      <div class="actions">
+        <button id="createTestReport" type="button">Testprotokoll erstellen</button>
+        <button id="openTestReportDir" type="button">Protokollordner</button>
+      </div>
+      <div id="testReportList" class="history-list"></div>
+    </section>
+
+    <section class="panel">
+      <h2>4. Unterricht starten</h2>
       <div class="actions">
         <button id="saveSetup" type="button">Konfiguration speichern</button>
         <button id="startWorkshop" class="primary" type="button">Workshop starten</button>
