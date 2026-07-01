@@ -264,16 +264,36 @@ test('project materials are grouped by role, project, and difficulty', () => {
       assert.match(materialContent, /href="\.\.\/vorbereitende_aufgaben\/schwer\/01_/);
       ['einfach', 'schwer'].forEach((difficulty) => {
         const taskDir = path.join(projectRoot, 'vorbereitende_aufgaben', difficulty);
-        const taskFiles = fs.readdirSync(taskDir).filter((fileName) => fileName.endsWith('.html'));
+        const taskFiles = fs.readdirSync(taskDir)
+          .filter((fileName) => /^\d{2}_.+\.html$/.test(fileName))
+          .filter((fileName) => !/_(?:aufgabe|loesung)\.html$/.test(fileName));
         const sortedTaskFiles = [...taskFiles].sort((left, right) => left.localeCompare(right, 'de'));
 
         assert.equal(taskFiles.length, 4, `${role} ${project} ${difficulty} task count`);
         assert.deepEqual(taskFiles, sortedTaskFiles, `${role} ${project} ${difficulty} sorted`);
         taskFiles.forEach((fileName, index) => {
           assert.match(fileName, new RegExp(`^${String(index + 1).padStart(2, '0')}_`));
-          const taskContent = fs.readFileSync(path.join(taskDir, fileName), 'utf8');
-          assert.match(taskContent, /Projektbezug/);
+          const taskPath = path.join(taskDir, fileName);
+          const taskContent = fs.readFileSync(taskPath, 'utf8');
+          const stem = fileName.replace(/\.html$/, '');
+          const starterHtml = path.join(taskDir, `${stem}_aufgabe.html`);
+          const starterCss = path.join(taskDir, `${stem}_aufgabe.css`);
+          const solutionHtml = path.join(taskDir, `${stem}_loesung.html`);
+
+          assert.match(taskContent, /Was soll ich hier machen\?|Zielbild/);
+          assert.match(taskContent, /HTML-Tags/);
+          assert.match(taskContent, /CSS-Styles/);
+          assert.match(taskContent, /Ergebnis anzeigen/);
+          assert.match(taskContent, new RegExp(`href="${stem}_aufgabe\\.html"`));
+          assert.match(taskContent, new RegExp(`href="${stem}_aufgabe\\.css"`));
+          assert.match(taskContent, new RegExp(`href="${stem}_loesung\\.html"`));
           assert.equal(/Loesungshinweise/.test(taskContent), hasSolutions);
+          assert.equal(fs.existsSync(starterHtml), true, `${role} ${project} ${difficulty} ${stem} starter html`);
+          assert.equal(fs.existsSync(starterCss), true, `${role} ${project} ${difficulty} ${stem} starter css`);
+          assert.equal(fs.existsSync(solutionHtml), true, `${role} ${project} ${difficulty} ${stem} solution html`);
+          assert.match(fs.readFileSync(starterHtml, 'utf8'), /Auftrag:/);
+          assert.match(fs.readFileSync(starterCss, 'utf8'), /Auftrag:/);
+          assert.match(fs.readFileSync(solutionHtml, 'utf8'), /Loesungsdatei fuer:/);
         });
       });
       assert.match(overview, new RegExp(`${project}/material/index\\.html`));
