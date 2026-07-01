@@ -152,6 +152,29 @@ test('teacher tag tool opens teacher info automatically when a tag card is opene
   assert.match(content, /openTeacherInfoForCard\(card\)/);
 });
 
+test('teacher tag tool provides five css variants with richer demo content', () => {
+  const tagTools = [
+    path.join(teacherRoot, 'tools', 'html-tags-css-dozenteninfo.html'),
+    path.join(participantRoot, 'tools', 'html-tags-css-uebersicht.html')
+  ];
+
+  tagTools.forEach((tagTool) => {
+    const content = fs.readFileSync(tagTool, 'utf8');
+    const cardCount = (content.match(/<details class="tag-card"/g) || []).length;
+
+    assert.ok(cardCount > 0);
+    [1, 2, 3, 4, 5].forEach((variant) => {
+      assert.equal((content.match(new RegExp(`class="variant-input v${variant}"`, 'g')) || []).length, cardCount);
+      assert.equal((content.match(new RegExp(`class="tab-${variant}"`, 'g')) || []).length, cardCount);
+      assert.equal((content.match(new RegExp(`class="code code-${variant}"`, 'g')) || []).length, cardCount);
+    });
+    assert.equal((content.match(/class="demo-context"/g) || []).length, cardCount);
+    assert.match(content, /grid-template-columns/);
+    assert.match(content, /box-shadow/);
+    assert.match(content, /linear-gradient/);
+  });
+});
+
 test('additional assignments are integrated by role and day', () => {
   const participantIndex = fs.readFileSync(path.join(participantRoot, 'index_teilnehmer.html'), 'utf8');
   const teacherIndex = fs.readFileSync(path.join(teacherRoot, 'index_dozent.html'), 'utf8');
