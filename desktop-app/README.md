@@ -51,14 +51,17 @@ pnpm run verify
 
 `verify` fuehrt Syntaxchecks und die automatisierten Modul-Tests aus. Die Tests laufen bewusst mit einem kleinen In-Process-Runner, damit sie auf Windows/OneDrive und in GitHub Actions ohne zusaetzliche Test-Worker stabil laufen.
 
+Der Test-Runner misst zusaetzlich die Pfad-/Range-Abdeckung der Module unter `app/lib` und bricht unter 90% ab. Der aktuelle Stand liegt bei 94,44%.
+
 Aktuell abgedeckt:
 
 - Settings werden angelegt und gespeichert
+- Wizard-Testmodus kann Historie deaktivieren
 - Historie wird gespeichert, begrenzt und sortiert
 - Reset loescht nur die Historie
 - Monitor-Auswahl faellt bei fehlendem Monitor sauber zurueck
 - Fensterpositionen werden aus der Display-Workarea berechnet
-- Diagnose-Sparklines, CPU-Berechnung und Berichtsausgabe
+- JSON-Dateien werden angelegt, gelesen und bei Fehlern mit Fallback behandelt
 
 ## Daten
 
@@ -67,24 +70,8 @@ Der Wizard zeigt den Datenordner ueber die Schaltflaeche `Datenordner`.
 
 - `settings.json`: Monitorwahl und Setup-Status
 - `history.json`: Unterrichtshistorie
-- `reports/`: lokal erzeugte Diagnoseberichte als JSON und HTML
 
 Die Reset-Funktion loescht nur `history.json`.
-
-## Diagnose und Testprotokoll
-
-Der Wizard kann nach aktiver Einwilligung ein Testprotokoll erzeugen. Es wird nichts automatisch oder heimlich versendet.
-
-Das Protokoll enthaelt:
-
-- App-Version und Systemdaten
-- Monitoranzahl und Displaydaten
-- lokale IP-Adressen
-- MAC-Adressen der Netzwerkadapter
-- kurze CPU- und RAM-Verlaufsskalen mit Peak-Werten
-- gespeicherte Dateien `report.html` und `report.json`
-
-Die Schaltflaeche `Mail vorbereiten` oeffnet das lokale Mailprogramm mit Empfaenger `jlploglan@gmail.com` und der Berichtszusammenfassung im Mailtext. Anhaenge koennen per `mailto:` nicht auf jedem System automatisch gesetzt werden; die gespeicherten Berichtdateien koennen bei Bedarf manuell angehaengt werden.
 
 ## Automatisierung
 
