@@ -245,6 +245,17 @@ test('project materials are grouped by role, project, and difficulty', () => {
   assert.match(participantIndex, /href="Projektmaterialien\/abgabe\/Abgabe_Checkliste\.html"/);
   assert.match(teacherIndex, /href="Projektmaterialien\/index\.html"/);
   assert.match(teacherIndex, /class="card teacher-open" href="Projektmaterialien\/index\.html"/);
+  [
+    'ausgangssituation-20260702-css.zip',
+    'wunderland-20260702-css.zip',
+    'akkordeon-20260702-css.zip'
+  ].forEach((zipFile) => {
+    assert.match(
+      fs.readFileSync(path.join(teacherRoot, 'Projektmaterialien', 'index.html'), 'utf8'),
+      new RegExp(`href="zip/${zipFile}"`)
+    );
+    assert.equal(fs.existsSync(path.join(teacherRoot, 'Projektmaterialien', 'zip', zipFile)), true);
+  });
 
   [
     { root: participantRoot, role: 'teilnehmer', hasSolutions: false },
