@@ -245,17 +245,28 @@ test('project materials are grouped by role, project, and difficulty', () => {
   assert.match(participantIndex, /href="Projektmaterialien\/abgabe\/Abgabe_Checkliste\.html"/);
   assert.match(teacherIndex, /href="Projektmaterialien\/index\.html"/);
   assert.match(teacherIndex, /class="card teacher-open" href="Projektmaterialien\/index\.html"/);
+  const teacherProjectArchiveRoot = path.join(teacherRoot, 'Projektmaterialien', 'zip');
   [
-    'ausgangssituation-20260702-original-plus-css.zip',
-    'wunderland-20260702-original-plus-css.zip',
-    'akkordeon-20260702-original-plus-css.zip'
-  ].forEach((zipFile) => {
+    { label: 'Ausgangssituation', href: 'zip/Ausgangssituation/index.html', files: ['Ausgangssituation/index.html'] },
+    { label: 'wunderland', href: 'zip/wunderland/index.html', files: ['wunderland/index.html', 'wunderland/css/style.css', 'wunderland/js/menu.js', 'wunderland/lightbox/dist/js/lightbox-plus-jquery.min.js'] },
+    { label: 'akkordeon', href: 'zip/akkordeon/index.html', files: ['akkordeon/index.html', 'akkordeon/css/style.css'] }
+  ].forEach((projectPackage) => {
     assert.match(
       fs.readFileSync(path.join(teacherRoot, 'Projektmaterialien', 'index.html'), 'utf8'),
-      new RegExp(`href="zip/${zipFile}"`)
+      new RegExp(`href="${projectPackage.href}"`)
     );
-    assert.equal(fs.existsSync(path.join(teacherRoot, 'Projektmaterialien', 'zip', zipFile)), true);
+    projectPackage.files.forEach((filePath) => {
+      assert.equal(
+        fs.existsSync(path.join(teacherProjectArchiveRoot, filePath)),
+        true,
+        `${projectPackage.label} ${filePath}`
+      );
+    });
   });
+  const excludedTeacherProjectPaths = walkFiles(teacherProjectArchiveRoot, () => true)
+    .filter((filePath) => /(^|[\\/])(less|css_aus_less|arbeitsverzeichnis)([\\/]|$)|\.less$|Gruntfile\.js$|package\.json$/i.test(filePath))
+    .map((filePath) => path.relative(teacherProjectArchiveRoot, filePath));
+  assert.deepEqual(excludedTeacherProjectPaths, []);
 
   [
     { root: participantRoot, role: 'teilnehmer', hasSolutions: false },
