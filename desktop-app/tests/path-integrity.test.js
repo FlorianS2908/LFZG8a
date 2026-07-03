@@ -116,8 +116,35 @@ test('static root does not expose the teacher folder by link', () => {
 test('electron desktop app starts the teacher overview with a portable project-relative path', () => {
   const mainSource = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'main.js'), 'utf8');
 
+  assert.match(mainSource, /path\.join\(__dirname,\s*'renderer',\s*'course\.html'\)/);
   assert.match(mainSource, /path\.join\(projectRoot,\s*'dozent',\s*'index_dozent\.html'\)/);
   assert.doesNotMatch(mainSource, /(?:^|[^A-Za-z0-9_])[A-Za-z]:[\\/][A-Za-z0-9_.-]|file:\/\//);
+});
+
+test('electron desktop app integrates course html pages through the app shell catalog', () => {
+  const mainSource = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'main.js'), 'utf8');
+  const preloadSource = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'preload.js'), 'utf8');
+  const courseHtml = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'renderer', 'course.html'), 'utf8');
+  const courseJs = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'renderer', 'course.js'), 'utf8');
+  const { flattenCatalog } = require('../app/lib/course-catalog');
+  const missingCatalogTargets = flattenCatalog()
+    .map((target) => path.join(repoRoot, target))
+    .filter((targetPath) => !fs.existsSync(targetPath));
+
+  assert.match(mainSource, /const \{ courseCatalog \} = require\('\.\/lib\/course-catalog'\)/);
+  assert.match(mainSource, /function getHydratedCourseCatalog\(\)/);
+  assert.match(mainSource, /ipcMain\.handle\('course:get-state'/);
+  assert.match(mainSource, /pathToFileURL\(resolvedPath\)\.href/);
+  assert.match(preloadSource, /getCourseState: \(\) => ipcRenderer\.invoke\('course:get-state'\)/);
+  assert.match(courseHtml, /data-panel="days"/);
+  assert.match(courseHtml, /data-panel="projects"/);
+  assert.match(courseHtml, /data-panel="releases"/);
+  assert.match(courseHtml, /<iframe class="viewer"/);
+  assert.match(courseJs, /window\.lfzq8aDesktop\.getCourseState\(\)/);
+  assert.match(courseJs, /loadContent\(title, kind, fileInfo\)/);
+  assert.match(courseJs, /window\.lfzq8aDesktop\.openInEditor\(project\.workspace\)/);
+  assert.match(courseJs, /window\.lfzq8aDesktop\.saveParticipantReleases/);
+  assert.deepEqual(missingCatalogTargets.map((targetPath) => path.relative(repoRoot, targetPath)), []);
 });
 
 test('electron desktop app closes all secondary windows when the app closes', () => {
@@ -458,4 +485,39 @@ test('project materials are grouped by role, project, and difficulty', () => {
       assert.match(overview, new RegExp(`${project}/vorbereitende_aufgaben/schwer/01_`));
     });
   });
+});
+
+test('original project showcases and solution steps keep their own project layout', () => {
+  const protectedProjectRoots = [
+    path.join(teacherRoot, 'Projektmaterialien', 'loesungen'),
+    path.join(teacherRoot, 'Projektmaterialien', 'aufgaben', 'akkordeon', 'Ausgangssituation'),
+    path.join(teacherRoot, 'Projektmaterialien', 'aufgaben', 'wunderland', 'Ausgangssituation'),
+    path.join(teacherRoot, 'Projektmaterialien', 'projektvorbereitung', 'akkordeon', 'loesungen'),
+    path.join(teacherRoot, 'Projektmaterialien', 'projektvorbereitung', 'akkordeon', 'material'),
+    path.join(teacherRoot, 'Projektmaterialien', 'projektvorbereitung', 'akkordeon', 'projektaufgaben', 'Ausgangssituation'),
+    path.join(teacherRoot, 'Projektmaterialien', 'projektvorbereitung', 'wunderland', 'loesungen'),
+    path.join(teacherRoot, 'Projektmaterialien', 'projektvorbereitung', 'wunderland', 'material'),
+    path.join(teacherRoot, 'Projektmaterialien', 'projektvorbereitung', 'wunderland', 'projektaufgaben', 'Ausgangssituation'),
+    path.join(teacherRoot, 'Projektmaterialien', '01_ausgangssituation_responsive', 'material'),
+    path.join(teacherRoot, 'Projektmaterialien', '02_wunderland', 'material'),
+    path.join(teacherRoot, 'Projektmaterialien', '03_akkordeon', 'material'),
+    path.join(participantRoot, 'Projektmaterialien', 'aufgaben', 'akkordeon', 'Ausgangssituation'),
+    path.join(participantRoot, 'Projektmaterialien', 'aufgaben', 'wunderland', 'Ausgangssituation'),
+    path.join(participantRoot, 'Projektmaterialien', '01_ausgangssituation_responsive', 'material'),
+    path.join(participantRoot, 'Projektmaterialien', '02_wunderland', 'material'),
+    path.join(participantRoot, 'Projektmaterialien', '03_akkordeon', 'material')
+  ];
+  const offenders = [];
+
+  protectedProjectRoots
+    .filter((root) => fs.existsSync(root))
+    .flatMap((root) => walkFiles(root, (filePath) => /\.html$/i.test(filePath)))
+    .forEach((filePath) => {
+      const content = fs.readFileSync(filePath, 'utf8');
+      if (/unified-layout\.css|<link\s+rel=["']stylesheet["']\s+href=["']["']\s*>/i.test(content)) {
+        offenders.push(path.relative(repoRoot, filePath));
+      }
+    });
+
+  assert.deepEqual(offenders, []);
 });

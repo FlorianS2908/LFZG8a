@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LFZQ8a Kursplattform</title>
+  <link rel="stylesheet" href="course.css">
+</head>
+<body>
+  <div class="course-app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">LF</div>
+        <div>
+          <span>LFZQ8a Desktop</span>
+          <strong>Kursplattform</strong>
+        </div>
+      </div>
+      <nav class="main-nav" aria-label="Kursbereiche">
+        <button class="nav-button is-active" type="button" data-view="dashboard">Uebersicht</button>
+        <button class="nav-button" type="button" data-view="days">Kurstage</button>
+        <button class="nav-button" type="button" data-view="projects">Projekte</button>
+        <button class="nav-button" type="button" data-view="tools">Tools</button>
+        <button class="nav-button" type="button" data-view="participants">Teilnehmer</button>
+        <button class="nav-button" type="button" data-view="releases">Freigaben</button>
+      </nav>
+      <div class="sidebar-note">
+        <strong>Prinzip</strong>
+        <span>Inhalte laufen in dieser App. Nur Arbeitsordner werden in VS Code geoeffnet.</span>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Electron App View</p>
+          <h1 data-view-title>Kursuebersicht</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-button" type="button" title="Aktuellen Inhalt im Zusatzfenster oeffnen" data-open-current-window>↗</button>
+          <button class="icon-button" type="button" title="Kursdatenordner oeffnen" data-open-data-dir>▣</button>
+        </div>
+      </header>
+
+      <section class="content-grid" data-panel="dashboard"></section>
+      <section class="content-grid" data-panel="days" hidden></section>
+      <section class="content-grid" data-panel="projects" hidden></section>
+      <section class="content-grid" data-panel="tools" hidden></section>
+      <section class="content-grid" data-panel="participants" hidden></section>
+      <section class="content-grid" data-panel="releases" hidden></section>
+
+      <section class="viewer-shell" aria-label="Integrierter Inhaltsbereich">
+        <div class="viewer-header">
+          <div>
+            <span class="viewer-kind" data-current-kind>Bereit</span>
+            <strong data-current-title>Waehle einen Inhalt aus</strong>
+          </div>
+          <div class="viewer-actions">
+            <button class="small-button" type="button" data-open-current-window>Fenster</button>
+            <button class="small-button" type="button" data-clear-viewer>Leeren</button>
+          </div>
+        </div>
+        <iframe class="viewer" title="LFZQ8a Inhalt" data-viewer></iframe>
+      </section>
+    </main>
+  </div>
+
+  <script src="course.js"></script>
+</body>
+</html>

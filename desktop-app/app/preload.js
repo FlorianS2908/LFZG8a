@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
   startWorkshop: () => ipcRenderer.invoke('setup:start-workshop'),
   openTeacherInfo: (url) => ipcRenderer.invoke('teacher:open', url),
   openInEditor: (target) => ipcRenderer.invoke('editor:open', target),
+  getCourseState: () => ipcRenderer.invoke('course:get-state'),
   getParticipantReleases: () => ipcRenderer.invoke('participant-releases:get'),
   saveParticipantReleases: (releases) => ipcRenderer.invoke('participant-releases:save', releases),
   getClassroomInfo: () => ipcRenderer.invoke('classroom:get-info'),

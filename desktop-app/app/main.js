@@ -3,9 +3,10 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { fileURLToPath } = require('url');
+const { fileURLToPath, pathToFileURL } = require('url');
 const { createAppData } = require('./lib/app-data');
 const { createClassroomServer } = require('./lib/classroom-server');
+const { courseCatalog } = require('./lib/course-catalog');
 const {
   chooseTargetDisplay,
   createFullDisplayBounds,
@@ -14,7 +15,8 @@ const {
 } = require('./lib/display');
 
 const projectRoot = path.resolve(__dirname, '..', '..');
-const contentFile = path.join(projectRoot, 'dozent', 'index_dozent.html');
+const contentFile = path.join(__dirname, 'renderer', 'course.html');
+const teacherOverviewFile = path.join(projectRoot, 'dozent', 'index_dozent.html');
 const participantReleaseScriptFile = path.join(projectRoot, 'teilnehmer', 'assets', 'js', 'freigaben.js');
 const participantRoot = path.join(projectRoot, 'teilnehmer');
 const preloadFile = path.join(__dirname, 'preload.js');
@@ -89,7 +91,7 @@ function createCurrentTestReport() {
         {
           name: 'Dozentenuebersicht',
           status: 'ok',
-          details: contentFile
+          details: teacherOverviewFile
         },
         {
           name: 'Monitor-Erkennung',
@@ -129,6 +131,43 @@ function resolveEditorTarget(target) {
   }
 
   return resolvedPath;
+}
+
+function getProjectFileUrl(target) {
+  const resolvedPath = resolveEditorTarget(target);
+  return {
+    path: resolvedPath,
+    url: pathToFileURL(resolvedPath).href,
+    kind: fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isDirectory() ? 'directory' : 'file'
+  };
+}
+
+function hydrateCatalogNode(node) {
+  if (Array.isArray(node)) {
+    return node.map(hydrateCatalogNode);
+  }
+
+  if (!node || typeof node !== 'object') {
+    return node;
+  }
+
+  const hydrated = { ...node };
+  ['path', 'web', 'tasks', 'solutions', 'quiz25', 'quiz50', 'overview', 'workspace', 'solution'].forEach((key) => {
+    if (hydrated[key]) {
+      hydrated[`${key}File`] = getProjectFileUrl(hydrated[key]);
+    }
+  });
+  Object.keys(hydrated).forEach((key) => {
+    if (hydrated[key] && typeof hydrated[key] === 'object' && !key.endsWith('File')) {
+      hydrated[key] = hydrateCatalogNode(hydrated[key]);
+    }
+  });
+
+  return hydrated;
+}
+
+function getHydratedCourseCatalog() {
+  return hydrateCatalogNode(courseCatalog);
 }
 
 function getVsCodeLaunchers() {
@@ -303,7 +342,18 @@ ipcMain.handle('setup:get-state', () => {
     displays: getDisplaySummaries(),
     history: getAppData().listHistory(),
     testReports: getAppData().listTestReports(),
-    contentFile
+    contentFile,
+    teacherOverviewFile
+  };
+});
+
+ipcMain.handle('course:get-state', () => {
+  syncParticipantReleaseScript();
+  return {
+    catalog: getHydratedCourseCatalog(),
+    releases: getAppData().getParticipantReleases(),
+    history: getAppData().listHistory(),
+    classroom: getClassroomServer().getInfo()
   };
 });
 

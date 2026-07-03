@@ -8,7 +8,9 @@ Der aktuelle Arbeitsstand liegt auf dem Branch `electronDesktop`.
 
 - Dozenten starten den Kurs ueber eine Electron-App.
 - Beim Erststart fuehrt ein Wizard durch die lokale Einrichtung.
-- Danach startet die App direkt in die Dozenten-Main-View.
+- Danach startet die App direkt in die integrierte Kursplattform.
+- Die bisherigen HTML-Materialien werden ueber einen Kurskatalog in der App angezeigt.
+- Standalone bleiben bewusst nur Arbeitsordner und Arbeitsdateien, die in VS Code bearbeitet werden.
 - Die Dozenten-App startet einen lokalen Kursserver.
 - Teilnehmer oeffnen die angezeigte Teilnehmer-Adresse im Browser.
 - Teilnehmer legen beim Erststart ein Profil an.
@@ -19,16 +21,28 @@ Der aktuelle Arbeitsstand liegt auf dem Branch `electronDesktop`.
 
 - `LFZQ8a-Workshop-starten.cmd`: Start der Electron-Desktop-App per Doppelklick.
 - `LFZQ8a-Konfig-Wizard-testen.cmd`: startet den Wizard gezielt zu Testzwecken.
+- `desktop-app/app/renderer/course.html`: integrierte Kursoberflaeche der Electron-App.
+- `desktop-app/app/lib/course-catalog.js`: Katalog der eingebundenen Tage, Tools, Projekte und Leitfaeden.
 - `index.html`: statischer Einstieg fuer den Teilnehmerbereich.
 - `LFZQ8a_Workflow_Uebersicht.html`: standalone Workflow-Dokumentation ohne App-Verlinkung.
+- `SOFTWARE.md`: reine Liste der benoetigten Softwarepakete.
+
+## Zielarchitektur
+
+Die Electron-App wird zur eigentlichen Kursplattform. Die vielen bisherigen HTML-Seiten bleiben als Materialdateien erhalten, werden aber nicht mehr als lose Einstiegsseiten gedacht, sondern ueber die App navigiert und in einem integrierten Inhaltsbereich angezeigt.
+
+- Dozent: arbeitet in der App mit Kursnavigation, Viewer, Freigaben, Teilnehmerstatus und Loesungen.
+- Teilnehmer: nutzt freigegebene Inhalte und bearbeitet Projektdateien lokal.
+- Arbeitsdateien: bleiben echte Ordner, damit sie direkt in Visual Studio Code geoeffnet werden koennen.
+- Loesungen: bleiben nur im Dozentenbereich sichtbar.
 
 ## Start des Dozentenbereichs
 
 1. Projektordner oeffnen.
 2. `LFZQ8a-Workshop-starten.cmd` doppelklicken.
 3. Beim Erststart den Wizard abschliessen.
-4. Danach oeffnet sich die Dozenten-Main-View.
-5. In der Dozenten-Main-View steht im Bereich `Teilnehmeruebersicht` die Teilnehmer-Adresse.
+4. Danach oeffnet sich die integrierte Kursplattform.
+5. Im Bereich `Teilnehmer` steht die Teilnehmer-Adresse.
 
 Das Startskript prueft automatisch:
 
@@ -39,6 +53,8 @@ Das Startskript prueft automatisch:
 Wenn Node.js fehlt und `winget` vorhanden ist, versucht das Skript Node.js LTS automatisch zu installieren. Danach werden die App-Abhaengigkeiten im Ordner `desktop-app/` ueber `pnpm install` oder alternativ `npm install` installiert.
 
 ## Software und Voraussetzungen
+
+Fuer diesen Umbau wurde keine neue Software eingefuehrt. Die integrierte Kursoberflaeche nutzt weiterhin die bestehende Electron/Node-Struktur. Die reine Paketliste steht zusaetzlich in `SOFTWARE.md`.
 
 | Komponente | Zweck | Hinweis |
 | --- | --- | --- |
@@ -52,7 +68,10 @@ Wenn Node.js fehlt und `winget` vorhanden ist, versucht das Skript Node.js LTS a
 
 ## Aktive Struktur
 
-- `desktop-app/`: Electron-Projekt fuer Wizard, Dozenten-App, Kursserver, Teilnehmerfreigaben und Fortschrittsdaten.
+- `desktop-app/`: Electron-Projekt fuer Wizard, Kursplattform, Kursserver, Teilnehmerfreigaben und Fortschrittsdaten.
+- `desktop-app/app/renderer/course.html`: integrierte App-Oberflaeche.
+- `desktop-app/app/renderer/course.js`: Navigation, Viewer, Freigaben, Teilnehmerstatus und VS-Code-Start.
+- `desktop-app/app/lib/course-catalog.js`: zentrale Inhaltsregistrierung.
 - `dozent/`: Dozentenstruktur mit Main-View, Leitfaeden, Tagesmaterial, Loesungen, Bewertung, Quizdaten, Projektmaterialien und Tools.
 - `teilnehmer/`: eigenstaendige Teilnehmerstruktur mit Webvarianten, Aufgaben, Starterdateien, Quizdaten, Projektmaterialien, Abgabehinweisen und Standalone-Tools.
 - `dozent/assets/css/unified-layout.css`: gemeinsames Dozenten-Layout fuer aktive Materialien.
@@ -63,11 +82,12 @@ Wenn Node.js fehlt und `winget` vorhanden ist, versucht das Skript Node.js LTS a
 
 1. Dozent startet `LFZQ8a-Workshop-starten.cmd`.
 2. Wizard speichert beim Erststart lokale Einstellungen.
-3. Dozenten-Main-View oeffnet sich.
+3. Integrierte Kursplattform oeffnet sich.
 4. Lokaler Kursserver startet automatisch.
-5. Dozent gibt Tage, Projekte und Tools frei.
-6. Teilnehmer verbinden sich ueber die angezeigte URL.
-7. Dozent sieht Profile, Online-Status, aktuelle Aufgabe, Fortschritt und Hilfeanfragen.
+5. Dozent oeffnet Tage, Tools, Projekte und Leitfaeden im integrierten Viewer.
+6. Dozent gibt Tage, Projekte und Tools frei.
+7. Teilnehmer verbinden sich ueber die angezeigte URL.
+8. Dozent sieht Profile, Online-Status, aktuelle Aufgabe, Fortschritt und Hilfeanfragen.
 
 ## Teilnehmer-Workflow
 
@@ -85,7 +105,7 @@ Wenn Node.js fehlt und `winget` vorhanden ist, versucht das Skript Node.js LTS a
 ## Lokaler Testablauf
 
 1. Dozentenbereich per Doppelklick auf `LFZQ8a-Workshop-starten.cmd` starten.
-2. In der Dozenten-View den Bereich `Teilnehmeruebersicht` oeffnen.
+2. In der App den Bereich `Teilnehmer` oeffnen.
 3. Teilnehmer-Adresse ablesen, zum Beispiel `http://localhost:PORT/teilnehmer`.
 4. Adresse in einem Browserfenster oeffnen.
 5. Profil anlegen, zum Beispiel:
@@ -93,9 +113,9 @@ Wenn Node.js fehlt und `winget` vorhanden ist, versucht das Skript Node.js LTS a
    - Kuerzel: `TT`
    - E-Mail optional
    - Teams-Name optional
-6. Teilnehmer sollte in der Dozenten-View erscheinen.
+6. Teilnehmer sollte in der Dozenten-App erscheinen.
 7. Im Teilnehmerfenster Statusbuttons testen.
-8. In der Dozenten-View pruefen, ob Fortschritt und Hilfe-Status aktualisiert werden.
+8. In der Dozenten-App pruefen, ob Fortschritt und Hilfe-Status aktualisiert werden.
 
 Mehrere Teilnehmer koennen lokal simuliert werden ueber:
 
@@ -118,6 +138,7 @@ Die Projektmaterialien sind nach Rollen und Projekten gruppiert.
 - Teilnehmer erhalten Aufgaben, Starterdateien und Ausgangssituationen.
 - Dozenten erhalten zusaetzlich Loesungen, Teilloesungen und Hinweise.
 - Projektvorbereitende Aufgaben liegen in zwei Schwierigkeitsstufen vor: `einfach` und `schwer`.
+- Arbeitsordner werden aus der App heraus in VS Code geoeffnet.
 
 Wichtige Projektbereiche:
 
@@ -178,6 +199,7 @@ Aktueller Testumfang:
 - Display-/Monitorlogik,
 - JSON-Speicher,
 - Pfadintegritaet,
+- Kurskatalog und integrierte App-View,
 - Standalone-Anforderungen fuer den Teilnehmerbereich,
 - 90 Prozent Pfadabdeckung fuer `desktop-app/app/lib`.
 

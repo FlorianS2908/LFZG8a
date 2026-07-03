@@ -1,14 +1,24 @@
 # LFZQ8a Desktop-App
 
-Diese App ist der Electron-Prototyp fuer die LFZQ8a-Unterrichtsmaterialien.
+Diese App ist die Electron-Kursplattform fuer die LFZQ8a-Unterrichtsmaterialien.
 
 ## Ziel
 
-- bestehende HTML-Uebersicht weiterverwenden
-- Dozenteninfos in einem eigenen Fenster oeffnen
+- bestehende HTML-Materialien ueber einen Kurskatalog in die App integrieren
+- Inhalte im App-Viewer anzeigen
+- Dozenteninfos und Materialien optional in einem eigenen Fenster oeffnen
 - zweites Fenster gezielt auf einen ausgewaehlten Monitor setzen
+- Teilnehmerfreigaben und Teilnehmerstatus verwalten
 - lokale Unterrichtshistorie speichern
 - Historie gezielt resetten, ohne Workshop-Dateien oder Einstellungen zu loeschen
+
+## App-Struktur
+
+- `app/renderer/course.html`: integrierte Kursplattform.
+- `app/renderer/course.js`: Navigation, Viewer, Freigaben, Teilnehmerstatus und VS-Code-Start.
+- `app/lib/course-catalog.js`: zentrale Registrierung der Tage, Tools, Projekte und Leitfaeden.
+- `app/renderer/wizard.html`: Erststart-Wizard.
+- `app/lib/classroom-server.js`: lokaler Kursserver fuer Teilnehmerprofile, Freigaben und Fortschritt.
 
 ## Entwicklung starten
 
@@ -59,6 +69,8 @@ Aktuell abgedeckt:
 - Wizard-Testmodus kann Historie deaktivieren
 - Historie wird gespeichert, begrenzt und sortiert
 - Reset loescht nur die Historie
+- Kurskatalog verweist auf vorhandene Inhalte
+- Electron startet die integrierte Kursplattform
 - Monitor-Auswahl faellt bei fehlendem Monitor sauber zurueck
 - Fensterpositionen werden aus der Display-Workarea berechnet
 - JSON-Dateien werden angelegt, gelesen und bei Fehlern mit Fallback behandelt
@@ -96,6 +108,7 @@ Fuer Clients ist als naechster Schritt ein Release-Paket sinnvoll:
 ## Naechste Ausbaustufe
 
 - Windows-Release als ZIP oder Installer bauen
+- Teilnehmer-App oder lokaler Helper fuer Teilnehmer-Arbeitsordner pruefen
 - Wizard um Kurs-/Klassenprofil erweitern
 - Historie mit Tagesstatus, Aufgabenstatus und Dozentennotizen ausbauen
 - optional Auto-Update oder GitHub-Release-Download vorbereiten
