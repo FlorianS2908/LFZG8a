@@ -53,7 +53,7 @@ dist/LFZQ8a-Teilnehmer.zip
 | React | Der aktuelle Umbau nutzt die bestehende Electron/HTML/JS-Struktur ohne neue UI-Abhaengigkeit |
 | Less | Die Projektmaterialien wurden auf CSS umgestellt |
 | Separater Webserver | Die Dozenten-App startet den lokalen Kursserver selbst |
-| Externer Uebersetzungsdienst | Die Sprachen Deutsch, Englisch und Tuerkisch liegen lokal in der App; keine Cloud-API oder Internetverbindung fuer die App-Uebersetzung noetig |
+| Externer Uebersetzungsdienst | Die Sprachen Deutsch, Englisch, Tuerkisch, Ukrainisch und Russisch liegen lokal in der App; keine Cloud-API oder Internetverbindung fuer die App-Uebersetzung noetig |
 
 ## Lokale App-Abhaengigkeiten
 

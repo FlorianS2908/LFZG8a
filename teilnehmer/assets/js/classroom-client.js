@@ -8,7 +8,9 @@
   const supportedLanguages = [
     { code: 'de', label: 'Deutsch' },
     { code: 'en', label: 'English' },
-    { code: 'tr', label: 'Turkce' }
+    { code: 'tr', label: 'Turkce' },
+    { code: 'uk', label: 'Українська' },
+    { code: 'ru', label: 'Русский' }
   ];
   const translations = {
     de: {
@@ -79,6 +81,52 @@
       locked: 'Kilitli',
       lockedMessage: 'Egitmen tarafindan henuz acilmadi',
       connectionFailed: 'Kurs sunucusuna baglanti basarisiz: {message}'
+    },
+    uk: {
+      participantArea: 'Область учасника',
+      participantIntro: 'Web-варіанти, завдання, стартові файли, набори тестів і проєктні матеріали для LFZQ8a HTML & CSS.',
+      dayCards: 'Картки днів',
+      projectAndTools: 'Проєкти та інструменти',
+      language: 'Мова',
+      profileTitle: 'Налаштувати профіль учасника',
+      profileText: 'Ці дані передаються викладачу, щоб прогрес і запити допомоги можна було пов’язати з учасниками курсу.',
+      displayName: 'Відображуване ім’я',
+      shortName: 'Скорочення',
+      emailOptional: 'E-mail необов’язково',
+      teamsOptional: 'Teams-ім’я необов’язково',
+      avatarOptional: 'Фото профілю необов’язково',
+      saveProfile: 'Зберегти профіль і підключитися',
+      started: 'Почато',
+      inProgress: 'В роботі',
+      helpNeeded: 'Потрібна допомога',
+      done: 'Готово',
+      released: 'Відкрито',
+      locked: 'Закрито',
+      lockedMessage: 'Викладач ще не відкрив доступ',
+      connectionFailed: 'Не вдалося підключитися до сервера курсу: {message}'
+    },
+    ru: {
+      participantArea: 'Область участника',
+      participantIntro: 'Web-варианты, задания, стартовые файлы, наборы тестов и проектные материалы для LFZQ8a HTML & CSS.',
+      dayCards: 'Карточки дней',
+      projectAndTools: 'Проекты и инструменты',
+      language: 'Язык',
+      profileTitle: 'Настроить профиль участника',
+      profileText: 'Эти данные передаются преподавателю, чтобы прогресс и запросы помощи можно было связать с участниками курса.',
+      displayName: 'Отображаемое имя',
+      shortName: 'Сокращение',
+      emailOptional: 'E-mail необязательно',
+      teamsOptional: 'Teams-имя необязательно',
+      avatarOptional: 'Фото профиля необязательно',
+      saveProfile: 'Сохранить профиль и подключиться',
+      started: 'Начато',
+      inProgress: 'В работе',
+      helpNeeded: 'Нужна помощь',
+      done: 'Готово',
+      released: 'Открыто',
+      locked: 'Закрыто',
+      lockedMessage: 'Преподаватель еще не открыл доступ',
+      connectionFailed: 'Не удалось подключиться к серверу курса: {message}'
     }
   };
 

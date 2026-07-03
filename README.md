@@ -8,7 +8,7 @@ Der aktuelle Arbeitsstand liegt auf dem Branch `electronDesktop`.
 
 - Dozenten starten den Kurs ueber eine Electron-App.
 - Beim Erststart fuehrt ein Wizard durch die lokale Einrichtung.
-- Im Wizard koennen Dozenten-App und Teilnehmer-Ansicht getrennt auf Deutsch, Englisch oder Tuerkisch gestellt werden.
+- Im Wizard koennen Dozenten-App und Teilnehmer-Ansicht getrennt auf Deutsch, Englisch, Tuerkisch, Ukrainisch oder Russisch gestellt werden.
 - Danach startet die App direkt in die integrierte Kursplattform.
 - Die bisherigen HTML-Materialien werden ueber einen Kurskatalog in der App angezeigt.
 - Standalone bleiben bewusst nur Arbeitsordner und Arbeitsdateien, die in VS Code bearbeitet werden.
@@ -64,7 +64,9 @@ Die App-Oberflaechen unterstuetzen aktuell:
 
 - Deutsch,
 - Englisch,
-- Tuerkisch.
+- Tuerkisch,
+- Ukrainisch,
+- Russisch.
 
 Die Sprachwahl wird lokal in den App-Einstellungen gespeichert. Der Dozent waehlt im Wizard getrennt:
 

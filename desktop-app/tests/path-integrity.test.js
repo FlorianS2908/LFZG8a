@@ -161,6 +161,8 @@ test('electron and participant views expose configurable app languages', () => {
   assert.match(i18nSource, /supportedLanguages/);
   assert.match(i18nSource, /code: 'en'/);
   assert.match(i18nSource, /code: 'tr'/);
+  assert.match(i18nSource, /code: 'uk'/);
+  assert.match(i18nSource, /code: 'ru'/);
   assert.match(appDataSource, /teacherLanguage: 'de'/);
   assert.match(appDataSource, /participantLanguage: 'de'/);
   assert.match(appDataSource, /LFZQ8A_PARTICIPANT_LANGUAGE/);
