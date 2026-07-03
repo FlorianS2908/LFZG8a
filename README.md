@@ -23,6 +23,10 @@ Der aktuelle Arbeitsstand liegt auf dem Branch `electronDesktop`.
 - `LFZQ8a-Konfig-Wizard-testen.cmd`: startet den Wizard gezielt zu Testzwecken.
 - `desktop-app/app/renderer/course.html`: integrierte Kursoberflaeche der Electron-App.
 - `desktop-app/app/lib/course-catalog.js`: Katalog der eingebundenen Tage, Tools, Projekte und Leitfaeden.
+- `deployment/build-packages.ps1`: baut Dozenten- und Teilnehmer-ZIP-Pakete.
+- `deployment/common/install-check.ps1`: gemeinsame Software- und Abhaengigkeitspruefung.
+- `deployment/dozent/Start-LFZQ8a-Dozent.cmd`: Starter fuer das Dozentenpaket.
+- `deployment/teilnehmer/Start-LFZQ8a-Teilnehmer.cmd`: Starter fuer das Teilnehmerpaket.
 - `index.html`: statischer Einstieg fuer den Teilnehmerbereich.
 - `LFZQ8a_Workflow_Uebersicht.html`: standalone Workflow-Dokumentation ohne App-Verlinkung.
 - `SOFTWARE.md`: reine Liste der benoetigten Softwarepakete.
@@ -52,6 +56,41 @@ Das Startskript prueft automatisch:
 
 Wenn Node.js fehlt und `winget` vorhanden ist, versucht das Skript Node.js LTS automatisch zu installieren. Danach werden die App-Abhaengigkeiten im Ordner `desktop-app/` ueber `pnpm install` oder alternativ `npm install` installiert.
 
+## Bereitstellung fuer Benutzer
+
+Die festen Bereitstellungspfade liegen unter `deployment/`.
+
+```text
+deployment/
+  build-packages.ps1
+  common/install-check.ps1
+  dozent/Start-LFZQ8a-Dozent.cmd
+  dozent/Start-LFZQ8a-Wizard-Test.cmd
+  teilnehmer/Start-LFZQ8a-Teilnehmer.cmd
+```
+
+ZIP-Pakete werden so gebaut:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\deployment\build-packages.ps1
+```
+
+Danach liegen die Pakete unter:
+
+```text
+dist/LFZQ8a-Dozent.zip
+dist/LFZQ8a-Teilnehmer.zip
+```
+
+Das Dozentenpaket enthaelt Electron-App, Dozentenmaterial, Teilnehmermaterial, Loesungen, Tools und den lokalen Kursserver. Das Teilnehmerpaket enthaelt nur Teilnehmermaterialien, Aufgaben, Tools ohne Dozentenloesungen und den Teilnehmerstarter.
+
+Die Starter pruefen beim Start automatisch:
+
+- Visual Studio Code vorhanden? Falls nicht, Installation per `winget`.
+- Node.js LTS vorhanden? Nur im Dozentenpaket erforderlich; falls nicht, Installation per `winget`.
+- Electron/App-Abhaengigkeiten vorhanden? Nur im Dozentenpaket; falls nicht, Installation per `pnpm install` oder `npm install`.
+- Danach wird die passende App- bzw. Teilnehmeransicht gestartet.
+
 ## Software und Voraussetzungen
 
 Fuer diesen Umbau wurde keine neue Software eingefuehrt. Die integrierte Kursoberflaeche nutzt weiterhin die bestehende Electron/Node-Struktur. Die reine Paketliste steht zusaetzlich in `SOFTWARE.md`.
@@ -72,6 +111,8 @@ Fuer diesen Umbau wurde keine neue Software eingefuehrt. Die integrierte Kursobe
 - `desktop-app/app/renderer/course.html`: integrierte App-Oberflaeche.
 - `desktop-app/app/renderer/course.js`: Navigation, Viewer, Freigaben, Teilnehmerstatus und VS-Code-Start.
 - `desktop-app/app/lib/course-catalog.js`: zentrale Inhaltsregistrierung.
+- `deployment/`: Paketierung, Starter und automatische Installationspruefung.
+- `dist/`: lokal erzeugte ZIP-Pakete, nicht versioniert.
 - `dozent/`: Dozentenstruktur mit Main-View, Leitfaeden, Tagesmaterial, Loesungen, Bewertung, Quizdaten, Projektmaterialien und Tools.
 - `teilnehmer/`: eigenstaendige Teilnehmerstruktur mit Webvarianten, Aufgaben, Starterdateien, Quizdaten, Projektmaterialien, Abgabehinweisen und Standalone-Tools.
 - `dozent/assets/css/unified-layout.css`: gemeinsames Dozenten-Layout fuer aktive Materialien.
@@ -200,6 +241,7 @@ Aktueller Testumfang:
 - JSON-Speicher,
 - Pfadintegritaet,
 - Kurskatalog und integrierte App-View,
+- Deployment-Skripte und feste Dokumentationsdateien,
 - Standalone-Anforderungen fuer den Teilnehmerbereich,
 - 90 Prozent Pfadabdeckung fuer `desktop-app/app/lib`.
 
@@ -209,4 +251,7 @@ Neue Kursdateien gehoeren in die passende Rollenstruktur:
 
 - Aufgaben, Starterdateien und Teilnehmermaterial nach `teilnehmer/`
 - Loesungen, Leitfaeden und Dozentenmaterial nach `dozent/`
+- App-Navigation und zentrale Kurslogik nach `desktop-app/`
+- Bereitstellungslogik nach `deployment/`
+- erzeugte Pakete nach `dist/`
 - alte oder nicht mehr benoetigte Arbeitsstaende nach `_archiv/`

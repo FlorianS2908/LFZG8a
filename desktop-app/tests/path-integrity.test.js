@@ -521,3 +521,44 @@ test('original project showcases and solution steps keep their own project layou
 
   assert.deepEqual(offenders, []);
 });
+
+test('deployment packaging scripts and required documentation are present', () => {
+  const requiredFiles = [
+    'README.md',
+    'SOFTWARE.md',
+    'LFZQ8a_Workflow_Uebersicht.html',
+    'deployment/build-packages.ps1',
+    'deployment/common/install-check.ps1',
+    'deployment/dozent/Start-LFZQ8a-Dozent.cmd',
+    'deployment/dozent/Start-LFZQ8a-Wizard-Test.cmd',
+    'deployment/teilnehmer/Start-LFZQ8a-Teilnehmer.cmd'
+  ];
+
+  requiredFiles.forEach((filePath) => {
+    assert.equal(fs.existsSync(path.join(repoRoot, filePath)), true, filePath);
+  });
+
+  const buildScript = fs.readFileSync(path.join(repoRoot, 'deployment', 'build-packages.ps1'), 'utf8');
+  const installScript = fs.readFileSync(path.join(repoRoot, 'deployment', 'common', 'install-check.ps1'), 'utf8');
+  const teacherStarter = fs.readFileSync(path.join(repoRoot, 'deployment', 'dozent', 'Start-LFZQ8a-Dozent.cmd'), 'utf8');
+  const participantStarter = fs.readFileSync(path.join(repoRoot, 'deployment', 'teilnehmer', 'Start-LFZQ8a-Teilnehmer.cmd'), 'utf8');
+  const gitignore = fs.readFileSync(path.join(repoRoot, '.gitignore'), 'utf8');
+
+  assert.match(buildScript, /LFZQ8a-Dozent\.zip/);
+  assert.match(buildScript, /LFZQ8a-Teilnehmer\.zip/);
+  assert.match(buildScript, /Copy-RootDocs/);
+  assert.match(installScript, /OpenJS\.NodeJS\.LTS/);
+  assert.match(installScript, /Microsoft\.VisualStudioCode/);
+  assert.match(installScript, /Ensure-AppDependencies/);
+  assert.match(teacherStarter, /install-check\.ps1/);
+  assert.match(teacherStarter, /-Role Dozent -Start/);
+  assert.match(teacherStarter, /--check/);
+  assert.match(participantStarter, /-Role Teilnehmer -Start/);
+  assert.match(participantStarter, /--check/);
+  assert.match(gitignore, /dist\//);
+
+  ['README.md', 'SOFTWARE.md', 'LFZQ8a_Workflow_Uebersicht.html'].forEach((filePath) => {
+    const content = fs.readFileSync(path.join(repoRoot, filePath), 'utf8');
+    assert.match(content, /deployment|Bereitstellung|Paket|Software/i, filePath);
+  });
+});

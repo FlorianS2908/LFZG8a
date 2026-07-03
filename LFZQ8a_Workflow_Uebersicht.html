@@ -451,6 +451,7 @@
         <a href="#branch">Branch</a>
         <a href="#software">Software</a>
         <a href="#start">Start</a>
+        <a href="#bereitstellung">Bereitstellung</a>
         <a href="#ablauf">Workflow</a>
         <a href="#freigaben">Freigaben</a>
         <a href="#fortschritt">Fortschritt</a>
@@ -571,7 +572,7 @@
           <p>Die App soll moeglichst per Doppelklick starten. Fehlende Abhaengigkeiten werden, soweit moeglich, automatisch eingerichtet.</p>
         </div>
         <div class="callout">
-          Fuer den aktuellen App-Umbau wurde keine neue Software eingefuehrt. Eine reine Paketliste liegt zusaetzlich in <code>SOFTWARE.md</code>.
+          Fuer die Paketbereitstellung wurde keine neue Laufzeit eingefuehrt. Die Starter pruefen benoetigte Software automatisch und nutzen, wenn moeglich, <code>winget</code>. Eine reine Paketliste liegt zusaetzlich in <code>SOFTWARE.md</code>.
         </div>
         <div class="table-wrap">
           <table>
@@ -647,6 +648,44 @@
           <h3>Startskript</h3>
           <p>Im Root-Ordner liegt das Startskript fuer die Dozenten-App. Es wird per Doppelklick ausgefuehrt.</p>
           <div class="command">LFZQ8a-Workshop-starten.cmd</div>
+        </div>
+      </section>
+
+      <section id="bereitstellung">
+        <div class="section-head">
+          <h2>Bereitstellung</h2>
+          <p>Dozenten und Teilnehmer sollen moeglichst nur ein passendes Paket entpacken und per Doppelklick starten.</p>
+        </div>
+        <div class="grid">
+          <article class="card accent-cyan">
+            <div class="tag">Dozentenpaket</div>
+            <h3>LFZQ8a-Dozent.zip</h3>
+            <p>Enthaelt Electron-App, Dozentenmaterial, Teilnehmermaterial, Loesungen, Tools, Kursserver und Starter.</p>
+          </article>
+          <article class="card accent-blue">
+            <div class="tag">Teilnehmerpaket</div>
+            <h3>LFZQ8a-Teilnehmer.zip</h3>
+            <p>Enthaelt Teilnehmermaterialien, Aufgaben, Tools ohne Dozentenloesungen und einen einfachen Teilnehmerstarter.</p>
+          </article>
+          <article class="card accent-green">
+            <div class="tag">Automatik</div>
+            <h3>Software-Pruefung</h3>
+            <p>Die Starter nutzen <code>deployment/common/install-check.ps1</code> und installieren fehlende Pflichtsoftware nach Moeglichkeit per <code>winget</code>.</p>
+          </article>
+        </div>
+        <div class="panel">
+          <h3>Feste Pfade im Repository</h3>
+          <div class="command">deployment/build-packages.ps1</div>
+          <div class="command">deployment/dozent/Start-LFZQ8a-Dozent.cmd</div>
+          <div class="command">deployment/teilnehmer/Start-LFZQ8a-Teilnehmer.cmd</div>
+          <div class="command">deployment/common/install-check.ps1</div>
+        </div>
+        <div class="panel">
+          <h3>Pakete bauen</h3>
+          <p>Der Build erzeugt die ZIP-Dateien immer an der gleichen Stelle im lokalen Build-Ordner.</p>
+          <div class="command">powershell -NoProfile -ExecutionPolicy Bypass -File .\deployment\build-packages.ps1</div>
+          <div class="command">dist/LFZQ8a-Dozent.zip</div>
+          <div class="command">dist/LFZQ8a-Teilnehmer.zip</div>
         </div>
       </section>
 
