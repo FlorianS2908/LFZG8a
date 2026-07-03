@@ -11,94 +11,112 @@
     <aside>
       <div class="brand">
         <div class="brand-mark">LF</div>
-        <div><small>LFZQ8a Desktop</small><strong>Workshop<br>Einrichtung</strong></div>
+        <div><small>LFZQ8a Desktop</small><strong data-i18n="setupBrand">Workshop<br>Einrichtung</strong></div>
       </div>
       <nav aria-label="Einrichtung">
-        <a href="#monitor">Monitor</a>
-        <a href="#inhalte">Inhalte</a>
-        <a href="#protokolle">Protokolle</a>
-        <a href="#start">Start</a>
-        <a href="#historie">Historie</a>
+        <a href="#sprache" data-i18n="setupNavLanguage">Sprache</a>
+        <a href="#monitor" data-i18n="setupNavMonitor">Monitor</a>
+        <a href="#inhalte" data-i18n="setupNavContent">Inhalte</a>
+        <a href="#protokolle" data-i18n="setupNavReports">Protokolle</a>
+        <a href="#start" data-i18n="setupNavStart">Start</a>
+        <a href="#historie" data-i18n="setupNavHistory">Historie</a>
       </nav>
       <div class="nav-hint">
-        <strong>Setup-Idee:</strong><br>
-        Einmal konfigurieren, lokal speichern und danach den Workshop direkt aus der Desktop-App starten.
+        <strong data-i18n="setupHintTitle">Setup-Idee:</strong><br>
+        <span data-i18n="setupHintText">Einmal konfigurieren, lokal speichern und danach den Workshop direkt aus der Desktop-App starten.</span>
       </div>
-      <button id="openDataDir" class="aside-button" type="button">Datenordner</button>
+      <button id="openDataDir" class="aside-button" type="button" data-i18n="dataFolder">Datenordner</button>
     </aside>
 
     <main>
       <header class="hero">
         <div>
           <div class="eyebrow">LFZQ8a Desktop</div>
-          <h1>Workshop-App einrichten</h1>
-          <p>Monitor, lokale Berichte und Unterrichtshistorie werden hier vorbereitet. Danach startet die Dozenten-Zentrale im gleichen Layout wie die Webvarianten.</p>
+          <h1 data-i18n="setupHeadline">Workshop-App einrichten</h1>
+          <p data-i18n="setupIntro">Monitor, lokale Berichte und Unterrichtshistorie werden hier vorbereitet. Danach startet die Dozenten-Zentrale im gleichen Layout wie die Webvarianten.</p>
         </div>
-        <div class="hero-visual" aria-label="Konfigurationsschritte">
+        <div class="hero-visual" aria-label="Konfigurationsschritte" data-i18n-aria="configSteps">
           <div class="css-stack">
-            <div class="layer l-monitor">Monitor<br><small>Dozenteninfo</small></div>
-            <div class="layer l-data">Daten<br><small>lokal speichern</small></div>
-            <div class="layer l-start">Start<br><small>Workshop</small></div>
+            <div class="layer l-monitor"><span data-i18n="monitorLayer">Monitor</span><br><small data-i18n="teacherInfoLayer">Dozenteninfo</small></div>
+            <div class="layer l-data"><span data-i18n="dataLayer">Daten</span><br><small data-i18n="localSaveLayer">lokal speichern</small></div>
+            <div class="layer l-start"><span data-i18n="startLayer">Start</span><br><small data-i18n="workshopLayer">Workshop</small></div>
           </div>
         </div>
       </header>
 
       <section class="section-grid">
+        <article id="sprache" class="panel accent-violet panel-wide">
+          <div class="tag" data-i18n="stepLanguage">Schritt 1</div>
+          <h2 data-i18n="languageTitle">Sprache fuer App-Inhalte</h2>
+          <p class="muted" data-i18n="languageText">Waehle, in welcher Sprache die App-Oberflaechen fuer Dozenten und Teilnehmer angezeigt werden sollen.</p>
+          <div class="language-grid">
+            <label class="field-option">
+              <span data-i18n="teacherLanguage">Dozenten-App</span>
+              <select id="teacherLanguage"></select>
+            </label>
+            <label class="field-option">
+              <span data-i18n="participantLanguage">Teilnehmer-Ansicht</span>
+              <select id="participantLanguage"></select>
+            </label>
+          </div>
+          <p class="muted" data-i18n="languageNote">Fachliche Unterrichtsmaterialien bleiben in ihrer Originalsprache. Uebersetzt werden App-Navigation, Wizard, Status und Bedienoberflaechen.</p>
+        </article>
+
         <article id="monitor" class="panel accent-cyan">
-          <div class="tag">Schritt 1</div>
-          <h2>Monitor fuer Dozenteninfo</h2>
-          <p class="muted">Waehle den Bildschirm, auf dem die Dozenteninfos automatisch erscheinen sollen.</p>
+          <div class="tag" data-i18n="stepMonitor">Schritt 2</div>
+          <h2 data-i18n="monitorTitle">Monitor fuer Dozenteninfo</h2>
+          <p class="muted" data-i18n="monitorText">Waehle den Bildschirm, auf dem die Dozenteninfos automatisch erscheinen sollen.</p>
           <div id="displayList" class="display-list"></div>
         </article>
 
         <article id="inhalte" class="panel accent-blue">
-          <div class="tag">Schritt 2</div>
-          <h2>Inhalte pruefen</h2>
+          <div class="tag" data-i18n="stepContent">Schritt 3</div>
+          <h2 data-i18n="contentTitle">Inhalte pruefen</h2>
           <dl class="meta-list">
-            <dt>Uebersicht</dt>
-            <dd id="contentFile">wird geladen...</dd>
-            <dt>Historie</dt>
-            <dd>Lokal in den App-Daten. Reset loescht nur diese Historie.</dd>
-            <dt>Testprotokolle</dt>
-            <dd>JSON und HTML-Bericht werden lokal als referenziertes Dateipaar gespeichert.</dd>
+            <dt data-i18n="overviewLabel">Uebersicht</dt>
+            <dd id="contentFile" data-i18n="loading">wird geladen...</dd>
+            <dt data-i18n="historyLabel">Historie</dt>
+            <dd data-i18n="historyDescription">Lokal in den App-Daten. Reset loescht nur diese Historie.</dd>
+            <dt data-i18n="reportsLabel">Testprotokolle</dt>
+            <dd data-i18n="reportsDescription">JSON und HTML-Bericht werden lokal als referenziertes Dateipaar gespeichert.</dd>
           </dl>
         </article>
 
         <article id="protokolle" class="panel accent-green">
-          <div class="tag">Schritt 3</div>
-          <h2>Testprotokolle</h2>
+          <div class="tag" data-i18n="stepReports">Schritt 4</div>
+          <h2 data-i18n="reportsTitle">Testprotokolle</h2>
           <label class="check-option">
             <input id="saveLocalTestReports" type="checkbox" checked>
-            <span><strong>Lokale Testprotokolle speichern</strong><small>Erzeugt JSON und HTML-Bericht im App-Datenordner.</small></span>
+            <span><strong data-i18n="saveReports">Lokale Testprotokolle speichern</strong><small data-i18n="saveReportsText">Erzeugt JSON und HTML-Bericht im App-Datenordner.</small></span>
           </label>
           <label class="check-option">
             <input id="includeDeviceNetworkData" type="checkbox">
-            <span><strong>IP- und MAC-Adresse lokal speichern</strong><small>Nur im lokalen Testprotokoll, wenn aktiv eingeschaltet.</small></span>
+            <span><strong data-i18n="includeNetwork">IP- und MAC-Adresse lokal speichern</strong><small data-i18n="includeNetworkText">Nur im lokalen Testprotokoll, wenn aktiv eingeschaltet.</small></span>
           </label>
           <div class="actions">
-            <button id="createTestReport" type="button">Testprotokoll erstellen</button>
-            <button id="openTestReportDir" type="button">Protokollordner</button>
+            <button id="createTestReport" type="button" data-i18n="createReport">Testprotokoll erstellen</button>
+            <button id="openTestReportDir" type="button" data-i18n="reportFolder">Protokollordner</button>
           </div>
           <div id="testReportList" class="history-list"></div>
         </article>
 
         <article id="start" class="panel accent-orange">
-          <div class="tag">Schritt 4</div>
-          <h2>Unterricht starten</h2>
-          <p class="muted">Speichere die Konfiguration und oeffne danach die Dozenten-Zentrale.</p>
+          <div class="tag" data-i18n="stepStart">Schritt 5</div>
+          <h2 data-i18n="startTitle">Unterricht starten</h2>
+          <p class="muted" data-i18n="startText">Speichere die Konfiguration und oeffne danach die Dozenten-Zentrale.</p>
           <div class="actions">
-            <button id="saveSetup" type="button">Konfiguration speichern</button>
-            <button id="startWorkshop" class="primary" type="button">Workshop starten</button>
+            <button id="saveSetup" type="button" data-i18n="saveConfig">Konfiguration speichern</button>
+            <button id="startWorkshop" class="primary" type="button" data-i18n="startWorkshop">Workshop starten</button>
           </div>
         </article>
 
         <article id="historie" class="panel accent-violet panel-wide">
-          <div class="tag">Nachbereitung</div>
-          <h2>Historie</h2>
-          <p class="muted">Die Historie bleibt lokal und kann gezielt zurueckgesetzt werden, ohne Inhalte oder Einstellungen zu loeschen.</p>
+          <div class="tag" data-i18n="followUp">Nachbereitung</div>
+          <h2 data-i18n="historyTitle">Historie</h2>
+          <p class="muted" data-i18n="historyText">Die Historie bleibt lokal und kann gezielt zurueckgesetzt werden, ohne Inhalte oder Einstellungen zu loeschen.</p>
           <div class="actions">
-            <button id="reloadHistory" type="button">Aktualisieren</button>
-            <button id="resetHistory" class="danger" type="button">Historie resetten</button>
+            <button id="reloadHistory" type="button" data-i18n="refresh">Aktualisieren</button>
+            <button id="resetHistory" class="danger" type="button" data-i18n="resetHistory">Historie resetten</button>
           </div>
           <div id="historyList" class="history-list"></div>
         </article>

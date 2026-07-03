@@ -2,7 +2,9 @@ const state = {
   catalog: null,
   releases: {},
   currentContent: null,
-  activeView: 'dashboard'
+  activeView: 'dashboard',
+  language: 'de',
+  translations: {}
 };
 
 const releaseLabels = {
@@ -19,13 +21,31 @@ const releaseLabels = {
 };
 
 const viewTitles = {
-  dashboard: 'Kursuebersicht',
-  days: 'Kurstage',
-  projects: 'Projekte und Arbeitsordner',
-  tools: 'Tools und Leitfaeden',
-  participants: 'Teilnehmeruebersicht',
-  releases: 'Teilnehmer-Freigaben'
+  dashboard: 'dashboardTitle',
+  days: 'daysTitle',
+  projects: 'projectsTitle',
+  tools: 'toolsTitle',
+  participants: 'participantsTitle',
+  releases: 'releasesTitle'
 };
+
+function t(key, replacements = {}) {
+  const template = state.translations[key] || key;
+  return Object.entries(replacements).reduce((text, [name, value]) => (
+    text.replaceAll(`{${name}}`, String(value))
+  ), template);
+}
+
+function applyTranslations() {
+  document.documentElement.lang = state.language;
+  document.title = t('appTitle');
+  document.querySelectorAll('[data-i18n]').forEach((element) => {
+    element.textContent = t(element.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach((element) => {
+    element.title = t(element.dataset.i18nTitle);
+  });
+}
 
 function byData(selector) {
   return document.querySelector(selector);
@@ -71,7 +91,7 @@ function showView(view) {
   document.querySelectorAll('[data-view]').forEach((button) => {
     button.classList.toggle('is-active', button.dataset.view === view);
   });
-  byData('[data-view-title]').textContent = viewTitles[view] || 'Kursplattform';
+  byData('[data-view-title]').textContent = t(viewTitles[view] || 'coursePlatform');
 }
 
 function loadContent(title, kind, fileInfo) {
@@ -80,7 +100,7 @@ function loadContent(title, kind, fileInfo) {
   }
   state.currentContent = { title, kind, fileInfo };
   byData('[data-current-title]').textContent = title;
-  byData('[data-current-kind]').textContent = kind || 'Inhalt';
+  byData('[data-current-kind]').textContent = kind || t('integratedContent');
   byData('[data-viewer]').src = fileInfo.url;
   window.lfzq8aDesktop.addHistory({
     type: 'course-content',
@@ -104,20 +124,20 @@ function createCard(item, options = {}) {
 
   card.appendChild(createElement('span', 'pill', item.kind || options.kind || 'Inhalt'));
   card.appendChild(createElement('h3', '', item.title));
-  card.appendChild(createElement('p', '', item.description || item.theme || 'Integrierter Kursinhalt.'));
+  card.appendChild(createElement('p', '', item.description || item.theme || t('integratedContent')));
 
   if (!isReleased(item) && options.showReleaseState) {
-    card.appendChild(createElement('p', 'status-line', `Noch nicht freigegeben: ${releaseLabels[item.releaseKey] || item.releaseKey}`));
+    card.appendChild(createElement('p', 'status-line', t('notReleased', { label: releaseLabels[item.releaseKey] || item.releaseKey })));
   }
 
   const actions = createElement('div', 'button-row');
-  const openButton = createElement('button', 'card-button', 'In App oeffnen');
+  const openButton = createElement('button', 'card-button', t('openInApp'));
   openButton.type = 'button';
   openButton.addEventListener('click', () => loadContent(item.title, item.kind, fileFrom(item)));
   actions.appendChild(openButton);
 
   if (fileFrom(item)) {
-    const windowButton = createElement('button', 'card-button', 'Fenster');
+    const windowButton = createElement('button', 'card-button', t('window'));
     windowButton.type = 'button';
     windowButton.addEventListener('click', () => window.lfzq8aDesktop.openTeacherInfo(fileFrom(item).url));
     actions.appendChild(windowButton);
@@ -137,11 +157,11 @@ function createDayCard(day, index) {
 
   const actions = createElement('div', 'button-row');
   [
-    ['Webvariante', 'web', 'Webvariante'],
-    ['Aufgaben', 'tasks', 'Aufgaben'],
-    ['Loesungen', 'solutions', 'Loesungen'],
-    ['Quiz 25', 'quiz25', 'Quiz'],
-    ['Quiz 50', 'quiz50', 'Quiz']
+    [t('webVariant'), 'web', t('webVariant')],
+    [t('tasks'), 'tasks', t('tasks')],
+    [t('solutions'), 'solutions', t('solutions')],
+    ['Quiz 25', 'quiz25', t('quiz')],
+    ['Quiz 50', 'quiz50', t('quiz')]
   ].forEach(([label, key, kind]) => {
     const button = createElement('button', 'card-button', label);
     button.type = 'button';
@@ -155,23 +175,23 @@ function createDayCard(day, index) {
 function createProjectCard(project) {
   const card = createElement('article', 'course-card');
   card.dataset.accent = 'green';
-  card.appendChild(createElement('span', 'pill', 'Projekt'));
+  card.appendChild(createElement('span', 'pill', t('project')));
   card.appendChild(createElement('h3', '', project.title));
-  card.appendChild(createElement('p', '', 'Aufgabenpaket in der App anzeigen, Arbeitsordner in VS Code bearbeiten.'));
+  card.appendChild(createElement('p', '', t('projectCardText')));
 
   const actions = createElement('div', 'button-row');
-  const overviewButton = createElement('button', 'card-button', 'Aufgabenpaket');
+  const overviewButton = createElement('button', 'card-button', t('taskPackage'));
   overviewButton.type = 'button';
   overviewButton.addEventListener('click', () => loadContent(project.title, 'Aufgabenpaket', fileFrom(project, 'overview')));
   actions.appendChild(overviewButton);
 
-  const workspaceButton = createElement('button', 'card-button', 'Arbeitsordner in VS Code');
+  const workspaceButton = createElement('button', 'card-button', t('workspaceInVsCode'));
   workspaceButton.type = 'button';
   workspaceButton.addEventListener('click', () => window.lfzq8aDesktop.openInEditor(project.workspace));
   actions.appendChild(workspaceButton);
 
   if (project.solutionFile) {
-    const solutionButton = createElement('button', 'card-button', 'Loesung');
+    const solutionButton = createElement('button', 'card-button', t('solution'));
     solutionButton.type = 'button';
     solutionButton.addEventListener('click', () => loadContent(`${project.title} - Loesung`, 'Loesung', fileFrom(project, 'solution')));
     actions.appendChild(solutionButton);
@@ -186,9 +206,9 @@ function renderDashboard() {
   clearElement(panel);
 
   const intro = createElement('article', 'wide-card');
-  intro.appendChild(createElement('span', 'pill', 'Zielarchitektur'));
-  intro.appendChild(createElement('h2', '', 'Alles Wichtige laeuft in der App'));
-  intro.appendChild(createElement('p', '', 'Die bisherigen HTML-Seiten werden ueber den Kurskatalog in diese Oberflaeche eingebunden. Eigenstaendig bleiben nur Arbeitsordner und Arbeitsdateien, die Teilnehmer in VS Code bearbeiten.'));
+  intro.appendChild(createElement('span', 'pill', t('targetArchitecture')));
+  intro.appendChild(createElement('h2', '', t('allInApp')));
+  intro.appendChild(createElement('p', '', t('allInAppText')));
   panel.appendChild(intro);
 
   state.catalog.teacher.quickLinks.forEach((item) => panel.appendChild(createCard(item, { showReleaseState: true })));
@@ -222,9 +242,9 @@ function renderReleases() {
   const panel = byData('[data-panel="releases"]');
   clearElement(panel);
   const card = createElement('article', 'wide-card');
-  card.appendChild(createElement('span', 'pill', 'Dozentensteuerung'));
-  card.appendChild(createElement('h2', '', 'Freigaben fuer Teilnehmer'));
-  card.appendChild(createElement('p', '', 'Diese Auswahl steuert, welche Bereiche in der Teilnehmer-Main-View verfuegbar sind.'));
+  card.appendChild(createElement('span', 'pill', t('teacherControl')));
+  card.appendChild(createElement('h2', '', t('releasesForParticipants')));
+  card.appendChild(createElement('p', '', t('releasesText')));
 
   const list = createElement('div', 'release-list');
   Object.entries(releaseLabels).forEach(([key, label]) => {
@@ -240,7 +260,7 @@ function renderReleases() {
   card.appendChild(list);
 
   const actions = createElement('div', 'button-row');
-  const saveButton = createElement('button', 'card-button', 'Freigaben speichern');
+  const saveButton = createElement('button', 'card-button', t('saveReleases'));
   saveButton.type = 'button';
   saveButton.addEventListener('click', saveReleases);
   actions.appendChild(saveButton);
@@ -255,25 +275,25 @@ async function renderParticipants() {
   const panel = byData('[data-panel="participants"]');
   clearElement(panel);
   const card = createElement('article', 'wide-card');
-  card.appendChild(createElement('span', 'pill', 'Kursserver'));
-  card.appendChild(createElement('h2', '', 'Teilnehmerstatus'));
+  card.appendChild(createElement('span', 'pill', t('classroomServer')));
+  card.appendChild(createElement('h2', '', t('participantStatus')));
 
   const info = await window.lfzq8aDesktop.getClassroomInfo();
-  card.appendChild(createElement('p', '', info.urls && info.urls.length ? `Teilnehmer-Adresse: ${info.urls[0]}` : 'Kursserver wird gestartet.'));
+  card.appendChild(createElement('p', '', info.urls && info.urls.length ? t('participantAddress', { url: info.urls[0] }) : t('serverStarting')));
 
   const table = createElement('table', 'participant-table');
-  table.innerHTML = '<thead><tr><th>Name</th><th>Status</th><th>Aufgabe</th><th>Fortschritt</th><th>Letzte Aktivitaet</th></tr></thead><tbody></tbody>';
+  table.innerHTML = `<thead><tr><th>${t('tableName')}</th><th>${t('tableStatus')}</th><th>${t('tableTask')}</th><th>${t('tableProgress')}</th><th>${t('tableLastActivity')}</th></tr></thead><tbody></tbody>`;
   const tbody = table.querySelector('tbody');
   const participants = await window.lfzq8aDesktop.listParticipants();
   if (!participants.length) {
-    tbody.innerHTML = '<tr><td colspan="5">Noch keine Teilnehmer verbunden.</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="5">${t('noParticipants')}</td></tr>`;
   } else {
     participants.forEach((participant) => {
       const row = document.createElement('tr');
       const status = participant.status || {};
       [
-        participant.displayName || 'Teilnehmer',
-        `${participant.online ? 'online' : 'offline'}${status.needsHelp ? ' / Hilfe' : ''}`,
+        participant.displayName || t('participantFallback'),
+        `${participant.online ? t('online') : t('offline')}${status.needsHelp ? ` / ${t('help')}` : ''}`,
         status.currentTask || '-',
         `${status.progress || 0}%`,
         participant.lastSeenAt || '-'
@@ -295,7 +315,7 @@ async function saveReleases() {
     nextReleases[input.dataset.releaseKey] = input.checked;
   });
   state.releases = await window.lfzq8aDesktop.saveParticipantReleases(nextReleases);
-  setStatus('Freigaben gespeichert.');
+  setStatus(t('releasesSaved'));
   renderDashboard();
 }
 
@@ -312,8 +332,12 @@ async function loadInitialState() {
   const courseState = await window.lfzq8aDesktop.getCourseState();
   state.catalog = courseState.catalog;
   state.releases = courseState.releases || {};
+  state.language = courseState.settings?.teacherLanguage || 'de';
+  state.translations = courseState.translations || {};
+  applyTranslations();
+  showView(state.activeView);
   renderAll();
-  loadContent('Dozentenarbeitsplatz', 'Start', state.catalog.teacher.quickLinks[0].pathFile);
+  loadContent(t('teacherWorkspace'), t('start'), state.catalog.teacher.quickLinks[0].pathFile);
 }
 
 document.addEventListener('click', (event) => {
@@ -328,8 +352,8 @@ document.addEventListener('click', (event) => {
 
   if (event.target.closest('[data-clear-viewer]')) {
     state.currentContent = null;
-    byData('[data-current-title]').textContent = 'Waehle einen Inhalt aus';
-    byData('[data-current-kind]').textContent = 'Bereit';
+    byData('[data-current-title]').textContent = t('viewerEmptyTitle');
+    byData('[data-current-kind]').textContent = t('viewerReady');
     byData('[data-viewer]').removeAttribute('src');
   }
 

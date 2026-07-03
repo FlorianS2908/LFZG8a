@@ -12,8 +12,8 @@
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;padding:2rem 0}.card{display:block;padding:1.4rem;border:1px solid var(--line);border-radius:.5rem;background:var(--card);box-shadow:0 12px 30px rgba(0,57,100,.08);text-decoration:none;color:inherit;position:relative}.card h2,.card h3{margin-top:0;color:var(--navy)}
     .badge{display:inline-block;background:#e6fbff;color:var(--navy);border-left:4px solid var(--cyan);padding:.35rem .6rem}.btn{display:inline-block;margin:.35rem .25rem .25rem 0;background:var(--navy);color:#fff;padding:.65rem .9rem;border-radius:.45rem;text-decoration:none;font-weight:700}.btn.secondary{background:#e6fbff;color:var(--navy)}
     .section{padding:1rem 1.5rem 2rem}.muted{color:var(--muted)}footer{padding:1.5rem;color:var(--muted)}
-    .release-state{display:inline-flex;margin-bottom:.75rem;padding:.3rem .55rem;border-radius:999px;background:#e7fbef;color:#146c3c;font-size:.78rem;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.release-card.is-locked{filter:grayscale(.25);background:#f8fafc;color:var(--locked)}.release-card.is-locked h3{color:#55636f}.release-card.is-locked .release-state{background:#eef1f4;color:#66727d}.release-card.is-locked a{pointer-events:none;opacity:.55}.release-card.is-locked::after{content:"Vom Dozenten noch nicht freigeschaltet";display:block;margin-top:1rem;color:#66727d;font-weight:800}
-    .profile-dialog{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:rgba(8,25,47,.55);padding:1rem}.profile-form{width:min(520px,100%);display:grid;gap:.85rem;background:#fff;border-radius:1rem;padding:1.4rem;box-shadow:0 24px 70px rgba(0,0,0,.25)}.profile-form h2{margin:0;color:var(--navy)}.profile-form p{margin:0;color:var(--muted)}.profile-form label{display:grid;gap:.3rem;font-weight:800;color:var(--navy)}.profile-form input{width:100%;border:1px solid var(--line);border-radius:.55rem;padding:.75rem;font:inherit}.profile-form button,.progress-actions button{border:0;border-radius:999px;background:var(--navy);color:#fff;padding:.7rem 1rem;font:inherit;font-weight:800;cursor:pointer}.progress-actions{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1rem}.progress-actions button{background:#e6fbff;color:var(--navy)}.progress-actions button[data-help="true"]{background:#fff0ee;color:#9f2d1f}
+    .release-state{display:inline-flex;margin-bottom:.75rem;padding:.3rem .55rem;border-radius:999px;background:#e7fbef;color:#146c3c;font-size:.78rem;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.release-card.is-locked{filter:grayscale(.25);background:#f8fafc;color:var(--locked)}.release-card.is-locked h3{color:#55636f}.release-card.is-locked .release-state{background:#eef1f4;color:#66727d}.release-card.is-locked a{pointer-events:none;opacity:.55}.release-card.is-locked::after{content:attr(data-locked-text);display:block;margin-top:1rem;color:#66727d;font-weight:800}
+    .profile-dialog{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:rgba(8,25,47,.55);padding:1rem}.profile-form{width:min(520px,100%);display:grid;gap:.85rem;background:#fff;border-radius:1rem;padding:1.4rem;box-shadow:0 24px 70px rgba(0,0,0,.25)}.profile-form h2{margin:0;color:var(--navy)}.profile-form p{margin:0;color:var(--muted)}.profile-form label{display:grid;gap:.3rem;font-weight:800;color:var(--navy)}.profile-form input,.profile-form select{width:100%;border:1px solid var(--line);border-radius:.55rem;padding:.75rem;font:inherit;background:#fff}.profile-form button,.progress-actions button{border:0;border-radius:999px;background:var(--navy);color:#fff;padding:.7rem 1rem;font:inherit;font-weight:800;cursor:pointer}.progress-actions{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1rem}.progress-actions button{background:#e6fbff;color:var(--navy)}.progress-actions button[data-help="true"]{background:#fff0ee;color:#9f2d1f}
   </style>
   <script src="assets/js/freigaben.js"></script>
   <link rel="stylesheet" href="">
@@ -22,13 +22,13 @@
 <body>
   <header class="hero">
     <div class="wrap">
-      <h1>Teilnehmerbereich</h1>
-      <p>Webvarianten, Aufgaben, Starterdateien, Quizpools und Projektmaterial fuer LFZQ8a HTML &amp; CSS.</p>
+      <h1 data-i18n="participantArea">Teilnehmerbereich</h1>
+      <p data-i18n="participantIntro">Webvarianten, Aufgaben, Starterdateien, Quizpools und Projektmaterial fuer LFZQ8a HTML &amp; CSS.</p>
     </div>
   </header>
 
   <main class="wrap section">
-    <h2>Tageskarten</h2>
+    <h2 data-i18n="dayCards">Tageskarten</h2>
     <div class="grid">
       <article class="card release-card" data-release-key="tag_01"><span class="release-state">Freigegeben</span><h3>Tag 1 - CSS-Grundlagen und Custom Properties</h3><p>Webvariante, Aufgaben, Starterdateien und passende Quizpools.</p><a class="btn" href="tag_01/LFZQ8a_tag_01_Webvariante_Teilnehmer.html">Webvariante</a><a class="btn secondary" href="tag_01/aufgaben_teilnehmer.html">Aufgaben</a><a class="btn secondary" href="tag_01/starter/">Starterdateien</a><a class="btn secondary" href="tools/quiz/Tag_01_CSS_Grundlagen_25_Fragen_35_Minuten.json">Quiz 25 Fragen</a><a class="btn secondary" href="tools/quiz/Tag_01_CSS_Grundlagen_50_Fragen_70_Minuten.json">Quiz 50 Fragen</a></article>
       <article class="card release-card" data-release-key="tag_02"><span class="release-state">Freigegeben</span><h3>Tag 2 - Flexbox, Navigation und Komponenten</h3><p>Webvariante, Aufgaben, Starterdateien und passende Quizpools.</p><a class="btn" href="tag_02/LFZQ8a_tag_02_Webvariante_Teilnehmer.html">Webvariante</a><a class="btn secondary" href="tag_02/aufgaben_teilnehmer.html">Aufgaben</a><a class="btn secondary" href="tag_02/starter/">Starterdateien</a><a class="btn secondary" href="tools/quiz/Tag_02_Flexbox_Komponenten_25_Fragen_35_Minuten.json">Quiz 25 Fragen</a><a class="btn secondary" href="tools/quiz/Tag_02_Flexbox_Komponenten_50_Fragen_70_Minuten.json">Quiz 50 Fragen</a></article>
@@ -37,7 +37,7 @@
       <article class="card release-card" data-release-key="tag_05"><span class="release-state">Freigegeben</span><h3>Tag 5 - Webfonts, Refactoring und Abschlussprojekt</h3><p>Webvariante, Aufgaben, Starterdateien und passende Quizpools.</p><a class="btn" href="tag_05/LFZQ8a_tag_05_Webvariante_Teilnehmer.html">Webvariante</a><a class="btn secondary" href="tag_05/aufgaben_teilnehmer.html">Aufgaben</a><a class="btn secondary" href="tag_05/starter/">Starterdateien</a><a class="btn secondary" href="tools/quiz/Tag_05_Webfonts_Projekt_Refactoring_25_Fragen_35_Minuten.json">Quiz 25 Fragen</a><a class="btn secondary" href="tools/quiz/Tag_05_Webfonts_Projekt_Refactoring_50_Fragen_70_Minuten.json">Quiz 50 Fragen</a></article>
     </div>
 
-    <h2>Projekt und Tools</h2>
+    <h2 data-i18n="projectAndTools">Projekt und Tools</h2>
     <div class="grid">
       <a class="card release-card" data-release-key="project_materials" href="Projektmaterialien/index.html"><span class="release-state">Freigegeben</span><h3>Projektmaterialien</h3><p>Projektpakete mit vorbereitenden Aufgaben in einfach und schwer.</p></a>
       <a class="card release-card" data-release-key="project_submission" href="Projektmaterialien/abgabe/Abgabe_Checkliste.html"><span class="release-state">Freigegeben</span><h3>Abgabecheckliste</h3></a>

@@ -46,6 +46,10 @@ test('display helpers fall back to second display and then primary display', () 
   assert.equal(chooseTargetDisplay([], primaryDisplay, 9), primaryDisplay);
 });
 
+test('display helpers fall back to the first available display without primary input', () => {
+  assert.equal(chooseTargetDisplay([primaryDisplay], null, 9), primaryDisplay);
+});
+
 test('display helpers create stable window options from work area', () => {
   const options = createWindowOptions(secondDisplay, 'preload.js', { title: 'Test' });
 

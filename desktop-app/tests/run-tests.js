@@ -2,7 +2,7 @@ const inspector = require('node:inspector');
 const path = require('node:path');
 
 const tests = [];
-const coverageThreshold = 90;
+const coverageThreshold = 95;
 const coveredAppFiles = [
   path.join('app', 'lib', 'app-data.js'),
   path.join('app', 'lib', 'display.js'),
@@ -94,6 +94,7 @@ async function main() {
 
   require('./app-data.test');
   require('./display.test');
+  require('./i18n.test');
   require('./json-store.test');
   require('./path-integrity.test');
 

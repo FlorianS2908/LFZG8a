@@ -147,6 +147,36 @@ test('electron desktop app integrates course html pages through the app shell ca
   assert.deepEqual(missingCatalogTargets.map((targetPath) => path.relative(repoRoot, targetPath)), []);
 });
 
+test('electron and participant views expose configurable app languages', () => {
+  const mainSource = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'main.js'), 'utf8');
+  const appDataSource = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'lib', 'app-data.js'), 'utf8');
+  const i18nSource = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'lib', 'i18n.js'), 'utf8');
+  const wizardHtml = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'renderer', 'wizard.html'), 'utf8');
+  const wizardJs = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'renderer', 'wizard.js'), 'utf8');
+  const courseHtml = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'renderer', 'course.html'), 'utf8');
+  const courseJs = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'renderer', 'course.js'), 'utf8');
+  const participantIndex = fs.readFileSync(path.join(participantRoot, 'index_teilnehmer.html'), 'utf8');
+  const participantClient = fs.readFileSync(path.join(participantRoot, 'assets', 'js', 'classroom-client.js'), 'utf8');
+
+  assert.match(i18nSource, /supportedLanguages/);
+  assert.match(i18nSource, /code: 'en'/);
+  assert.match(i18nSource, /code: 'tr'/);
+  assert.match(appDataSource, /teacherLanguage: 'de'/);
+  assert.match(appDataSource, /participantLanguage: 'de'/);
+  assert.match(appDataSource, /LFZQ8A_PARTICIPANT_LANGUAGE/);
+  assert.match(mainSource, /getTranslations\(getAppData\(\)\.getSettings\(\)\.teacherLanguage\)/);
+  assert.match(mainSource, /supportedLanguages/);
+  assert.match(wizardHtml, /id="teacherLanguage"/);
+  assert.match(wizardHtml, /id="participantLanguage"/);
+  assert.match(wizardJs, /renderLanguageSelects/);
+  assert.match(wizardJs, /data-i18n/);
+  assert.match(courseHtml, /data-i18n="coursePlatform"/);
+  assert.match(courseJs, /applyTranslations/);
+  assert.match(participantIndex, /data-i18n="participantArea"/);
+  assert.match(participantClient, /LFZQ8A_PARTICIPANT_LANGUAGE/);
+  assert.match(participantClient, /profileTitle/);
+});
+
 test('electron desktop app closes all secondary windows when the app closes', () => {
   const mainSource = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'main.js'), 'utf8');
 

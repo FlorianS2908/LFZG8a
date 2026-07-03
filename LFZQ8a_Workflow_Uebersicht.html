@@ -451,10 +451,12 @@
         <a href="#branch">Branch</a>
         <a href="#software">Software</a>
         <a href="#start">Start</a>
+        <a href="#sprachen">Sprachen</a>
         <a href="#bereitstellung">Bereitstellung</a>
         <a href="#ablauf">Workflow</a>
         <a href="#freigaben">Freigaben</a>
         <a href="#fortschritt">Fortschritt</a>
+        <a href="#teststrategie">Teststrategie</a>
         <a href="#testen">Lokal testen</a>
       </nav>
       <div class="note">Standalone-Dokument ohne Verlinkung zur App. Es beschreibt nur Konzept, Start und geplante Nutzung.</div>
@@ -636,7 +638,7 @@
           <article class="card accent-blue">
             <div class="tag">Erststart</div>
             <h3>Wizard</h3>
-            <p>Beim ersten Start werden Konfigurationen wie Monitor und lokale Einstellungen gespeichert. Danach startet die App direkt in die integrierte Kursplattform.</p>
+            <p>Beim ersten Start werden Konfigurationen wie Monitor, lokale Einstellungen und Sprachen fuer Dozenten- und Teilnehmeroberflaeche gespeichert. Danach startet die App direkt in die integrierte Kursplattform.</p>
           </article>
           <article class="card accent-green">
             <div class="tag">Regelstart</div>
@@ -648,6 +650,30 @@
           <h3>Startskript</h3>
           <p>Im Root-Ordner liegt das Startskript fuer die Dozenten-App. Es wird per Doppelklick ausgefuehrt.</p>
           <div class="command">LFZQ8a-Workshop-starten.cmd</div>
+        </div>
+      </section>
+
+      <section id="sprachen">
+        <div class="section-head">
+          <h2>Sprachen</h2>
+          <p>Dozenten- und Teilnehmeroberflaechen koennen getrennt konfiguriert werden.</p>
+        </div>
+        <div class="grid">
+          <article class="card accent-cyan">
+            <div class="tag">Wizard</div>
+            <h3>Getrennte Sprachwahl</h3>
+            <p>Beim Erststart waehlt der Dozent eine Sprache fuer die Dozenten-App und eine Standardsprache fuer die Teilnehmer-Ansicht.</p>
+          </article>
+          <article class="card accent-blue">
+            <div class="tag">Verfuegbar</div>
+            <h3>Deutsch, Englisch, Tuerkisch</h3>
+            <p>Die App-Navigation, Wizard-Texte, Freigaben, Teilnehmerstatus, Profil-Wizard und Fortschrittsbuttons nutzen die gespeicherte Sprache.</p>
+          </article>
+          <article class="card accent-green">
+            <div class="tag">Abgrenzung</div>
+            <h3>Materialien bleiben original</h3>
+            <p>Fachliche HTML-Seiten, Projektdateien und Aufgabeninhalte werden nicht automatisch uebersetzt. Sie bleiben didaktisch kontrolliert in ihrer Originalfassung.</p>
+          </article>
         </div>
       </section>
 
@@ -765,6 +791,69 @@
         </div>
         <div class="callout">
           Spaeter kann eine Teilnehmer-Electron-App ergaenzt werden, um lokale Projektordner direkt in VS Code zu oeffnen und Dateiaktivitaeten genauer zu erfassen.
+        </div>
+      </section>
+
+      <section id="teststrategie">
+        <div class="section-head">
+          <h2>Teststrategie</h2>
+          <p>Die automatisierten Tests sichern App-Logik, Pfade, Rollen-Trennung und Bereitstellung mit einem festen Coverage-Ziel ab.</p>
+        </div>
+        <div class="grid">
+          <article class="card accent-green">
+            <div class="tag">Coverage</div>
+            <h3>95 Prozent als Mindestwert</h3>
+            <p>Der Test-Runner misst V8/Node-Coverage fuer <code>desktop-app/app/lib</code> und bricht unter 95 Prozent Pfadabdeckung ab.</p>
+          </article>
+          <article class="card accent-blue">
+            <div class="tag">Blackbox</div>
+            <h3>Oeffentliche Funktionen</h3>
+            <p>Profile, Freigaben, Fortschritt, Reports, Pfadregeln und Deployment-Dateien werden ueber Eingaben und erwartete Ausgaben geprueft.</p>
+          </article>
+          <article class="card accent-cyan">
+            <div class="tag">Whitebox</div>
+            <h3>Interne Randfaelle</h3>
+            <p>Fallbacks, Fehlerpfade, kaputte JSON-Dateien, Display-Auswahl, Fortschrittsgrenzen und deaktivierte Historie sind gezielt abgedeckt.</p>
+          </article>
+        </div>
+        <div class="panel">
+          <h3>C0 bis C4 im Projekt</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Stufe</th>
+                <th>Abdeckung</th>
+                <th>Umsetzung</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>C0</td>
+                <td>Anweisungen</td>
+                <td>Zentrale Daten-, Display- und JSON-Funktionen werden direkt ausgefuehrt.</td>
+              </tr>
+              <tr>
+                <td>C1</td>
+                <td>Zweige</td>
+                <td>Erfolgs-, Fallback-, Fehler- und Grenzwertzweige werden getestet.</td>
+              </tr>
+              <tr>
+                <td>C2</td>
+                <td>Bedingungen</td>
+                <td>Optionen wie Historie, Netzwerkdaten, Freigaben und Hilfe-Status laufen in beiden Richtungen.</td>
+              </tr>
+              <tr>
+                <td>C3</td>
+                <td>Pfade</td>
+                <td>Wichtige App-Flows fuer Speicherung, Profile, Fortschritt, Reports und Deployment sind automatisiert.</td>
+              </tr>
+              <tr>
+                <td>C4</td>
+                <td>Mehrfachbedingungen</td>
+                <td>Kombinierte Randfaelle wie fehlende Eingaben plus vorhandene Daten oder unvollstaendige Netzwerkdaten plus HTML-Report sind abgedeckt.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 

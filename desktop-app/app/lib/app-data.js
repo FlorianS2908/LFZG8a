@@ -1,13 +1,16 @@
 const path = require('path');
 const fs = require('fs');
 const { ensureDir, readJson, writeJson } = require('./json-store');
+const { normalizeLanguage } = require('./i18n');
 
 const defaultSettings = {
   configured: false,
   monitorIndex: 1,
   openTeacherOnSecondMonitor: true,
   saveLocalTestReports: true,
-  includeDeviceNetworkData: false
+  includeDeviceNetworkData: false,
+  teacherLanguage: 'de',
+  participantLanguage: 'de'
 };
 
 const defaultParticipantReleases = {
@@ -116,7 +119,15 @@ function createAppData(baseDir, options = {}) {
 
   function getSettings() {
     ensureDataFiles();
-    return readJson(settingsPath, defaultSettings);
+    const settings = {
+      ...defaultSettings,
+      ...readJson(settingsPath, {})
+    };
+    return {
+      ...settings,
+      teacherLanguage: normalizeLanguage(settings.teacherLanguage),
+      participantLanguage: normalizeLanguage(settings.participantLanguage)
+    };
   }
 
   function saveSettings(nextSettings) {
@@ -125,6 +136,8 @@ function createAppData(baseDir, options = {}) {
       ...nextSettings,
       configured: true
     };
+    merged.teacherLanguage = normalizeLanguage(merged.teacherLanguage);
+    merged.participantLanguage = normalizeLanguage(merged.participantLanguage);
     writeJson(settingsPath, merged);
     return merged;
   }
@@ -182,7 +195,11 @@ function createAppData(baseDir, options = {}) {
 
   function writeParticipantReleaseScript(scriptPath, releases = getParticipantReleases()) {
     ensureDir(path.dirname(scriptPath));
-    const content = `window.LFZQ8A_PARTICIPANT_RELEASES = ${JSON.stringify(releases, null, 2)};\n`;
+    const content = [
+      `window.LFZQ8A_PARTICIPANT_RELEASES = ${JSON.stringify(releases, null, 2)};`,
+      `window.LFZQ8A_PARTICIPANT_LANGUAGE = ${JSON.stringify(getSettings().participantLanguage)};`,
+      ''
+    ].join('\n');
     fs.writeFileSync(scriptPath, content, 'utf8');
     return scriptPath;
   }

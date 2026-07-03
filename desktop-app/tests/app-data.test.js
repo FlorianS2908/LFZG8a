@@ -55,7 +55,9 @@ test('app data saves setup without losing existing settings', () => {
       monitorIndex: 2,
       openTeacherOnSecondMonitor: false,
       saveLocalTestReports: true,
-      includeDeviceNetworkData: false
+      includeDeviceNetworkData: false,
+      teacherLanguage: 'de',
+      participantLanguage: 'de'
     });
   } finally {
     cleanup();
@@ -96,8 +98,32 @@ test('app data resets only history and keeps settings untouched', () => {
       monitorIndex: 1,
       openTeacherOnSecondMonitor: true,
       saveLocalTestReports: true,
-      includeDeviceNetworkData: false
+      includeDeviceNetworkData: false,
+      teacherLanguage: 'de',
+      participantLanguage: 'de'
     });
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data stores teacher and participant language settings with fallback', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const saved = appData.saveSettings({
+      teacherLanguage: 'en',
+      participantLanguage: 'tr'
+    });
+    const fallback = appData.saveSettings({
+      teacherLanguage: 'fr',
+      participantLanguage: 'xx'
+    });
+
+    assert.equal(saved.teacherLanguage, 'en');
+    assert.equal(saved.participantLanguage, 'tr');
+    assert.equal(fallback.teacherLanguage, 'de');
+    assert.equal(fallback.participantLanguage, 'de');
   } finally {
     cleanup();
   }
@@ -216,6 +242,31 @@ test('app data creates a minimal test report with fallback values', () => {
   }
 });
 
+test('app data keeps report html readable when network fields are incomplete', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    appData.saveSettings({ includeDeviceNetworkData: true });
+    const report = appData.saveTestReport({
+      device: {
+        hostname: 'CLIENT-03',
+        network: [{ name: 'LAN ohne Werte' }]
+      },
+      results: {
+        status: 'ok',
+        checks: [{ name: 'Optionaler Check', status: 'ok' }]
+      }
+    }, new Date('2026-07-01T14:30:00.000Z'));
+    const html = fs.readFileSync(report.paths.html, 'utf8');
+
+    assert.match(html, /LAN ohne Werte/);
+    assert.match(html, /<td>-<\/td><td>-<\/td>/);
+    assert.match(html, /Optionaler Check/);
+  } finally {
+    cleanup();
+  }
+});
+
 test('app data stores participant releases and writes participant script', () => {
   const { appData, cleanup } = createTempAppData();
 
@@ -229,6 +280,7 @@ test('app data stores participant releases and writes participant script', () =>
       tool_tags: false,
       unknown_key: true
     });
+    appData.saveSettings({ participantLanguage: 'en' });
     const unchangedReleases = appData.saveParticipantReleases(null);
     const scriptPath = path.join(appData.dataDir, 'freigaben.js');
     const defaultScriptPath = path.join(appData.dataDir, 'freigaben-default.js');
@@ -245,6 +297,7 @@ test('app data stores participant releases and writes participant script', () =>
     assert.equal(releases.unknown_key, true);
     assert.equal(unchangedReleases.tag_02, true);
     assert.match(script, /window\.LFZQ8A_PARTICIPANT_RELEASES/);
+    assert.match(script, /window\.LFZQ8A_PARTICIPANT_LANGUAGE = "en"/);
     assert.match(script, /"tag_02": true/);
     assert.match(defaultScript, /"tool_quiz": true/);
   } finally {
@@ -304,6 +357,82 @@ test('app data keeps participant defaults and progress fallbacks stable', () => 
     assert.equal(fallback.status.currentTask, '');
     assert.equal(fallback.status.state, 'online');
     assert.equal(appData.listParticipants(new Date('2026-07-01T11:04:00.000Z'))[0].online, false);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data refreshes participant profiles without losing existing optional fields', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const initial = appData.saveParticipantProfile({
+      participantId: 'tn-2',
+      displayName: 'Erika Muster',
+      shortName: 'EM',
+      email: 'erika@example.test',
+      teamsName: 'Erika M.',
+      avatarDataUrl: 'data:image/png;base64,abc'
+    }, new Date('2026-07-01T12:00:00.000Z'));
+    const refreshed = appData.saveParticipantProfile({
+      participantId: 'tn-2',
+      displayName: 'Erika Aktualisiert'
+    }, new Date('2026-07-01T12:05:00.000Z'));
+
+    assert.equal(initial.joinedAt, refreshed.joinedAt);
+    assert.equal(refreshed.displayName, 'Erika Aktualisiert');
+    assert.equal(refreshed.shortName, 'EM');
+    assert.equal(refreshed.email, 'erika@example.test');
+    assert.equal(refreshed.teamsName, 'Erika M.');
+    assert.equal(refreshed.avatarDataUrl, 'data:image/png;base64,abc');
+    assert.equal(appData.listParticipants(new Date('2026-07-01T12:05:20.000Z'))[0].online, true);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data clamps low progress and keeps previous progress on invalid input', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    appData.saveParticipantProfile({ participantId: 'tn-3' }, new Date('2026-07-01T13:00:00.000Z'));
+    const negative = appData.updateParticipantProgress('tn-3', {
+      progress: -10,
+      state: '',
+      needsHelp: false
+    }, new Date('2026-07-01T13:01:00.000Z'));
+    const invalid = appData.updateParticipantProgress('tn-3', {
+      progress: 'kein-wert',
+      currentTask: '',
+      state: ''
+    }, new Date('2026-07-01T13:02:00.000Z'));
+
+    assert.equal(negative.status.progress, 0);
+    assert.equal(negative.status.state, 'online');
+    assert.equal(negative.status.needsHelp, false);
+    assert.equal(invalid.status.progress, 0);
+    assert.equal(invalid.status.currentTask, '');
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data ignores broken test report json files while listing reports', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const valid = appData.saveTestReport({
+      results: {
+        status: 'ok',
+        checks: [{ name: 'Valide', status: 'ok' }]
+      }
+    }, new Date('2026-07-01T15:00:00.000Z'));
+    fs.writeFileSync(path.join(appData.testReportsDir, 'kaputt.json'), '{kaputt', 'utf8');
+
+    const reports = appData.listTestReports();
+
+    assert.equal(reports.length, 1);
+    assert.equal(reports[0].id, valid.id);
   } finally {
     cleanup();
   }

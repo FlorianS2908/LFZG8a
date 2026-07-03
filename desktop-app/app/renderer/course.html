@@ -13,32 +13,32 @@
         <div class="brand-mark">LF</div>
         <div>
           <span>LFZQ8a Desktop</span>
-          <strong>Kursplattform</strong>
+          <strong data-i18n="coursePlatform">Kursplattform</strong>
         </div>
       </div>
       <nav class="main-nav" aria-label="Kursbereiche">
-        <button class="nav-button is-active" type="button" data-view="dashboard">Uebersicht</button>
-        <button class="nav-button" type="button" data-view="days">Kurstage</button>
-        <button class="nav-button" type="button" data-view="projects">Projekte</button>
-        <button class="nav-button" type="button" data-view="tools">Tools</button>
-        <button class="nav-button" type="button" data-view="participants">Teilnehmer</button>
-        <button class="nav-button" type="button" data-view="releases">Freigaben</button>
+        <button class="nav-button is-active" type="button" data-view="dashboard" data-i18n="overview">Uebersicht</button>
+        <button class="nav-button" type="button" data-view="days" data-i18n="courseDays">Kurstage</button>
+        <button class="nav-button" type="button" data-view="projects" data-i18n="projects">Projekte</button>
+        <button class="nav-button" type="button" data-view="tools" data-i18n="tools">Tools</button>
+        <button class="nav-button" type="button" data-view="participants" data-i18n="participants">Teilnehmer</button>
+        <button class="nav-button" type="button" data-view="releases" data-i18n="releases">Freigaben</button>
       </nav>
       <div class="sidebar-note">
-        <strong>Prinzip</strong>
-        <span>Inhalte laufen in dieser App. Nur Arbeitsordner werden in VS Code geoeffnet.</span>
+        <strong data-i18n="principle">Prinzip</strong>
+        <span data-i18n="principleText">Inhalte laufen in dieser App. Nur Arbeitsordner werden in VS Code geoeffnet.</span>
       </div>
     </aside>
 
     <main class="workspace">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Electron App View</p>
+          <p class="eyebrow" data-i18n="electronView">Electron App View</p>
           <h1 data-view-title>Kursuebersicht</h1>
         </div>
         <div class="topbar-actions">
-          <button class="icon-button" type="button" title="Aktuellen Inhalt im Zusatzfenster oeffnen" data-open-current-window>↗</button>
-          <button class="icon-button" type="button" title="Kursdatenordner oeffnen" data-open-data-dir>▣</button>
+          <button class="icon-button" type="button" title="Aktuellen Inhalt im Zusatzfenster oeffnen" data-i18n-title="openCurrentWindow" data-open-current-window>↗</button>
+          <button class="icon-button" type="button" title="Kursdatenordner oeffnen" data-i18n-title="openDataDir" data-open-data-dir>▣</button>
         </div>
       </header>
 
@@ -52,12 +52,12 @@
       <section class="viewer-shell" aria-label="Integrierter Inhaltsbereich">
         <div class="viewer-header">
           <div>
-            <span class="viewer-kind" data-current-kind>Bereit</span>
-            <strong data-current-title>Waehle einen Inhalt aus</strong>
+            <span class="viewer-kind" data-current-kind data-i18n="viewerReady">Bereit</span>
+            <strong data-current-title data-i18n="chooseContent">Waehle einen Inhalt aus</strong>
           </div>
           <div class="viewer-actions">
-            <button class="small-button" type="button" data-open-current-window>Fenster</button>
-            <button class="small-button" type="button" data-clear-viewer>Leeren</button>
+            <button class="small-button" type="button" data-open-current-window data-i18n="window">Fenster</button>
+            <button class="small-button" type="button" data-clear-viewer data-i18n="clear">Leeren</button>
           </div>
         </div>
         <iframe class="viewer" title="LFZQ8a Inhalt" data-viewer></iframe>

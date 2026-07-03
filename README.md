@@ -8,6 +8,7 @@ Der aktuelle Arbeitsstand liegt auf dem Branch `electronDesktop`.
 
 - Dozenten starten den Kurs ueber eine Electron-App.
 - Beim Erststart fuehrt ein Wizard durch die lokale Einrichtung.
+- Im Wizard koennen Dozenten-App und Teilnehmer-Ansicht getrennt auf Deutsch, Englisch oder Tuerkisch gestellt werden.
 - Danach startet die App direkt in die integrierte Kursplattform.
 - Die bisherigen HTML-Materialien werden ueber einen Kurskatalog in der App angezeigt.
 - Standalone bleiben bewusst nur Arbeitsordner und Arbeitsdateien, die in VS Code bearbeitet werden.
@@ -45,8 +46,9 @@ Die Electron-App wird zur eigentlichen Kursplattform. Die vielen bisherigen HTML
 1. Projektordner oeffnen.
 2. `LFZQ8a-Workshop-starten.cmd` doppelklicken.
 3. Beim Erststart den Wizard abschliessen.
-4. Danach oeffnet sich die integrierte Kursplattform.
-5. Im Bereich `Teilnehmer` steht die Teilnehmer-Adresse.
+4. Im Wizard die Sprache fuer die Dozenten-App und optional abweichend fuer die Teilnehmer-Ansicht waehlen.
+5. Danach oeffnet sich die integrierte Kursplattform.
+6. Im Bereich `Teilnehmer` steht die Teilnehmer-Adresse.
 
 Das Startskript prueft automatisch:
 
@@ -55,6 +57,21 @@ Das Startskript prueft automatisch:
 - ob App-Abhaengigkeiten installiert sind.
 
 Wenn Node.js fehlt und `winget` vorhanden ist, versucht das Skript Node.js LTS automatisch zu installieren. Danach werden die App-Abhaengigkeiten im Ordner `desktop-app/` ueber `pnpm install` oder alternativ `npm install` installiert.
+
+## Mehrsprachigkeit
+
+Die App-Oberflaechen unterstuetzen aktuell:
+
+- Deutsch,
+- Englisch,
+- Tuerkisch.
+
+Die Sprachwahl wird lokal in den App-Einstellungen gespeichert. Der Dozent waehlt im Wizard getrennt:
+
+- `Dozenten-App`: Sprache fuer Wizard, Kursplattform, Freigaben, Teilnehmerstatus und App-Bedienung.
+- `Teilnehmer-Ansicht`: Standardsprache fuer Teilnehmer-Main-View, Teilnehmer-Profil-Wizard, Freigabestatus und Fortschrittsbuttons.
+
+Fachliche Unterrichtsmaterialien, Projektdateien und bereits erstellte HTML-Aufgaben bleiben bewusst in ihrer Originalsprache. Uebersetzt wird die Bedienoberflaeche der Electron-App und der Teilnehmersteuerung.
 
 ## Bereitstellung fuer Benutzer
 
@@ -241,9 +258,22 @@ Aktueller Testumfang:
 - JSON-Speicher,
 - Pfadintegritaet,
 - Kurskatalog und integrierte App-View,
+- Mehrsprachigkeit fuer Wizard, Kursplattform und Teilnehmersteuerung,
 - Deployment-Skripte und feste Dokumentationsdateien,
 - Standalone-Anforderungen fuer den Teilnehmerbereich,
-- 90 Prozent Pfadabdeckung fuer `desktop-app/app/lib`.
+- mindestens 95 Prozent Pfadabdeckung fuer `desktop-app/app/lib`.
+
+Die aktuelle automatisierte Abdeckung liegt bei 95,15 Prozent fuer die instrumentierten Bibliotheken.
+
+Teststrategie:
+
+- C0-Anweisungsabdeckung: zentrale Daten-, Display- und JSON-Funktionen werden ueber direkte Unit-Tests ausgefuehrt.
+- C1-Zweigabdeckung: Fallbacks, Fehlerpfade, optionale Eingaben und Grenzwerte werden gezielt getestet.
+- C2-Bedingungsabdeckung: boolesche Optionen wie Historie, Netzwerkdaten, Freigaben und Hilfe-Status werden in beiden Richtungen geprueft.
+- C3-Pfadabdeckung: wichtige Pfade durch lokale Speicherung, Profilanlage, Fortschritt, Report-Erzeugung und Deployment-Pruefung sind automatisiert.
+- C4-Mehrfachbedingungsabdeckung: kombinierte Faelle wie fehlende Profildaten plus vorhandene Bestandsdaten oder unvollstaendige Netzwerkdaten plus HTML-Bericht werden abgedeckt.
+- Blackbox-Tests: Tests pruefen oeffentliche Funktionen ueber Eingabe und erwartete Ausgabe, zum Beispiel Profile, Freigaben, Reports und Pfade.
+- Whitebox-Tests: Tests decken bekannte interne Randbedingungen ab, zum Beispiel Clamping von Fortschritt, kaputte JSON-Dateien, Display-Fallbacks und deaktivierte Historie.
 
 ## Aufraeumregel
 

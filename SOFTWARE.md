@@ -53,6 +53,7 @@ dist/LFZQ8a-Teilnehmer.zip
 | React | Der aktuelle Umbau nutzt die bestehende Electron/HTML/JS-Struktur ohne neue UI-Abhaengigkeit |
 | Less | Die Projektmaterialien wurden auf CSS umgestellt |
 | Separater Webserver | Die Dozenten-App startet den lokalen Kursserver selbst |
+| Externer Uebersetzungsdienst | Die Sprachen Deutsch, Englisch und Tuerkisch liegen lokal in der App; keine Cloud-API oder Internetverbindung fuer die App-Uebersetzung noetig |
 
 ## Lokale App-Abhaengigkeiten
 
@@ -71,3 +72,27 @@ cd desktop-app
 pnpm install
 pnpm start
 ```
+
+## Testausfuehrung und Coverage
+
+| Paket | Zweck | Hinweis |
+| --- | --- | --- |
+| Node.js LTS | Fuehrt den Test-Runner und die Coverage-Instrumentierung aus | Pflicht fuer automatisierte Tests |
+| npm oder pnpm | Installiert die App-Abhaengigkeiten vor dem Testlauf | `npm test` startet `tests/run-tests.js` |
+| Node Inspector / V8 Coverage | Misst Pfadbereiche in `desktop-app/app/lib` | Wird ueber Node.js genutzt, keine separate Installation |
+
+Aktueller Zielwert:
+
+```text
+Mindestens 95 Prozent Pfadabdeckung fuer desktop-app/app/lib
+```
+
+Abgedeckte Testarten:
+
+- C0-Anweisungsabdeckung,
+- C1-Zweigabdeckung,
+- C2-Bedingungsabdeckung,
+- C3-Pfadabdeckung fuer zentrale App-Flows,
+- C4-Mehrfachbedingungsabdeckung fuer kombinierte Randfaelle,
+- Blackbox-Tests ueber oeffentliche Funktionen,
+- Whitebox-Tests fuer interne Fallbacks und Grenzwerte.

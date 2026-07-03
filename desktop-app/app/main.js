@@ -7,6 +7,7 @@ const { fileURLToPath, pathToFileURL } = require('url');
 const { createAppData } = require('./lib/app-data');
 const { createClassroomServer } = require('./lib/classroom-server');
 const { courseCatalog } = require('./lib/course-catalog');
+const { getTranslations, supportedLanguages } = require('./lib/i18n');
 const {
   chooseTargetDisplay,
   createFullDisplayBounds,
@@ -339,6 +340,8 @@ ipcMain.handle('setup:get-state', () => {
   syncParticipantReleaseScript();
   return {
     settings: getAppData().getSettings(),
+    translations: getTranslations(getAppData().getSettings().teacherLanguage),
+    supportedLanguages,
     displays: getDisplaySummaries(),
     history: getAppData().listHistory(),
     testReports: getAppData().listTestReports(),
@@ -352,15 +355,23 @@ ipcMain.handle('course:get-state', () => {
   return {
     catalog: getHydratedCourseCatalog(),
     releases: getAppData().getParticipantReleases(),
+    settings: getAppData().getSettings(),
+    translations: getTranslations(getAppData().getSettings().teacherLanguage),
+    supportedLanguages,
     history: getAppData().listHistory(),
     classroom: getClassroomServer().getInfo()
   };
 });
 
-ipcMain.handle('setup:save', (event, settings) => getAppData().saveSettings(settings));
+ipcMain.handle('setup:save', (event, settings) => {
+  const saved = getAppData().saveSettings(settings);
+  syncParticipantReleaseScript();
+  return saved;
+});
 
 ipcMain.handle('setup:start-workshop', () => {
   getAppData().saveSettings({ configured: true });
+  syncParticipantReleaseScript();
   const setupWindow = mainWindow;
   isReplacingMainWindow = true;
   createWorkshopWindow();
