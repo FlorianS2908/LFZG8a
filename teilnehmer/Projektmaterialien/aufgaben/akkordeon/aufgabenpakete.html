@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Akkordeon Projekt - Aufgabenpakete</title>
+  <style>
+    :root{--brand:#003964;--accent:#00abc7;--ink:#163044;--muted:#526575;--line:#d8e8ee;--card:#fff;--soft:#f3fbff;--focus:#d8f5a2;--warn:#fff7db}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:linear-gradient(180deg,#eef8fb,#fff 44rem)}.hero{background:var(--brand);color:#fff;padding:2rem 1.25rem}.wrap{width:min(1120px,100%);margin:0 auto}.toplink{color:#fff;font-weight:700}.badge{display:inline-block;margin-top:1rem;padding:.35rem .65rem;border-left:4px solid var(--accent);background:#e6fbff;color:var(--brand);font-weight:700}h1{margin:.75rem 0 .5rem;font-size:clamp(2rem,4vw,3rem)}.hero p{max-width:860px;margin:0;color:#d7edf3;line-height:1.6}main{padding:1.25rem}.intro,.docs,.task{border:1px solid var(--line);border-radius:.6rem;background:var(--card);box-shadow:0 12px 28px rgba(0,57,100,.08)}.intro{margin:1rem 0;padding:1rem;background:var(--soft)}.docs{padding:1rem;margin:1rem 0}.docs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.5rem}.docs a{display:block;padding:.55rem .7rem;border:1px solid var(--line);border-radius:.45rem;background:#f8fcff;color:var(--brand);font-weight:700;text-decoration:none}.docs a:hover,.docs a:focus-visible{background:var(--focus);outline:3px solid rgba(0,171,199,.35);outline-offset:2px}.task-list{list-style:none;margin:0;padding:0;display:grid;gap:.85rem}.task{display:grid;grid-template-columns:minmax(0,1fr);gap:.55rem;padding:1rem}.task h2{margin:0;color:var(--brand);font-size:1.15rem}.task-meta{color:var(--muted);font-weight:700;font-size:.9rem}.task p{margin:0;line-height:1.55}.task ul{margin:0;padding-left:1.25rem;line-height:1.55}.task li+li{margin-top:.25rem}.links{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}.btn{display:inline-block;padding:.65rem .8rem;border-radius:.45rem;background:var(--brand);color:#fff;text-decoration:none;font-weight:700;border:0;cursor:pointer;font:inherit}.btn.secondary{background:#e6fbff;color:var(--brand)}.btn:hover,.btn:focus-visible{outline:3px solid rgba(0,171,199,.35);outline-offset:2px;background:#005180;color:#fff}.hint{margin-top:.75rem;color:var(--muted);font-size:.95rem;line-height:1.45}.hintbox{border-left:4px solid var(--accent);background:#f8fcff;padding:.7rem .8rem;border-radius:.35rem;line-height:1.5}.check{border-left:4px solid #f1b700;background:var(--warn);padding:.7rem .8rem;border-radius:.35rem;line-height:1.5}.label{font-weight:700;color:var(--brand)}@media(max-width:720px){.btn{width:100%;text-align:center}}
+  </style>
+  <link rel="stylesheet" href="">
+  <link rel="stylesheet" href="../../../assets/css/unified-layout.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <a class="toplink" href="../../index.html">Zurueck zu den Projektmaterialien</a>
+      <span class="badge">03 Akkordeon</span>
+      <h1>Akkordeon Projekt - Aufgabenpakete</h1>
+      <p>Diese Uebersicht zerlegt die Akkordeon-Umsetzung in kleine, aufeinander aufbauende Arbeitspakete. Die Aufgaben geben bewusst keine fertigen CSS-Loesungen vor, sondern fuehren ueber Hinweise, Kontrollfragen und sichtbare Zielkriterien zur eigenen Umsetzung.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="intro" aria-labelledby="ziel">
+      <h2 id="ziel">Ziel der Paketstruktur</h2>
+      <p>Die Teilnehmenden bauen das Akkordeon Schritt fuer Schritt nach: zuerst HTML-Struktur, dann positionierte Panels, Bildstreifen, Hover-Logik, Glow-Effekte und abschliessende Qualitaetspruefung. Die Bilder liegen lokal im Ordner Ausgangssituation/images.</p>
+      <p class="hintbox"><span class="label">Didaktischer Hinweis:</span> In dieser Version stehen keine fertigen Selektorenketten, keine direkt kopierbaren CSS-Regeln und keine fertigen Positionslisten. Die Teilnehmenden sollen die Werte aus Rahmenbreite, Streifenbreite und Panelanzahl ableiten und anschliessend mit der Zielloesung vergleichen.</p>
+      <p class="check"><span class="label">Pfadlogik:</span> Die Arbeitsdateien und benoetigten Bilder liegen gemeinsam im Ordner Ausgangssituation. Deshalb sollen die Teilnehmenden den relativen Pfad selbst vom Speicherort ihrer Arbeitsdatei aus herleiten. Tipp: Erst den Bilderordner im Projektbaum suchen, dann den Weg von der HTML- bzw. CSS-Datei dorthin bestimmen.</p>
+      <div class="links">
+        <a class="btn secondary" href="Ausgangssituation/index.html">Ausgangssituation ansehen</a>
+        <a class="btn secondary" href="Ausgangssituation/arbeitsdatei.html">Arbeits-HTML oeffnen</a>
+        <a class="btn secondary" href="Ausgangssituation/arbeitsdatei.css">Arbeits-CSS oeffnen</a>
+        
+      </div>
+      <p class="hint">Hinweis: Bearbeite die Dateien im Ordner Ausgangssituation. Dort liegen die Arbeitsdateien und die benoetigten Bilder.</p>
+    </section>
+
+    <section class="docs" aria-labelledby="docs-title">
+      <h2 id="docs-title">Wichtige HTML-Tags und offizielle Doku</h2>
+      <div class="docs-grid">
+        <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/html" target="_blank" rel="noopener">&lt;html&gt;</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/head" target="_blank" rel="noopener">&lt;head&gt;</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta" target="_blank" rel="noopener">&lt;meta&gt;</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/title" target="_blank" rel="noopener">&lt;title&gt;</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link" target="_blank" rel="noopener">&lt;link&gt;</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/body" target="_blank" rel="noopener">&lt;body&gt;</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/div" target="_blank" rel="noopener">&lt;div&gt;</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/span" target="_blank" rel="noopener">&lt;span&gt;</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img" target="_blank" rel="noopener">&lt;img&gt;</a>
+      </div>
+    </section>
+
+    <section class="docs" aria-labelledby="css-docs-title">
+      <h2 id="css-docs-title">Wichtige CSS-Eigenschaften und offizielle Doku</h2>
+      <div class="docs-grid">
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/box-sizing" target="_blank" rel="noopener">box-sizing</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/margin" target="_blank" rel="noopener">margin</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/padding" target="_blank" rel="noopener">padding</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/width" target="_blank" rel="noopener">width</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/height" target="_blank" rel="noopener">height</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/position" target="_blank" rel="noopener">position</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/top" target="_blank" rel="noopener">top</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/left" target="_blank" rel="noopener">left</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/overflow" target="_blank" rel="noopener">overflow</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/background-color" target="_blank" rel="noopener">background-color</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/background-image" target="_blank" rel="noopener">background-image</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/background-size" target="_blank" rel="noopener">background-size</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit" target="_blank" rel="noopener">object-fit</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/object-position" target="_blank" rel="noopener">object-position</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/opacity" target="_blank" rel="noopener">opacity</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/transition" target="_blank" rel="noopener">transition</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/box-shadow" target="_blank" rel="noopener">box-shadow</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/filter" target="_blank" rel="noopener">filter</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/text-shadow" target="_blank" rel="noopener">text-shadow</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/:hover" target="_blank" rel="noopener">:hover</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/Next-sibling_combinator" target="_blank" rel="noopener">+ Nachbarselektor</a>
+      </div>
+    </section>
+
+    <ol class="task-list">
+      <li class="task">
+        <h2>01 Grundgeruest der HTML-Datei anlegen</h2>
+        <span class="task-meta">Fokus: HTML-Basis</span>
+        <p>Lege die technische Basis fuer die spaetere Akkordeon-Seite an.</p>
+        <ul>
+          <li>Erstelle ein vollstaendiges HTML5-Grundgeruest in der Arbeits-HTML.</li>
+          <li>Setze Sprache, Zeichensatz, Viewport und Seitentitel bewusst ein.</li>
+          <li>Binde die Arbeits-CSS relativ ein.</li>
+          <li><strong>Hinweis:</strong> Pruefe im Browser zuerst nur, ob die Datei ohne Fehler geladen wird.</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>02 Akkordeon-Rahmen erstellen</h2>
+        <span class="task-meta">Fokus: Rahmen als Buehne</span>
+        <p>Der Frame ist die feste Buehne, in der spaeter alle Panels verschoben werden.</p>
+        <ul>
+          <li>Lege im body einen zentralen Rahmen fuer das Akkordeon an.</li>
+          <li>Verwende die vorgegebene id <strong>accordianFrame</strong>.</li>
+          <li><strong>Hinweis:</strong> Die Schreibweise wirkt ungewoehnlich, muss aber zur vorhandenen Projektstruktur passen. Nicht eigenstaendig in "accordion" umbenennen.</li>
+          <li>Der Rahmen braucht spaeter eine feste Groesse, eine relative Bezugsposition und muss ueberstehende Inhalte abschneiden.</li>
+          <li><strong>Kontrollfrage:</strong> Warum waere ohne Abschneiden der ueberstehenden Inhalte der Akkordeon-Effekt sichtbar unsauber?</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>03 Titelbox einbauen</h2>
+        <span class="task-meta">Fokus: Einstieg und Overlay</span>
+        <p>Die Titelbox zeigt am Anfang den Projektnamen und verschwindet beim Hover.</p>
+        <ul>
+          <li>Fuege innerhalb des Rahmens eine Titelbox mit Text ein.</li>
+          <li>Die Titelbox soll vor den Panels stehen, damit sie als Einstieg sichtbar bleibt.</li>
+          <li><strong>Hinweis:</strong> Denke an absolute Positionierung, eine deutliche Vordergrundebene und daran, dass die Box spaeter nicht die Mausinteraktion blockieren soll.</li>
+          <li><strong>Pruefung:</strong> Die Box soll vor dem Hover sichtbar sein und beim Interagieren mit dem Akkordeon verschwinden koennen.</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>04 Erstes Panel strukturieren</h2>
+        <span class="task-meta">Fokus: wiederholbarer Panel-Aufbau</span>
+        <p>Das erste Panel zeigt die Grundstruktur, die fuer alle weiteren Panels wiederholt wird.</p>
+        <ul>
+          <li>Lege ein erstes Panel an und nummeriere dessen Bestandteile nachvollziehbar.</li>
+          <li>Innerhalb des Panels werden drei Ebenen benoetigt: Leuchtebene, vorderer Bildstreifen und Textleiste.</li>
+          <li><strong>Hinweis:</strong> Die Reihenfolge der Elemente hilft spaeter beim Stapeln und bei der Lesbarkeit des Codes.</li>
+          <li>Nutze fuer den vorderen Streifen das Betonwand-Bild aus dem Bilderordner.</li>
+          <li><strong>Pfad-Hilfe:</strong> Bestimme den relativen Weg vom Speicherort deiner Arbeits-HTML zum Bilderordner, statt einen fertigen Pfad zu uebernehmen.</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>05 Alle fuenf Panels anlegen</h2>
+        <span class="task-meta">Fokus: Wiederholung ohne ID-Fehler</span>
+        <p>Jetzt wird aus einem Panel die komplette Akkordeon-Struktur.</p>
+        <ul>
+          <li>Uebertrage die Struktur des ersten Panels auf insgesamt fuenf Panels.</li>
+          <li>Nummeriere Panel, Glow-Ebene und Textleiste konsistent von 1 bis 5.</li>
+          <li>Verwende fuer die Textleisten die fuenf Bildtitel aus dem Zielprojekt.</li>
+          <li><strong>Hinweis:</strong> Jede id darf im HTML nur einmal vorkommen.</li>
+          <li><strong>Wichtig fuer die Hover-Logik:</strong> Die Panels muessen direkt hintereinander stehen. Fuege zwischen ihnen keine zusaetzlichen Wrapper ein.</li>
+          <li><strong>Kontrollfrage:</strong> Warum koennen Nachbarselektoren nur funktionieren, wenn die betroffenen Elemente wirklich Geschwister sind?</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>06 Grundlayout in CSS schreiben</h2>
+        <span class="task-meta">Fokus: Reset, Body und Rahmen</span>
+        <p>Die CSS-Basis sorgt dafuer, dass der Rahmen zentriert, begrenzt und optisch ruhig wirkt.</p>
+        <ul>
+          <li>Setze eine einfache globale Basis fuer Abstaende und Boxmodell.</li>
+          <li>Gib der Seite einen dunklen Hintergrund, damit das Akkordeon wie eine Buehne wirkt.</li>
+          <li>Der Rahmen soll fest dimensioniert, zentriert und sichtbar begrenzt sein.</li>
+          <li><strong>Hinweis:</strong> Orientiere dich an einem breiten Querformat. Die spaeteren Panelwerte muessen zu dieser Rahmengroesse passen.</li>
+          <li><strong>Pruefung:</strong> Der Rahmen darf beim Verschieben der Panels seine Groesse nicht veraendern.</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>07 Panel-Basisregeln definieren</h2>
+        <span class="task-meta">Fokus: absolute Positionierung</span>
+        <p>Alle Panels liegen im gleichen Rahmen und werden ueber horizontale Versatzwerte sichtbar gemacht.</p>
+        <ul>
+          <li>Schreibe eine gemeinsame Basisregel fuer alle Panels.</li>
+          <li>Die Panels sollen innerhalb des Rahmens absolut positioniert werden.</li>
+          <li>Jedes Panel soll fast die volle Innenflaeche des Rahmens einnehmen.</li>
+          <li><strong>Hinweis:</strong> Die gemeinsame Regel verhindert Wiederholungen. Individuell bleiben spaeter nur Bild, Farbe und horizontale Position.</li>
+          <li><strong>Pruefung:</strong> Wenn alle Panels dieselbe Basisgroesse haben, sollte nur noch der horizontale Versatz den sichtbaren Streifen bestimmen.</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>08 Bildstreifen sichtbar machen</h2>
+        <span class="task-meta">Fokus: vorderes Betonwand-Bild</span>
+        <p>Die Betonwand-Bilder vorne erzeugen die schmalen Panel-Streifen im geschlossenen Zustand.</p>
+        <ul>
+          <li>Gestalte die Bilder innerhalb der Panels gemeinsam.</li>
+          <li>Die Bilder sollen als schmale vertikale Streifen vor dem jeweiligen Panel liegen.</li>
+          <li><strong>Hinweis:</strong> Ueberlege, wie breit ein Streifen sein muss, damit fuenf Streifen zusammen die Rahmenbreite fuellen.</li>
+          <li>Nutze die passende Eigenschaft, um nur einen Bildausschnitt statt ein skaliertes Gesamtbild zu zeigen.</li>
+          <li><strong>Pruefung:</strong> Jeder Streifen soll einen anderen Ausschnitt derselben Betonwand zeigen.</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>09 Startpositionen und Hintergrundbilder setzen</h2>
+        <span class="task-meta">Fokus: Staffelung und Bildzuordnung</span>
+        <p>Nun bekommt jedes Panel seine Startposition und sein grosses Hintergrundbild.</p>
+        <ul>
+          <li>Ordne jedem Panel eines der fuenf grossen Hintergrundbilder zu.</li>
+          <li>Die Bildnummer soll zur Panelnummer passen.</li>
+          <li><strong>Hinweis:</strong> Die Startpositionen entstehen aus der Streifenbreite. Jedes weitere Panel beginnt um genau eine Streifenbreite weiter rechts.</li>
+          <li><strong>Pfad-Hilfe:</strong> Hintergrundbilder werden in der CSS-Datei verlinkt. Bestimme den Pfad deshalb vom Speicherort der CSS-Datei aus.</li>
+          <li><strong>Pruefung:</strong> Im geschlossenen Zustand sollen fuenf gleich breite Betonwand-Streifen sichtbar sein.</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>10 Hover ueber dem Frame vorbereiten</h2>
+        <span class="task-meta">Fokus: Titel ausblenden und Grundstaffelung</span>
+        <p>Beim Hover ueber das gesamte Akkordeon soll die Titelbox verschwinden und die Panels ruecken enger zusammen.</p>
+        <ul>
+          <li>Reagiere auf Hover ueber dem gesamten Akkordeon-Rahmen.</li>
+          <li>Die Titelbox soll dabei weich ausgeblendet werden.</li>
+          <li>Die hinteren Panels sollen links enger gestaffelt werden.</li>
+          <li><strong>Hinweis:</strong> Verwende kleine, gleichmaessige Abstaende fuer die Staffelung. Das erste Panel bleibt der Orientierungspunkt.</li>
+          <li><strong>Pruefung:</strong> Noch bevor ein einzelnes Panel aktiv geoeffnet wird, soll man erkennen, dass die Panels links enger zusammenruecken.</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>11 Hover-Logik fuer Panel 1 und 2 umsetzen</h2>
+        <span class="task-meta">Fokus: Nachbarselektoren</span>
+        <p>Jetzt entstehen die ersten echten Oeffnungsbewegungen im Akkordeon.</p>
+        <ul>
+          <li>Beim Hover auf ein Panel soll dessen Textleiste sichtbar in den Rahmen fahren.</li>
+          <li>Die folgenden Panels sollen mit Nachbarselektoren nach rechts geschoben werden.</li>
+          <li><strong>Hinweis:</strong> Die rechten Zielpositionen lassen sich aus Rahmenbreite und schmalem Reststreifen ableiten.</li>
+          <li>Setze die Logik zuerst fuer das erste Panel um und uebertrage das Muster danach auf das zweite Panel.</li>
+          <li><strong>Kontrollfrage:</strong> Warum braucht das zweite Panel weniger nachfolgende Selektorketten als das erste?</li>
+          <li><strong>Pruefung:</strong> Beim Oeffnen bleibt links eine schmale Staffelung sichtbar, rechts sammeln sich die folgenden Panels als Reststreifen.</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>12 Hover-Logik fuer Panel 3 bis 5 umsetzen</h2>
+        <span class="task-meta">Fokus: restliche Panel-Interaktionen</span>
+        <p>Die gleiche Logik wird auf die restlichen Panels uebertragen.</p>
+        <ul>
+          <li>Uebertrage das Hover-Muster auf Panel 3, 4 und 5.</li>
+          <li>Jedes aktive Panel soll an seiner linken Staffelposition bleiben.</li>
+          <li>Nur die Panels, die danach kommen, werden nach rechts verschoben.</li>
+          <li><strong>Hinweis:</strong> Je weiter rechts das aktive Panel liegt, desto kuerzer werden die Nachbarselektor-Ketten.</li>
+          <li><strong>Pruefung:</strong> Teste alle fuenf Panels einzeln. Der Effekt muss bei jedem Panel gleich logisch wirken, obwohl unterschiedlich viele Nachbarn verschoben werden.</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>13 Glow-Effekte einbauen</h2>
+        <span class="task-meta">Fokus: Leuchtebene, Schatten und Weichzeichnung</span>
+        <p>Die Glow-Ebenen erzeugen beim Oeffnen den kurzen farbigen Leuchteffekt.</p>
+        <ul>
+          <li>Positioniere die Glow-Ebene so, dass sie am Rand des vorderen Streifens sitzt.</li>
+          <li>Im Startzustand soll die Glow-Ebene kaum sichtbare Breite haben.</li>
+          <li>Beim Hover soll sie kurz groesser, weicher und transparenter werden.</li>
+          <li><strong>Hinweis:</strong> Kombiniere Schatten, Weichzeichnung, Groessenveraenderung und Transparenz, statt nur eine Farbe zu setzen.</li>
+          <li><strong>Pruefung:</strong> Der Glow soll den Oeffnungseffekt unterstuetzen, aber nicht dauerhaft als farbiger Balken stehen bleiben.</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>14 Farben und Textleisten finalisieren</h2>
+        <span class="task-meta">Fokus: Lesbarkeit und Bildstimmung</span>
+        <p>Die Textleisten zeigen, welches Panel geoeffnet wurde.</p>
+        <ul>
+          <li>Positioniere die Textleisten unten im Panel.</li>
+          <li>Im Startzustand liegen die Textleisten ausserhalb des sichtbaren Bereichs.</li>
+          <li>Beim Hover fahren sie sichtbar in das Panel hinein.</li>
+          <li><strong>Hinweis:</strong> Waehle die Akzentfarben passend zur Stimmung der jeweiligen Bilder.</li>
+          <li>Nutze einen dunklen, halbtransparenten Hintergrund und einen dezenten Textschatten fuer bessere Lesbarkeit.</li>
+          <li><strong>Pruefung:</strong> Alle Titel muessen lesbar sein, ohne die Bildwirkung zu stark zu verdecken.</li>
+        </ul>
+      </li>
+
+      <li class="task">
+        <h2>15 Abnahme gegen die Zielumsetzung</h2>
+        <span class="task-meta">Fokus: Vergleich und Fehlerkorrektur</span>
+        <p>Zum Schluss wird die Arbeitsloesung gegen das Zielprojekt geprueft.</p>
+        <ul>
+          <li>Oeffne das Zielprojekt und deine Arbeitsloesung nebeneinander.</li>
+          <li>Vergleiche Struktur, Bildzuordnung, Streifenbreite, Hoverbewegung, Textleisten und Glow-Effekt.</li>
+          <li><strong>Hinweis:</strong> Korrigiere immer nur eine Sache gleichzeitig. Erst HTML-Struktur, dann Pfade, dann Positionierung, dann Effekte.</li>
+          <li>Teste alle fuenf Hover-Zustaende.</li>
+          <li><strong>Abnahmefrage:</strong> Kannst du erklaeren, welche Rolle Rahmen, absolute Positionierung, Nachbarselektoren und overflow fuer den Effekt spielen?</li>
+        </ul>
+      </li>
+    </ol>
+  </main>
+</body>
+</html>

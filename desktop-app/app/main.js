@@ -1,7 +1,11 @@
 const { app, BrowserWindow, ipcMain, screen, shell } = require('electron');
+const { spawn } = require('child_process');
+const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { fileURLToPath } = require('url');
 const { createAppData } = require('./lib/app-data');
+const { createClassroomServer } = require('./lib/classroom-server');
 const {
   chooseTargetDisplay,
   createFullDisplayBounds,
@@ -11,6 +15,8 @@ const {
 
 const projectRoot = path.resolve(__dirname, '..', '..');
 const contentFile = path.join(projectRoot, 'dozent', 'index_dozent.html');
+const participantReleaseScriptFile = path.join(projectRoot, 'teilnehmer', 'assets', 'js', 'freigaben.js');
+const participantRoot = path.join(projectRoot, 'teilnehmer');
 const preloadFile = path.join(__dirname, 'preload.js');
 const wizardFile = path.join(__dirname, 'renderer', 'wizard.html');
 const forceWizard = process.argv.includes('--wizard') || process.argv.includes('--wizard-test');
@@ -19,6 +25,7 @@ const disableHistory = process.argv.includes('--no-history') || process.argv.inc
 let mainWindow = null;
 let teacherWindow = null;
 let appData = null;
+let classroomServer = null;
 let isClosingAllWindows = false;
 let isReplacingMainWindow = false;
 
@@ -27,6 +34,16 @@ function getAppData() {
     appData = createAppData(app.getPath('userData'), { disableHistory });
   }
   return appData;
+}
+
+function getClassroomServer() {
+  if (!classroomServer) {
+    classroomServer = createClassroomServer({
+      appData: getAppData(),
+      participantRoot
+    });
+  }
+  return classroomServer;
 }
 
 function getDisplaySummaries() {
@@ -82,6 +99,109 @@ function createCurrentTestReport() {
       ]
     }
   });
+}
+
+function syncParticipantReleaseScript() {
+  return getAppData().writeParticipantReleaseScript(participantReleaseScriptFile);
+}
+
+async function ensureClassroomServer() {
+  return getClassroomServer().start();
+}
+
+function isInsideProject(filePath) {
+  const relative = path.relative(projectRoot, filePath);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function resolveEditorTarget(target) {
+  if (!target || typeof target !== 'string') {
+    throw new Error('Kein Dateipfad uebergeben.');
+  }
+
+  const filePath = target.startsWith('file:')
+    ? fileURLToPath(target)
+    : path.resolve(projectRoot, target);
+  const resolvedPath = path.resolve(filePath);
+
+  if (!isInsideProject(resolvedPath)) {
+    throw new Error('Datei liegt ausserhalb des Projektordners.');
+  }
+
+  return resolvedPath;
+}
+
+function getVsCodeLaunchers() {
+  const localAppData = process.env.LOCALAPPDATA;
+  const programFiles = process.env.ProgramFiles;
+  const programFilesX86 = process.env['ProgramFiles(x86)'];
+  const candidates = [
+    localAppData && path.join(localAppData, 'Programs', 'Microsoft VS Code', 'Code.exe'),
+    localAppData && path.join(localAppData, 'Programs', 'Microsoft VS Code', 'bin', 'code.cmd'),
+    programFiles && path.join(programFiles, 'Microsoft VS Code', 'Code.exe'),
+    programFilesX86 && path.join(programFilesX86, 'Microsoft VS Code', 'Code.exe')
+  ].filter(Boolean);
+
+  const existingLaunchers = candidates
+    .filter((candidate) => fs.existsSync(candidate))
+    .map((command) => ({
+      command,
+      shell: /\.cmd$/i.test(command)
+    }));
+
+  return existingLaunchers.length > 0
+    ? existingLaunchers
+    : [{ command: 'code.cmd', shell: true }];
+}
+
+function spawnDetached(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+      ...options
+    });
+
+    child.once('error', reject);
+    child.once('spawn', () => {
+      child.unref();
+      resolve(true);
+    });
+  });
+}
+
+function getVsCodeFileUrl(filePath) {
+  return encodeURI(`vscode://file/${filePath.replace(/\\/g, '/')}`);
+}
+
+async function openFileInVsCode(target) {
+  const filePath = resolveEditorTarget(target);
+  const isDirectory = fs.existsSync(filePath) && fs.statSync(filePath).isDirectory();
+  const launchArgs = isDirectory
+    ? ['-n', filePath]
+    : ['-n', projectRoot, '-g', filePath];
+  const launchers = getVsCodeLaunchers();
+  const errors = [];
+
+  for (const launcher of launchers) {
+    try {
+      await spawnDetached(launcher.command, launchArgs, { shell: launcher.shell });
+      await shell.openExternal(getVsCodeFileUrl(filePath));
+      return { opened: true, filePath, editor: launcher.command, kind: isDirectory ? 'directory' : 'file' };
+    } catch (error) {
+      errors.push(`${launcher.command}: ${error.message}`);
+    }
+  }
+
+  try {
+    await shell.openExternal(getVsCodeFileUrl(filePath));
+    return { opened: true, filePath, editor: 'vscode-protocol', kind: isDirectory ? 'directory' : 'file' };
+  } catch (error) {
+    errors.push(`vscode-protocol: ${error.message}`);
+  }
+
+  throw new Error(`VS Code konnte nicht gestartet werden. ${errors.join(' | ')}`);
 }
 
 function getWindowOptions(display, extra = {}) {
@@ -177,6 +297,7 @@ function openTeacherInfo(url) {
 
 ipcMain.handle('setup:get-state', () => {
   getAppData().ensureDataFiles();
+  syncParticipantReleaseScript();
   return {
     settings: getAppData().getSettings(),
     displays: getDisplaySummaries(),
@@ -218,6 +339,27 @@ ipcMain.handle('teacher:open', (event, url) => {
   return true;
 });
 
+ipcMain.handle('editor:open', (event, target) => openFileInVsCode(target));
+
+ipcMain.handle('participant-releases:get', () => {
+  syncParticipantReleaseScript();
+  return getAppData().getParticipantReleases();
+});
+
+ipcMain.handle('participant-releases:save', (event, releases) => {
+  const saved = getAppData().saveParticipantReleases(releases);
+  syncParticipantReleaseScript();
+  return saved;
+});
+
+ipcMain.handle('classroom:get-info', () => {
+  return getClassroomServer().getInfo();
+});
+
+ipcMain.handle('classroom:list-participants', () => {
+  return getAppData().listParticipants();
+});
+
 ipcMain.handle('app:open-data-dir', () => {
   getAppData().ensureDataFiles();
   shell.openPath(getAppData().dataDir);
@@ -238,6 +380,10 @@ ipcMain.handle('test-report:open-dir', () => {
 
 app.whenReady().then(() => {
   getAppData().ensureDataFiles();
+  syncParticipantReleaseScript();
+  ensureClassroomServer().catch((error) => {
+    console.error(`Kursserver konnte nicht gestartet werden: ${error.message}`);
+  });
   if (forceWizard) {
     createWizardWindow();
   } else if (getAppData().getSettings().configured) {
@@ -261,6 +407,9 @@ app.whenReady().then(() => {
 
 app.on('before-quit', () => {
   closeAllApplicationWindows();
+  if (classroomServer) {
+    classroomServer.stop();
+  }
 });
 
 app.on('window-all-closed', () => {

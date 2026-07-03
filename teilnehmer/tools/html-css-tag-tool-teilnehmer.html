@@ -1,0 +1,3401 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Übersicht wichtiger HTML-Tags</title>
+  <style>
+:root{--navy:#003964;--cyan:#00abc7;--lime:#bdf77a;--ink:#173248;--muted:#5f7284;--bg:#f2f8fb;--card:#fff;--line:#d8e8ee;--soft:#e8fbff;--code:#0b1725;--shadow:0 16px 40px rgba(0,57,100,.12)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:linear-gradient(180deg,#eef8fb 0,#fff 45%,#f7fbf4 100%);line-height:1.55}a{color:inherit}.site-header{background:var(--navy);color:#fff;padding:2.4rem 1.25rem}.wrap{width:min(1180px,100%);margin:0 auto}.site-header h1{margin:.2rem 0;font-size:clamp(2.2rem,5vw,4.2rem);line-height:1.05}.site-header p{max-width:820px;color:#d9eef4;font-size:1.08rem}.kicker{display:inline-block;color:var(--lime);font-weight:900;text-transform:uppercase;letter-spacing:.06em}.day-nav{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.94);border-bottom:1px solid var(--line);backdrop-filter:blur(8px)}.day-nav .wrap{display:flex;gap:.55rem;flex-wrap:wrap;padding:.85rem 1.25rem}.day-nav a{padding:.6rem .8rem;border-radius:999px;background:#fff;border:1px solid var(--line);text-decoration:none;color:var(--navy);font-weight:800}.day-nav a:hover{background:var(--navy);color:#fff}.intro,.day-section,.obsolete{padding:2rem 1.25rem}.intro-card,.day-head,.exercise,.obsolete-box{background:#fff;border:1px solid var(--line);border-radius:.65rem;box-shadow:var(--shadow);padding:1.25rem}.day-head{margin-bottom:1rem}.day-head h2{margin:.2rem 0;color:var(--navy);font-size:clamp(1.7rem,3vw,2.6rem)}.tag-list{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.9rem}.tag-list span{padding:.3rem .55rem;border-radius:999px;background:var(--soft);color:var(--navy);font-weight:800;font-size:.9rem}.tag-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}.tag-card{background:#fff;border:1px solid var(--line);border-radius:.65rem;box-shadow:0 10px 24px rgba(0,57,100,.08);overflow:hidden}.tag-card[open]{grid-column:1/-1}.tag-card summary{cursor:pointer;list-style:none;padding:1rem;display:flex;justify-content:space-between;gap:.8rem;align-items:center}.tag-card summary::-webkit-details-marker{display:none}.tag-card summary span{font-size:1.25rem;font-weight:900;color:var(--cyan)}.tag-card summary small{color:var(--navy);background:#eaffd5;border-radius:999px;padding:.25rem .5rem;font-weight:800}.tag-detail{border-top:1px solid var(--line);padding:1rem}.tag-detail h3{font-size:1.65rem;color:var(--navy);margin:.2rem 0}.tag-detail h4{color:var(--navy);margin:1rem 0 .35rem}pre{margin:.5rem 0;background:var(--code);color:#e8fbff;border-radius:.5rem;padding:1rem;overflow:auto;font-size:.92rem;line-height:1.45}.variant-input{position:absolute;opacity:0;pointer-events:none}.variant-tabs{display:flex;gap:.45rem;flex-wrap:wrap;margin:.75rem 0}.variant-tabs label{border:1px solid var(--line);border-radius:999px;padding:.55rem .8rem;background:#fff;color:var(--navy);font-weight:900;cursor:pointer}.v1:checked~.variant-tabs .tab-1,.v2:checked~.variant-tabs .tab-2,.v3:checked~.variant-tabs .tab-3,.v4:checked~.variant-tabs .tab-4,.v5:checked~.variant-tabs .tab-5{background:var(--navy);border-color:var(--navy);color:#fff}.preview{min-height:170px;border:2px dashed var(--line);border-radius:.65rem;background:#f8fbfd;padding:1.1rem;display:grid;place-items:center;overflow:hidden}.code-variants .code{display:none}.v1:checked~.code-variants .code-1,.v2:checked~.code-variants .code-2,.v3:checked~.code-variants .code-3,.v4:checked~.code-variants .code-4,.v5:checked~.code-variants .code-5{display:block}.demo-target{transition:all .2s ease}.demo-card{padding:1rem;border:1px solid var(--line);border-radius:.45rem;background:#fff;max-width:320px}.v2:checked~.preview .demo-card{border-color:var(--cyan);background:var(--soft);padding:1.25rem}.v3:checked~.preview .demo-card{box-shadow:0 16px 34px rgba(0,57,100,.16);border-radius:1rem;transform:translateY(-2px)}.demo-heading{margin:0;color:var(--navy);font-size:1.55rem}.v2:checked~.preview .demo-heading{color:var(--cyan);background:#fff;padding:.4rem .7rem;border-left:5px solid var(--cyan)}.v3:checked~.preview .demo-heading{font-size:clamp(2rem,6vw,3.8rem);line-height:1.05;text-align:center}.demo-paragraph{max-width:45ch}.v2:checked~.preview .demo-paragraph{background:var(--soft);padding:1rem;border-left:5px solid var(--cyan)}.v3:checked~.preview .demo-paragraph{font-size:1.18rem;line-height:1.75;max-width:60ch}.demo-link{font-weight:800;color:var(--navy)}.v2:checked~.preview .demo-link{display:inline-block;background:var(--navy);color:#fff;text-decoration:none;padding:.75rem 1rem;border-radius:999px}.v3:checked~.preview .demo-link{text-decoration:none;border-bottom:3px solid var(--cyan);padding-bottom:.15rem}.demo-button{font:inherit;padding:.65rem .9rem;border:1px solid var(--line);border-radius:.45rem;background:#fff;color:var(--navy);font-weight:900}.v2:checked~.preview .demo-button{border-color:var(--navy);background:var(--navy);color:#fff;border-radius:999px}.v3:checked~.preview .demo-button{border:2px solid var(--cyan);background:#fff;color:var(--navy);box-shadow:0 10px 22px rgba(0,171,199,.18)}.demo-image{width:220px;max-width:100%;height:130px;background:linear-gradient(135deg,var(--cyan),var(--lime));display:grid;place-items:center;color:var(--navy);font-weight:900}.v2:checked~.preview .demo-image{width:100%;height:150px;border-radius:.75rem}.v3:checked~.preview .demo-image{border-radius:1rem;box-shadow:0 18px 34px rgba(0,57,100,.2)}.demo-nav{display:flex;gap:.5rem;flex-wrap:wrap}.demo-nav a{padding:.55rem .75rem;border-radius:999px;background:#fff;border:1px solid var(--line);text-decoration:none;font-weight:800;color:var(--navy)}.v2:checked~.preview .demo-nav{background:var(--navy);padding:.7rem;border-radius:.6rem}.v2:checked~.preview .demo-nav a{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.25)}.v3:checked~.preview .demo-nav{flex-direction:column;align-items:stretch;width:min(280px,100%)}.demo-list{margin:0;padding-left:1.2rem}.v2:checked~.preview .demo-list li::marker{color:var(--cyan)}.v3:checked~.preview .demo-list{list-style:none;padding:0;display:grid;gap:.45rem}.v3:checked~.preview .demo-list li{background:#fff;border:1px solid var(--line);border-radius:.45rem;padding:.5rem}.demo-section{padding:1rem;border:1px solid var(--line);border-radius:.5rem;background:#fff}.v2:checked~.preview .demo-section{background:var(--soft);border-color:var(--cyan)}.v3:checked~.preview .demo-section{padding:2rem;width:100%;max-width:520px}.demo-span{font-weight:800}.v2:checked~.preview .demo-span{background:#eaffd5;padding:.15rem .35rem;border-radius:.3rem}.v3:checked~.preview .demo-span{color:var(--navy);border-bottom:3px solid var(--cyan)}.demo-figure{margin:0;text-align:center}.demo-figure figcaption{margin-top:.5rem;color:var(--muted)}.v2:checked~.preview .demo-figure{background:#fff;padding:1rem;border:1px solid var(--line);border-radius:.65rem}.v3:checked~.preview .demo-figure{box-shadow:0 14px 30px rgba(0,57,100,.14);border-radius:1rem;padding:1rem}.demo-form{display:grid;gap:.55rem;width:min(340px,100%)}.demo-form input,.demo-form textarea,.demo-form select,.demo-input,.demo-textarea,.demo-select{font:inherit;padding:.7rem;border:2px solid var(--line);border-radius:.45rem;width:100%}.v2:checked~.preview .demo-form,.v2:checked~.preview .demo-input,.v2:checked~.preview .demo-textarea,.v2:checked~.preview .demo-select{background:#fff;border-color:var(--cyan)}.v3:checked~.preview .demo-form input,.v3:checked~.preview .demo-input,.v3:checked~.preview .demo-textarea,.v3:checked~.preview .demo-select{outline:3px solid rgba(0,171,199,.18);border-color:var(--cyan)}.demo-label{font-weight:900;color:var(--navy)}.v2:checked~.preview .demo-label::after{content:' *';color:#b42318}.v3:checked~.preview .demo-label{display:block;margin-bottom:.35rem}.demo-fieldset{border:2px solid var(--line);border-radius:.65rem;padding:1rem;display:grid;gap:.5rem}.demo-fieldset legend{font-weight:900;color:var(--navy);padding:0 .35rem}.v2:checked~.preview .demo-fieldset{border-color:var(--cyan);background:var(--soft)}.v3:checked~.preview .demo-fieldset{box-shadow:0 14px 30px rgba(0,57,100,.12)}.demo-context{margin-top:.85rem;width:min(420px,100%);font-size:.92rem;color:var(--muted);text-align:left}.demo-context strong{display:block;color:var(--navy);margin-bottom:.25rem}.demo-context ul{margin:.35rem 0 0;padding-left:1.15rem}.demo-context li{margin:.18rem 0}.v4:checked~.preview{background:linear-gradient(135deg,#fff 0,#e8fbff 55%,#f2ffe3 100%);border-style:solid;align-content:center;gap:.8rem}.v5:checked~.preview{background:#0b1725;border-color:#24364a;color:#f6fbff;gap:.9rem}.v4:checked~.preview .demo-target{outline:3px solid rgba(0,171,199,.22);outline-offset:4px;filter:saturate(1.12);transform:scale(1.02)}.v5:checked~.preview .demo-target{background:#111f31;color:#f6fbff;border-color:#6ee7f9;box-shadow:0 18px 42px rgba(0,0,0,.28);transform:translateY(-3px)}.v4:checked~.preview .demo-card,.v4:checked~.preview .demo-section,.v4:checked~.preview .demo-figure{display:grid;gap:.55rem;min-width:min(360px,100%);border-color:var(--cyan);background:#fff;border-radius:.85rem;padding:1.25rem}.v5:checked~.preview .demo-card,.v5:checked~.preview .demo-section,.v5:checked~.preview .demo-figure{display:grid;gap:.65rem;min-width:min(380px,100%);border:1px solid rgba(110,231,249,.55);background:#111f31;border-radius:1rem;padding:1.35rem}.v4:checked~.preview .demo-heading{font-size:2rem;line-height:1.12;color:var(--navy);padding-bottom:.35rem;border-bottom:4px solid var(--lime)}.v5:checked~.preview .demo-heading{font-size:2.15rem;line-height:1.08;color:#bdf77a;text-transform:uppercase}.v4:checked~.preview .demo-paragraph{max-width:62ch;font-size:1.05rem;line-height:1.7;color:#173248}.v5:checked~.preview .demo-paragraph{max-width:58ch;font-size:1.06rem;line-height:1.75;color:#d9eef4}.v4:checked~.preview .demo-link,.v4:checked~.preview .demo-button{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;background:var(--cyan);color:#fff;border:0;border-radius:.5rem;padding:.75rem 1rem;text-decoration:none;box-shadow:0 10px 20px rgba(0,171,199,.2)}.v5:checked~.preview .demo-link,.v5:checked~.preview .demo-button{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;background:#bdf77a;color:#0b1725;border:2px solid #e8ffd1;border-radius:.25rem;padding:.8rem 1.1rem;text-decoration:none;box-shadow:0 0 0 4px rgba(189,247,122,.14)}.v4:checked~.preview .demo-image{width:100%;height:180px;border-radius:1rem;background:linear-gradient(135deg,#00abc7,#bdf77a);box-shadow:0 16px 32px rgba(0,57,100,.18)}.v5:checked~.preview .demo-image{width:100%;height:190px;border-radius:.35rem;background:linear-gradient(135deg,#13243a,#00abc7);color:#fff;box-shadow:inset 0 0 0 3px rgba(255,255,255,.16)}.v4:checked~.preview .demo-nav{width:min(520px,100%);display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.65rem;background:#fff;padding:.85rem;border:1px solid var(--line);border-radius:.85rem}.v5:checked~.preview .demo-nav{width:min(520px,100%);display:flex;justify-content:space-between;gap:.65rem;background:#111f31;padding:.9rem;border:1px solid rgba(110,231,249,.45);border-radius:.3rem}.v4:checked~.preview .demo-nav a{background:#e8fbff;color:var(--navy);border-color:var(--cyan)}.v5:checked~.preview .demo-nav a{background:#20344f;color:#f6fbff;border-color:#6ee7f9}.v4:checked~.preview .demo-list{list-style:square;padding-left:1.35rem;columns:2;column-gap:2rem}.v5:checked~.preview .demo-list{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.45rem}.v5:checked~.preview .demo-list li{background:#20344f;border:1px solid rgba(110,231,249,.35);border-radius:.35rem;padding:.55rem}.v4:checked~.preview .demo-span{display:inline-block;background:#fff3c4;color:#5b3b06;border:1px solid #f59e0b;border-radius:.35rem;padding:.25rem .45rem}.v5:checked~.preview .demo-span{display:inline-block;background:#20344f;color:#bdf77a;border-bottom:3px solid #6ee7f9;padding:.22rem .4rem}.v4:checked~.preview .demo-form{background:#fff;border:1px solid var(--line);border-radius:.85rem;padding:1rem;box-shadow:0 14px 30px rgba(0,57,100,.12)}.v5:checked~.preview .demo-form{background:#111f31;border:1px solid rgba(110,231,249,.45);border-radius:.35rem;padding:1rem}.v4:checked~.preview .demo-form input,.v4:checked~.preview .demo-input,.v4:checked~.preview .demo-textarea,.v4:checked~.preview .demo-select{border-color:var(--cyan);background:#f8feff;border-radius:.65rem;box-shadow:inset 0 1px 2px rgba(0,57,100,.08)}.v5:checked~.preview .demo-form input,.v5:checked~.preview .demo-input,.v5:checked~.preview .demo-textarea,.v5:checked~.preview .demo-select{border-color:#6ee7f9;background:#20344f;color:#fff;border-radius:.25rem;outline:3px solid rgba(110,231,249,.12)}.v4:checked~.preview .demo-fieldset{border-color:var(--cyan);background:#fff;border-radius:1rem;box-shadow:0 14px 28px rgba(0,171,199,.14)}.v5:checked~.preview .demo-fieldset{border-color:#6ee7f9;background:#111f31;color:#f6fbff;border-radius:.35rem}.v4:checked~.preview .demo-context{background:#fff;border-left:5px solid var(--cyan);border-radius:.6rem;padding:.75rem}.v5:checked~.preview .demo-context{background:#111f31;border:1px solid rgba(110,231,249,.45);border-radius:.35rem;padding:.75rem;color:#d9eef4}.v5:checked~.preview .demo-context strong{color:#bdf77a}.exercise{margin-top:1rem;border-left:5px solid var(--cyan)}.obsolete-box ul{columns:2;margin-bottom:0}@media(max-width:960px){.tag-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tag-card[open]{grid-column:1/-1}}@media(max-width:640px){.tag-grid{grid-template-columns:1fr}.tag-card[open]{grid-column:1/-1}.site-header{padding-top:1.6rem}.day-nav{position:static}.obsolete-box ul{columns:1}}
+  </style>
+  <link rel="stylesheet" href="">
+  <link rel="stylesheet" href="../assets/css/unified-layout.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <span class="kicker">HTML und CSS</span>
+      <h1>Übersicht wichtiger HTML-Tags</h1>
+      <p>HTML-Tags verstehen, Syntax ansehen und passende CSS-Styles direkt vergleichen.</p>
+      <p>Die Tags sind nach Themenbereichen gruppiert. Jedes Tag kann aufgeklappt werden. In der Detailansicht wird das Tag erklärt, als HTML-Code gezeigt und mit passenden CSS-Varianten in Aktion dargestellt.</p>
+    </div>
+  </header>
+  <nav class="day-nav" aria-label="Tagesnavigation"><div class="wrap"><a href="#tag1">Tag 1: HTML-Grundstruktur und CSS-Basics</a><a href="#tag2">Tag 2: Navigation, Buttons und Flexbox</a><a href="#tag3">Tag 3: Struktur, Karten und Grid</a><a href="#tag4">Tag 4: Responsive HTML-Elemente</a><a href="#tag5">Tag 5: Formulare, Webfonts und saubere CSS-Struktur</a></div></nav>
+  <main>
+    <section class="intro"><div class="wrap intro-card"><strong>So funktioniert die Übersicht:</strong> Öffne eine Tag-Karte, wähle eine CSS-Variante über die Tabs und vergleiche Vorschau und Code. Die Umschaltung erfolgt nur mit HTML und CSS.</div></section>
+
+<section class="day-section" id="tag1"><div class="wrap"><div class="day-head"><span class="kicker">Tag 1</span><h2>Tag 1: HTML-Grundstruktur und CSS-Basics</h2><p>Der erste Tag legt das Fundament: HTML-Dokumente werden sauber aufgebaut, Inhalte semantisch gegliedert und mit grundlegenden CSS-Eigenschaften gestaltet.</p><p><strong>CSS-Schwerpunkte:</strong> Elementselektoren, Klassen, IDs, Farben, Schrift, Abstände, Rahmen, Breiten, Box-Modell und Custom Properties.</p><div class="tag-list"><span>&lt;html&gt;</span><span>&lt;head&gt;</span><span>&lt;title&gt;</span><span>&lt;meta&gt;</span><span>&lt;link&gt;</span><span>&lt;body&gt;</span><span>&lt;header&gt;</span><span>&lt;main&gt;</span><span>&lt;section&gt;</span><span>&lt;article&gt;</span><span>&lt;footer&gt;</span><span>&lt;h1&gt;</span><span>&lt;h2&gt;</span><span>&lt;p&gt;</span><span>&lt;ul&gt;</span><span>&lt;ol&gt;</span><span>&lt;li&gt;</span><span>&lt;a&gt;</span><span>&lt;img&gt;</span><span>&lt;div&gt;</span><span>&lt;span&gt;</span></div></div><div class="tag-grid">
+<details class="tag-card">
+  <summary><span>&lt;html&gt;</span><small>Dokument</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;html&gt;</h3>
+    <h4>Bedeutung</h4><p>Das html-Element ist das Wurzelelement einer HTML-Seite.</p>
+    <h4>Typische Verwendung</h4><p>Es umschließt head und body und legt über lang die Sprache fest.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;html lang=&quot;de&quot;&gt;
+  &lt;head&gt;...&lt;/head&gt;
+  &lt;body&gt;...&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>html
+html[lang=&quot;de&quot;]</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-1-html" id="demo-1-html-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-1-html" id="demo-1-html-v2">
+    <input class="variant-input v3" type="radio" name="demo-1-html" id="demo-1-html-v3">
+    <input class="variant-input v4" type="radio" name="demo-1-html" id="demo-1-html-v4">
+    <input class="variant-input v5" type="radio" name="demo-1-html" id="demo-1-html-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-1-html-v1">Standard</label><label class="tab-2" for="demo-1-html-v2">Akzent</label><label class="tab-3" for="demo-1-html-v3">Layout</label><label class="tab-4" for="demo-1-html-v4">Karte</label><label class="tab-5" for="demo-1-html-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;html&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>html {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.html-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.html-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>html {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>html {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Das lang-Attribut hilft Screenreadern, Suchmaschinen und Übersetzungsfunktionen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;head&gt;</span><small>Dokument</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;head&gt;</h3>
+    <h4>Bedeutung</h4><p>Das head-Element enthält Metadaten der Seite.</p>
+    <h4>Typische Verwendung</h4><p>Hier stehen Zeichensatz, Viewport, Titel und bei Bedarf interne Styles.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;Meine Seite&lt;/title&gt;
+&lt;/head&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>head
+head meta
+head title</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-2-head" id="demo-2-head-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-2-head" id="demo-2-head-v2">
+    <input class="variant-input v3" type="radio" name="demo-2-head" id="demo-2-head-v3">
+    <input class="variant-input v4" type="radio" name="demo-2-head" id="demo-2-head-v4">
+    <input class="variant-input v5" type="radio" name="demo-2-head" id="demo-2-head-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-2-head-v1">Standard</label><label class="tab-2" for="demo-2-head-v2">Akzent</label><label class="tab-3" for="demo-2-head-v3">Layout</label><label class="tab-4" for="demo-2-head-v4">Karte</label><label class="tab-5" for="demo-2-head-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;head&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>head {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.head-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.head-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>head {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Im head steht normalerweise kein sichtbarer Seiteninhalt.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;title&gt;</span><small>Dokument</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;title&gt;</h3>
+    <h4>Bedeutung</h4><p>Das title-Element definiert den Titel im Browser-Tab.</p>
+    <h4>Typische Verwendung</h4><p>Es hilft Orientierung, Lesezeichen und Suchmaschinen.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;title&gt;Übersicht wichtiger HTML-Tags&lt;/title&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>title</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-3-title" id="demo-3-title-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-3-title" id="demo-3-title-v2">
+    <input class="variant-input v3" type="radio" name="demo-3-title" id="demo-3-title-v3">
+    <input class="variant-input v4" type="radio" name="demo-3-title" id="demo-3-title-v4">
+    <input class="variant-input v5" type="radio" name="demo-3-title" id="demo-3-title-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-3-title-v1">Standard</label><label class="tab-2" for="demo-3-title-v2">Akzent</label><label class="tab-3" for="demo-3-title-v3">Layout</label><label class="tab-4" for="demo-3-title-v4">Karte</label><label class="tab-5" for="demo-3-title-v5">Kontrast</label></div>
+    <div class="preview"><h3 class="demo-target demo-heading">HTML und CSS verstehen</h3><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>title {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.title-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.title-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>title {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Jede Seite sollte einen eindeutigen title besitzen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;meta&gt;</span><small>Dokument</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;meta&gt;</h3>
+    <h4>Bedeutung</h4><p>Das meta-Element beschreibt technische Metadaten.</p>
+    <h4>Typische Verwendung</h4><p>Typisch sind Zeichensatz und Viewport für responsive Seiten.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>meta
+meta[name=&quot;viewport&quot;]</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-4-meta" id="demo-4-meta-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-4-meta" id="demo-4-meta-v2">
+    <input class="variant-input v3" type="radio" name="demo-4-meta" id="demo-4-meta-v3">
+    <input class="variant-input v4" type="radio" name="demo-4-meta" id="demo-4-meta-v4">
+    <input class="variant-input v5" type="radio" name="demo-4-meta" id="demo-4-meta-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-4-meta-v1">Standard</label><label class="tab-2" for="demo-4-meta-v2">Akzent</label><label class="tab-3" for="demo-4-meta-v3">Layout</label><label class="tab-4" for="demo-4-meta-v4">Karte</label><label class="tab-5" for="demo-4-meta-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;meta&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>meta {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.meta-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.meta-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>meta {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Der Viewport-Eintrag ist für mobile Darstellung besonders wichtig.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;link&gt;</span><small>Dokument</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;link&gt;</h3>
+    <h4>Bedeutung</h4><p>Das link-Element verknüpft Dokumente mit Ressourcen.</p>
+    <h4>Typische Verwendung</h4><p>In Projekten bindet es häufig CSS ein; in dieser Datei bleibt CSS intern.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;link rel=&quot;stylesheet&quot; href=&quot;styles.css&quot;&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>link
+link[rel=&quot;stylesheet&quot;]</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-5-link" id="demo-5-link-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-5-link" id="demo-5-link-v2">
+    <input class="variant-input v3" type="radio" name="demo-5-link" id="demo-5-link-v3">
+    <input class="variant-input v4" type="radio" name="demo-5-link" id="demo-5-link-v4">
+    <input class="variant-input v5" type="radio" name="demo-5-link" id="demo-5-link-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-5-link-v1">Standard</label><label class="tab-2" for="demo-5-link-v2">Akzent</label><label class="tab-3" for="demo-5-link-v3">Layout</label><label class="tab-4" for="demo-5-link-v4">Karte</label><label class="tab-5" for="demo-5-link-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;link&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>link {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.link-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.link-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>link {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Für diese Übersicht wird kein echtes externes Stylesheet eingebunden.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;body&gt;</span><small>Dokument</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;body&gt;</h3>
+    <h4>Bedeutung</h4><p>Das body-Element enthält den sichtbaren Seiteninhalt.</p>
+    <h4>Typische Verwendung</h4><p>Alles, was im Browser angezeigt oder bedient wird, liegt im body.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;body&gt;
+  &lt;header&gt;...&lt;/header&gt;
+  &lt;main&gt;...&lt;/main&gt;
+&lt;/body&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>body
+body &gt; main</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-6-body" id="demo-6-body-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-6-body" id="demo-6-body-v2">
+    <input class="variant-input v3" type="radio" name="demo-6-body" id="demo-6-body-v3">
+    <input class="variant-input v4" type="radio" name="demo-6-body" id="demo-6-body-v4">
+    <input class="variant-input v5" type="radio" name="demo-6-body" id="demo-6-body-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-6-body-v1">Standard</label><label class="tab-2" for="demo-6-body-v2">Akzent</label><label class="tab-3" for="demo-6-body-v3">Layout</label><label class="tab-4" for="demo-6-body-v4">Karte</label><label class="tab-5" for="demo-6-body-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;body&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>body {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.body-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.body-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>body {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Globale Grundgestaltung wie Schrift und Hintergrund wird häufig am body gesetzt.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;header&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;header&gt;</h3>
+    <h4>Bedeutung</h4><p>Das header-Element kennzeichnet einen Kopfbereich.</p>
+    <h4>Typische Verwendung</h4><p>Es enthält häufig Logo, Überschrift, Einleitung oder Navigation.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;header class=&quot;site-header&quot;&gt;
+  &lt;h1&gt;Meine Seite&lt;/h1&gt;
+&lt;/header&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>header
+.site-header
+section &gt; header</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-7-header" id="demo-7-header-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-7-header" id="demo-7-header-v2">
+    <input class="variant-input v3" type="radio" name="demo-7-header" id="demo-7-header-v3">
+    <input class="variant-input v4" type="radio" name="demo-7-header" id="demo-7-header-v4">
+    <input class="variant-input v5" type="radio" name="demo-7-header" id="demo-7-header-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-7-header-v1">Standard</label><label class="tab-2" for="demo-7-header-v2">Akzent</label><label class="tab-3" for="demo-7-header-v3">Layout</label><label class="tab-4" for="demo-7-header-v4">Karte</label><label class="tab-5" for="demo-7-header-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;header&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>header {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.header-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.header-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>header {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Ein header kann für die ganze Seite oder für einen Abschnitt stehen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;main&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;main&gt;</h3>
+    <h4>Bedeutung</h4><p>Das main-Element enthält den Hauptinhalt der Seite.</p>
+    <h4>Typische Verwendung</h4><p>Es sollte pro Seite nur einmal verwendet werden.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;main&gt;
+  &lt;section&gt;...&lt;/section&gt;
+&lt;/main&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>main
+.page-main</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-8-main" id="demo-8-main-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-8-main" id="demo-8-main-v2">
+    <input class="variant-input v3" type="radio" name="demo-8-main" id="demo-8-main-v3">
+    <input class="variant-input v4" type="radio" name="demo-8-main" id="demo-8-main-v4">
+    <input class="variant-input v5" type="radio" name="demo-8-main" id="demo-8-main-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-8-main-v1">Standard</label><label class="tab-2" for="demo-8-main-v2">Akzent</label><label class="tab-3" for="demo-8-main-v3">Layout</label><label class="tab-4" for="demo-8-main-v4">Karte</label><label class="tab-5" for="demo-8-main-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;main&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>main {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.main-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.main-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>main {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>main hilft dabei, Hauptinhalt von Navigation und Fußbereich zu trennen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;section&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;section&gt;</h3>
+    <h4>Bedeutung</h4><p>Das section-Element beschreibt einen thematischen Abschnitt.</p>
+    <h4>Typische Verwendung</h4><p>Es eignet sich für Kapitel, Tagesbereiche oder Inhaltsblöcke.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;section&gt;
+  &lt;h2&gt;Thema&lt;/h2&gt;
+  &lt;p&gt;Inhalt&lt;/p&gt;
+&lt;/section&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>section
+.section
+.section.highlight</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-9-section" id="demo-9-section-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-9-section" id="demo-9-section-v2">
+    <input class="variant-input v3" type="radio" name="demo-9-section" id="demo-9-section-v3">
+    <input class="variant-input v4" type="radio" name="demo-9-section" id="demo-9-section-v4">
+    <input class="variant-input v5" type="radio" name="demo-9-section" id="demo-9-section-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-9-section-v1">Standard</label><label class="tab-2" for="demo-9-section-v2">Akzent</label><label class="tab-3" for="demo-9-section-v3">Layout</label><label class="tab-4" for="demo-9-section-v4">Karte</label><label class="tab-5" for="demo-9-section-v5">Kontrast</label></div>
+    <div class="preview"><section class="demo-target demo-section"><strong>Abschnitt</strong><p>Ein thematischer Bereich.</p></section><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>section {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.section-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.section-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>section {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Eine section sollte in der Regel eine passende Überschrift besitzen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;article&gt;</span><small>Komponente</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;article&gt;</h3>
+    <h4>Bedeutung</h4><p>Das article-Element beschreibt eigenständigen Inhalt.</p>
+    <h4>Typische Verwendung</h4><p>Typisch sind Karten, Beiträge, Meldungen oder Projektblöcke.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;article class=&quot;card&quot;&gt;
+  &lt;h2&gt;Karte&lt;/h2&gt;
+  &lt;p&gt;Text&lt;/p&gt;
+&lt;/article&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>article
+.card
+.card:hover</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-10-article" id="demo-10-article-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-10-article" id="demo-10-article-v2">
+    <input class="variant-input v3" type="radio" name="demo-10-article" id="demo-10-article-v3">
+    <input class="variant-input v4" type="radio" name="demo-10-article" id="demo-10-article-v4">
+    <input class="variant-input v5" type="radio" name="demo-10-article" id="demo-10-article-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-10-article-v1">Standard</label><label class="tab-2" for="demo-10-article-v2">Akzent</label><label class="tab-3" for="demo-10-article-v3">Layout</label><label class="tab-4" for="demo-10-article-v4">Karte</label><label class="tab-5" for="demo-10-article-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;article&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>article {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.article-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.article-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>article {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>article {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>article eignet sich gut für wiederverwendbare Inhaltskarten.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;footer&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;footer&gt;</h3>
+    <h4>Bedeutung</h4><p>Das footer-Element kennzeichnet einen Fußbereich.</p>
+    <h4>Typische Verwendung</h4><p>Dort stehen oft Zusatzinfos, Copyright, Kontakt oder Quellenangaben.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;footer&gt;
+  &lt;p&gt;Kontakt und Hinweise&lt;/p&gt;
+&lt;/footer&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>footer
+.site-footer</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-11-footer" id="demo-11-footer-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-11-footer" id="demo-11-footer-v2">
+    <input class="variant-input v3" type="radio" name="demo-11-footer" id="demo-11-footer-v3">
+    <input class="variant-input v4" type="radio" name="demo-11-footer" id="demo-11-footer-v4">
+    <input class="variant-input v5" type="radio" name="demo-11-footer" id="demo-11-footer-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-11-footer-v1">Standard</label><label class="tab-2" for="demo-11-footer-v2">Akzent</label><label class="tab-3" for="demo-11-footer-v3">Layout</label><label class="tab-4" for="demo-11-footer-v4">Karte</label><label class="tab-5" for="demo-11-footer-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;footer&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>footer {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.footer-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.footer-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>footer {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Ein footer kann zur ganzen Seite oder zu einem article gehören.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;h1&gt;</span><small>Text</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;h1&gt;</h3>
+    <h4>Bedeutung</h4><p>Das h1-Element ist die wichtigste Überschrift einer Seite.</p>
+    <h4>Typische Verwendung</h4><p>Es beschreibt das zentrale Thema des Dokuments.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;h1&gt;Übersicht wichtiger HTML-Tags&lt;/h1&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>h1
+.hero-title
+main h1</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-12-h1" id="demo-12-h1-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-12-h1" id="demo-12-h1-v2">
+    <input class="variant-input v3" type="radio" name="demo-12-h1" id="demo-12-h1-v3">
+    <input class="variant-input v4" type="radio" name="demo-12-h1" id="demo-12-h1-v4">
+    <input class="variant-input v5" type="radio" name="demo-12-h1" id="demo-12-h1-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-12-h1-v1">Standard</label><label class="tab-2" for="demo-12-h1-v2">Akzent</label><label class="tab-3" for="demo-12-h1-v3">Layout</label><label class="tab-4" for="demo-12-h1-v4">Karte</label><label class="tab-5" for="demo-12-h1-v5">Kontrast</label></div>
+    <div class="preview"><h3 class="demo-target demo-heading">HTML und CSS verstehen</h3><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>h1 {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.h1-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.h1-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>h1 {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>h1 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Die h1 nicht nur wegen der Schriftgröße wählen, sondern wegen der Bedeutung.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;h2&gt;</span><small>Text</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;h2&gt;</h3>
+    <h4>Bedeutung</h4><p>Das h2-Element gliedert größere Unterbereiche.</p>
+    <h4>Typische Verwendung</h4><p>Es eignet sich für Kapitel wie Tagesbereiche oder Inhaltsgruppen.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;h2&gt;Tag 1: HTML-Grundstruktur&lt;/h2&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>h2
+.section-title
+section h2</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-13-h2" id="demo-13-h2-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-13-h2" id="demo-13-h2-v2">
+    <input class="variant-input v3" type="radio" name="demo-13-h2" id="demo-13-h2-v3">
+    <input class="variant-input v4" type="radio" name="demo-13-h2" id="demo-13-h2-v4">
+    <input class="variant-input v5" type="radio" name="demo-13-h2" id="demo-13-h2-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-13-h2-v1">Standard</label><label class="tab-2" for="demo-13-h2-v2">Akzent</label><label class="tab-3" for="demo-13-h2-v3">Layout</label><label class="tab-4" for="demo-13-h2-v4">Karte</label><label class="tab-5" for="demo-13-h2-v5">Kontrast</label></div>
+    <div class="preview"><h3 class="demo-target demo-heading">HTML und CSS verstehen</h3><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>h2 {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.h2-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.h2-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>h2 {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Überschriften sollten eine nachvollziehbare Reihenfolge behalten.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;p&gt;</span><small>Text</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;p&gt;</h3>
+    <h4>Bedeutung</h4><p>Das p-Element beschreibt einen Textabsatz.</p>
+    <h4>Typische Verwendung</h4><p>Es ist die Standardwahl für zusammenhängenden Fließtext.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;p&gt;Dies ist ein gut lesbarer Absatz.&lt;/p&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>p
+.lead
+.note</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-14-p" id="demo-14-p-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-14-p" id="demo-14-p-v2">
+    <input class="variant-input v3" type="radio" name="demo-14-p" id="demo-14-p-v3">
+    <input class="variant-input v4" type="radio" name="demo-14-p" id="demo-14-p-v4">
+    <input class="variant-input v5" type="radio" name="demo-14-p" id="demo-14-p-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-14-p-v1">Standard</label><label class="tab-2" for="demo-14-p-v2">Akzent</label><label class="tab-3" for="demo-14-p-v3">Layout</label><label class="tab-4" for="demo-14-p-v4">Karte</label><label class="tab-5" for="demo-14-p-v5">Kontrast</label></div>
+    <div class="preview"><p class="demo-target demo-paragraph">Ein gut lesbarer Absatz braucht ausreichend Zeilenhöhe, sinnvolle Breite und klare Abstände.</p><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>p {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.p-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.p-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>p {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Lesbarkeit entsteht durch Zeilenhöhe, Breite und ausreichende Abstände.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;ul&gt;</span><small>Liste</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;ul&gt;</h3>
+    <h4>Bedeutung</h4><p>Das ul-Element erstellt eine ungeordnete Liste.</p>
+    <h4>Typische Verwendung</h4><p>Es eignet sich für Merkmale, Stichpunkte oder Navigationspunkte ohne feste Reihenfolge.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;ul&gt;
+  &lt;li&gt;HTML&lt;/li&gt;
+  &lt;li&gt;CSS&lt;/li&gt;
+&lt;/ul&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>ul
+.feature-list
+ul li</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-15-ul" id="demo-15-ul-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-15-ul" id="demo-15-ul-v2">
+    <input class="variant-input v3" type="radio" name="demo-15-ul" id="demo-15-ul-v3">
+    <input class="variant-input v4" type="radio" name="demo-15-ul" id="demo-15-ul-v4">
+    <input class="variant-input v5" type="radio" name="demo-15-ul" id="demo-15-ul-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-15-ul-v1">Standard</label><label class="tab-2" for="demo-15-ul-v2">Akzent</label><label class="tab-3" for="demo-15-ul-v3">Layout</label><label class="tab-4" for="demo-15-ul-v4">Karte</label><label class="tab-5" for="demo-15-ul-v5">Kontrast</label></div>
+    <div class="preview"><ul class="demo-target demo-list"><li>Struktur</li><li>Style</li><li>Prüfen</li></ul><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>ul {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.ul-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.ul-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>ul {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Listen sind semantischer als Absätze mit Bindestrichen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;ol&gt;</span><small>Liste</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;ol&gt;</h3>
+    <h4>Bedeutung</h4><p>Das ol-Element erstellt eine geordnete Liste.</p>
+    <h4>Typische Verwendung</h4><p>Es wird verwendet, wenn Reihenfolge oder Schritte wichtig sind.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;ol&gt;
+  &lt;li&gt;Struktur erstellen&lt;/li&gt;
+  &lt;li&gt;CSS anwenden&lt;/li&gt;
+&lt;/ol&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>ol
+.steps
+ol li</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-16-ol" id="demo-16-ol-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-16-ol" id="demo-16-ol-v2">
+    <input class="variant-input v3" type="radio" name="demo-16-ol" id="demo-16-ol-v3">
+    <input class="variant-input v4" type="radio" name="demo-16-ol" id="demo-16-ol-v4">
+    <input class="variant-input v5" type="radio" name="demo-16-ol" id="demo-16-ol-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-16-ol-v1">Standard</label><label class="tab-2" for="demo-16-ol-v2">Akzent</label><label class="tab-3" for="demo-16-ol-v3">Layout</label><label class="tab-4" for="demo-16-ol-v4">Karte</label><label class="tab-5" for="demo-16-ol-v5">Kontrast</label></div>
+    <div class="preview"><ul class="demo-target demo-list"><li>Struktur</li><li>Style</li><li>Prüfen</li></ul><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>ol {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.ol-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.ol-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>ol {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Für Arbeitsabläufe ist ol oft aussagekräftiger als ul.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;li&gt;</span><small>Liste</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;li&gt;</h3>
+    <h4>Bedeutung</h4><p>Das li-Element ist ein einzelner Listeneintrag.</p>
+    <h4>Typische Verwendung</h4><p>Es steht innerhalb von ul, ol oder menu.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;li&gt;Responsive Design prüfen&lt;/li&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>li
+ul &gt; li
+ol &gt; li</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-17-li" id="demo-17-li-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-17-li" id="demo-17-li-v2">
+    <input class="variant-input v3" type="radio" name="demo-17-li" id="demo-17-li-v3">
+    <input class="variant-input v4" type="radio" name="demo-17-li" id="demo-17-li-v4">
+    <input class="variant-input v5" type="radio" name="demo-17-li" id="demo-17-li-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-17-li-v1">Standard</label><label class="tab-2" for="demo-17-li-v2">Akzent</label><label class="tab-3" for="demo-17-li-v3">Layout</label><label class="tab-4" for="demo-17-li-v4">Karte</label><label class="tab-5" for="demo-17-li-v5">Kontrast</label></div>
+    <div class="preview"><ul class="demo-target demo-list"><li>Struktur</li><li>Style</li><li>Prüfen</li></ul><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>li {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.li-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.li-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>li {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>li erhält Bedeutung durch den Listentyp, in dem es steht.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;a&gt;</span><small>Interaktion</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;a&gt;</h3>
+    <h4>Bedeutung</h4><p>Das a-Element erstellt einen Link.</p>
+    <h4>Typische Verwendung</h4><p>Es führt zu einer Stelle auf derselben Seite oder zu einem Ziel.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;a href=&quot;#tag1&quot;&gt;Zu Tag 1 springen&lt;/a&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>a
+.nav-link
+.button-link
+a:hover</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-18-a" id="demo-18-a-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-18-a" id="demo-18-a-v2">
+    <input class="variant-input v3" type="radio" name="demo-18-a" id="demo-18-a-v3">
+    <input class="variant-input v4" type="radio" name="demo-18-a" id="demo-18-a-v4">
+    <input class="variant-input v5" type="radio" name="demo-18-a" id="demo-18-a-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-18-a-v1">Standard</label><label class="tab-2" for="demo-18-a-v2">Akzent</label><label class="tab-3" for="demo-18-a-v3">Layout</label><label class="tab-4" for="demo-18-a-v4">Karte</label><label class="tab-5" for="demo-18-a-v5">Kontrast</label></div>
+    <div class="preview"><a class="demo-target demo-link" href="#">Beispiel-Link</a><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>a {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.a-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.a-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>a {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>a {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Ein Linktext sollte sagen, wohin der Link führt.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;img&gt;</span><small>Medien</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;img&gt;</h3>
+    <h4>Bedeutung</h4><p>Das img-Element bindet ein Bild ein.</p>
+    <h4>Typische Verwendung</h4><p>Das alt-Attribut beschreibt Inhalt oder Funktion des Bildes.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;img src=&quot;bild.jpg&quot; alt=&quot;Beispielbild&quot;&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>img
+.card img
+img.responsive</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-19-img" id="demo-19-img-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-19-img" id="demo-19-img-v2">
+    <input class="variant-input v3" type="radio" name="demo-19-img" id="demo-19-img-v3">
+    <input class="variant-input v4" type="radio" name="demo-19-img" id="demo-19-img-v4">
+    <input class="variant-input v5" type="radio" name="demo-19-img" id="demo-19-img-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-19-img-v1">Standard</label><label class="tab-2" for="demo-19-img-v2">Akzent</label><label class="tab-3" for="demo-19-img-v3">Layout</label><label class="tab-4" for="demo-19-img-v4">Karte</label><label class="tab-5" for="demo-19-img-v5">Kontrast</label></div>
+    <div class="preview"><div class="demo-target demo-image">Bild</div><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>img {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.img-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.img-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>img {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>img {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Bilder sollten mit max-width:100% und height:auto flexibel bleiben.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;div&gt;</span><small>Container</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;div&gt;</h3>
+    <h4>Bedeutung</h4><p>Das div-Element ist ein allgemeiner Blockcontainer ohne eigene Bedeutung.</p>
+    <h4>Typische Verwendung</h4><p>Es wird genutzt, wenn kein semantisch passenderes Element existiert.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;div class=&quot;layout-box&quot;&gt;Inhalt&lt;/div&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>div
+.wrapper
+.layout-box</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-20-div" id="demo-20-div-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-20-div" id="demo-20-div-v2">
+    <input class="variant-input v3" type="radio" name="demo-20-div" id="demo-20-div-v3">
+    <input class="variant-input v4" type="radio" name="demo-20-div" id="demo-20-div-v4">
+    <input class="variant-input v5" type="radio" name="demo-20-div" id="demo-20-div-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-20-div-v1">Standard</label><label class="tab-2" for="demo-20-div-v2">Akzent</label><label class="tab-3" for="demo-20-div-v3">Layout</label><label class="tab-4" for="demo-20-div-v4">Karte</label><label class="tab-5" for="demo-20-div-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;div&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>div {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.div-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.div-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>div {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>div sollte nicht jedes semantische Element ersetzen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;span&gt;</span><small>Text</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;span&gt;</h3>
+    <h4>Bedeutung</h4><p>Das span-Element ist ein allgemeiner Inline-Container.</p>
+    <h4>Typische Verwendung</h4><p>Es markiert kurze Textteile innerhalb einer Zeile.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;p&gt;Ein &lt;span class=&quot;highlight&quot;&gt;wichtiger Begriff&lt;/span&gt;.&lt;/p&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>span
+.highlight
+p span</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-21-span" id="demo-21-span-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-21-span" id="demo-21-span-v2">
+    <input class="variant-input v3" type="radio" name="demo-21-span" id="demo-21-span-v3">
+    <input class="variant-input v4" type="radio" name="demo-21-span" id="demo-21-span-v4">
+    <input class="variant-input v5" type="radio" name="demo-21-span" id="demo-21-span-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-21-span-v1">Standard</label><label class="tab-2" for="demo-21-span-v2">Akzent</label><label class="tab-3" for="demo-21-span-v3">Layout</label><label class="tab-4" for="demo-21-span-v4">Karte</label><label class="tab-5" for="demo-21-span-v5">Kontrast</label></div>
+    <div class="preview"><p>Ein <span class="demo-target demo-span">markierter Begriff</span> im Satz.</p><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>span {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.span-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.span-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>span {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>span eignet sich für kleine Hervorhebungen ohne Blockumbruch.</p>
+  </div>
+</details></div><div class="exercise"><strong>Kurze Übungsidee:</strong> Erstelle eine einfache Profilseite mit Header, Hauptbereich, Abschnitt, Texten, Liste, Bildplatzhalter und Link. Gestalte Farben, Abstände und Rahmen mit CSS.</div></div></section>
+<section class="day-section" id="tag2"><div class="wrap"><div class="day-head"><span class="kicker">Tag 2</span><h2>Tag 2: Navigation, Buttons und Flexbox</h2><p>Am zweiten Tag werden aus einzelnen Elementen bedienbare Oberflächen: Navigationen, Buttons, Listen und Karten werden mit Flexbox ausgerichtet.</p><p><strong>CSS-Schwerpunkte:</strong> display:flex, flex-direction, justify-content, align-items, gap, flex-wrap, flex-basis, Hover-Zustände, Button-Styles und Komponentenklassen.</p><div class="tag-list"><span>&lt;nav&gt;</span><span>&lt;header&gt;</span><span>&lt;button&gt;</span><span>&lt;a&gt;</span><span>&lt;ul&gt;</span><span>&lt;li&gt;</span><span>&lt;div&gt;</span><span>&lt;section&gt;</span><span>&lt;article&gt;</span></div></div><div class="tag-grid">
+<details class="tag-card">
+  <summary><span>&lt;nav&gt;</span><small>Navigation</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;nav&gt;</h3>
+    <h4>Bedeutung</h4><p>Das nav-Element kennzeichnet zentrale Navigation.</p>
+    <h4>Typische Verwendung</h4><p>Es enthält wichtige Links zu Bereichen oder Seitenabschnitten.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;nav aria-label=&quot;Tagesnavigation&quot;&gt;
+  &lt;a href=&quot;#tag1&quot;&gt;Tag 1&lt;/a&gt;
+&lt;/nav&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>nav
+.main-nav
+nav a</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-22-nav" id="demo-22-nav-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-22-nav" id="demo-22-nav-v2">
+    <input class="variant-input v3" type="radio" name="demo-22-nav" id="demo-22-nav-v3">
+    <input class="variant-input v4" type="radio" name="demo-22-nav" id="demo-22-nav-v4">
+    <input class="variant-input v5" type="radio" name="demo-22-nav" id="demo-22-nav-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-22-nav-v1">Standard</label><label class="tab-2" for="demo-22-nav-v2">Akzent</label><label class="tab-3" for="demo-22-nav-v3">Layout</label><label class="tab-4" for="demo-22-nav-v4">Karte</label><label class="tab-5" for="demo-22-nav-v5">Kontrast</label></div>
+    <div class="preview"><nav class="demo-target demo-nav"><a href="#">Start</a><a href="#">Tags</a><a href="#">Kontakt</a></nav><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>nav {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.nav-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.nav-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>nav {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Nicht jede Linkliste muss nav sein; nav ist für zentrale Navigation gedacht.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;header&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;header&gt;</h3>
+    <h4>Bedeutung</h4><p>Das header-Element kennzeichnet einen Kopfbereich.</p>
+    <h4>Typische Verwendung</h4><p>Es enthält häufig Logo, Überschrift, Einleitung oder Navigation.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;header class=&quot;site-header&quot;&gt;
+  &lt;h1&gt;Meine Seite&lt;/h1&gt;
+&lt;/header&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>header
+.site-header
+section &gt; header</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-23-header" id="demo-23-header-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-23-header" id="demo-23-header-v2">
+    <input class="variant-input v3" type="radio" name="demo-23-header" id="demo-23-header-v3">
+    <input class="variant-input v4" type="radio" name="demo-23-header" id="demo-23-header-v4">
+    <input class="variant-input v5" type="radio" name="demo-23-header" id="demo-23-header-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-23-header-v1">Standard</label><label class="tab-2" for="demo-23-header-v2">Akzent</label><label class="tab-3" for="demo-23-header-v3">Layout</label><label class="tab-4" for="demo-23-header-v4">Karte</label><label class="tab-5" for="demo-23-header-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;header&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>header {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.header-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.header-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>header {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Ein header kann für die ganze Seite oder für einen Abschnitt stehen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;button&gt;</span><small>Interaktion</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;button&gt;</h3>
+    <h4>Bedeutung</h4><p>Das button-Element beschreibt eine Schaltfläche für eine Aktion.</p>
+    <h4>Typische Verwendung</h4><p>Buttons werden für Formulare und Bedienaktionen verwendet.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;button type=&quot;button&quot;&gt;Mehr erfahren&lt;/button&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>button
+.btn
+button:hover
+button:focus-visible</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-24-button" id="demo-24-button-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-24-button" id="demo-24-button-v2">
+    <input class="variant-input v3" type="radio" name="demo-24-button" id="demo-24-button-v3">
+    <input class="variant-input v4" type="radio" name="demo-24-button" id="demo-24-button-v4">
+    <input class="variant-input v5" type="radio" name="demo-24-button" id="demo-24-button-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-24-button-v1">Standard</label><label class="tab-2" for="demo-24-button-v2">Akzent</label><label class="tab-3" for="demo-24-button-v3">Layout</label><label class="tab-4" for="demo-24-button-v4">Karte</label><label class="tab-5" for="demo-24-button-v5">Kontrast</label></div>
+    <div class="preview"><button class="demo-target demo-button" type="button">Mehr erfahren</button><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>button {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.button-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.button-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>button {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Ein button sollte immer einen passenden type besitzen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;a&gt;</span><small>Interaktion</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;a&gt;</h3>
+    <h4>Bedeutung</h4><p>Das a-Element erstellt einen Link.</p>
+    <h4>Typische Verwendung</h4><p>Es führt zu einer Stelle auf derselben Seite oder zu einem Ziel.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;a href=&quot;#tag1&quot;&gt;Zu Tag 1 springen&lt;/a&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>a
+.nav-link
+.button-link
+a:hover</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-25-a" id="demo-25-a-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-25-a" id="demo-25-a-v2">
+    <input class="variant-input v3" type="radio" name="demo-25-a" id="demo-25-a-v3">
+    <input class="variant-input v4" type="radio" name="demo-25-a" id="demo-25-a-v4">
+    <input class="variant-input v5" type="radio" name="demo-25-a" id="demo-25-a-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-25-a-v1">Standard</label><label class="tab-2" for="demo-25-a-v2">Akzent</label><label class="tab-3" for="demo-25-a-v3">Layout</label><label class="tab-4" for="demo-25-a-v4">Karte</label><label class="tab-5" for="demo-25-a-v5">Kontrast</label></div>
+    <div class="preview"><a class="demo-target demo-link" href="#">Beispiel-Link</a><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>a {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.a-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.a-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>a {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>a {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Ein Linktext sollte sagen, wohin der Link führt.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;ul&gt;</span><small>Liste</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;ul&gt;</h3>
+    <h4>Bedeutung</h4><p>Das ul-Element erstellt eine ungeordnete Liste.</p>
+    <h4>Typische Verwendung</h4><p>Es eignet sich für Merkmale, Stichpunkte oder Navigationspunkte ohne feste Reihenfolge.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;ul&gt;
+  &lt;li&gt;HTML&lt;/li&gt;
+  &lt;li&gt;CSS&lt;/li&gt;
+&lt;/ul&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>ul
+.feature-list
+ul li</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-26-ul" id="demo-26-ul-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-26-ul" id="demo-26-ul-v2">
+    <input class="variant-input v3" type="radio" name="demo-26-ul" id="demo-26-ul-v3">
+    <input class="variant-input v4" type="radio" name="demo-26-ul" id="demo-26-ul-v4">
+    <input class="variant-input v5" type="radio" name="demo-26-ul" id="demo-26-ul-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-26-ul-v1">Standard</label><label class="tab-2" for="demo-26-ul-v2">Akzent</label><label class="tab-3" for="demo-26-ul-v3">Layout</label><label class="tab-4" for="demo-26-ul-v4">Karte</label><label class="tab-5" for="demo-26-ul-v5">Kontrast</label></div>
+    <div class="preview"><ul class="demo-target demo-list"><li>Struktur</li><li>Style</li><li>Prüfen</li></ul><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>ul {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.ul-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.ul-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>ul {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Listen sind semantischer als Absätze mit Bindestrichen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;li&gt;</span><small>Liste</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;li&gt;</h3>
+    <h4>Bedeutung</h4><p>Das li-Element ist ein einzelner Listeneintrag.</p>
+    <h4>Typische Verwendung</h4><p>Es steht innerhalb von ul, ol oder menu.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;li&gt;Responsive Design prüfen&lt;/li&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>li
+ul &gt; li
+ol &gt; li</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-27-li" id="demo-27-li-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-27-li" id="demo-27-li-v2">
+    <input class="variant-input v3" type="radio" name="demo-27-li" id="demo-27-li-v3">
+    <input class="variant-input v4" type="radio" name="demo-27-li" id="demo-27-li-v4">
+    <input class="variant-input v5" type="radio" name="demo-27-li" id="demo-27-li-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-27-li-v1">Standard</label><label class="tab-2" for="demo-27-li-v2">Akzent</label><label class="tab-3" for="demo-27-li-v3">Layout</label><label class="tab-4" for="demo-27-li-v4">Karte</label><label class="tab-5" for="demo-27-li-v5">Kontrast</label></div>
+    <div class="preview"><ul class="demo-target demo-list"><li>Struktur</li><li>Style</li><li>Prüfen</li></ul><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>li {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.li-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.li-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>li {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>li erhält Bedeutung durch den Listentyp, in dem es steht.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;div&gt;</span><small>Container</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;div&gt;</h3>
+    <h4>Bedeutung</h4><p>Das div-Element ist ein allgemeiner Blockcontainer ohne eigene Bedeutung.</p>
+    <h4>Typische Verwendung</h4><p>Es wird genutzt, wenn kein semantisch passenderes Element existiert.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;div class=&quot;layout-box&quot;&gt;Inhalt&lt;/div&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>div
+.wrapper
+.layout-box</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-28-div" id="demo-28-div-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-28-div" id="demo-28-div-v2">
+    <input class="variant-input v3" type="radio" name="demo-28-div" id="demo-28-div-v3">
+    <input class="variant-input v4" type="radio" name="demo-28-div" id="demo-28-div-v4">
+    <input class="variant-input v5" type="radio" name="demo-28-div" id="demo-28-div-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-28-div-v1">Standard</label><label class="tab-2" for="demo-28-div-v2">Akzent</label><label class="tab-3" for="demo-28-div-v3">Layout</label><label class="tab-4" for="demo-28-div-v4">Karte</label><label class="tab-5" for="demo-28-div-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;div&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>div {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.div-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.div-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>div {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>div sollte nicht jedes semantische Element ersetzen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;section&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;section&gt;</h3>
+    <h4>Bedeutung</h4><p>Das section-Element beschreibt einen thematischen Abschnitt.</p>
+    <h4>Typische Verwendung</h4><p>Es eignet sich für Kapitel, Tagesbereiche oder Inhaltsblöcke.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;section&gt;
+  &lt;h2&gt;Thema&lt;/h2&gt;
+  &lt;p&gt;Inhalt&lt;/p&gt;
+&lt;/section&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>section
+.section
+.section.highlight</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-29-section" id="demo-29-section-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-29-section" id="demo-29-section-v2">
+    <input class="variant-input v3" type="radio" name="demo-29-section" id="demo-29-section-v3">
+    <input class="variant-input v4" type="radio" name="demo-29-section" id="demo-29-section-v4">
+    <input class="variant-input v5" type="radio" name="demo-29-section" id="demo-29-section-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-29-section-v1">Standard</label><label class="tab-2" for="demo-29-section-v2">Akzent</label><label class="tab-3" for="demo-29-section-v3">Layout</label><label class="tab-4" for="demo-29-section-v4">Karte</label><label class="tab-5" for="demo-29-section-v5">Kontrast</label></div>
+    <div class="preview"><section class="demo-target demo-section"><strong>Abschnitt</strong><p>Ein thematischer Bereich.</p></section><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>section {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.section-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.section-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>section {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Eine section sollte in der Regel eine passende Überschrift besitzen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;article&gt;</span><small>Komponente</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;article&gt;</h3>
+    <h4>Bedeutung</h4><p>Das article-Element beschreibt eigenständigen Inhalt.</p>
+    <h4>Typische Verwendung</h4><p>Typisch sind Karten, Beiträge, Meldungen oder Projektblöcke.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;article class=&quot;card&quot;&gt;
+  &lt;h2&gt;Karte&lt;/h2&gt;
+  &lt;p&gt;Text&lt;/p&gt;
+&lt;/article&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>article
+.card
+.card:hover</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-30-article" id="demo-30-article-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-30-article" id="demo-30-article-v2">
+    <input class="variant-input v3" type="radio" name="demo-30-article" id="demo-30-article-v3">
+    <input class="variant-input v4" type="radio" name="demo-30-article" id="demo-30-article-v4">
+    <input class="variant-input v5" type="radio" name="demo-30-article" id="demo-30-article-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-30-article-v1">Standard</label><label class="tab-2" for="demo-30-article-v2">Akzent</label><label class="tab-3" for="demo-30-article-v3">Layout</label><label class="tab-4" for="demo-30-article-v4">Karte</label><label class="tab-5" for="demo-30-article-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;article&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>article {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.article-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.article-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>article {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>article {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>article eignet sich gut für wiederverwendbare Inhaltskarten.</p>
+  </div>
+</details></div><div class="exercise"><strong>Kurze Übungsidee:</strong> Baue eine kleine Navigationsleiste mit Linkliste und Button. Vergleiche horizontale, vertikale und umbrechende Varianten.</div></div></section>
+<section class="day-section" id="tag3"><div class="wrap"><div class="day-head"><span class="kicker">Tag 3</span><h2>Tag 3: Struktur, Karten und Grid</h2><p>Der dritte Tag betrachtet Seitenbereiche, Karten und Raster. Grid macht mehrspaltige Übersichten und Seitenlayouts nachvollziehbar.</p><p><strong>CSS-Schwerpunkte:</strong> display:grid, grid-template-columns, grid-template-rows, repeat(), fr, minmax(), auto-fit, auto-fill, grid-template-areas und Kachel-Layouts.</p><div class="tag-list"><span>&lt;main&gt;</span><span>&lt;aside&gt;</span><span>&lt;section&gt;</span><span>&lt;article&gt;</span><span>&lt;div&gt;</span><span>&lt;header&gt;</span><span>&lt;footer&gt;</span><span>&lt;figure&gt;</span><span>&lt;figcaption&gt;</span></div></div><div class="tag-grid">
+<details class="tag-card">
+  <summary><span>&lt;main&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;main&gt;</h3>
+    <h4>Bedeutung</h4><p>Das main-Element enthält den Hauptinhalt der Seite.</p>
+    <h4>Typische Verwendung</h4><p>Es sollte pro Seite nur einmal verwendet werden.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;main&gt;
+  &lt;section&gt;...&lt;/section&gt;
+&lt;/main&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>main
+.page-main</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-31-main" id="demo-31-main-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-31-main" id="demo-31-main-v2">
+    <input class="variant-input v3" type="radio" name="demo-31-main" id="demo-31-main-v3">
+    <input class="variant-input v4" type="radio" name="demo-31-main" id="demo-31-main-v4">
+    <input class="variant-input v5" type="radio" name="demo-31-main" id="demo-31-main-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-31-main-v1">Standard</label><label class="tab-2" for="demo-31-main-v2">Akzent</label><label class="tab-3" for="demo-31-main-v3">Layout</label><label class="tab-4" for="demo-31-main-v4">Karte</label><label class="tab-5" for="demo-31-main-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;main&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>main {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.main-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.main-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>main {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>main hilft dabei, Hauptinhalt von Navigation und Fußbereich zu trennen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;aside&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;aside&gt;</h3>
+    <h4>Bedeutung</h4><p>Das aside-Element enthält ergänzende Inhalte.</p>
+    <h4>Typische Verwendung</h4><p>Typisch sind Sidebar, Infobox oder Zusatzhinweis.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;aside class=&quot;sidebar&quot;&gt;
+  &lt;h2&gt;Hinweis&lt;/h2&gt;
+&lt;/aside&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>aside
+.sidebar
+.info-box</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-32-aside" id="demo-32-aside-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-32-aside" id="demo-32-aside-v2">
+    <input class="variant-input v3" type="radio" name="demo-32-aside" id="demo-32-aside-v3">
+    <input class="variant-input v4" type="radio" name="demo-32-aside" id="demo-32-aside-v4">
+    <input class="variant-input v5" type="radio" name="demo-32-aside" id="demo-32-aside-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-32-aside-v1">Standard</label><label class="tab-2" for="demo-32-aside-v2">Akzent</label><label class="tab-3" for="demo-32-aside-v3">Layout</label><label class="tab-4" for="demo-32-aside-v4">Karte</label><label class="tab-5" for="demo-32-aside-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;aside&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>aside {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.aside-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.aside-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>aside {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>aside {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>aside ist ergänzend, nicht der zentrale Hauptinhalt.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;section&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;section&gt;</h3>
+    <h4>Bedeutung</h4><p>Das section-Element beschreibt einen thematischen Abschnitt.</p>
+    <h4>Typische Verwendung</h4><p>Es eignet sich für Kapitel, Tagesbereiche oder Inhaltsblöcke.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;section&gt;
+  &lt;h2&gt;Thema&lt;/h2&gt;
+  &lt;p&gt;Inhalt&lt;/p&gt;
+&lt;/section&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>section
+.section
+.section.highlight</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-33-section" id="demo-33-section-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-33-section" id="demo-33-section-v2">
+    <input class="variant-input v3" type="radio" name="demo-33-section" id="demo-33-section-v3">
+    <input class="variant-input v4" type="radio" name="demo-33-section" id="demo-33-section-v4">
+    <input class="variant-input v5" type="radio" name="demo-33-section" id="demo-33-section-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-33-section-v1">Standard</label><label class="tab-2" for="demo-33-section-v2">Akzent</label><label class="tab-3" for="demo-33-section-v3">Layout</label><label class="tab-4" for="demo-33-section-v4">Karte</label><label class="tab-5" for="demo-33-section-v5">Kontrast</label></div>
+    <div class="preview"><section class="demo-target demo-section"><strong>Abschnitt</strong><p>Ein thematischer Bereich.</p></section><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>section {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.section-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.section-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>section {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Eine section sollte in der Regel eine passende Überschrift besitzen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;article&gt;</span><small>Komponente</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;article&gt;</h3>
+    <h4>Bedeutung</h4><p>Das article-Element beschreibt eigenständigen Inhalt.</p>
+    <h4>Typische Verwendung</h4><p>Typisch sind Karten, Beiträge, Meldungen oder Projektblöcke.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;article class=&quot;card&quot;&gt;
+  &lt;h2&gt;Karte&lt;/h2&gt;
+  &lt;p&gt;Text&lt;/p&gt;
+&lt;/article&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>article
+.card
+.card:hover</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-34-article" id="demo-34-article-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-34-article" id="demo-34-article-v2">
+    <input class="variant-input v3" type="radio" name="demo-34-article" id="demo-34-article-v3">
+    <input class="variant-input v4" type="radio" name="demo-34-article" id="demo-34-article-v4">
+    <input class="variant-input v5" type="radio" name="demo-34-article" id="demo-34-article-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-34-article-v1">Standard</label><label class="tab-2" for="demo-34-article-v2">Akzent</label><label class="tab-3" for="demo-34-article-v3">Layout</label><label class="tab-4" for="demo-34-article-v4">Karte</label><label class="tab-5" for="demo-34-article-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;article&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>article {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.article-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.article-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>article {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>article {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>article eignet sich gut für wiederverwendbare Inhaltskarten.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;div&gt;</span><small>Container</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;div&gt;</h3>
+    <h4>Bedeutung</h4><p>Das div-Element ist ein allgemeiner Blockcontainer ohne eigene Bedeutung.</p>
+    <h4>Typische Verwendung</h4><p>Es wird genutzt, wenn kein semantisch passenderes Element existiert.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;div class=&quot;layout-box&quot;&gt;Inhalt&lt;/div&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>div
+.wrapper
+.layout-box</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-35-div" id="demo-35-div-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-35-div" id="demo-35-div-v2">
+    <input class="variant-input v3" type="radio" name="demo-35-div" id="demo-35-div-v3">
+    <input class="variant-input v4" type="radio" name="demo-35-div" id="demo-35-div-v4">
+    <input class="variant-input v5" type="radio" name="demo-35-div" id="demo-35-div-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-35-div-v1">Standard</label><label class="tab-2" for="demo-35-div-v2">Akzent</label><label class="tab-3" for="demo-35-div-v3">Layout</label><label class="tab-4" for="demo-35-div-v4">Karte</label><label class="tab-5" for="demo-35-div-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;div&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>div {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.div-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.div-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>div {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>div sollte nicht jedes semantische Element ersetzen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;header&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;header&gt;</h3>
+    <h4>Bedeutung</h4><p>Das header-Element kennzeichnet einen Kopfbereich.</p>
+    <h4>Typische Verwendung</h4><p>Es enthält häufig Logo, Überschrift, Einleitung oder Navigation.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;header class=&quot;site-header&quot;&gt;
+  &lt;h1&gt;Meine Seite&lt;/h1&gt;
+&lt;/header&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>header
+.site-header
+section &gt; header</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-36-header" id="demo-36-header-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-36-header" id="demo-36-header-v2">
+    <input class="variant-input v3" type="radio" name="demo-36-header" id="demo-36-header-v3">
+    <input class="variant-input v4" type="radio" name="demo-36-header" id="demo-36-header-v4">
+    <input class="variant-input v5" type="radio" name="demo-36-header" id="demo-36-header-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-36-header-v1">Standard</label><label class="tab-2" for="demo-36-header-v2">Akzent</label><label class="tab-3" for="demo-36-header-v3">Layout</label><label class="tab-4" for="demo-36-header-v4">Karte</label><label class="tab-5" for="demo-36-header-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;header&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>header {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.header-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.header-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>header {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Ein header kann für die ganze Seite oder für einen Abschnitt stehen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;footer&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;footer&gt;</h3>
+    <h4>Bedeutung</h4><p>Das footer-Element kennzeichnet einen Fußbereich.</p>
+    <h4>Typische Verwendung</h4><p>Dort stehen oft Zusatzinfos, Copyright, Kontakt oder Quellenangaben.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;footer&gt;
+  &lt;p&gt;Kontakt und Hinweise&lt;/p&gt;
+&lt;/footer&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>footer
+.site-footer</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-37-footer" id="demo-37-footer-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-37-footer" id="demo-37-footer-v2">
+    <input class="variant-input v3" type="radio" name="demo-37-footer" id="demo-37-footer-v3">
+    <input class="variant-input v4" type="radio" name="demo-37-footer" id="demo-37-footer-v4">
+    <input class="variant-input v5" type="radio" name="demo-37-footer" id="demo-37-footer-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-37-footer-v1">Standard</label><label class="tab-2" for="demo-37-footer-v2">Akzent</label><label class="tab-3" for="demo-37-footer-v3">Layout</label><label class="tab-4" for="demo-37-footer-v4">Karte</label><label class="tab-5" for="demo-37-footer-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;footer&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>footer {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.footer-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.footer-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>footer {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Ein footer kann zur ganzen Seite oder zu einem article gehören.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;figure&gt;</span><small>Medien</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;figure&gt;</h3>
+    <h4>Bedeutung</h4><p>Das figure-Element gruppiert Medien mit optionaler Beschriftung.</p>
+    <h4>Typische Verwendung</h4><p>Es wird für Bilder, Diagramme oder Codeabbildungen genutzt.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;figure&gt;
+  &lt;img src=&quot;bild.jpg&quot; alt=&quot;Beispiel&quot;&gt;
+  &lt;figcaption&gt;Beschreibung&lt;/figcaption&gt;
+&lt;/figure&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>figure
+.media-card
+figure img</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-38-figure" id="demo-38-figure-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-38-figure" id="demo-38-figure-v2">
+    <input class="variant-input v3" type="radio" name="demo-38-figure" id="demo-38-figure-v3">
+    <input class="variant-input v4" type="radio" name="demo-38-figure" id="demo-38-figure-v4">
+    <input class="variant-input v5" type="radio" name="demo-38-figure" id="demo-38-figure-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-38-figure-v1">Standard</label><label class="tab-2" for="demo-38-figure-v2">Akzent</label><label class="tab-3" for="demo-38-figure-v3">Layout</label><label class="tab-4" for="demo-38-figure-v4">Karte</label><label class="tab-5" for="demo-38-figure-v5">Kontrast</label></div>
+    <div class="preview"><figure class="demo-target demo-figure"><div class="demo-image">Bild</div><figcaption>Bildbeschreibung</figcaption></figure><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>figure {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.figure-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.figure-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>figure {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>figure und figcaption halten Bild und Beschreibung zusammen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;figcaption&gt;</span><small>Medien</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;figcaption&gt;</h3>
+    <h4>Bedeutung</h4><p>Das figcaption-Element ist die Beschriftung zu figure.</p>
+    <h4>Typische Verwendung</h4><p>Es erklärt oder benennt den zugehörigen Medieninhalt.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;figcaption&gt;Abbildung: CSS Box-Modell&lt;/figcaption&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>figcaption
+figure figcaption</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-39-figcaption" id="demo-39-figcaption-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-39-figcaption" id="demo-39-figcaption-v2">
+    <input class="variant-input v3" type="radio" name="demo-39-figcaption" id="demo-39-figcaption-v3">
+    <input class="variant-input v4" type="radio" name="demo-39-figcaption" id="demo-39-figcaption-v4">
+    <input class="variant-input v5" type="radio" name="demo-39-figcaption" id="demo-39-figcaption-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-39-figcaption-v1">Standard</label><label class="tab-2" for="demo-39-figcaption-v2">Akzent</label><label class="tab-3" for="demo-39-figcaption-v3">Layout</label><label class="tab-4" for="demo-39-figcaption-v4">Karte</label><label class="tab-5" for="demo-39-figcaption-v5">Kontrast</label></div>
+    <div class="preview"><figure class="demo-figure"><div class="demo-image">Bild</div><figcaption class="demo-target demo-caption">Bildbeschreibung</figcaption></figure><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>figcaption {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.figcaption-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.figcaption-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>figcaption {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Die Beschriftung sollte kurz und hilfreich sein.</p>
+  </div>
+</details></div><div class="exercise"><strong>Kurze Übungsidee:</strong> Erstelle ein Kartenraster mit Bildbereich, Überschrift, Text und Seitenbox. Teste Grid-Spalten und Abstände.</div></div></section>
+<section class="day-section" id="tag4"><div class="wrap"><div class="day-head"><span class="kicker">Tag 4</span><h2>Tag 4: Responsive HTML-Elemente</h2><p>Der vierte Tag zeigt, wie HTML-Elemente auf unterschiedliche Bildschirmbreiten reagieren: Bilder, Navigationen, Container und Schriftgrößen werden flexibel.</p><p><strong>CSS-Schwerpunkte:</strong> @media, Mobile First, Breakpoints, max-width:100%, height:auto, width:min(), clamp(), min(), max(), responsive Navigation, Grid und Flexbox.</p><div class="tag-list"><span>&lt;meta viewport&gt;</span><span>&lt;picture&gt;</span><span>&lt;source&gt;</span><span>&lt;img&gt;</span><span>&lt;nav&gt;</span><span>&lt;button&gt;</span><span>&lt;section&gt;</span><span>&lt;main&gt;</span></div></div><div class="tag-grid">
+<details class="tag-card">
+  <summary><span>&lt;meta viewport&gt;</span><small>Responsive</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;meta viewport&gt;</h3>
+    <h4>Bedeutung</h4><p>Der Viewport-Meta-Tag steuert die mobile Skalierung.</p>
+    <h4>Typische Verwendung</h4><p>Er sorgt dafür, dass responsive CSS-Regeln sinnvoll greifen.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>meta[name=&quot;viewport&quot;]</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-40-meta-viewport" id="demo-40-meta-viewport-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-40-meta-viewport" id="demo-40-meta-viewport-v2">
+    <input class="variant-input v3" type="radio" name="demo-40-meta-viewport" id="demo-40-meta-viewport-v3">
+    <input class="variant-input v4" type="radio" name="demo-40-meta-viewport" id="demo-40-meta-viewport-v4">
+    <input class="variant-input v5" type="radio" name="demo-40-meta-viewport" id="demo-40-meta-viewport-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-40-meta-viewport-v1">Standard</label><label class="tab-2" for="demo-40-meta-viewport-v2">Akzent</label><label class="tab-3" for="demo-40-meta-viewport-v3">Layout</label><label class="tab-4" for="demo-40-meta-viewport-v4">Karte</label><label class="tab-5" for="demo-40-meta-viewport-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;meta viewport&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>meta viewport {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.meta-viewport-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.meta-viewport-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>meta viewport {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>meta viewport {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Ohne Viewport-Meta-Tag wirken mobile Seiten oft künstlich verkleinert.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;picture&gt;</span><small>Responsive</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;picture&gt;</h3>
+    <h4>Bedeutung</h4><p>Das picture-Element bietet alternative Bildquellen.</p>
+    <h4>Typische Verwendung</h4><p>Es wird genutzt, wenn je nach Breite oder Format andere Bilder passend sind.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;picture&gt;
+  &lt;source media=&quot;(min-width: 800px)&quot; srcset=&quot;gross.jpg&quot;&gt;
+  &lt;img src=&quot;klein.jpg&quot; alt=&quot;Beispiel&quot;&gt;
+&lt;/picture&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>picture
+picture img</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-41-picture" id="demo-41-picture-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-41-picture" id="demo-41-picture-v2">
+    <input class="variant-input v3" type="radio" name="demo-41-picture" id="demo-41-picture-v3">
+    <input class="variant-input v4" type="radio" name="demo-41-picture" id="demo-41-picture-v4">
+    <input class="variant-input v5" type="radio" name="demo-41-picture" id="demo-41-picture-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-41-picture-v1">Standard</label><label class="tab-2" for="demo-41-picture-v2">Akzent</label><label class="tab-3" for="demo-41-picture-v3">Layout</label><label class="tab-4" for="demo-41-picture-v4">Karte</label><label class="tab-5" for="demo-41-picture-v5">Kontrast</label></div>
+    <div class="preview"><div class="demo-target demo-image">Bild</div><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>picture {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.picture-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.picture-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>picture {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>picture {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>picture ersetzt nicht das alt-Attribut am img-Element.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;source&gt;</span><small>Responsive</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;source&gt;</h3>
+    <h4>Bedeutung</h4><p>Das source-Element definiert eine Medienquelle.</p>
+    <h4>Typische Verwendung</h4><p>Innerhalb von picture kann es unterschiedliche Bildvarianten anbieten.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;source media=&quot;(min-width: 800px)&quot; srcset=&quot;gross.jpg&quot;&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>source
+picture source</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-42-source" id="demo-42-source-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-42-source" id="demo-42-source-v2">
+    <input class="variant-input v3" type="radio" name="demo-42-source" id="demo-42-source-v3">
+    <input class="variant-input v4" type="radio" name="demo-42-source" id="demo-42-source-v4">
+    <input class="variant-input v5" type="radio" name="demo-42-source" id="demo-42-source-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-42-source-v1">Standard</label><label class="tab-2" for="demo-42-source-v2">Akzent</label><label class="tab-3" for="demo-42-source-v3">Layout</label><label class="tab-4" for="demo-42-source-v4">Karte</label><label class="tab-5" for="demo-42-source-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;source&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>source {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.source-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.source-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>source {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>source selbst ist nicht sichtbar; sichtbar bleibt das img-Element.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;img&gt;</span><small>Medien</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;img&gt;</h3>
+    <h4>Bedeutung</h4><p>Das img-Element bindet ein Bild ein.</p>
+    <h4>Typische Verwendung</h4><p>Das alt-Attribut beschreibt Inhalt oder Funktion des Bildes.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;img src=&quot;bild.jpg&quot; alt=&quot;Beispielbild&quot;&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>img
+.card img
+img.responsive</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-43-img" id="demo-43-img-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-43-img" id="demo-43-img-v2">
+    <input class="variant-input v3" type="radio" name="demo-43-img" id="demo-43-img-v3">
+    <input class="variant-input v4" type="radio" name="demo-43-img" id="demo-43-img-v4">
+    <input class="variant-input v5" type="radio" name="demo-43-img" id="demo-43-img-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-43-img-v1">Standard</label><label class="tab-2" for="demo-43-img-v2">Akzent</label><label class="tab-3" for="demo-43-img-v3">Layout</label><label class="tab-4" for="demo-43-img-v4">Karte</label><label class="tab-5" for="demo-43-img-v5">Kontrast</label></div>
+    <div class="preview"><div class="demo-target demo-image">Bild</div><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>img {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.img-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.img-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>img {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>img {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Bilder sollten mit max-width:100% und height:auto flexibel bleiben.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;nav&gt;</span><small>Navigation</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;nav&gt;</h3>
+    <h4>Bedeutung</h4><p>Das nav-Element kennzeichnet zentrale Navigation.</p>
+    <h4>Typische Verwendung</h4><p>Es enthält wichtige Links zu Bereichen oder Seitenabschnitten.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;nav aria-label=&quot;Tagesnavigation&quot;&gt;
+  &lt;a href=&quot;#tag1&quot;&gt;Tag 1&lt;/a&gt;
+&lt;/nav&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>nav
+.main-nav
+nav a</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-44-nav" id="demo-44-nav-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-44-nav" id="demo-44-nav-v2">
+    <input class="variant-input v3" type="radio" name="demo-44-nav" id="demo-44-nav-v3">
+    <input class="variant-input v4" type="radio" name="demo-44-nav" id="demo-44-nav-v4">
+    <input class="variant-input v5" type="radio" name="demo-44-nav" id="demo-44-nav-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-44-nav-v1">Standard</label><label class="tab-2" for="demo-44-nav-v2">Akzent</label><label class="tab-3" for="demo-44-nav-v3">Layout</label><label class="tab-4" for="demo-44-nav-v4">Karte</label><label class="tab-5" for="demo-44-nav-v5">Kontrast</label></div>
+    <div class="preview"><nav class="demo-target demo-nav"><a href="#">Start</a><a href="#">Tags</a><a href="#">Kontakt</a></nav><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>nav {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.nav-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.nav-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>nav {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Nicht jede Linkliste muss nav sein; nav ist für zentrale Navigation gedacht.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;button&gt;</span><small>Interaktion</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;button&gt;</h3>
+    <h4>Bedeutung</h4><p>Das button-Element beschreibt eine Schaltfläche für eine Aktion.</p>
+    <h4>Typische Verwendung</h4><p>Buttons werden für Formulare und Bedienaktionen verwendet.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;button type=&quot;button&quot;&gt;Mehr erfahren&lt;/button&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>button
+.btn
+button:hover
+button:focus-visible</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-45-button" id="demo-45-button-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-45-button" id="demo-45-button-v2">
+    <input class="variant-input v3" type="radio" name="demo-45-button" id="demo-45-button-v3">
+    <input class="variant-input v4" type="radio" name="demo-45-button" id="demo-45-button-v4">
+    <input class="variant-input v5" type="radio" name="demo-45-button" id="demo-45-button-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-45-button-v1">Standard</label><label class="tab-2" for="demo-45-button-v2">Akzent</label><label class="tab-3" for="demo-45-button-v3">Layout</label><label class="tab-4" for="demo-45-button-v4">Karte</label><label class="tab-5" for="demo-45-button-v5">Kontrast</label></div>
+    <div class="preview"><button class="demo-target demo-button" type="button">Mehr erfahren</button><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>button {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.button-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.button-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>button {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Ein button sollte immer einen passenden type besitzen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;section&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;section&gt;</h3>
+    <h4>Bedeutung</h4><p>Das section-Element beschreibt einen thematischen Abschnitt.</p>
+    <h4>Typische Verwendung</h4><p>Es eignet sich für Kapitel, Tagesbereiche oder Inhaltsblöcke.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;section&gt;
+  &lt;h2&gt;Thema&lt;/h2&gt;
+  &lt;p&gt;Inhalt&lt;/p&gt;
+&lt;/section&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>section
+.section
+.section.highlight</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-46-section" id="demo-46-section-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-46-section" id="demo-46-section-v2">
+    <input class="variant-input v3" type="radio" name="demo-46-section" id="demo-46-section-v3">
+    <input class="variant-input v4" type="radio" name="demo-46-section" id="demo-46-section-v4">
+    <input class="variant-input v5" type="radio" name="demo-46-section" id="demo-46-section-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-46-section-v1">Standard</label><label class="tab-2" for="demo-46-section-v2">Akzent</label><label class="tab-3" for="demo-46-section-v3">Layout</label><label class="tab-4" for="demo-46-section-v4">Karte</label><label class="tab-5" for="demo-46-section-v5">Kontrast</label></div>
+    <div class="preview"><section class="demo-target demo-section"><strong>Abschnitt</strong><p>Ein thematischer Bereich.</p></section><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>section {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.section-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.section-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>section {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Eine section sollte in der Regel eine passende Überschrift besitzen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;main&gt;</span><small>Layout</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;main&gt;</h3>
+    <h4>Bedeutung</h4><p>Das main-Element enthält den Hauptinhalt der Seite.</p>
+    <h4>Typische Verwendung</h4><p>Es sollte pro Seite nur einmal verwendet werden.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;main&gt;
+  &lt;section&gt;...&lt;/section&gt;
+&lt;/main&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>main
+.page-main</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-47-main" id="demo-47-main-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-47-main" id="demo-47-main-v2">
+    <input class="variant-input v3" type="radio" name="demo-47-main" id="demo-47-main-v3">
+    <input class="variant-input v4" type="radio" name="demo-47-main" id="demo-47-main-v4">
+    <input class="variant-input v5" type="radio" name="demo-47-main" id="demo-47-main-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-47-main-v1">Standard</label><label class="tab-2" for="demo-47-main-v2">Akzent</label><label class="tab-3" for="demo-47-main-v3">Layout</label><label class="tab-4" for="demo-47-main-v4">Karte</label><label class="tab-5" for="demo-47-main-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;main&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>main {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.main-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.main-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>main {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>main hilft dabei, Hauptinhalt von Navigation und Fußbereich zu trennen.</p>
+  </div>
+</details></div><div class="exercise"><strong>Kurze Übungsidee:</strong> Prüfe ein bestehendes Layout in schmaler und breiter Ansicht. Ersetze feste Breiten durch flexible Werte und setze gezielte Breakpoints.</div></div></section>
+<section class="day-section" id="tag5"><div class="wrap"><div class="day-head"><span class="kicker">Tag 5</span><h2>Tag 5: Formulare, Webfonts und CSS-Struktur</h2><p>Am fünften Tag werden Formulare, Fokuszustände und wiederverwendbare CSS-Strukturen behandelt. Der Code soll gut lesbar und wartbar bleiben.</p><p><strong>CSS-Schwerpunkte:</strong> @font-face, font-family mit Fallbacks, CSS-Struktur, Komponentenklassen, Utility-Klassen, Formularstyling, :focus und :focus-visible.</p><div class="tag-list"><span>&lt;style&gt;</span><span>&lt;link&gt;</span><span>&lt;form&gt;</span><span>&lt;label&gt;</span><span>&lt;input&gt;</span><span>&lt;textarea&gt;</span><span>&lt;select&gt;</span><span>&lt;option&gt;</span><span>&lt;button&gt;</span><span>&lt;fieldset&gt;</span><span>&lt;legend&gt;</span></div></div><div class="tag-grid">
+<details class="tag-card">
+  <summary><span>&lt;style&gt;</span><small>CSS</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;style&gt;</h3>
+    <h4>Bedeutung</h4><p>Das style-Element enthält CSS direkt im HTML-Dokument.</p>
+    <h4>Typische Verwendung</h4><p>Für diese eigenständige Datei liegt das CSS im style-Bereich.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;style&gt;
+  body { font-family: Arial, sans-serif; }
+&lt;/style&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>style</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-48-style" id="demo-48-style-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-48-style" id="demo-48-style-v2">
+    <input class="variant-input v3" type="radio" name="demo-48-style" id="demo-48-style-v3">
+    <input class="variant-input v4" type="radio" name="demo-48-style" id="demo-48-style-v4">
+    <input class="variant-input v5" type="radio" name="demo-48-style" id="demo-48-style-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-48-style-v1">Standard</label><label class="tab-2" for="demo-48-style-v2">Akzent</label><label class="tab-3" for="demo-48-style-v3">Layout</label><label class="tab-4" for="demo-48-style-v4">Karte</label><label class="tab-5" for="demo-48-style-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;style&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>style {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.style-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.style-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>style {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>style {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Für große Projekte ist externe CSS-Struktur oft übersichtlicher.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;link&gt;</span><small>Dokument</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;link&gt;</h3>
+    <h4>Bedeutung</h4><p>Das link-Element verknüpft Dokumente mit Ressourcen.</p>
+    <h4>Typische Verwendung</h4><p>In Projekten bindet es häufig CSS ein; in dieser Datei bleibt CSS intern.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;link rel=&quot;stylesheet&quot; href=&quot;styles.css&quot;&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>link
+link[rel=&quot;stylesheet&quot;]</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-49-link" id="demo-49-link-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-49-link" id="demo-49-link-v2">
+    <input class="variant-input v3" type="radio" name="demo-49-link" id="demo-49-link-v3">
+    <input class="variant-input v4" type="radio" name="demo-49-link" id="demo-49-link-v4">
+    <input class="variant-input v5" type="radio" name="demo-49-link" id="demo-49-link-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-49-link-v1">Standard</label><label class="tab-2" for="demo-49-link-v2">Akzent</label><label class="tab-3" for="demo-49-link-v3">Layout</label><label class="tab-4" for="demo-49-link-v4">Karte</label><label class="tab-5" for="demo-49-link-v5">Kontrast</label></div>
+    <div class="preview"><article class="demo-target demo-card"><strong>&lt;link&gt;</strong><p>Beispielinhalt für Gestaltung.</p></article><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>link {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.link-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.link-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>link {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Für diese Übersicht wird kein echtes externes Stylesheet eingebunden.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;form&gt;</span><small>Formular</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;form&gt;</h3>
+    <h4>Bedeutung</h4><p>Das form-Element gruppiert Formularfelder.</p>
+    <h4>Typische Verwendung</h4><p>Es bildet den Rahmen für Eingaben und Absenden von Daten.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;form&gt;
+  &lt;label for=&quot;name&quot;&gt;Name&lt;/label&gt;
+  &lt;input id=&quot;name&quot; name=&quot;name&quot;&gt;
+&lt;/form&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>form
+.contact-form
+form input</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-50-form" id="demo-50-form-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-50-form" id="demo-50-form-v2">
+    <input class="variant-input v3" type="radio" name="demo-50-form" id="demo-50-form-v3">
+    <input class="variant-input v4" type="radio" name="demo-50-form" id="demo-50-form-v4">
+    <input class="variant-input v5" type="radio" name="demo-50-form" id="demo-50-form-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-50-form-v1">Standard</label><label class="tab-2" for="demo-50-form-v2">Akzent</label><label class="tab-3" for="demo-50-form-v3">Layout</label><label class="tab-4" for="demo-50-form-v4">Karte</label><label class="tab-5" for="demo-50-form-v5">Kontrast</label></div>
+    <div class="preview"><form class="demo-target demo-form"><label>Name</label><input placeholder="Max"><button type="button">Senden</button></form><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>form {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.form-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.form-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>form {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Formulare brauchen klare Labels und sichtbare Fokuszustände.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;label&gt;</span><small>Formular</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;label&gt;</h3>
+    <h4>Bedeutung</h4><p>Das label-Element beschriftet ein Formularfeld.</p>
+    <h4>Typische Verwendung</h4><p>Über for wird es mit einer id verbunden.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;label for=&quot;email&quot;&gt;E-Mail&lt;/label&gt;
+&lt;input id=&quot;email&quot; type=&quot;email&quot;&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>label
+.form-label
+label.required</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-51-label" id="demo-51-label-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-51-label" id="demo-51-label-v2">
+    <input class="variant-input v3" type="radio" name="demo-51-label" id="demo-51-label-v3">
+    <input class="variant-input v4" type="radio" name="demo-51-label" id="demo-51-label-v4">
+    <input class="variant-input v5" type="radio" name="demo-51-label" id="demo-51-label-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-51-label-v1">Standard</label><label class="tab-2" for="demo-51-label-v2">Akzent</label><label class="tab-3" for="demo-51-label-v3">Layout</label><label class="tab-4" for="demo-51-label-v4">Karte</label><label class="tab-5" for="demo-51-label-v5">Kontrast</label></div>
+    <div class="preview"><div class="demo-form"><label class="demo-target demo-label">E-Mail</label><input placeholder="name@example.de"></div><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>label {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.label-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.label-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>label {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Ein Klick auf das Label fokussiert das passende Feld.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;input&gt;</span><small>Formular</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;input&gt;</h3>
+    <h4>Bedeutung</h4><p>Das input-Element nimmt kurze Eingaben auf.</p>
+    <h4>Typische Verwendung</h4><p>Der type bestimmt Art und Verhalten des Feldes.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;input type=&quot;email&quot; placeholder=&quot;name@example.de&quot;&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>input
+input:focus
+input[aria-invalid=&quot;true&quot;]</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-52-input" id="demo-52-input-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-52-input" id="demo-52-input-v2">
+    <input class="variant-input v3" type="radio" name="demo-52-input" id="demo-52-input-v3">
+    <input class="variant-input v4" type="radio" name="demo-52-input" id="demo-52-input-v4">
+    <input class="variant-input v5" type="radio" name="demo-52-input" id="demo-52-input-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-52-input-v1">Standard</label><label class="tab-2" for="demo-52-input-v2">Akzent</label><label class="tab-3" for="demo-52-input-v3">Layout</label><label class="tab-4" for="demo-52-input-v4">Karte</label><label class="tab-5" for="demo-52-input-v5">Kontrast</label></div>
+    <div class="preview"><input class="demo-target demo-input" placeholder="Eingabe"><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>input {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.input-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.input-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>input {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Passende Typen verbessern Bedienbarkeit und Validierung.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;textarea&gt;</span><small>Formular</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;textarea&gt;</h3>
+    <h4>Bedeutung</h4><p>Das textarea-Element nimmt mehrzeiligen Text auf.</p>
+    <h4>Typische Verwendung</h4><p>Es eignet sich für Nachrichten, Notizen und Kommentare.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;textarea rows=&quot;4&quot;&gt;Nachricht&lt;/textarea&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>textarea
+textarea:focus</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-53-textarea" id="demo-53-textarea-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-53-textarea" id="demo-53-textarea-v2">
+    <input class="variant-input v3" type="radio" name="demo-53-textarea" id="demo-53-textarea-v3">
+    <input class="variant-input v4" type="radio" name="demo-53-textarea" id="demo-53-textarea-v4">
+    <input class="variant-input v5" type="radio" name="demo-53-textarea" id="demo-53-textarea-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-53-textarea-v1">Standard</label><label class="tab-2" for="demo-53-textarea-v2">Akzent</label><label class="tab-3" for="demo-53-textarea-v3">Layout</label><label class="tab-4" for="demo-53-textarea-v4">Karte</label><label class="tab-5" for="demo-53-textarea-v5">Kontrast</label></div>
+    <div class="preview"><textarea class="demo-target demo-textarea" rows="3">Mehrzeiliger Text</textarea><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>textarea {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.textarea-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.textarea-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>textarea {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>textarea {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Die Höhe sollte zur erwarteten Eingabe passen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;select&gt;</span><small>Formular</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;select&gt;</h3>
+    <h4>Bedeutung</h4><p>Das select-Element erstellt eine Auswahlliste.</p>
+    <h4>Typische Verwendung</h4><p>Es wird verwendet, wenn aus mehreren Optionen gewählt werden soll.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;select&gt;
+  &lt;option&gt;Tag 1&lt;/option&gt;
+&lt;/select&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>select
+select:focus</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-54-select" id="demo-54-select-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-54-select" id="demo-54-select-v2">
+    <input class="variant-input v3" type="radio" name="demo-54-select" id="demo-54-select-v3">
+    <input class="variant-input v4" type="radio" name="demo-54-select" id="demo-54-select-v4">
+    <input class="variant-input v5" type="radio" name="demo-54-select" id="demo-54-select-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-54-select-v1">Standard</label><label class="tab-2" for="demo-54-select-v2">Akzent</label><label class="tab-3" for="demo-54-select-v3">Layout</label><label class="tab-4" for="demo-54-select-v4">Karte</label><label class="tab-5" for="demo-54-select-v5">Kontrast</label></div>
+    <div class="preview"><select class="demo-target demo-select"><option>Tag 1</option><option>Tag 2</option></select><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>select {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.select-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.select-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>select {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>select {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Bei sehr wenigen Optionen können Radio-Buttons übersichtlicher sein.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;option&gt;</span><small>Formular</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;option&gt;</h3>
+    <h4>Bedeutung</h4><p>Das option-Element ist ein Eintrag innerhalb einer select-Auswahl.</p>
+    <h4>Typische Verwendung</h4><p>Es enthält den sichtbaren Text einer auswählbaren Option.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;option value=&quot;tag1&quot;&gt;Tag 1&lt;/option&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>option
+select option</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-55-option" id="demo-55-option-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-55-option" id="demo-55-option-v2">
+    <input class="variant-input v3" type="radio" name="demo-55-option" id="demo-55-option-v3">
+    <input class="variant-input v4" type="radio" name="demo-55-option" id="demo-55-option-v4">
+    <input class="variant-input v5" type="radio" name="demo-55-option" id="demo-55-option-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-55-option-v1">Standard</label><label class="tab-2" for="demo-55-option-v2">Akzent</label><label class="tab-3" for="demo-55-option-v3">Layout</label><label class="tab-4" for="demo-55-option-v4">Karte</label><label class="tab-5" for="demo-55-option-v5">Kontrast</label></div>
+    <div class="preview"><select class="demo-target demo-select"><option>Tag 1</option><option>Tag 2</option></select><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>option {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.option-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.option-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>option {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>option wird zusammen mit select verwendet.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;button&gt;</span><small>Interaktion</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;button&gt;</h3>
+    <h4>Bedeutung</h4><p>Das button-Element beschreibt eine Schaltfläche für eine Aktion.</p>
+    <h4>Typische Verwendung</h4><p>Buttons werden für Formulare und Bedienaktionen verwendet.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;button type=&quot;button&quot;&gt;Mehr erfahren&lt;/button&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>button
+.btn
+button:hover
+button:focus-visible</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-56-button" id="demo-56-button-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-56-button" id="demo-56-button-v2">
+    <input class="variant-input v3" type="radio" name="demo-56-button" id="demo-56-button-v3">
+    <input class="variant-input v4" type="radio" name="demo-56-button" id="demo-56-button-v4">
+    <input class="variant-input v5" type="radio" name="demo-56-button" id="demo-56-button-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-56-button-v1">Standard</label><label class="tab-2" for="demo-56-button-v2">Akzent</label><label class="tab-3" for="demo-56-button-v3">Layout</label><label class="tab-4" for="demo-56-button-v4">Karte</label><label class="tab-5" for="demo-56-button-v5">Kontrast</label></div>
+    <div class="preview"><button class="demo-target demo-button" type="button">Mehr erfahren</button><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>button {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.button-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.button-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>button {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>Ein button sollte immer einen passenden type besitzen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;fieldset&gt;</span><small>Formular</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;fieldset&gt;</h3>
+    <h4>Bedeutung</h4><p>Das fieldset-Element gruppiert zusammengehörige Formularfelder.</p>
+    <h4>Typische Verwendung</h4><p>Es macht Formularbereiche semantisch verständlicher.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;fieldset&gt;
+  &lt;legend&gt;Kontakt&lt;/legend&gt;
+  ...
+&lt;/fieldset&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>fieldset
+.form-group</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-57-fieldset" id="demo-57-fieldset-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-57-fieldset" id="demo-57-fieldset-v2">
+    <input class="variant-input v3" type="radio" name="demo-57-fieldset" id="demo-57-fieldset-v3">
+    <input class="variant-input v4" type="radio" name="demo-57-fieldset" id="demo-57-fieldset-v4">
+    <input class="variant-input v5" type="radio" name="demo-57-fieldset" id="demo-57-fieldset-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-57-fieldset-v1">Standard</label><label class="tab-2" for="demo-57-fieldset-v2">Akzent</label><label class="tab-3" for="demo-57-fieldset-v3">Layout</label><label class="tab-4" for="demo-57-fieldset-v4">Karte</label><label class="tab-5" for="demo-57-fieldset-v5">Kontrast</label></div>
+    <div class="preview"><fieldset class="demo-target demo-fieldset"><legend>Kontakt</legend><label>Name</label><input placeholder="Max"></fieldset><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>fieldset {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.fieldset-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.fieldset-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>fieldset {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>fieldset eignet sich gut für thematische Formulargruppen.</p>
+  </div>
+</details>
+<details class="tag-card">
+  <summary><span>&lt;legend&gt;</span><small>Formular</small></summary>
+  <div class="tag-detail">
+    <h3>&lt;legend&gt;</h3>
+    <h4>Bedeutung</h4><p>Das legend-Element benennt eine fieldset-Gruppe.</p>
+    <h4>Typische Verwendung</h4><p>Es erklärt, worum es in der Feldgruppe geht.</p>
+    <h4>HTML-Syntax</h4><pre><code>&lt;legend&gt;Persönliche Daten&lt;/legend&gt;</code></pre>
+    <h4>Passende CSS-Selektoren</h4><pre><code>legend
+fieldset legend</code></pre>
+    <h4>CSS-Varianten in Aktion</h4>
+    <input class="variant-input v1" type="radio" name="demo-58-legend" id="demo-58-legend-v1" checked>
+    <input class="variant-input v2" type="radio" name="demo-58-legend" id="demo-58-legend-v2">
+    <input class="variant-input v3" type="radio" name="demo-58-legend" id="demo-58-legend-v3">
+    <input class="variant-input v4" type="radio" name="demo-58-legend" id="demo-58-legend-v4">
+    <input class="variant-input v5" type="radio" name="demo-58-legend" id="demo-58-legend-v5">
+    <div class="variant-tabs"><label class="tab-1" for="demo-58-legend-v1">Standard</label><label class="tab-2" for="demo-58-legend-v2">Akzent</label><label class="tab-3" for="demo-58-legend-v3">Layout</label><label class="tab-4" for="demo-58-legend-v4">Karte</label><label class="tab-5" for="demo-58-legend-v5">Kontrast</label></div>
+    <div class="preview"><fieldset class="demo-target demo-fieldset"><legend>Kontakt</legend><label>Name</label><input placeholder="Max"></fieldset><div class="demo-context"><strong>Mehr Kontext fuer die Variante</strong><ul><li>Abstaende, Rahmen, Farben und Typografie vergleichen.</li><li>Responsive Wirkung, Fokus und Lesbarkeit gemeinsam bewerten.</li></ul></div></div>
+    <div class="code-variants"><pre class="code code-1"><code>legend {
+  color: #12324a;
+  margin: 0;
+}</code></pre><pre class="code code-2"><code>.legend-demo {
+  padding: 1rem;
+  border: 2px solid #00abc7;
+  background-color: #e9fbff;
+}</code></pre><pre class="code code-3"><code>.legend-demo {
+  max-width: 100%;
+  border-radius: .75rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-4"><code>legend {
+  display: grid;
+  gap: .75rem;
+  max-width: 42rem;
+  padding: 1.25rem;
+  margin: 0 auto;
+  color: #173248;
+  background-color: #ffffff;
+  border: 2px solid #00abc7;
+  border-radius: .85rem;
+  box-shadow: 0 14px 30px rgba(0,57,100,.14);
+}</code></pre><pre class="code code-5"><code>legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 48rem);
+  padding: 1.5rem;
+  color: #f6fbff;
+  background: linear-gradient(135deg, #0b1725, #20344f);
+  border: 1px solid #6ee7f9;
+  border-radius: .35rem;
+  box-shadow: inset 0 0 0 4px rgba(110,231,249,.12);
+}</code></pre></div>
+    <h4>Praxishinweis</h4><p>legend sollte kurz und eindeutig sein.</p>
+  </div>
+</details></div><div class="exercise"><strong>Kurze Übungsidee:</strong> Baue ein Kontaktformular mit Labels, Eingabefeldern, Auswahlfeld und Button. Gestalte Fokuszustände sichtbar und gruppiere Felder sinnvoll.</div></div></section>
+    <section class="obsolete"><div class="wrap obsolete-box"><h2>Veraltete HTML-Tags</h2><p>Diese Tags sollten heute nicht mehr für neue Seiten verwendet werden:</p><ul><li>font</li><li>center</li><li>marquee</li><li>blink</li><li>applet</li><li>big</li><li>strike</li><li>tt</li><li>xmp</li></ul></div></section>
+  </main>
+</body>
+</html>

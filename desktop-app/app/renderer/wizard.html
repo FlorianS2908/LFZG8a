@@ -7,67 +7,104 @@
   <link rel="stylesheet" href="wizard.css">
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <span class="kicker">LFZQ8a Desktop</span>
-      <h1>Workshop-App einrichten</h1>
-    </div>
-    <button id="openDataDir" type="button">Datenordner</button>
-  </header>
-
-  <main class="layout">
-    <section class="panel">
-      <h2>1. Monitor fuer Dozenteninfo</h2>
-      <p class="muted">Waehle den Bildschirm, auf dem die Dozenteninfos automatisch erscheinen sollen.</p>
-      <div id="displayList" class="display-list"></div>
-    </section>
-
-    <section class="panel">
-      <h2>2. Inhalte pruefen</h2>
-      <dl class="meta-list">
-        <dt>Uebersicht</dt>
-        <dd id="contentFile">wird geladen...</dd>
-        <dt>Historie</dt>
-        <dd>Lokal in den App-Daten. Reset loescht nur diese Historie.</dd>
-        <dt>Testprotokolle</dt>
-        <dd>JSON und HTML-Bericht werden lokal als referenziertes Dateipaar gespeichert.</dd>
-      </dl>
-    </section>
-
-    <section class="panel">
-      <h2>3. Testprotokolle</h2>
-      <label class="check-option">
-        <input id="saveLocalTestReports" type="checkbox" checked>
-        <span><strong>Lokale Testprotokolle speichern</strong><small>Erzeugt JSON und HTML-Bericht im App-Datenordner.</small></span>
-      </label>
-      <label class="check-option">
-        <input id="includeDeviceNetworkData" type="checkbox">
-        <span><strong>IP- und MAC-Adresse lokal speichern</strong><small>Nur im lokalen Testprotokoll, wenn aktiv eingeschaltet.</small></span>
-      </label>
-      <div class="actions">
-        <button id="createTestReport" type="button">Testprotokoll erstellen</button>
-        <button id="openTestReportDir" type="button">Protokollordner</button>
+  <div class="app">
+    <aside>
+      <div class="brand">
+        <div class="brand-mark">LF</div>
+        <div><small>LFZQ8a Desktop</small><strong>Workshop<br>Einrichtung</strong></div>
       </div>
-      <div id="testReportList" class="history-list"></div>
-    </section>
-
-    <section class="panel">
-      <h2>4. Unterricht starten</h2>
-      <div class="actions">
-        <button id="saveSetup" type="button">Konfiguration speichern</button>
-        <button id="startWorkshop" class="primary" type="button">Workshop starten</button>
+      <nav aria-label="Einrichtung">
+        <a href="#monitor">Monitor</a>
+        <a href="#inhalte">Inhalte</a>
+        <a href="#protokolle">Protokolle</a>
+        <a href="#start">Start</a>
+        <a href="#historie">Historie</a>
+      </nav>
+      <div class="nav-hint">
+        <strong>Setup-Idee:</strong><br>
+        Einmal konfigurieren, lokal speichern und danach den Workshop direkt aus der Desktop-App starten.
       </div>
-    </section>
+      <button id="openDataDir" class="aside-button" type="button">Datenordner</button>
+    </aside>
 
-    <section class="panel">
-      <h2>Historie</h2>
-      <div class="actions">
-        <button id="reloadHistory" type="button">Aktualisieren</button>
-        <button id="resetHistory" class="danger" type="button">Historie resetten</button>
-      </div>
-      <div id="historyList" class="history-list"></div>
-    </section>
-  </main>
+    <main>
+      <header class="hero">
+        <div>
+          <div class="eyebrow">LFZQ8a Desktop</div>
+          <h1>Workshop-App einrichten</h1>
+          <p>Monitor, lokale Berichte und Unterrichtshistorie werden hier vorbereitet. Danach startet die Dozenten-Zentrale im gleichen Layout wie die Webvarianten.</p>
+        </div>
+        <div class="hero-visual" aria-label="Konfigurationsschritte">
+          <div class="css-stack">
+            <div class="layer l-monitor">Monitor<br><small>Dozenteninfo</small></div>
+            <div class="layer l-data">Daten<br><small>lokal speichern</small></div>
+            <div class="layer l-start">Start<br><small>Workshop</small></div>
+          </div>
+        </div>
+      </header>
+
+      <section class="section-grid">
+        <article id="monitor" class="panel accent-cyan">
+          <div class="tag">Schritt 1</div>
+          <h2>Monitor fuer Dozenteninfo</h2>
+          <p class="muted">Waehle den Bildschirm, auf dem die Dozenteninfos automatisch erscheinen sollen.</p>
+          <div id="displayList" class="display-list"></div>
+        </article>
+
+        <article id="inhalte" class="panel accent-blue">
+          <div class="tag">Schritt 2</div>
+          <h2>Inhalte pruefen</h2>
+          <dl class="meta-list">
+            <dt>Uebersicht</dt>
+            <dd id="contentFile">wird geladen...</dd>
+            <dt>Historie</dt>
+            <dd>Lokal in den App-Daten. Reset loescht nur diese Historie.</dd>
+            <dt>Testprotokolle</dt>
+            <dd>JSON und HTML-Bericht werden lokal als referenziertes Dateipaar gespeichert.</dd>
+          </dl>
+        </article>
+
+        <article id="protokolle" class="panel accent-green">
+          <div class="tag">Schritt 3</div>
+          <h2>Testprotokolle</h2>
+          <label class="check-option">
+            <input id="saveLocalTestReports" type="checkbox" checked>
+            <span><strong>Lokale Testprotokolle speichern</strong><small>Erzeugt JSON und HTML-Bericht im App-Datenordner.</small></span>
+          </label>
+          <label class="check-option">
+            <input id="includeDeviceNetworkData" type="checkbox">
+            <span><strong>IP- und MAC-Adresse lokal speichern</strong><small>Nur im lokalen Testprotokoll, wenn aktiv eingeschaltet.</small></span>
+          </label>
+          <div class="actions">
+            <button id="createTestReport" type="button">Testprotokoll erstellen</button>
+            <button id="openTestReportDir" type="button">Protokollordner</button>
+          </div>
+          <div id="testReportList" class="history-list"></div>
+        </article>
+
+        <article id="start" class="panel accent-orange">
+          <div class="tag">Schritt 4</div>
+          <h2>Unterricht starten</h2>
+          <p class="muted">Speichere die Konfiguration und oeffne danach die Dozenten-Zentrale.</p>
+          <div class="actions">
+            <button id="saveSetup" type="button">Konfiguration speichern</button>
+            <button id="startWorkshop" class="primary" type="button">Workshop starten</button>
+          </div>
+        </article>
+
+        <article id="historie" class="panel accent-violet panel-wide">
+          <div class="tag">Nachbereitung</div>
+          <h2>Historie</h2>
+          <p class="muted">Die Historie bleibt lokal und kann gezielt zurueckgesetzt werden, ohne Inhalte oder Einstellungen zu loeschen.</p>
+          <div class="actions">
+            <button id="reloadHistory" type="button">Aktualisieren</button>
+            <button id="resetHistory" class="danger" type="button">Historie resetten</button>
+          </div>
+          <div id="historyList" class="history-list"></div>
+        </article>
+      </section>
+    </main>
+  </div>
 
   <script src="wizard.js"></script>
 </body>

@@ -1,0 +1,95 @@
+﻿/* =========================================================
+   Akkordeon Teilloesungen - gemeinsame CSS-Datei
+   Bildquelle fuer alle Aufgaben: ../images/
+   Die Bloecke sind kumulativ: Jede Aufgabe ergaenzt den
+   vorherigen Stand. Oeffne die jeweilige HTML-Datei, um den
+   passenden Zwischenstand zu sehen.
+   ========================================================= */
+
+/* Aufgabe 01 - HTML-Grundgeruest und gemeinsame Basis */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; min-height: 100%; background-color: #000; color: #c0c0c0; font-family: Arial, Helvetica, sans-serif; }
+.solution-note, .task-note { max-width: 900px; margin: 25px auto 0; padding: 1rem; border: 1px solid #444; background: #111; color: #ddd; }
+.task-note { line-height: 1.45; }
+.task-note a { display: inline-block; margin-bottom: .5rem; color: #ccff00; }
+.task-note strong, .task-note span { display: block; }
+.task-note ul { margin-top: .5rem; padding-left: 1.2rem; }
+
+/* Aufgabe 02 - Akkordeon-Rahmen */
+#accordianFrame { position: relative; width: 900px; height: 600px; margin: 25px auto 0; border: 1px solid #c0c0c0; overflow: hidden; }
+
+/* Aufgabe 03 - Titelbox */
+#accordianFrame #titleBox { position: absolute; top: 250px; left: 250px; width: 400px; height: 50px; background-color: rgba(51,51,51,.8); color: #ccff00; z-index: 666; opacity: 1; text-align: center; pointer-events: none; transition: all 1.5s 1s; border: 1px solid #ccff00; font-size: 22px; padding-top: 10px; transform: rotate(-5deg); }
+
+/* Aufgabe 04 - Erstes Panel */
+#accordianFrame #acc1, #accordianFrame #acc2, #accordianFrame #acc3, #accordianFrame #acc4, #accordianFrame #acc5 { position: absolute; top: 0; width: 898px; height: 598px; background-size: cover; transition: all 1.5s .25s; }
+
+/* Aufgabe 05 - Alle Panelbilder kommen aus ../images/ */
+#accordianFrame #acc1 { background-image: url('../images/bild1.jpg'); left: 0; }
+#accordianFrame #acc2 { background-image: url('../images/bild2.jpg'); left: 180px; }
+#accordianFrame #acc3 { background-image: url('../images/bild3.jpg'); left: 360px; }
+#accordianFrame #acc4 { background-image: url('../images/bild4.jpg'); left: 540px; }
+#accordianFrame #acc5 { background-image: url('../images/bild5.jpg'); left: 720px; }
+
+/* Aufgabe 06 - Bildstreifen im Vordergrund */
+#accordianFrame #acc1 img, #accordianFrame #acc2 img, #accordianFrame #acc3 img, #accordianFrame #acc4 img, #accordianFrame #acc5 img { display: block; position: absolute; top: 0; left: 0; width: 180px; height: 598px; opacity: 1; object-fit: none; transition: all 1.5s .25s; }
+
+/* Aufgabe 07 - Ausschnitt pro Bildstreifen */
+#accordianFrame #acc1 img { object-position: 0 0; }
+#accordianFrame #acc2 img { object-position: -180px 0; }
+#accordianFrame #acc3 img { object-position: -360px 0; }
+#accordianFrame #acc4 img { object-position: -540px 0; }
+#accordianFrame #acc5 img { object-position: -720px 0; }
+
+/* Aufgabe 08 - Textleisten vorbereiten */
+#accordianFrame #acc1 #acc1T, #accordianFrame #acc2 #acc2T, #accordianFrame #acc3 #acc3T, #accordianFrame #acc4 #acc4T, #accordianFrame #acc5 #acc5T { position: absolute; bottom: 0; left: 900px; width: 898px; height: 35px; background-color: rgba(51,51,51,.8); padding: 6px 0 0 20px; font-size: 17px; transition: all 1.5s .25s; text-shadow: 1px 1px 1px #000; }
+
+/* Aufgabe 09 - Farbcode je Panel */
+#accordianFrame #acc1 #acc1T { border-top: 1px solid #c20a0a; color: #c20a0a; }
+#accordianFrame #acc2 #acc2T { border-top: 1px solid #edc15b; color: #edc15b; }
+#accordianFrame #acc3 #acc3T { border-top: 1px solid #ac972b; color: #ac972b; }
+#accordianFrame #acc4 #acc4T { border-top: 1px solid #918b33; color: #918b33; }
+#accordianFrame #acc5 #acc5T { border-top: 1px solid #618d96; color: #618d96; }
+
+/* Aufgabe 10 - Hover ueber dem gesamten Frame */
+#accordianFrame:hover #titleBox { opacity: 0; transition: all .75s .25s; }
+#accordianFrame:hover #acc2 { left: 20px; }
+#accordianFrame:hover #acc3 { left: 40px; }
+#accordianFrame:hover #acc4 { left: 60px; }
+#accordianFrame:hover #acc5 { left: 80px; }
+
+/* Aufgabe 11 - Panel 1 und 2 oeffnen */
+#accordianFrame #acc1:hover #acc1T, #accordianFrame #acc2:hover #acc2T { left: 0; }
+#accordianFrame #acc1:hover + #acc2 { left: 820px; }
+#accordianFrame #acc1:hover + #acc2 + #acc3 { left: 840px; }
+#accordianFrame #acc1:hover + #acc2 + #acc3 + #acc4 { left: 860px; }
+#accordianFrame #acc1:hover + #acc2 + #acc3 + #acc4 + #acc5 { left: 880px; }
+#accordianFrame #acc2:hover { left: 20px; }
+#accordianFrame #acc2:hover + #acc3 { left: 840px; }
+#accordianFrame #acc2:hover + #acc3 + #acc4 { left: 860px; }
+#accordianFrame #acc2:hover + #acc3 + #acc4 + #acc5 { left: 880px; }
+
+/* Aufgabe 12 - Panel 3 bis 5 oeffnen */
+#accordianFrame #acc3:hover { left: 40px; }
+#accordianFrame #acc3:hover #acc3T { left: 0; }
+#accordianFrame #acc3:hover + #acc4 { left: 860px; }
+#accordianFrame #acc3:hover + #acc4 + #acc5 { left: 880px; }
+#accordianFrame #acc4:hover { left: 60px; }
+#accordianFrame #acc4:hover #acc4T { left: 0; }
+#accordianFrame #acc4:hover + #acc5 { left: 880px; }
+#accordianFrame #acc5:hover { left: 80px; }
+#accordianFrame #acc5:hover #acc5T { left: 0; }
+
+/* Aufgabe 13 - Glow-Ebenen */
+#accordianFrame .glow { position: absolute; top: 0; left: 178px; width: 0; height: 100%; filter: blur(1px); z-index: 666; transition: all 1.5s .25s; opacity: 1; }
+#accordianFrame #glow1 { box-shadow: -10px -20px 70px #c20a0a; }
+#accordianFrame #glow2 { box-shadow: -10px -10px 70px #edc15b; }
+#accordianFrame #glow3 { box-shadow: -10px -10px 70px #ac972b; }
+#accordianFrame #glow4 { box-shadow: -10px -10px 70px #918b33; }
+#accordianFrame #glow5 { box-shadow: -10px -10px 70px #618d96; }
+
+/* Aufgabe 14 - Bildstreifen beim Oeffnen ausblenden */
+#accordianFrame #acc1:hover img, #accordianFrame #acc2:hover img, #accordianFrame #acc3:hover img, #accordianFrame #acc4:hover img, #accordianFrame #acc5:hover img { opacity: 0; }
+#accordianFrame #acc1:hover .glow, #accordianFrame #acc2:hover .glow, #accordianFrame #acc3:hover .glow, #accordianFrame #acc4:hover .glow, #accordianFrame #acc5:hover .glow { width: 600px; height: 100%; filter: blur(35px); opacity: 0; }
+
+/* Aufgabe 15 - Abnahmehinweis: finaler Stand entspricht der Original-Loesung. */

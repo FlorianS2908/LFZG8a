@@ -2,7 +2,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const assert = require('node:assert/strict');
-const { createAppData, defaultSettings } = require('../app/lib/app-data');
+const { createAppData, defaultSettings, defaultParticipantReleases } = require('../app/lib/app-data');
 
 function createTempAppData() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-app-data-'));
@@ -36,6 +36,7 @@ test('app data can disable history file creation for wizard tests', () => {
     assert.equal(fs.existsSync(appData.historyPath), false);
     assert.deepEqual(appData.listHistory(), []);
     assert.deepEqual(appData.addHistoryEntry({ title: 'Test' }), []);
+    assert.deepEqual(appData.resetHistory(), []);
     assert.equal(fs.existsSync(appData.historyPath), false);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -210,6 +211,99 @@ test('app data creates a minimal test report with fallback values', () => {
     assert.equal(json.results.status, 'ok');
     assert.deepEqual(json.results.checks, []);
     assert.match(html, /Nicht im Bericht enthalten/);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data stores participant releases and writes participant script', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    appData.ensureDataFiles();
+    assert.deepEqual(appData.getParticipantReleases(), defaultParticipantReleases);
+
+    const releases = appData.saveParticipantReleases({
+      tag_02: true,
+      tool_quiz: true,
+      tool_tags: false,
+      unknown_key: true
+    });
+    const unchangedReleases = appData.saveParticipantReleases(null);
+    const scriptPath = path.join(appData.dataDir, 'freigaben.js');
+    const defaultScriptPath = path.join(appData.dataDir, 'freigaben-default.js');
+
+    appData.writeParticipantReleaseScript(scriptPath, releases);
+    appData.writeParticipantReleaseScript(defaultScriptPath);
+    const script = fs.readFileSync(scriptPath, 'utf8');
+    const defaultScript = fs.readFileSync(defaultScriptPath, 'utf8');
+
+    assert.equal(releases.tag_01, true);
+    assert.equal(releases.tag_02, true);
+    assert.equal(releases.tool_quiz, true);
+    assert.equal(releases.tool_tags, false);
+    assert.equal(releases.unknown_key, true);
+    assert.equal(unchangedReleases.tag_02, true);
+    assert.match(script, /window\.LFZQ8A_PARTICIPANT_RELEASES/);
+    assert.match(script, /"tag_02": true/);
+    assert.match(defaultScript, /"tool_quiz": true/);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data stores participant profiles and progress', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const profile = appData.saveParticipantProfile({
+      participantId: 'tn-1',
+      displayName: 'Max Mueller',
+      shortName: 'MM',
+      email: 'max@example.test',
+      teamsName: 'Max M.'
+    }, new Date('2026-07-01T10:00:00.000Z'));
+    const progress = appData.updateParticipantProgress('tn-1', {
+      currentTask: 'Akkordeon Aufgabe 3',
+      progress: 55,
+      state: 'in Bearbeitung',
+      needsHelp: true
+    }, new Date('2026-07-01T10:05:00.000Z'));
+
+    assert.equal(profile.participantId, 'tn-1');
+    assert.equal(progress.status.currentTask, 'Akkordeon Aufgabe 3');
+    assert.equal(progress.status.progress, 55);
+    assert.equal(progress.status.needsHelp, true);
+    assert.equal(appData.updateParticipantProgress('fehlt', {}, new Date('2026-07-01T10:06:00.000Z')), null);
+    assert.equal(appData.listParticipants(new Date('2026-07-01T10:05:20.000Z'))[0].online, true);
+    assert.equal(appData.listParticipants(new Date('2026-07-01T10:06:00.000Z'))[0].online, false);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data keeps participant defaults and progress fallbacks stable', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const generated = appData.saveParticipantProfile(null, new Date('2026-07-01T11:00:00.000Z'));
+    const refreshed = appData.saveParticipantProfile({
+      participantId: generated.participantId,
+      displayName: ''
+    }, new Date('2026-07-01T11:01:00.000Z'));
+    const clamped = appData.updateParticipantProgress(generated.participantId, {
+      progress: 150
+    }, new Date('2026-07-01T11:02:00.000Z'));
+    const fallback = appData.updateParticipantProgress(generated.participantId, null, new Date('2026-07-01T11:03:00.000Z'));
+
+    fs.writeFileSync(appData.participantsPath, JSON.stringify([{ participantId: 'tn-alt', displayName: 'Alt' }]), 'utf8');
+
+    assert.match(generated.participantId, /^tn-/);
+    assert.equal(refreshed.displayName, 'Teilnehmer');
+    assert.equal(clamped.status.progress, 100);
+    assert.equal(fallback.status.currentTask, '');
+    assert.equal(fallback.status.state, 'online');
+    assert.equal(appData.listParticipants(new Date('2026-07-01T11:04:00.000Z'))[0].online, false);
   } finally {
     cleanup();
   }

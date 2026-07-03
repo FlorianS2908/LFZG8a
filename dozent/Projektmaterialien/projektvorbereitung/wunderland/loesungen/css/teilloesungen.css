@@ -1,0 +1,45 @@
+/* =========================================================
+   Wunderland Teilloesungen - gemeinsame CSS-Datei
+   Assetquelle: ../images/ und ../fonts/
+   Die Bloecke sind kumulativ: Jede Aufgabe ergaenzt den
+   vorherigen Stand. Oeffne die jeweilige HTML-Datei, um den
+   passenden Zwischenstand zu sehen.
+   ========================================================= */
+
+/* Aufgabe 01 - Basis */
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Arial,Helvetica,sans-serif;background:#00a3e8;color:#111}.task-note{width:min(1050px,100%);margin:1rem auto;padding:1rem;border:1px solid #d8e8ee;border-left:4px solid #00abc7;background:#fff;line-height:1.45}.task-note a{font-weight:700;color:#003964}.task-note strong,.task-note span{display:block}.task-note details{margin-top:.5rem}.placeholder{padding:1rem;border:1px dashed #e9b305;background:rgba(255,255,255,.45)}
+
+/* Aufgabe 02 - Wrapper, Header, Main, Footer und Navigation */
+#wrapper{position:relative;display:flex;flex-direction:column;width:1200px;min-height:850px;margin:0 auto}#header{position:relative;flex:0 0 200px;width:100%;height:200px;border:1px solid #e9b305;border-radius:20px;background:linear-gradient(0deg,rgba(193,70,88,.6),rgba(0,163,232,.6))}#main{position:relative;flex:1 1 auto;margin:63px 0 30px;padding:20px 20px 40px;border:1px solid #e9b305;border-bottom:none;border-radius:20px 20px 0 0;background:linear-gradient(0deg,#829420,rgba(0,163,232,.6),rgba(193,70,88,.6) 60%)}#footer{position:fixed;bottom:0;width:1200px;height:30px;border:1px solid #e9b305;border-radius:0 0 20px 20px;background:#829420;text-align:center}#mainNav{position:absolute;top:200px;right:0;width:100%;min-height:52px;margin:5px 0;border:1px solid #e9b305;border-radius:30px;background:rgba(193,70,88,.6)}
+
+/* Aufgabe 03 - Logo, Claim und Burger */
+#burgerBox{position:absolute;top:30px;right:10px;display:none}#burgerLink{width:80px;height:auto;transition:all .75s .25s}#burgerLink.rotateButton{transform:rotate(90deg)}#logoBox{position:absolute;left:-225px;bottom:-20px;margin-left:50%;width:450px;z-index:666}#logo{width:450px;height:auto}#claimBox{position:absolute;bottom:45px;left:100px;width:1000px;height:40px;padding-top:3px;border-radius:15px;background:#c14658}#claimLeft,#claimRight{position:absolute;font-family:Georgia,serif;font-size:26px;color:#e9b305;text-shadow:1px 1px 1px #333}#claimLeft{left:85px}#claimRight{right:52px}
+
+/* Aufgabe 04 - Navigation mit Untermenues */
+#mainNav ul{display:flex;justify-content:center;gap:20px;list-style:none;margin:0;padding:6px 0 0}#mainNav li{position:relative;font-family:Georgia,serif;font-size:28px}#mainNav a,#mainNav span{display:block;padding:0 5px;color:#e9b305;text-decoration:none;text-shadow:1px 1px 1px #333}#mainNav span{color:#00a3e8}#mainNav a:hover{color:#00a3e8}.subNav{position:absolute;top:-666px;opacity:0;display:block!important;width:auto;padding:0 15px 0 5px;border:1px solid #e9b305;border-top:0;border-radius:0 0 30px 30px;background:rgba(193,70,88,.86);transition:opacity .5s}.subNav li{white-space:nowrap;font-size:22px;border-bottom:1px solid #e9b305}#mainNav li:hover .subNav{top:100%;opacity:1}
+
+/* Aufgabe 05 - Typografie und Mehrspalten */
+h1,h2,h3,h4{font-family:Georgia,serif;margin:0 0 1rem}h1{display:inline-block;padding:5px 15px;border-radius:15px;background:#c14658;color:#e9b305;text-shadow:1px 1px 1px #333}h2{color:#c14658;text-shadow:1px 1px 1px #000}p{line-height:1.45}.multi{column-count:2}.zitat{text-align:center;margin:1rem 0}.zitat blockquote{display:inline-block;position:relative;font-style:italic}.zitat cite{display:block}#main ul{list-style:none;margin:0 0 1em 15px;padding:0}#main ul li:before{content:'?';color:#de9966;margin-right:4px}
+
+/* Aufgabe 06 - Farben, Fonts und Grundgestaltung */
+body{background-image:url('../images/background.jpg');background-repeat:no-repeat;background-size:cover;background-attachment:fixed}a{outline:0}.page-links a,.final-link a{display:inline-block;margin:.25rem;padding:.45rem .65rem;border-radius:.4rem;background:#c14658;color:#e9b305;text-decoration:none}.cards article,#gallery figure,form,table{background:rgba(193,70,88,.65);border:1px solid #e9b305;border-radius:15px;padding:1rem;color:#111}
+
+/* Aufgabe 07 - Footer und Social-Sprite */
+#footermask{position:fixed;bottom:0;width:1200px;height:30px;background-image:url('../images/background.jpg');background-size:cover}#footer address{padding:5px 0;font-style:normal}#socialBox{position:absolute;top:-30px;right:20px;width:187px;height:52px;padding:5px;border:1px solid #e9b305;border-radius:10px;background:rgba(193,70,88,.6)}#socialBox a{float:left;margin-right:5px;transition:all .75s .25s}#socialBox a:hover{transform:rotate(360deg)}#socialBox img{display:block;width:40px;height:40px;object-fit:none;object-position:0 0}#tw{object-position:0 -50px}#gplus{object-position:0 -100px}#rss{object-position:0 -150px}
+
+/* Aufgabe 08 und 09 - Unterseiten und Attraktionen */
+.page-links,.cards{break-inside:avoid;margin:1rem 0}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;column-span:all}.cards article{font-family:Georgia,serif;font-size:1.2rem;text-align:center;color:#e9b305;text-shadow:1px 1px 1px #333}
+
+/* Aufgabe 10 - Galerie */
+#gallery{column-span:all;display:flex;flex-wrap:wrap;gap:1rem;margin:1rem 0}#gallery h2{flex:1 0 100%}#gallery figure{width:190px;margin:0;text-align:center}#gallery img{max-width:100%;border:1px solid #e9b305;border-radius:15px}#gallery figcaption{margin-top:.35rem;color:#e9b305;text-shadow:1px 1px 1px #000}
+
+/* Aufgabe 11 - Formular */
+form{column-span:all;width:min(470px,100%);margin:1rem auto}form label{display:block;margin:.4rem 0 .2rem;font-weight:700}input,textarea{width:100%;padding:.35rem;border:0;background:#c14658;color:#f8df89}input[type=checkbox]{width:auto}textarea{min-height:120px;resize:vertical}#buttonBox{display:flex;gap:.5rem;margin-top:1rem}
+
+/* Aufgabe 12 - Tabelle */
+table{column-span:all;width:min(520px,100%);margin:1rem auto;border-collapse:collapse}th,td{border:1px solid #e9b305;padding:.5rem;text-align:center}thead{background:#c14658;color:#e9b305}tfoot{background:#829420}
+
+/* Aufgabe 13 und 14 - JavaScript-Zustand und Responsive */
+@media screen and (max-width:1217px){#wrapper,#footer,#footermask{width:100%}#claimBox{width:100%;left:0}#claimLeft{left:2vw}#claimRight{right:2vw}}@media screen and (max-width:768px){body{background-image:none}#header{height:120px;flex-basis:120px}#logoBox{width:300px;left:-150px}#logo{width:300px}#claimBox{display:none}#mainNav{top:120px}.multi{column-count:1}}@media screen and (max-width:640px){#burgerBox{display:block}#main{margin-top:5px}#mainNav{display:none;right:0;width:auto;min-width:220px}#mainNav.toggleButton{display:block}#mainNav ul{flex-direction:column;align-items:flex-end;padding:1rem}#mainNav li{font-size:24px}.subNav{position:static;display:none!important;opacity:1;border:1px solid #e9b305;border-radius:15px}#mainNav li:hover .subNav{display:block!important}#buttonBox{flex-direction:column}}
+
+/* Aufgabe 15 - Abnahmehinweis: finaler Vergleich erfolgt gegen ../index.html */

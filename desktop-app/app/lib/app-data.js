@@ -10,6 +10,19 @@ const defaultSettings = {
   includeDeviceNetworkData: false
 };
 
+const defaultParticipantReleases = {
+  tag_01: true,
+  tag_02: false,
+  tag_03: false,
+  tag_04: false,
+  tag_05: false,
+  project_materials: false,
+  project_submission: false,
+  tool_quiz: false,
+  tool_tags: true,
+  additional_tasks: false
+};
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -81,6 +94,8 @@ function createAppData(baseDir, options = {}) {
   const dataDir = path.join(baseDir, 'data');
   const settingsPath = path.join(dataDir, 'settings.json');
   const historyPath = path.join(dataDir, 'history.json');
+  const participantReleasesPath = path.join(dataDir, 'participant-releases.json');
+  const participantsPath = path.join(dataDir, 'participants.json');
   const testReportsDir = path.join(dataDir, 'testprotokolle');
 
   function ensureDataFiles() {
@@ -90,6 +105,12 @@ function createAppData(baseDir, options = {}) {
     }
     if (!disableHistory && !readJson(historyPath, null)) {
       writeJson(historyPath, []);
+    }
+    if (!readJson(participantReleasesPath, null)) {
+      writeJson(participantReleasesPath, defaultParticipantReleases);
+    }
+    if (!readJson(participantsPath, null)) {
+      writeJson(participantsPath, []);
     }
   }
 
@@ -138,6 +159,104 @@ function createAppData(baseDir, options = {}) {
     }
     writeJson(historyPath, []);
     return [];
+  }
+
+  function getParticipantReleases() {
+    ensureDataFiles();
+    return {
+      ...defaultParticipantReleases,
+      ...readJson(participantReleasesPath, {})
+    };
+  }
+
+  function saveParticipantReleases(nextReleases) {
+    const merged = {
+      ...getParticipantReleases(),
+      ...Object.fromEntries(
+        Object.entries(nextReleases || {}).map(([key, value]) => [key, value === true])
+      )
+    };
+    writeJson(participantReleasesPath, merged);
+    return merged;
+  }
+
+  function writeParticipantReleaseScript(scriptPath, releases = getParticipantReleases()) {
+    ensureDir(path.dirname(scriptPath));
+    const content = `window.LFZQ8A_PARTICIPANT_RELEASES = ${JSON.stringify(releases, null, 2)};\n`;
+    fs.writeFileSync(scriptPath, content, 'utf8');
+    return scriptPath;
+  }
+
+  function listParticipants(now = new Date()) {
+    ensureDataFiles();
+    const currentTime = now.getTime();
+    return readJson(participantsPath, []).map((participant) => {
+      const lastSeen = participant.lastSeenAt ? new Date(participant.lastSeenAt).getTime() : 0;
+      return {
+        ...participant,
+        online: currentTime - lastSeen < 45000
+      };
+    });
+  }
+
+  function saveParticipantProfile(profileInput, now = new Date()) {
+    ensureDataFiles();
+    const existingParticipants = readJson(participantsPath, []);
+    const profile = profileInput || {};
+    const participantId = profile.participantId || `tn-${now.getTime()}-${Math.random().toString(16).slice(2)}`;
+    const previous = existingParticipants.find((participant) => participant.participantId === participantId) || {};
+    const nextParticipant = {
+      participantId,
+      displayName: profile.displayName || previous.displayName || 'Teilnehmer',
+      shortName: profile.shortName || previous.shortName || '',
+      email: profile.email || previous.email || '',
+      teamsName: profile.teamsName || previous.teamsName || '',
+      avatarDataUrl: profile.avatarDataUrl || previous.avatarDataUrl || '',
+      joinedAt: previous.joinedAt || now.toISOString(),
+      lastSeenAt: now.toISOString(),
+      status: previous.status || {
+        currentTask: '',
+        progress: 0,
+        state: 'online',
+        needsHelp: false
+      }
+    };
+    const nextParticipants = [
+      nextParticipant,
+      ...existingParticipants.filter((participant) => participant.participantId !== participantId)
+    ];
+
+    writeJson(participantsPath, nextParticipants);
+    return nextParticipant;
+  }
+
+  function updateParticipantProgress(participantId, statusInput, now = new Date()) {
+    ensureDataFiles();
+    const existingParticipants = readJson(participantsPath, []);
+    const previous = existingParticipants.find((participant) => participant.participantId === participantId);
+
+    if (!previous) {
+      return null;
+    }
+
+    const status = statusInput || {};
+    const nextParticipant = {
+      ...previous,
+      lastSeenAt: now.toISOString(),
+      status: {
+        ...previous.status,
+        currentTask: status.currentTask ?? previous.status?.currentTask ?? '',
+        progress: Number.isFinite(Number(status.progress)) ? Math.max(0, Math.min(100, Number(status.progress))) : previous.status?.progress ?? 0,
+        state: status.state || previous.status?.state || 'online',
+        needsHelp: status.needsHelp === true
+      }
+    };
+    const nextParticipants = existingParticipants.map((participant) => (
+      participant.participantId === participantId ? nextParticipant : participant
+    ));
+
+    writeJson(participantsPath, nextParticipants);
+    return nextParticipant;
   }
 
   function saveTestReport(reportInput, now = new Date()) {
@@ -193,6 +312,8 @@ function createAppData(baseDir, options = {}) {
     dataDir,
     settingsPath,
     historyPath,
+    participantReleasesPath,
+    participantsPath,
     testReportsDir,
     ensureDataFiles,
     getSettings,
@@ -200,6 +321,12 @@ function createAppData(baseDir, options = {}) {
     listHistory,
     addHistoryEntry,
     resetHistory,
+    getParticipantReleases,
+    saveParticipantReleases,
+    writeParticipantReleaseScript,
+    listParticipants,
+    saveParticipantProfile,
+    updateParticipantProgress,
     saveTestReport,
     listTestReports
   };
@@ -207,5 +334,6 @@ function createAppData(baseDir, options = {}) {
 
 module.exports = {
   createAppData,
-  defaultSettings
+  defaultSettings,
+  defaultParticipantReleases
 };

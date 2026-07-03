@@ -1,0 +1,225 @@
+:root {
+  --lf-ink: #0b1b4d;
+  --lf-ink-soft: #27456f;
+  --lf-blue: #0074c8;
+  --lf-cyan: #00abc7;
+  --lf-cyan-dark: #008aa0;
+  --lf-green: #1b8f4b;
+  --lf-orange: #f26a21;
+  --lf-red: #bf2f2f;
+  --lf-paper: #ffffff;
+  --lf-soft: #f4f8fb;
+  --lf-line: #d8e5ee;
+  --lf-shadow: 0 16px 45px rgba(9, 31, 66, .12);
+  --lf-radius: 18px;
+  --lf-sans: Arial, Helvetica, sans-serif;
+  --lf-mono: Consolas, "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--lf-sans);
+  color: var(--lf-ink);
+  background:
+    radial-gradient(circle at 10% 8%, rgba(0, 171, 199, .10), transparent 28rem),
+    radial-gradient(circle at 90% 18%, rgba(0, 116, 200, .08), transparent 24rem),
+    linear-gradient(180deg, #ffffff 0%, #f3f8fc 100%);
+  line-height: 1.55;
+}
+
+body > header,
+.site-header,
+.topbar,
+.hero {
+  background:
+    linear-gradient(135deg, rgba(0, 171, 199, .92), rgba(0, 87, 161, .96)),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, .24), transparent 20rem) !important;
+  color: #fff !important;
+  border-radius: 0 0 28px 28px;
+  box-shadow: var(--lf-shadow);
+}
+
+body > header,
+.hero {
+  padding: clamp(28px, 4vw, 56px) clamp(18px, 3vw, 48px) !important;
+}
+
+main,
+.wrap,
+.container,
+.section {
+  max-width: 1180px;
+  width: min(1180px, calc(100% - 28px));
+  margin-inline: auto;
+}
+
+main,
+.section {
+  padding-block: 28px 64px;
+}
+
+h1,
+h2,
+h3 {
+  color: inherit;
+}
+
+h1 {
+  font-size: clamp(34px, 5vw, 64px);
+  line-height: 1;
+}
+
+h2 {
+  font-size: clamp(26px, 3vw, 42px);
+  line-height: 1.08;
+}
+
+a {
+  color: var(--lf-blue);
+}
+
+.card,
+.panel,
+.task,
+.item,
+.quiz-card,
+.tool-card,
+.example-box,
+.ref-panel,
+article,
+section.panel {
+  border: 1px solid var(--lf-line) !important;
+  border-radius: var(--lf-radius) !important;
+  background: rgba(255, 255, 255, .94) !important;
+  box-shadow: var(--lf-shadow) !important;
+}
+
+.card,
+.panel,
+.task,
+.item,
+.quiz-card,
+.tool-card,
+.example-box,
+.ref-panel {
+  padding: 22px !important;
+}
+
+.grid {
+  gap: 18px !important;
+}
+
+.badge,
+.tag,
+.release-state,
+.pill-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px !important;
+  border-radius: 999px !important;
+  background: #eef9fc !important;
+  color: var(--lf-cyan-dark) !important;
+  border: 1px solid #d8f2f7 !important;
+  font-size: 12px !important;
+  text-transform: uppercase;
+  font-weight: 900 !important;
+  letter-spacing: .04em;
+}
+
+.btn,
+button,
+input[type="button"],
+input[type="submit"] {
+  min-height: 42px;
+  border: 0;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg, var(--lf-cyan), var(--lf-blue)) !important;
+  color: #fff !important;
+  padding: 11px 15px !important;
+  text-decoration: none !important;
+  font: inherit;
+  font-weight: 900 !important;
+  box-shadow: 0 12px 24px rgba(0, 116, 200, .22);
+  cursor: pointer;
+}
+
+.btn.secondary,
+button.secondary {
+  background: #eaf2f7 !important;
+  color: var(--lf-ink) !important;
+  box-shadow: none;
+}
+
+.btn:hover,
+button:hover {
+  transform: translateY(-2px);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #fff;
+}
+
+th,
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--lf-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: #eaf7fb;
+  color: var(--lf-ink);
+  font-weight: 900;
+}
+
+pre,
+code {
+  font-family: var(--lf-mono);
+}
+
+pre {
+  border-radius: 16px;
+  border: 1px solid #12334a;
+  background: #102d42;
+  color: #eefbff;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+.callout,
+.hint,
+.note,
+.nav-hint {
+  border-radius: 16px !important;
+  border: 1px solid #d8f2f7 !important;
+  background: #eef9fc !important;
+  color: var(--lf-ink-soft) !important;
+}
+
+@media (max-width: 760px) {
+  main,
+  .wrap,
+  .container,
+  .section {
+    width: min(100% - 20px, 1180px);
+  }
+}

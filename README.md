@@ -1,40 +1,185 @@
-# LFZQ8a HTML & CSS
+# LFZQ8a HTML & CSS Workshop-App
 
-Dieses Repository enthaelt die Kursmaterialien fuer LFZQ8a HTML & CSS.
+Dieses Repository enthaelt die Kursmaterialien und die Electron-Desktop-App fuer den LFZQ8a HTML-&-CSS-Workshop.
+
+Der aktuelle Arbeitsstand liegt auf dem Branch `electronDesktop`.
+
+## Kurzueberblick
+
+- Dozenten starten den Kurs ueber eine Electron-App.
+- Beim Erststart fuehrt ein Wizard durch die lokale Einrichtung.
+- Danach startet die App direkt in die Dozenten-Main-View.
+- Die Dozenten-App startet einen lokalen Kursserver.
+- Teilnehmer oeffnen die angezeigte Teilnehmer-Adresse im Browser.
+- Teilnehmer legen beim Erststart ein Profil an.
+- Der Dozent kann Tage, Tools und Projekte fuer alle Teilnehmer freigeben.
+- Fortschritt, Hilfeanfragen und letzte Aktivitaet erscheinen in der Dozentenuebersicht.
 
 ## Einstieg
 
-- `index.html`: statischer Einstieg fuer den Teilnehmerbereich
-- `LFZQ8a-Workshop-starten.cmd`: Start der Electron-Desktop-App per Doppelklick
+- `LFZQ8a-Workshop-starten.cmd`: Start der Electron-Desktop-App per Doppelklick.
+- `LFZQ8a-Konfig-Wizard-testen.cmd`: startet den Wizard gezielt zu Testzwecken.
+- `index.html`: statischer Einstieg fuer den Teilnehmerbereich.
+- `LFZQ8a_Workflow_Uebersicht.html`: standalone Workflow-Dokumentation ohne App-Verlinkung.
+
+## Start des Dozentenbereichs
+
+1. Projektordner oeffnen.
+2. `LFZQ8a-Workshop-starten.cmd` doppelklicken.
+3. Beim Erststart den Wizard abschliessen.
+4. Danach oeffnet sich die Dozenten-Main-View.
+5. In der Dozenten-Main-View steht im Bereich `Teilnehmeruebersicht` die Teilnehmer-Adresse.
+
+Das Startskript prueft automatisch:
+
+- ob Electron bereits installiert ist,
+- ob Node.js verfuegbar ist,
+- ob App-Abhaengigkeiten installiert sind.
+
+Wenn Node.js fehlt und `winget` vorhanden ist, versucht das Skript Node.js LTS automatisch zu installieren. Danach werden die App-Abhaengigkeiten im Ordner `desktop-app/` ueber `pnpm install` oder alternativ `npm install` installiert.
+
+## Software und Voraussetzungen
+
+| Komponente | Zweck | Hinweis |
+| --- | --- | --- |
+| Windows | Zielsystem fuer Dozenten- und Teilnehmer-Clients | Aktuelles Startskript ist fuer Windows ausgelegt |
+| Node.js LTS | Start und Installation der Electron-App | Wird bei Bedarf per `winget` installiert |
+| winget | automatische Node.js-Installation | Falls nicht vorhanden, Node.js manuell installieren |
+| Electron | Desktop-App fuer Dozent, Wizard und Kursserver | Abhaengigkeit in `desktop-app/package.json` |
+| pnpm oder npm | Installation der App-Abhaengigkeiten | Skript bevorzugt `pnpm`, sonst `npm` |
+| Browser | Teilnehmer-View | Teilnehmer oeffnen die Kursserver-Adresse |
+| Visual Studio Code | Bearbeitung der lokalen Ausgangssituationen | empfohlen fuer Projektarbeit |
 
 ## Aktive Struktur
 
-- `dozent/`: Dozentenstruktur mit Leitfaeden, Tagesmaterial, Loesungen, Bewertung, Quizdaten, Projektmaterialien und Tools; Start erfolgt ueber die Electron-Desktop-App
-- `teilnehmer/`: eigenstaendige Teilnehmerstruktur mit Webvarianten, Aufgaben, Starterdateien, Quizdaten, Projektmaterialien, Abgabehinweisen und Standalone-Tools
-- `desktop-app/`: Electron-Projekt fuer die Desktop-App
-- `_archiv/`: alte Root-Dubletten, Zwischenstaende und nicht mehr direkt benoetigte Dateien
+- `desktop-app/`: Electron-Projekt fuer Wizard, Dozenten-App, Kursserver, Teilnehmerfreigaben und Fortschrittsdaten.
+- `dozent/`: Dozentenstruktur mit Main-View, Leitfaeden, Tagesmaterial, Loesungen, Bewertung, Quizdaten, Projektmaterialien und Tools.
+- `teilnehmer/`: eigenstaendige Teilnehmerstruktur mit Webvarianten, Aufgaben, Starterdateien, Quizdaten, Projektmaterialien, Abgabehinweisen und Standalone-Tools.
+- `dozent/assets/css/unified-layout.css`: gemeinsames Dozenten-Layout fuer aktive Materialien.
+- `teilnehmer/assets/css/unified-layout.css`: gemeinsames Teilnehmer-Layout fuer aktive Materialien.
+- `_archiv/`: alte Root-Dubletten, Zwischenstaende und nicht mehr direkt benoetigte Dateien.
 
-## Zusatzaufgaben
+## Dozenten-Workflow
 
-Ergaenzende LF10a-Aufgaben sind nach Kurstagen einsortiert:
+1. Dozent startet `LFZQ8a-Workshop-starten.cmd`.
+2. Wizard speichert beim Erststart lokale Einstellungen.
+3. Dozenten-Main-View oeffnet sich.
+4. Lokaler Kursserver startet automatisch.
+5. Dozent gibt Tage, Projekte und Tools frei.
+6. Teilnehmer verbinden sich ueber die angezeigte URL.
+7. Dozent sieht Profile, Online-Status, aktuelle Aufgabe, Fortschritt und Hilfeanfragen.
 
-- Teilnehmer: `teilnehmer/zusatzaufgaben/index.html`
-- Dozenten: `dozent/zusatzaufgaben/index.html`
+## Teilnehmer-Workflow
 
-Der Teilnehmerbereich enthaelt nur Aufgaben und benoetigte Medien. Loesungen liegen ausschliesslich im Dozentenbereich.
+1. Teilnehmer oeffnet die vom Dozenten angezeigte Teilnehmer-Adresse.
+2. Beim Erststart erscheint ein Profil-Wizard.
+3. Teilnehmer gibt Name und Kuerzel an; E-Mail, Teams-Name und Bild sind optional.
+4. Freigegebene Bereiche sind anklickbar.
+5. Gesperrte Bereiche bleiben sichtbar, sind aber deaktiviert.
+6. Teilnehmer meldet Fortschritt ueber Statusbuttons:
+   - `Gestartet`
+   - `In Bearbeitung`
+   - `Hilfe benoetigt`
+   - `Erledigt`
 
-## Standalone-Tools
+## Lokaler Testablauf
 
-- Dozenten-Tool: `dozent/tools/html-tags-css-dozenteninfo.html`
-- Teilnehmer-Tool: `teilnehmer/tools/html-tags-css-uebersicht.html`
+1. Dozentenbereich per Doppelklick auf `LFZQ8a-Workshop-starten.cmd` starten.
+2. In der Dozenten-View den Bereich `Teilnehmeruebersicht` oeffnen.
+3. Teilnehmer-Adresse ablesen, zum Beispiel `http://localhost:PORT/teilnehmer`.
+4. Adresse in einem Browserfenster oeffnen.
+5. Profil anlegen, zum Beispiel:
+   - Name: `Test Teilnehmer`
+   - Kuerzel: `TT`
+   - E-Mail optional
+   - Teams-Name optional
+6. Teilnehmer sollte in der Dozenten-View erscheinen.
+7. Im Teilnehmerfenster Statusbuttons testen.
+8. In der Dozenten-View pruefen, ob Fortschritt und Hilfe-Status aktualisiert werden.
+
+Mehrere Teilnehmer koennen lokal simuliert werden ueber:
+
+- Inkognito-Fenster,
+- zweites Browserprofil,
+- anderen Browser.
+
+## Freigaben testen
+
+1. In der Dozenten-View den Bereich `Teilnehmer-Freigaben` oeffnen.
+2. Zum Beispiel `Tag 2` oder `Projektmaterialien` aktivieren.
+3. `Freigaben speichern` klicken.
+4. Teilnehmerfenster kurz warten oder neu laden.
+5. Der Bereich sollte entsperrt werden.
+
+## Projektmaterialien
+
+Die Projektmaterialien sind nach Rollen und Projekten gruppiert.
+
+- Teilnehmer erhalten Aufgaben, Starterdateien und Ausgangssituationen.
+- Dozenten erhalten zusaetzlich Loesungen, Teilloesungen und Hinweise.
+- Projektvorbereitende Aufgaben liegen in zwei Schwierigkeitsstufen vor: `einfach` und `schwer`.
+
+Wichtige Projektbereiche:
+
+- `teilnehmer/Projektmaterialien/`
+- `dozent/Projektmaterialien/`
+- `dozent/Projektmaterialien/projektvorbereitung/`
+
+## Tools
+
+- Dozenten-Tool: `dozent/tools/html-css-tag-tool-dozent.html`
+- Teilnehmer-Tool: `teilnehmer/tools/html-css-tag-tool-teilnehmer.html`
+- Quiztool Dozent: `dozent/tools/quiz/QuizTool_Timer_v9_LFZQ8a_CSS_Pools.html`
+- Quiztool Teilnehmer: `teilnehmer/tools/quiz/QuizTool_Timer_v9_LFZQ8a_CSS_Pools.html`
+
+## Workflow-Dokumentation
+
+Die Datei `LFZQ8a_Workflow_Uebersicht.html` beschreibt den Gesamtplan fuer externe Leser:
+
+- Rollen,
+- Branch und Entwicklungsstand,
+- benoetigte Software,
+- Start,
+- Dozenten-/Teilnehmer-Workflow,
+- Freigaben,
+- Fortschritt,
+- lokalen Testablauf.
+
+Die Datei ist bewusst standalone und enthaelt keine Verlinkung zur App.
 
 ## DSGVO-relevante Funktionen
 
 Diagnosefunktionen mit technischen Geraetedaten, Netzwerkdaten und Mailvorbereitung wurden aus `electronDesktop` entfernt und liegen separat im Branch `dsgvo-diagnosefunktionen`.
 
-## Nutzung
+Profilinformationen der Teilnehmer dienen der Kurssteuerung und Zuordnung im Unterricht. Optional erfasste Angaben wie E-Mail, Teams-Name und Profilbild sollten nur verwendet werden, wenn sie fuer den konkreten Kursbetrieb benoetigt werden.
 
-Der Bereich `teilnehmer/` ist bewusst standalone aufgebaut und kann separat weitergegeben oder geoeffnet werden. Der Bereich `dozent/` wird nicht aus dem statischen Einstieg verlinkt und soll ueber die Electron-Desktop-App gestartet werden. Alle Projektmaterialien sind projektweise gruppiert und mit relativen Pfaden aufgebaut, damit der Ordner auf unterschiedlichen Windows-Systemen lauffaehig bleibt.
+## Tests
+
+Die Tests liegen unter `desktop-app/tests/`.
+
+Ausfuehren:
+
+```powershell
+cd desktop-app
+npm test
+```
+
+Alternativ mit dem im Projekt genutzten Node.js:
+
+```powershell
+node tests/run-tests.js
+```
+
+Aktueller Testumfang:
+
+- App-Daten und lokale Speicherung,
+- Freigaben,
+- Teilnehmerprofile und Fortschritt,
+- Display-/Monitorlogik,
+- JSON-Speicher,
+- Pfadintegritaet,
+- Standalone-Anforderungen fuer den Teilnehmerbereich,
+- 90 Prozent Pfadabdeckung fuer `desktop-app/app/lib`.
 
 ## Aufraeumregel
 
