@@ -142,6 +142,10 @@ test('electron desktop app integrates course html pages through the app shell ca
   assert.match(courseHtml, /<iframe class="viewer"/);
   assert.match(courseJs, /window\.lfzq8aDesktop\.getCourseState\(\)/);
   assert.match(courseJs, /loadContent\(title, kind, fileInfo\)/);
+  assert.match(courseJs, /function renderDashboard\(\)/);
+  assert.match(courseJs, /state\.catalog\.teacher\.days\.forEach/);
+  assert.match(courseJs, /state\.catalog\.teacher\.projects\.forEach/);
+  assert.match(courseJs, /state\.catalog\.teacher\.guides/);
   assert.match(courseJs, /window\.lfzq8aDesktop\.openInEditor\(project\.workspace\)/);
   assert.match(courseJs, /window\.lfzq8aDesktop\.saveParticipantReleases/);
   assert.deepEqual(missingCatalogTargets.map((targetPath) => path.relative(repoRoot, targetPath)), []);

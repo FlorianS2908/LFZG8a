@@ -54,6 +54,7 @@ dist/LFZQ8a-Teilnehmer.zip
 | Less | Die Projektmaterialien wurden auf CSS umgestellt |
 | Separater Webserver | Die Dozenten-App startet den lokalen Kursserver selbst |
 | Externer Uebersetzungsdienst | Die Sprachen Deutsch, Englisch, Tuerkisch, Ukrainisch und Russisch liegen lokal in der App; keine Cloud-API oder Internetverbindung fuer die App-Uebersetzung noetig |
+| Zusaetzliches Navigationsframework | Die zentrale Dozenten-Startseite wird mit der bestehenden Electron/HTML/JS-Struktur aus dem Kurskatalog gerendert |
 
 ## Lokale App-Abhaengigkeiten
 

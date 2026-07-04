@@ -191,14 +191,23 @@ function createProjectCard(project) {
   actions.appendChild(workspaceButton);
 
   if (project.solutionFile) {
-    const solutionButton = createElement('button', 'card-button', t('solution'));
+    const solutionButton = createElement('button', 'card-button', t('finalResult'));
     solutionButton.type = 'button';
-    solutionButton.addEventListener('click', () => loadContent(`${project.title} - Loesung`, 'Loesung', fileFrom(project, 'solution')));
+    solutionButton.addEventListener('click', () => loadContent(`${project.title} - ${t('finalResult')}`, t('finalResult'), fileFrom(project, 'solution')));
     actions.appendChild(solutionButton);
   }
 
   card.appendChild(actions);
   return card;
+}
+
+function appendSectionTitle(panel, title, description) {
+  const sectionTitle = createElement('article', 'wide-card section-title-card');
+  sectionTitle.appendChild(createElement('h2', '', title));
+  if (description) {
+    sectionTitle.appendChild(createElement('p', '', description));
+  }
+  panel.appendChild(sectionTitle);
 }
 
 function renderDashboard() {
@@ -211,7 +220,15 @@ function renderDashboard() {
   intro.appendChild(createElement('p', '', t('allInAppText')));
   panel.appendChild(intro);
 
-  state.catalog.teacher.quickLinks.forEach((item) => panel.appendChild(createCard(item, { showReleaseState: true })));
+  appendSectionTitle(panel, t('courseDays'), t('dashboardDaysText'));
+  state.catalog.teacher.days.forEach((day, index) => panel.appendChild(createDayCard(day, index)));
+
+  appendSectionTitle(panel, t('projects'), t('dashboardProjectsText'));
+  state.catalog.teacher.projects.forEach((project) => panel.appendChild(createProjectCard(project)));
+
+  appendSectionTitle(panel, t('tools'), t('dashboardToolsText'));
+  [...state.catalog.teacher.guides, ...state.catalog.teacher.quickLinks.filter((item) => item.kind === 'Tool')]
+    .forEach((item) => panel.appendChild(createCard(item, { showReleaseState: true })));
 }
 
 function renderDays() {

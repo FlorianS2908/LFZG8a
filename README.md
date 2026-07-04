@@ -37,6 +37,7 @@ Der aktuelle Arbeitsstand liegt auf dem Branch `electronDesktop`.
 Die Electron-App wird zur eigentlichen Kursplattform. Die vielen bisherigen HTML-Seiten bleiben als Materialdateien erhalten, werden aber nicht mehr als lose Einstiegsseiten gedacht, sondern ueber die App navigiert und in einem integrierten Inhaltsbereich angezeigt.
 
 - Dozent: arbeitet in der App mit Kursnavigation, Viewer, Freigaben, Teilnehmerstatus und Loesungen.
+- Dozenten-Startseite: zeigt direkt alle 5 Tage, die 2 Projekte und die Toolliste als zentrale Arbeitsflaeche.
 - Teilnehmer: nutzt freigegebene Inhalte und bearbeitet Projektdateien lokal.
 - Arbeitsdateien: bleiben echte Ordner, damit sie direkt in Visual Studio Code geoeffnet werden koennen.
 - Loesungen: bleiben nur im Dozentenbereich sichtbar.
@@ -144,10 +145,13 @@ Fuer diesen Umbau wurde keine neue Software eingefuehrt. Die integrierte Kursobe
 2. Wizard speichert beim Erststart lokale Einstellungen.
 3. Integrierte Kursplattform oeffnet sich.
 4. Lokaler Kursserver startet automatisch.
-5. Dozent oeffnet Tage, Tools, Projekte und Leitfaeden im integrierten Viewer.
-6. Dozent gibt Tage, Projekte und Tools frei.
-7. Teilnehmer verbinden sich ueber die angezeigte URL.
-8. Dozent sieht Profile, Online-Status, aktuelle Aufgabe, Fortschritt und Hilfeanfragen.
+5. Auf der Startseite sieht der Dozent direkt die 5 Kurstage mit Webvariante und Uebungsaufgaben.
+6. Darunter stehen die 2 Projekte mit Aufgabenpaket, Arbeitsordner und Endergebnis.
+7. Danach folgt die Tool- und Leitfadenliste.
+8. Dozent oeffnet Tage, Tools, Projekte und Leitfaeden im integrierten Viewer.
+9. Dozent gibt Tage, Projekte und Tools frei.
+10. Teilnehmer verbinden sich ueber die angezeigte URL.
+11. Dozent sieht Profile, Online-Status, aktuelle Aufgabe, Fortschritt und Hilfeanfragen.
 
 ## Teilnehmer-Workflow
 

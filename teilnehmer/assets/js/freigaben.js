@@ -10,3 +10,4 @@ window.LFZQ8A_PARTICIPANT_RELEASES = {
   "tool_tags": true,
   "additional_tasks": false
 };
+window.LFZQ8A_PARTICIPANT_LANGUAGE = "de";
