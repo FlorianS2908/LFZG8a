@@ -3,6 +3,7 @@ param(
   [string]$Role = 'Dozent',
   [switch]$Start,
   [switch]$WizardTest,
+  [switch]$TeacherStartviewTest,
   [string]$ParticipantUrl = ''
 )
 
@@ -130,6 +131,9 @@ function Start-TeacherApp {
   $args = @('.')
   if ($WizardTest) {
     $args += '--wizard-test'
+  }
+  if ($TeacherStartviewTest) {
+    $args += '--teacher-startview'
   }
 
   Write-Step "Starte Dozenten-App..."

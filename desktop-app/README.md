@@ -1,6 +1,6 @@
 # LFZQ8a Desktop-App
 
-Diese App ist die Electron-Kursplattform fuer die LFZQ8a-Unterrichtsmaterialien.
+Diese App ist die Electron-Dozentenview fuer die LFZQ8a-Unterrichtsmaterialien.
 
 ## Ziel
 
@@ -14,7 +14,7 @@ Diese App ist die Electron-Kursplattform fuer die LFZQ8a-Unterrichtsmaterialien.
 
 ## App-Struktur
 
-- `app/renderer/course.html`: integrierte Kursplattform.
+- `app/renderer/course.html`: integrierte Dozentenview.
 - `app/renderer/course.js`: Navigation, Viewer, Freigaben, Teilnehmerstatus und VS-Code-Start.
 - `app/lib/course-catalog.js`: zentrale Registrierung der Tage, Tools, Projekte und Leitfaeden.
 - `app/renderer/wizard.html`: Erststart-Wizard.
@@ -34,24 +34,15 @@ Nach der ersten Installation muss `pnpm install` nur erneut ausgefuehrt werden, 
 pnpm start
 ```
 
-## Start per Doppelklick
+## Root-Teststarter
 
-Im Projektordner liegt die Datei `LFZQ8a-Workshop-starten.cmd`. Sie kann per Doppelklick gestartet werden.
+Im Projektordner bleibt aktuell nur die Datei `LFZQ8a-Dozent-Startview-testen.cmd`. Sie kann per Doppelklick gestartet werden.
 
 Der Starter:
 
-- wechselt automatisch in den Ordner `desktop-app`
-- sucht direkt die installierte `electron.exe` und benoetigt dafuer kein globales `node`
-- installiert bei fehlender Electron-Installation automatisch die Abhaengigkeiten
-- installiert bei Bedarf Node.js LTS ueber `winget`
-- fuehrt danach einmalig `pnpm install` oder `npm install` aus
-- startet danach die Desktop-App
-
-Fuer eine reine Pruefung ohne App-Start:
-
-```powershell
-.\LFZQ8a-Workshop-starten.cmd --check
-```
+- oeffnet die reduzierte Kursuebersicht fuer den aktuellen Neustruktur-Test
+- nutzt die bestehende Installationspruefung
+- startet nicht mehr ueber die alten Root-Starter
 
 ## Pruefung
 
@@ -70,7 +61,7 @@ Aktuell abgedeckt:
 - Historie wird gespeichert, begrenzt und sortiert
 - Reset loescht nur die Historie
 - Kurskatalog verweist auf vorhandene Inhalte
-- Electron startet die integrierte Kursplattform
+- Electron startet die integrierte Dozentenview
 - Monitor-Auswahl faellt bei fehlendem Monitor sauber zurueck
 - Fensterpositionen werden aus der Display-Workarea berechnet
 - JSON-Dateien werden angelegt, gelesen und bei Fehlern mit Fallback behandelt

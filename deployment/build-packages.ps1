@@ -122,7 +122,6 @@ function New-TeacherPackage {
   Copy-ItemSafe -Source (Join-Path $repoRoot 'teilnehmer') -Destination (Join-Path $PackageRoot 'teilnehmer')
   Copy-ItemSafe -Source (Join-Path $repoRoot 'index.html') -Destination (Join-Path $PackageRoot 'index.html')
   Copy-ItemSafe -Source (Join-Path $repoRoot 'deployment\dozent\Start-LFZQ8a-Dozent.cmd') -Destination (Join-Path $PackageRoot 'Start-LFZQ8a-Dozent.cmd')
-  Copy-ItemSafe -Source (Join-Path $repoRoot 'deployment\dozent\Start-LFZQ8a-Wizard-Test.cmd') -Destination (Join-Path $PackageRoot 'Start-LFZQ8a-Wizard-Test.cmd')
 }
 
 function New-ParticipantPackage {

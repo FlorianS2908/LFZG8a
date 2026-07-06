@@ -3,26 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LFZQ8a Kursplattform</title>
+  <title>LFZQ8a Dozentenview</title>
   <link rel="stylesheet" href="course.css">
 </head>
 <body>
   <div class="course-app">
     <aside class="sidebar">
+      <button class="profile-entry" type="button" data-open-settings aria-label="Profil und Einstellungen oeffnen">
+        <span class="profile-avatar" data-profile-avatar>LF</span>
+        <span>
+          <strong data-profile-name>Dozent</strong>
+          <small>Settings</small>
+        </span>
+      </button>
       <div class="brand">
         <div class="brand-mark">LF</div>
         <div>
           <span>LFZQ8a Desktop</span>
-          <strong data-i18n="coursePlatform">Kursplattform</strong>
+          <strong data-i18n="coursePlatform">Dozentenview</strong>
         </div>
       </div>
-      <nav class="main-nav" aria-label="Kursbereiche">
+      <nav class="main-nav" aria-label="Dozentenview" hidden>
         <button class="nav-button is-active" type="button" data-view="dashboard" data-i18n="overview">Uebersicht</button>
-        <button class="nav-button" type="button" data-view="days" data-i18n="courseDays">Kurstage</button>
-        <button class="nav-button" type="button" data-view="projects" data-i18n="projects">Projekte</button>
-        <button class="nav-button" type="button" data-view="tools" data-i18n="tools">Tools</button>
-        <button class="nav-button" type="button" data-view="participants" data-i18n="participants">Teilnehmer</button>
-        <button class="nav-button" type="button" data-view="releases" data-i18n="releases">Freigaben</button>
       </nav>
       <div class="sidebar-note">
         <strong data-i18n="principle">Prinzip</strong>
@@ -43,13 +45,8 @@
       </header>
 
       <section class="content-grid" data-panel="dashboard"></section>
-      <section class="content-grid" data-panel="days" hidden></section>
-      <section class="content-grid" data-panel="projects" hidden></section>
-      <section class="content-grid" data-panel="tools" hidden></section>
-      <section class="content-grid" data-panel="participants" hidden></section>
-      <section class="content-grid" data-panel="releases" hidden></section>
 
-      <section class="viewer-shell" aria-label="Integrierter Inhaltsbereich">
+      <section class="viewer-shell" aria-label="Integrierter Inhaltsbereich" data-viewer-shell hidden>
         <div class="viewer-header">
           <div>
             <span class="viewer-kind" data-current-kind data-i18n="viewerReady">Bereit</span>
@@ -65,6 +62,56 @@
     </main>
   </div>
 
+  <div class="settings-dialog" data-settings-dialog hidden>
+    <form class="settings-panel" data-settings-form>
+      <div class="settings-head">
+        <div>
+          <p class="eyebrow">Profil</p>
+          <h2>Profil und Einstellungen</h2>
+        </div>
+        <button class="icon-button" type="button" data-close-settings aria-label="Einstellungen schliessen">x</button>
+      </div>
+
+      <section class="settings-section">
+        <h3>Profil</h3>
+        <label>Name<input name="displayName" data-setting-display-name></label>
+        <label>E-Mail<input name="email" type="email" data-setting-email></label>
+        <label>Profilbild<input name="avatar" type="file" accept="image/*"></label>
+      </section>
+
+      <section class="settings-section">
+        <h3>Sprachen</h3>
+        <label>Dozenten-App<select name="teacherLanguage" data-setting-teacher-language></select></label>
+        <label>Teilnehmer-Ansicht<select name="participantLanguage" data-setting-participant-language></select></label>
+      </section>
+
+      <section class="settings-section">
+        <h3>Dozenten-Settings</h3>
+        <label>Monitor fuer Dozenteninfo<select name="monitorIndex" data-setting-monitor></select></label>
+        <label class="check-row"><input name="openTeacherOnSecondMonitor" type="checkbox" data-setting-second-monitor> Dozenteninfo auf zweitem Monitor oeffnen</label>
+        <label class="check-row"><input name="includeDeviceNetworkData" type="checkbox" data-setting-network> IP- und MAC-Adresse lokal im Testbericht speichern</label>
+      </section>
+
+      <section class="settings-section">
+        <h3>Testberichte</h3>
+        <p class="muted">Beim Start der Dozenten-App wird automatisch ein lokaler JSON- und HTML-Bericht erstellt.</p>
+        <div class="report-list" data-settings-reports></div>
+        <div class="button-row">
+          <button class="card-button" type="button" data-create-report>Testbericht jetzt erstellen</button>
+          <button class="card-button" type="button" data-open-report-dir>Berichtsordner oeffnen</button>
+        </div>
+      </section>
+
+      <div class="button-row">
+        <button class="card-button" type="submit">Settings speichern</button>
+        <button class="card-button" type="button" data-close-settings>Abbrechen</button>
+      </div>
+      <p class="status-line" data-settings-status></p>
+    </form>
+  </div>
+
+  <script src="course-navigation.js"></script>
+  <script src="course-content-groups.js"></script>
   <script src="course.js"></script>
 </body>
 </html>

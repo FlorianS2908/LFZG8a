@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Windows | Zielsystem fuer Startskripte und Desktop-App | Aktuelle Automatisierung ist fuer Windows ausgelegt |
 | Node.js LTS | Start und Installation der Electron-App | Kann bei Bedarf ueber `winget` installiert werden |
-| Electron | Desktop-App fuer Wizard, Kursplattform und lokalen Kursserver | Wird ueber `desktop-app/package.json` installiert |
+| Electron | Desktop-App fuer Wizard, Dozentenview und lokalen Kursserver | Wird ueber `desktop-app/package.json` installiert |
 | npm | Installation der JavaScript-Abhaengigkeiten | Kommt mit Node.js |
 | Browser | Teilnehmer-View ueber Kursserver-Adresse | Edge, Chrome oder Firefox reicht |
 
@@ -46,6 +46,14 @@ dist/LFZQ8a-Teilnehmer.zip
 
 `dist/` ist ein lokaler Build-Ordner und wird nicht versioniert.
 
+## Root-Teststarter
+
+Fuer den aktuellen Branch `codex/startview-neustruktur` bleibt im Root-Ordner nur ein Teststarter. Er installiert keine neue Software und oeffnet nur die reduzierte Kursuebersicht:
+
+| Starter | Zweck |
+| --- | --- |
+| `LFZQ8a-Dozent-Startview-testen.cmd` | Oeffnet `dozent/index_dozent.html` direkt im Standardbrowser |
+
 ## Wird aktuell nicht zusaetzlich benoetigt
 
 | Paket | Grund |
@@ -55,6 +63,21 @@ dist/LFZQ8a-Teilnehmer.zip
 | Separater Webserver | Die Dozenten-App startet den lokalen Kursserver selbst |
 | Externer Uebersetzungsdienst | Die Sprachen Deutsch, Englisch, Tuerkisch, Ukrainisch und Russisch liegen lokal in der App; keine Cloud-API oder Internetverbindung fuer die App-Uebersetzung noetig |
 | Zusaetzliches Navigationsframework | Die zentrale Dozenten-Startseite wird mit der bestehenden Electron/HTML/JS-Struktur aus dem Kurskatalog gerendert |
+| Zusaetzliche Profil- oder Report-Software | Profil, Settings und lokale Testberichte werden mit den bestehenden Electron-/Browser-Funktionen gespeichert |
+
+## Wartbarkeit und Modularitaet
+
+Fuer die Trennung von Tagen, Projekten und Tools wird keine weitere Software benoetigt. Die Modularitaet entsteht ueber normale JavaScript-Dateien:
+
+| Bereich | Datei | Zweck |
+| --- | --- | --- |
+| Kurstage | `desktop-app/app/lib/catalog/teacher-days.js` | Webvarianten, Aufgaben, Loesungen und Quizdateien pro Tag |
+| Projekte | `desktop-app/app/lib/catalog/teacher-projects.js` | Aufgabenpakete, Arbeitsordner und Dozentenloesungen |
+| Tools und Leitfaeden | `desktop-app/app/lib/catalog/teacher-tools.js` | Toolliste, Leitfaeden und zentrale Dozentenmaterialien |
+| Teilnehmerinhalte | `desktop-app/app/lib/catalog/participant-content.js` | Teilnehmer-Tools und Teilnehmer-Projektordner |
+| App-Gruppierung | `desktop-app/app/renderer/course-content-groups.js` | Sortiert die Katalogdaten fuer die App-Ansichten |
+
+`desktop-app/app/lib/course-catalog.js` bleibt als stabile Schnittstelle erhalten, damit Electron-App, Tests und spaetere Erweiterungen nicht direkt von einzelnen Inhaltsdateien abhaengen.
 
 ## Lokale App-Abhaengigkeiten
 

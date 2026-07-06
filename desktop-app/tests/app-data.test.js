@@ -57,7 +57,12 @@ test('app data saves setup without losing existing settings', () => {
       saveLocalTestReports: true,
       includeDeviceNetworkData: false,
       teacherLanguage: 'de',
-      participantLanguage: 'de'
+      participantLanguage: 'de',
+      teacherProfile: {
+        displayName: 'Dozent',
+        email: '',
+        avatarDataUrl: ''
+      }
     });
   } finally {
     cleanup();
@@ -100,8 +105,37 @@ test('app data resets only history and keeps settings untouched', () => {
       saveLocalTestReports: true,
       includeDeviceNetworkData: false,
       teacherLanguage: 'de',
-      participantLanguage: 'de'
+      participantLanguage: 'de',
+      teacherProfile: {
+        displayName: 'Dozent',
+        email: '',
+        avatarDataUrl: ''
+      }
     });
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data stores teacher profile settings with defaults', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const settings = appData.saveSettings({
+      teacherProfile: {
+        displayName: 'Florian Schaffer',
+        email: 'florian@example.test',
+        avatarDataUrl: 'data:image/png;base64,abc'
+      }
+    });
+    const persisted = appData.getSettings();
+
+    assert.deepEqual(settings.teacherProfile, {
+      displayName: 'Florian Schaffer',
+      email: 'florian@example.test',
+      avatarDataUrl: 'data:image/png;base64,abc'
+    });
+    assert.deepEqual(persisted.teacherProfile, settings.teacherProfile);
   } finally {
     cleanup();
   }
@@ -290,8 +324,12 @@ test('app data stores participant releases and writes participant script', () =>
     const script = fs.readFileSync(scriptPath, 'utf8');
     const defaultScript = fs.readFileSync(defaultScriptPath, 'utf8');
 
-    assert.equal(releases.tag_01, true);
+    assert.equal(releases.tag_01, false);
     assert.equal(releases.tag_02, true);
+    assert.equal(releases.tag_01_task_html_css_tag_overview, false);
+    assert.equal(releases.tag_02_task_wunderland_hero_button, false);
+    assert.equal(releases.tag_01_task_wunderland_custom_properties, false);
+    assert.equal(releases.tag_04_task_akkordeon_responsive, false);
     assert.equal(releases.tool_quiz, true);
     assert.equal(releases.tool_tags, false);
     assert.equal(releases.unknown_key, true);

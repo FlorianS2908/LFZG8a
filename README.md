@@ -2,14 +2,14 @@
 
 Dieses Repository enthaelt die Kursmaterialien und die Electron-Desktop-App fuer den LFZQ8a HTML-&-CSS-Workshop.
 
-Der aktuelle Arbeitsstand liegt auf dem Branch `electronDesktop`.
+Der aktuelle Neustruktur-Arbeitsstand liegt auf dem Branch `codex/startview-neustruktur`.
 
 ## Kurzueberblick
 
 - Dozenten starten den Kurs ueber eine Electron-App.
 - Beim Erststart fuehrt ein Wizard durch die lokale Einrichtung.
 - Im Wizard koennen Dozenten-App und Teilnehmer-Ansicht getrennt auf Deutsch, Englisch, Tuerkisch, Ukrainisch oder Russisch gestellt werden.
-- Danach startet die App direkt in die integrierte Kursplattform.
+- Danach startet die App direkt in die integrierte Dozentenview.
 - Die bisherigen HTML-Materialien werden ueber einen Kurskatalog in der App angezeigt.
 - Standalone bleiben bewusst nur Arbeitsordner und Arbeitsdateien, die in VS Code bearbeitet werden.
 - Die Dozenten-App startet einen lokalen Kursserver.
@@ -20,10 +20,10 @@ Der aktuelle Arbeitsstand liegt auf dem Branch `electronDesktop`.
 
 ## Einstieg
 
-- `LFZQ8a-Workshop-starten.cmd`: Start der Electron-Desktop-App per Doppelklick.
-- `LFZQ8a-Konfig-Wizard-testen.cmd`: startet den Wizard gezielt zu Testzwecken.
+- `LFZQ8a-Dozent-Startview-testen.cmd`: einziger Root-Starter fuer den aktuellen Neustruktur-Test; oeffnet direkt die reduzierte Kursuebersicht.
 - `desktop-app/app/renderer/course.html`: integrierte Kursoberflaeche der Electron-App.
-- `desktop-app/app/lib/course-catalog.js`: Katalog der eingebundenen Tage, Tools, Projekte und Leitfaeden.
+- `desktop-app/app/lib/course-catalog.js`: stabile Katalog-Schnittstelle fuer die App.
+- `desktop-app/app/lib/catalog/`: getrennte Inhaltsmodule fuer Tage, Projekte, Tools/Leitfaeden und Teilnehmerinhalte.
 - `deployment/build-packages.ps1`: baut Dozenten- und Teilnehmer-ZIP-Pakete.
 - `deployment/common/install-check.ps1`: gemeinsame Software- und Abhaengigkeitspruefung.
 - `deployment/dozent/Start-LFZQ8a-Dozent.cmd`: Starter fuer das Dozentenpaket.
@@ -34,22 +34,26 @@ Der aktuelle Arbeitsstand liegt auf dem Branch `electronDesktop`.
 
 ## Zielarchitektur
 
-Die Electron-App wird zur eigentlichen Kursplattform. Die vielen bisherigen HTML-Seiten bleiben als Materialdateien erhalten, werden aber nicht mehr als lose Einstiegsseiten gedacht, sondern ueber die App navigiert und in einem integrierten Inhaltsbereich angezeigt.
+Die Electron-App wird zur eigentlichen Dozentenview. Die vielen bisherigen HTML-Seiten bleiben als Materialdateien erhalten, werden aber nicht mehr als lose Einstiegsseiten gedacht, sondern ueber die App navigiert und in einem integrierten Inhaltsbereich angezeigt.
+
+Die Inhalte sind intern modular getrennt: Kurstage, Projekte, Tools/Leitfaeden und Teilnehmerinhalte liegen in eigenen Katalogmodulen unter `desktop-app/app/lib/catalog/`. `desktop-app/app/lib/course-catalog.js` bleibt nur die gemeinsame Schnittstelle, die Electron-App und Tests verwenden. Dadurch koennen neue Tage, neue Projekte oder neue Tools getrennt gepflegt werden, ohne die App-Startlogik umzubauen.
 
 - Dozent: arbeitet in der App mit Kursnavigation, Viewer, Freigaben, Teilnehmerstatus und Loesungen.
 - Dozenten-Startseite: zeigt direkt alle 5 Tage, die 2 Projekte und die Toolliste als zentrale Arbeitsflaeche.
 - Teilnehmer: nutzt freigegebene Inhalte und bearbeitet Projektdateien lokal.
 - Arbeitsdateien: bleiben echte Ordner, damit sie direkt in Visual Studio Code geoeffnet werden koennen.
-- Loesungen: bleiben nur im Dozentenbereich sichtbar.
+- Loesungen: bleiben nur in der Kursuebersicht sichtbar.
 
-## Start des Dozentenbereichs
+## Start der Kursuebersicht
 
 1. Projektordner oeffnen.
-2. `LFZQ8a-Workshop-starten.cmd` doppelklicken.
+2. `LFZQ8a-Dozent-Startview-testen.cmd` doppelklicken.
 3. Beim Erststart den Wizard abschliessen.
 4. Im Wizard die Sprache fuer die Dozenten-App und optional abweichend fuer die Teilnehmer-Ansicht waehlen.
-5. Danach oeffnet sich die integrierte Kursplattform.
-6. Im Bereich `Teilnehmer` steht die Teilnehmer-Adresse.
+5. Danach oeffnet sich die integrierte Dozentenview.
+6. Wenn `Dozenteninfo auf zweitem Monitor oeffnen` aktiv ist, oeffnet sich zusaetzlich ein zweites Fenster direkt mit den Teilnehmer-Freigaben auf dem ausgewaehlten Monitor.
+7. Im Bereich `Teilnehmer` steht die Teilnehmer-Adresse.
+8. Links oben im Profil-Icon liegen danach Profil, Sprache, Monitorwahl und lokale Testberichte.
 
 Das Startskript prueft automatisch:
 
@@ -71,10 +75,26 @@ Die App-Oberflaechen unterstuetzen aktuell:
 
 Die Sprachwahl wird lokal in den App-Einstellungen gespeichert. Der Dozent waehlt im Wizard getrennt:
 
-- `Dozenten-App`: Sprache fuer Wizard, Kursplattform, Freigaben, Teilnehmerstatus und App-Bedienung.
+- `Dozenten-App`: Sprache fuer Wizard, Dozentenview, Freigaben, Teilnehmerstatus und App-Bedienung.
 - `Teilnehmer-Ansicht`: Standardsprache fuer Teilnehmer-Main-View, Teilnehmer-Profil-Wizard, Freigabestatus und Fortschrittsbuttons.
 
 Fachliche Unterrichtsmaterialien, Projektdateien und bereits erstellte HTML-Aufgaben bleiben bewusst in ihrer Originalsprache. Uebersetzt wird die Bedienoberflaeche der Electron-App und der Teilnehmersteuerung.
+
+## Profil und Settings
+
+In der Dozenten-App befindet sich links oben ein Profil-Icon. Darueber werden nach dem Erststart die wichtigen Einstellungen gepflegt:
+
+- Name, E-Mail und Profilbild des Dozenten,
+- Sprache der Dozenten-App,
+- Standardsprache der Teilnehmer-Ansicht,
+- Monitor fuer Dozenteninfos,
+- automatisches Freigabe-Fenster auf dem ausgewaehlten zweiten Monitor,
+- lokale Testbericht-Einstellungen,
+- Liste der automatisch erzeugten Testberichte.
+
+Beim Start der Dozenten-App wird automatisch ein lokales Testprotokoll erzeugt. Die Berichte liegen als JSON- und HTML-Dateipaar im lokalen App-Datenordner und koennen ueber das Settings-Menue eingesehen werden.
+
+Auch im Teilnehmerbereich gibt es links oben ein Profil-Icon. Teilnehmer koennen dort Name, Kuerzel, optionale Kontaktdaten, Profilbild und Sprache bearbeiten. Diese Daten dienen der Zuordnung in der Dozentenuebersicht.
 
 ## Bereitstellung fuer Benutzer
 
@@ -85,7 +105,6 @@ deployment/
   build-packages.ps1
   common/install-check.ps1
   dozent/Start-LFZQ8a-Dozent.cmd
-  dozent/Start-LFZQ8a-Wizard-Test.cmd
   teilnehmer/Start-LFZQ8a-Teilnehmer.cmd
 ```
 
@@ -127,10 +146,15 @@ Fuer diesen Umbau wurde keine neue Software eingefuehrt. Die integrierte Kursobe
 
 ## Aktive Struktur
 
-- `desktop-app/`: Electron-Projekt fuer Wizard, Kursplattform, Kursserver, Teilnehmerfreigaben und Fortschrittsdaten.
+- `desktop-app/`: Electron-Projekt fuer Wizard, Dozentenview, Kursserver, Teilnehmerfreigaben und Fortschrittsdaten.
 - `desktop-app/app/renderer/course.html`: integrierte App-Oberflaeche.
 - `desktop-app/app/renderer/course.js`: Navigation, Viewer, Freigaben, Teilnehmerstatus und VS-Code-Start.
-- `desktop-app/app/lib/course-catalog.js`: zentrale Inhaltsregistrierung.
+- `desktop-app/app/renderer/course-content-groups.js`: Gruppierung der App-Bereiche fuer Tage, Projekte, Tools und Teilnehmerprojekte.
+- `desktop-app/app/lib/course-catalog.js`: stabile Schnittstelle zur Inhaltsregistrierung.
+- `desktop-app/app/lib/catalog/teacher-days.js`: Kurstage und Tagesmaterial.
+- `desktop-app/app/lib/catalog/teacher-projects.js`: Dozenten-Projektkarten, Arbeitsordner und Loesungen.
+- `desktop-app/app/lib/catalog/teacher-tools.js`: Tools, Leitfaeden und zentrale Dozentenlinks.
+- `desktop-app/app/lib/catalog/participant-content.js`: Teilnehmerlinks und Teilnehmer-Projektordner.
 - `deployment/`: Paketierung, Starter und automatische Installationspruefung.
 - `dist/`: lokal erzeugte ZIP-Pakete, nicht versioniert.
 - `dozent/`: Dozentenstruktur mit Main-View, Leitfaeden, Tagesmaterial, Loesungen, Bewertung, Quizdaten, Projektmaterialien und Tools.
@@ -141,17 +165,18 @@ Fuer diesen Umbau wurde keine neue Software eingefuehrt. Die integrierte Kursobe
 
 ## Dozenten-Workflow
 
-1. Dozent startet `LFZQ8a-Workshop-starten.cmd`.
+1. Dozent startet im aktuellen Root-Teststand `LFZQ8a-Dozent-Startview-testen.cmd`.
 2. Wizard speichert beim Erststart lokale Einstellungen.
-3. Integrierte Kursplattform oeffnet sich.
-4. Lokaler Kursserver startet automatisch.
-5. Auf der Startseite sieht der Dozent direkt die 5 Kurstage mit Webvariante und Uebungsaufgaben.
-6. Darunter stehen die 2 Projekte mit Aufgabenpaket, Arbeitsordner und Endergebnis.
-7. Danach folgt die Tool- und Leitfadenliste.
-8. Dozent oeffnet Tage, Tools, Projekte und Leitfaeden im integrierten Viewer.
-9. Dozent gibt Tage, Projekte und Tools frei.
-10. Teilnehmer verbinden sich ueber die angezeigte URL.
-11. Dozent sieht Profile, Online-Status, aktuelle Aufgabe, Fortschritt und Hilfeanfragen.
+3. Integrierte Dozentenview oeffnet sich.
+4. Bei aktiver Zweitmonitor-Option oeffnet sich die Freigabe-View automatisch als zweites Fenster.
+5. Lokaler Kursserver startet automatisch.
+6. Auf der Startseite sieht der Dozent direkt die 5 Kurstage mit Webvariante und Uebungsaufgaben.
+7. Darunter stehen die 2 Projekte mit Aufgabenpaket, Arbeitsordner und Endergebnis.
+8. Danach folgt die Tool- und Leitfadenliste.
+9. Dozent oeffnet Tage, Tools, Projekte und Leitfaeden im integrierten Viewer.
+10. Dozent gibt Tage, Projekte und Tools frei.
+11. Teilnehmer verbinden sich ueber die angezeigte URL.
+12. Dozent sieht Profile, Online-Status, aktuelle Aufgabe, Fortschritt und Hilfeanfragen.
 
 ## Teilnehmer-Workflow
 
@@ -168,7 +193,7 @@ Fuer diesen Umbau wurde keine neue Software eingefuehrt. Die integrierte Kursobe
 
 ## Lokaler Testablauf
 
-1. Dozentenbereich per Doppelklick auf `LFZQ8a-Workshop-starten.cmd` starten.
+1. Kursuebersicht per Doppelklick auf `LFZQ8a-Dozent-Startview-testen.cmd` starten.
 2. In der App den Bereich `Teilnehmer` oeffnen.
 3. Teilnehmer-Adresse ablesen, zum Beispiel `http://localhost:PORT/teilnehmer`.
 4. Adresse in einem Browserfenster oeffnen.
@@ -264,7 +289,7 @@ Aktueller Testumfang:
 - JSON-Speicher,
 - Pfadintegritaet,
 - Kurskatalog und integrierte App-View,
-- Mehrsprachigkeit fuer Wizard, Kursplattform und Teilnehmersteuerung,
+- Mehrsprachigkeit fuer Wizard, Dozentenview und Teilnehmersteuerung,
 - Deployment-Skripte und feste Dokumentationsdateien,
 - Standalone-Anforderungen fuer den Teilnehmerbereich,
 - mindestens 95 Prozent Pfadabdeckung fuer `desktop-app/app/lib`.

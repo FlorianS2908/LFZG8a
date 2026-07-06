@@ -9,8 +9,8 @@ const supportedLanguages = [
 const translations = {
   de: {
     languageName: 'Deutsch',
-    appTitle: 'LFZQ8a Kursplattform',
-    coursePlatform: 'Kursplattform',
+    appTitle: 'LFZQ8a Dozentenview',
+    coursePlatform: 'Dozentenview',
     overview: 'Uebersicht',
     courseDays: 'Kurstage',
     projects: 'Projekte',
@@ -153,8 +153,8 @@ const translations = {
   },
   en: {
     languageName: 'English',
-    appTitle: 'LFZQ8a Course Platform',
-    coursePlatform: 'Course platform',
+    appTitle: 'LFZQ8a Teacher View',
+    coursePlatform: 'Teacher View',
     overview: 'Overview',
     courseDays: 'Course days',
     projects: 'Projects',
@@ -297,8 +297,8 @@ const translations = {
   },
   tr: {
     languageName: 'Turkce',
-    appTitle: 'LFZQ8a Kurs Platformu',
-    coursePlatform: 'Kurs platformu',
+    appTitle: 'LFZQ8a Egitmen View',
+    coursePlatform: 'Egitmen View',
     overview: 'Genel bakis',
     courseDays: 'Kurs gunleri',
     projects: 'Projeler',
@@ -441,8 +441,8 @@ const translations = {
   },
   uk: {
     languageName: 'Українська',
-    appTitle: 'Платформа курсу LFZQ8a',
-    coursePlatform: 'Платформа курсу',
+    appTitle: 'Вид викладача LFZQ8a',
+    coursePlatform: 'Вид викладача',
     overview: 'Огляд',
     courseDays: 'Дні курсу',
     projects: 'Проєкти',
@@ -585,8 +585,8 @@ const translations = {
   },
   ru: {
     languageName: 'Русский',
-    appTitle: 'Платформа курса LFZQ8a',
-    coursePlatform: 'Платформа курса',
+    appTitle: 'Вид преподавателя LFZQ8a',
+    coursePlatform: 'Вид преподавателя',
     overview: 'Обзор',
     courseDays: 'Дни курса',
     projects: 'Проекты',

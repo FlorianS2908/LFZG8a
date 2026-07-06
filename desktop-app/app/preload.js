@@ -5,10 +5,16 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
   saveSetup: (settings) => ipcRenderer.invoke('setup:save', settings),
   startWorkshop: () => ipcRenderer.invoke('setup:start-workshop'),
   openTeacherInfo: (url) => ipcRenderer.invoke('teacher:open', url),
+  openParticipantReleases: () => ipcRenderer.invoke('teacher:open-releases'),
   openInEditor: (target) => ipcRenderer.invoke('editor:open', target),
   getCourseState: () => ipcRenderer.invoke('course:get-state'),
   getParticipantReleases: () => ipcRenderer.invoke('participant-releases:get'),
   saveParticipantReleases: (releases) => ipcRenderer.invoke('participant-releases:save', releases),
+  onParticipantReleasesChanged: (callback) => {
+    const listener = (event, releases) => callback(releases);
+    ipcRenderer.on('participant-releases:changed', listener);
+    return () => ipcRenderer.removeListener('participant-releases:changed', listener);
+  },
   getClassroomInfo: () => ipcRenderer.invoke('classroom:get-info'),
   listParticipants: () => ipcRenderer.invoke('classroom:list-participants'),
   listHistory: () => ipcRenderer.invoke('history:list'),
@@ -17,6 +23,8 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
   createTestReport: () => ipcRenderer.invoke('test-report:create'),
   listTestReports: () => ipcRenderer.invoke('test-report:list'),
   openTestReportDir: () => ipcRenderer.invoke('test-report:open-dir'),
+  moveViewToMonitor: (viewType, displayId) => ipcRenderer.invoke('display:move-view', viewType, displayId),
+  highlightMonitor: (displayId, label) => ipcRenderer.invoke('display:highlight', displayId, label),
   openDataDir: () => ipcRenderer.invoke('app:open-data-dir')
 });
 

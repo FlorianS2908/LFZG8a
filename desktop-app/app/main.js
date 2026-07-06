@@ -23,14 +23,17 @@ const participantRoot = path.join(projectRoot, 'teilnehmer');
 const preloadFile = path.join(__dirname, 'preload.js');
 const wizardFile = path.join(__dirname, 'renderer', 'wizard.html');
 const forceWizard = process.argv.includes('--wizard') || process.argv.includes('--wizard-test');
+const forceTeacherStartview = process.argv.includes('--teacher-startview');
 const disableHistory = process.argv.includes('--no-history') || process.argv.includes('--wizard-test');
 
 let mainWindow = null;
 let teacherWindow = null;
+let releaseWindow = null;
 let appData = null;
 let classroomServer = null;
 let isClosingAllWindows = false;
 let isReplacingMainWindow = false;
+let startupTestReportCreated = false;
 
 function getAppData() {
   if (!appData) {
@@ -61,6 +64,54 @@ function getTargetDisplay() {
 
 function getMainDisplay() {
   return screen.getPrimaryDisplay();
+}
+
+function getDisplayByDisplayId(displayId) {
+  const displays = screen.getAllDisplays();
+  const normalizedId = String(displayId || '').replace(/^display-/, '');
+  return displays.find((display) => String(display.id) === normalizedId)
+    || displays[Number(normalizedId) - 1]
+    || displays[0];
+}
+
+function moveWindowToDisplay(window, display) {
+  if (!window || window.isDestroyed() || !display) {
+    return false;
+  }
+
+  const bounds = createFullDisplayBounds(display);
+  window.setBounds(bounds);
+  window.maximize();
+  window.focus();
+  return true;
+}
+
+function createMonitorHighlightWindow(display, label) {
+  const bounds = createFullDisplayBounds(display);
+  const highlightWindow = new BrowserWindow({
+    x: bounds.x,
+    y: bounds.y,
+    width: bounds.width,
+    height: bounds.height,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    movable: false,
+    focusable: false,
+    show: false
+  });
+
+  const html = `<!doctype html><html><body style="margin:0;width:100vw;height:100vh;display:grid;place-items:center;box-sizing:border-box;border:10px solid #d31818;background:rgba(211,24,24,.08);font-family:Arial,sans-serif;color:#d31818;font-size:46px;font-weight:900;text-align:center">${String(label || 'Ausgewaehlter Monitor')}</body></html>`;
+  highlightWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+  highlightWindow.once('ready-to-show', () => highlightWindow.showInactive());
+  setTimeout(() => {
+    if (!highlightWindow.isDestroyed()) {
+      highlightWindow.close();
+    }
+  }, 2600);
+  return true;
 }
 
 function getDeviceNetworkData() {
@@ -102,6 +153,14 @@ function createCurrentTestReport() {
       ]
     }
   });
+}
+
+function createStartupTestReport() {
+  if (startupTestReportCreated) {
+    return null;
+  }
+  startupTestReportCreated = true;
+  return createCurrentTestReport();
 }
 
 function syncParticipantReleaseScript() {
@@ -169,6 +228,14 @@ function hydrateCatalogNode(node) {
 
 function getHydratedCourseCatalog() {
   return hydrateCatalogNode(courseCatalog);
+}
+
+function notifyParticipantReleasesChanged(releases) {
+  BrowserWindow.getAllWindows().forEach((window) => {
+    if (!window.isDestroyed()) {
+      window.webContents.send('participant-releases:changed', releases);
+    }
+  });
 }
 
 function getVsCodeLaunchers() {
@@ -275,6 +342,10 @@ function registerMainWindow(window) {
   });
 }
 
+function getReleaseViewUrl() {
+  return `${pathToFileURL(contentFile).href}?view=releases`;
+}
+
 function createWizardWindow() {
   const display = getMainDisplay();
   registerMainWindow(new BrowserWindow(getWindowOptions(display, {
@@ -290,10 +361,60 @@ function createWizardWindow() {
 function createWorkshopWindow() {
   const display = getMainDisplay();
   registerMainWindow(new BrowserWindow(getWindowOptions(display, {
-    title: 'LFZQ8a Workshop'
+    title: 'LFZQ8a Dozentenview'
   })));
 
   mainWindow.loadFile(contentFile);
+  mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    openTeacherInfo(url);
+    return { action: 'deny' };
+  });
+}
+
+function openParticipantReleaseWindow() {
+  const settings = getAppData().getSettings();
+  if (settings.openTeacherOnSecondMonitor === false) {
+    return null;
+  }
+
+  const display = getTargetDisplay();
+  const area = createFullDisplayBounds(display);
+  const options = getWindowOptions(display, {
+    title: 'LFZQ8a Teilnehmer-Freigaben',
+    width: area.width,
+    height: area.height,
+    minWidth: 860,
+    minHeight: 640
+  });
+
+  if (!releaseWindow || releaseWindow.isDestroyed()) {
+    releaseWindow = new BrowserWindow(options);
+    releaseWindow.once('ready-to-show', () => releaseWindow.show());
+    releaseWindow.on('closed', () => {
+      releaseWindow = null;
+    });
+  } else {
+    releaseWindow.setBounds({
+      x: area.x,
+      y: area.y,
+      width: area.width,
+      height: area.height
+    });
+  }
+
+  releaseWindow.loadURL(getReleaseViewUrl());
+  releaseWindow.focus();
+  return releaseWindow;
+}
+
+function createTeacherStartviewWindow() {
+  const display = getMainDisplay();
+  registerMainWindow(new BrowserWindow(getWindowOptions(display, {
+    title: 'LFZQ8a Kursuebersicht'
+  })));
+
+  mainWindow.loadFile(teacherOverviewFile);
   mainWindow.once('ready-to-show', () => mainWindow.show());
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     openTeacherInfo(url);
@@ -358,6 +479,8 @@ ipcMain.handle('course:get-state', () => {
     settings: getAppData().getSettings(),
     translations: getTranslations(getAppData().getSettings().teacherLanguage),
     supportedLanguages,
+    displays: getDisplaySummaries(),
+    testReports: getAppData().listTestReports(),
     history: getAppData().listHistory(),
     classroom: getClassroomServer().getInfo()
   };
@@ -372,9 +495,11 @@ ipcMain.handle('setup:save', (event, settings) => {
 ipcMain.handle('setup:start-workshop', () => {
   getAppData().saveSettings({ configured: true });
   syncParticipantReleaseScript();
+  createStartupTestReport();
   const setupWindow = mainWindow;
   isReplacingMainWindow = true;
   createWorkshopWindow();
+  openParticipantReleaseWindow();
   if (setupWindow && !setupWindow.isDestroyed()) {
     setupWindow.once('closed', () => {
       isReplacingMainWindow = false;
@@ -400,6 +525,38 @@ ipcMain.handle('teacher:open', (event, url) => {
   return true;
 });
 
+ipcMain.handle('teacher:open-releases', () => {
+  openParticipantReleaseWindow();
+  return true;
+});
+
+ipcMain.handle('display:move-view', (event, viewType, displayId) => {
+  const display = getDisplayByDisplayId(displayId);
+  if (viewType === 'main') {
+    return { moved: moveWindowToDisplay(mainWindow, display), viewType, displayId };
+  }
+
+  if (viewType === 'teacher') {
+    const moved = moveWindowToDisplay(teacherWindow, display);
+    return {
+      moved,
+      prepared: !moved,
+      viewType,
+      displayId
+    };
+  }
+
+  return { moved: false, viewType, displayId };
+});
+
+ipcMain.handle('display:highlight', (event, displayId, label) => {
+  const display = getDisplayByDisplayId(displayId);
+  return {
+    highlighted: createMonitorHighlightWindow(display, label),
+    displayId
+  };
+});
+
 ipcMain.handle('editor:open', (event, target) => openFileInVsCode(target));
 
 ipcMain.handle('participant-releases:get', () => {
@@ -410,6 +567,7 @@ ipcMain.handle('participant-releases:get', () => {
 ipcMain.handle('participant-releases:save', (event, releases) => {
   const saved = getAppData().saveParticipantReleases(releases);
   syncParticipantReleaseScript();
+  notifyParticipantReleasesChanged(saved);
   return saved;
 });
 
@@ -445,20 +603,29 @@ app.whenReady().then(() => {
   ensureClassroomServer().catch((error) => {
     console.error(`Kursserver konnte nicht gestartet werden: ${error.message}`);
   });
-  if (forceWizard) {
+  if (forceTeacherStartview) {
+    createTeacherStartviewWindow();
+    openParticipantReleaseWindow();
+  } else if (forceWizard) {
     createWizardWindow();
   } else if (getAppData().getSettings().configured) {
+    createStartupTestReport();
     createWorkshopWindow();
+    openParticipantReleaseWindow();
   } else {
     createWizardWindow();
   }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      if (forceWizard) {
+      if (forceTeacherStartview) {
+        createTeacherStartviewWindow();
+        openParticipantReleaseWindow();
+      } else if (forceWizard) {
         createWizardWindow();
       } else if (getAppData().getSettings().configured) {
         createWorkshopWindow();
+        openParticipantReleaseWindow();
       } else {
         createWizardWindow();
       }

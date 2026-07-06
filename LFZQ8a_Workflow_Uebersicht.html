@@ -485,7 +485,7 @@
         <div class="grid">
           <article class="card accent-cyan">
             <div class="tag">Zentrale Steuerung</div>
-            <h3>Integrierte Kursplattform</h3>
+            <h3>Integrierte Dozentenview</h3>
             <p>Der Dozent startet die Electron-App, oeffnet Materialien im App-Viewer, gibt Bereiche frei und sieht eine Teilnehmeruebersicht.</p>
           </article>
           <article class="card accent-blue">
@@ -554,7 +554,7 @@
           <article class="card accent-cyan">
             <div class="tag">Aktueller Branch</div>
             <h3>electronDesktop</h3>
-            <p>Auf diesem Branch wird die Desktop-App mit integrierter Kursplattform, Wizard, Kursserver, Teilnehmerfreigaben und Fortschrittsuebersicht entwickelt.</p>
+            <p>Auf diesem Branch wird die Desktop-App mit integrierter Dozentenview, Wizard, Kursserver, Teilnehmerfreigaben und Fortschrittsuebersicht entwickelt.</p>
           </article>
           <article class="card accent-blue">
             <div class="tag">Abgrenzung</div>
@@ -566,6 +566,11 @@
             <h3>Lokaler Kursbetrieb mit App-Viewer</h3>
             <p>Der Stand ist fuer lokale Tests gedacht: Dozent startet Electron, Inhalte werden ueber den Kurskatalog in der App angezeigt, Teilnehmer verbinden sich ueber die angezeigte Kursserver-Adresse.</p>
           </article>
+          <article class="card accent-orange">
+            <div class="tag">Modularitaet</div>
+            <h3>Tage, Projekte und Tools getrennt</h3>
+            <p>Die App nutzt getrennte Katalogmodule unter <code>desktop-app/app/lib/catalog/</code>. Kurstage, Projekte, Tools/Leitfaeden und Teilnehmerinhalte koennen dadurch getrennt gepflegt werden, waehrend alles weiterhin in der Electron-App angezeigt wird.</p>
+          </article>
         </div>
       </section>
 
@@ -576,6 +581,9 @@
         </div>
         <div class="callout">
           Fuer die Paketbereitstellung wurde keine neue Laufzeit eingefuehrt. Die Starter pruefen benoetigte Software automatisch und nutzen, wenn moeglich, <code>winget</code>. Eine reine Paketliste liegt zusaetzlich in <code>SOFTWARE.md</code>.
+        </div>
+        <div class="callout">
+          Fuer Wartbarkeit und Erweiterbarkeit wurde ebenfalls keine neue Software eingefuehrt. Die Trennung erfolgt ueber JavaScript-Module: <code>teacher-days.js</code>, <code>teacher-projects.js</code>, <code>teacher-tools.js</code>, <code>participant-content.js</code> und die Renderer-Gruppierung <code>course-content-groups.js</code>.
         </div>
         <div class="table-wrap">
           <table>
@@ -604,7 +612,7 @@
               </tr>
               <tr>
                 <td>Electron</td>
-                <td>Dozenten-Desktop-App, Wizard, integrierte Kursplattform und Kursserver</td>
+                <td>Dozenten-Desktop-App, Wizard, integrierte Dozentenview und Kursserver</td>
                 <td>Wird ueber <code>pnpm install</code> oder <code>npm install</code> aus <code>desktop-app/package.json</code> installiert</td>
               </tr>
               <tr>
@@ -639,18 +647,18 @@
           <article class="card accent-blue">
             <div class="tag">Erststart</div>
             <h3>Wizard</h3>
-            <p>Beim ersten Start werden Konfigurationen wie Monitor, lokale Einstellungen und Sprachen fuer Dozenten- und Teilnehmeroberflaeche gespeichert. Danach startet die App direkt in die integrierte Kursplattform.</p>
+            <p>Beim ersten Start werden Konfigurationen wie Monitor, lokale Einstellungen und Sprachen fuer Dozenten- und Teilnehmeroberflaeche gespeichert. Danach startet die App direkt in die integrierte Dozentenview.</p>
           </article>
           <article class="card accent-green">
             <div class="tag">Regelstart</div>
-            <h3>Kursplattform</h3>
-            <p>Nach der Einrichtung oeffnet sich die App-Oberflaeche. Dort stehen Materialien, integrierter Viewer, Freigaben, Teilnehmeruebersicht und Kursserver-Adresse bereit.</p>
+            <h3>Dozentenview</h3>
+            <p>Nach der Einrichtung oeffnet sich die App-Oberflaeche. Dort stehen Materialien, integrierter Viewer, Freigaben, Teilnehmeruebersicht und Kursserver-Adresse bereit. Ist der zweite Monitor aktiviert, oeffnet die App zusaetzlich automatisch die Freigabe-View auf dem ausgewaehlten Monitor.</p>
           </article>
         </div>
         <div class="panel">
-          <h3>Startskript</h3>
-          <p>Im Root-Ordner liegt das Startskript fuer die Dozenten-App. Es wird per Doppelklick ausgefuehrt.</p>
-          <div class="command">LFZQ8a-Workshop-starten.cmd</div>
+          <h3>Root-Teststarter</h3>
+          <p>Im Root-Ordner bleibt fuer den aktuellen Neustruktur-Test nur noch ein Starter. Er wird per Doppelklick ausgefuehrt und oeffnet die reduzierte Kursuebersicht.</p>
+          <div class="command">LFZQ8a-Dozent-Startview-testen.cmd</div>
         </div>
       </section>
 
@@ -722,9 +730,9 @@
           <p>Der Unterricht folgt einem einfachen Ablauf von Einrichtung ueber Freigabe bis zur Fortschrittskontrolle.</p>
         </div>
         <div class="flow">
-          <div class="flow-step"><strong>1. Dozent startet</strong><span>Electron-App oeffnen, Wizard bei Bedarf abschliessen.</span></div>
-          <div class="flow-step"><strong>2. Kursserver laeuft</strong><span>Die Kursplattform zeigt die Teilnehmeradresse an.</span></div>
-          <div class="flow-step"><strong>3. Teilnehmer melden sich</strong><span>Profil mit Name, Kuerzel und optionalen Daten anlegen.</span></div>
+          <div class="flow-step"><strong>1. Dozent startet</strong><span>Electron-App oeffnen, Wizard bei Bedarf abschliessen; danach liegen Settings im Profil-Icon. Bei aktivem zweiten Monitor erscheint die Freigabe-View automatisch separat.</span></div>
+          <div class="flow-step"><strong>2. Kursserver laeuft</strong><span>Die Dozentenview zeigt die Teilnehmeradresse an.</span></div>
+          <div class="flow-step"><strong>3. Teilnehmer melden sich</strong><span>Profil mit Name, Kuerzel, Profilbild und Sprache anlegen oder ueber das Profil-Icon bearbeiten.</span></div>
           <div class="flow-step"><strong>4. Freigeben</strong><span>Dozent gibt Tage, Projekte und Tools fuer alle frei.</span></div>
           <div class="flow-step"><strong>5. Arbeiten</strong><span>Teilnehmer bearbeiten lokale Ausgangssituationen.</span></div>
           <div class="flow-step"><strong>6. Begleiten</strong><span>Dozent sieht Fortschritt, Hilfeanfragen und letzte Aktivitaet.</span></div>
@@ -752,13 +760,18 @@
             <h3>Werkzeuge und Leitfaeden</h3>
             <p>Die Toolliste fuehrt zu Tag-Tool, Quiztool, Workflow-Dokumentation und Leitfaeden.</p>
           </article>
+          <article class="card accent-orange">
+            <div class="tag">Profil</div>
+            <h3>Settings und Testberichte</h3>
+            <p>Links oben oeffnet das Profil-Icon Name, Profilbild, Sprachwahl, Monitorwahl und die automatisch erzeugten lokalen Testberichte.</p>
+          </article>
         </div>
       </section>
 
       <section id="freigaben">
         <div class="section-head">
           <h2>Freigaben</h2>
-          <p>Freigaben werden einmalig vom Dozenten gesetzt und gelten fuer alle verbundenen Teilnehmer.</p>
+          <p>Freigaben werden einmalig vom Dozenten gesetzt und gelten fuer alle verbundenen Teilnehmer. Wenn im Wizard der zweite Monitor ausgewaehlt ist, wird diese Ansicht beim Start automatisch als eigenes Fenster geoeffnet.</p>
         </div>
         <div class="grid">
           <article class="card accent-cyan">
@@ -907,14 +920,14 @@
         <div class="panel">
           <h3>Konkreter Testablauf</h3>
           <ol>
-            <li>Dozenten-App per Doppelklick auf <code>LFZQ8a-Workshop-starten.cmd</code> starten.</li>
-            <li>In der Kursplattform den Bereich <strong>Teilnehmer</strong> oeffnen.</li>
+            <li>Kursuebersicht per Doppelklick auf <code>LFZQ8a-Dozent-Startview-testen.cmd</code> starten.</li>
+            <li>In der Dozentenview den Bereich <strong>Teilnehmer</strong> oeffnen.</li>
             <li>Dort die angezeigte Teilnehmer-Adresse ablesen, zum Beispiel <code>http://localhost:PORT/teilnehmer</code>.</li>
             <li>Diese Adresse in einem normalen Browserfenster oeffnen. Dieses Fenster simuliert den ersten Teilnehmer.</li>
             <li>Beim ersten Oeffnen das Teilnehmerprofil ausfuellen, zum Beispiel Name <code>Test Teilnehmer</code> und Kuerzel <code>TT</code>. E-Mail und Teams-Name sind optional.</li>
-            <li>Nach dem Speichern sollte der Teilnehmer nach wenigen Sekunden in der Kursplattform sichtbar werden.</li>
+            <li>Nach dem Speichern sollte der Teilnehmer nach wenigen Sekunden in der Dozentenview sichtbar werden.</li>
             <li>Im Teilnehmerfenster bei einem freigegebenen Bereich die Statusbuttons testen: <code>Gestartet</code>, <code>In Bearbeitung</code>, <code>Hilfe benoetigt</code> und <code>Erledigt</code>.</li>
-            <li>In der Kursplattform pruefen, ob aktuelle Aufgabe, Fortschritt, Hilfe-Status und letzte Aktivitaet aktualisiert werden.</li>
+            <li>In der Dozentenview pruefen, ob aktuelle Aufgabe, Fortschritt, Hilfe-Status und letzte Aktivitaet aktualisiert werden.</li>
           </ol>
         </div>
         <div class="grid">
@@ -922,7 +935,7 @@
             <div class="tag">Freigaben testen</div>
             <h3>Bereiche entsperren</h3>
             <ul>
-              <li>In der Kursplattform den Bereich <strong>Freigaben</strong> oeffnen.</li>
+              <li>In der Dozentenview den Bereich <strong>Freigaben</strong> oeffnen.</li>
               <li>Zum Beispiel <strong>Tag 2</strong> oder <strong>Projektmaterialien</strong> aktivieren.</li>
               <li><strong>Freigaben speichern</strong> klicken.</li>
               <li>Im Teilnehmerfenster kurz warten oder neu laden.</li>

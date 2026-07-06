@@ -10,20 +10,82 @@ const defaultSettings = {
   saveLocalTestReports: true,
   includeDeviceNetworkData: false,
   teacherLanguage: 'de',
-  participantLanguage: 'de'
+  participantLanguage: 'de',
+  teacherProfile: {
+    displayName: 'Dozent',
+    email: '',
+    avatarDataUrl: ''
+  }
 };
 
+const individualAssignmentReleaseKeys = [
+  'tag_01_task_tag_sheet',
+  'tag_01_task_html_css_tag_overview',
+  'tag_01_task_wunderland_farben_abstaende',
+  'tag_01_task_wunderland_custom_properties',
+  'tag_01_task_akkordeon_checked_selector',
+  'tag_02_task_tag_sheet',
+  'tag_02_task_wunderland_header_logo_navigation',
+  'tag_02_task_wunderland_hero_button',
+  'tag_02_task_akkordeon_radio_label',
+  'tag_02_task_akkordeon_basislayout',
+  'tag_02_task_akkordeon_active_panel',
+  'tag_03_task_tag_sheet',
+  'tag_03_task_wunderland_attraktionskarten',
+  'tag_03_task_wunderland_bildkarten_hover',
+  'tag_03_task_akkordeon_transition_fokus',
+  'tag_04_task_tag_sheet',
+  'tag_04_task_wunderland_grid_gallery_responsive',
+  'tag_04_task_akkordeon_bilder_hintergrund',
+  'tag_04_task_akkordeon_responsive',
+  'tag_05_task_tag_sheet',
+  'tag_05_task_wunderland_seitenabnahme',
+  'tag_05_task_akkordeon_barrierearm'
+];
+
 const defaultParticipantReleases = {
-  tag_01: true,
+  tag_01: false,
+  tag_01_web: false,
+  tag_01_tasks: false,
+  tag_01_solutions: false,
+  tag_01_quiz25: false,
+  tag_01_quiz50: false,
   tag_02: false,
+  tag_02_web: false,
+  tag_02_tasks: false,
+  tag_02_solutions: false,
+  tag_02_quiz25: false,
+  tag_02_quiz50: false,
   tag_03: false,
+  tag_03_web: false,
+  tag_03_tasks: false,
+  tag_03_solutions: false,
+  tag_03_quiz25: false,
+  tag_03_quiz50: false,
   tag_04: false,
+  tag_04_web: false,
+  tag_04_tasks: false,
+  tag_04_solutions: false,
+  tag_04_quiz25: false,
+  tag_04_quiz50: false,
   tag_05: false,
+  tag_05_web: false,
+  tag_05_tasks: false,
+  tag_05_solutions: false,
+  tag_05_quiz25: false,
+  tag_05_quiz50: false,
   project_materials: false,
+  project_accordion_tasks: false,
+  project_accordion_workspace: false,
+  project_accordion_result: false,
+  project_wunderland_tasks: false,
+  project_wunderland_workspace: false,
+  project_wunderland_result: false,
   project_submission: false,
   tool_quiz: false,
   tool_tags: true,
-  additional_tasks: false
+  additional_tasks: false,
+  ...Object.fromEntries(individualAssignmentReleaseKeys.map((key) => [key, false]))
 };
 
 function escapeHtml(value) {
@@ -135,6 +197,11 @@ function createAppData(baseDir, options = {}) {
       ...getSettings(),
       ...nextSettings,
       configured: true
+    };
+    merged.teacherProfile = {
+      ...defaultSettings.teacherProfile,
+      ...getSettings().teacherProfile,
+      ...(nextSettings?.teacherProfile || {})
     };
     merged.teacherLanguage = normalizeLanguage(merged.teacherLanguage);
     merged.participantLanguage = normalizeLanguage(merged.participantLanguage);

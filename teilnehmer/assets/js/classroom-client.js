@@ -5,6 +5,7 @@
   const languageKey = 'lfzq8a-participant-language';
   const isClassroomServer = /^https?:$/.test(window.location.protocol);
   const cards = [...document.querySelectorAll('[data-release-key]')];
+  let activeProfile = null;
   const supportedLanguages = [
     { code: 'de', label: 'Deutsch' },
     { code: 'en', label: 'English' },
@@ -194,7 +195,37 @@
 
   function saveProfile(profile) {
     window.localStorage.setItem(profileKey, JSON.stringify(profile));
+    updateProfileEntry(profile);
     return profile;
+  }
+
+  function initials(name) {
+    return String(name || 'TN')
+      .trim()
+      .split(/\s+/)
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'TN';
+  }
+
+  function updateProfileEntry(profile = readProfile() || {}) {
+    const avatar = document.querySelector('[data-profile-avatar]');
+    const name = document.querySelector('[data-profile-name]');
+    if (!avatar || !name) {
+      return;
+    }
+    const displayName = profile.displayName || 'Teilnehmer';
+    name.textContent = displayName;
+    avatar.textContent = '';
+    if (profile.avatarDataUrl) {
+      const image = document.createElement('img');
+      image.alt = '';
+      image.src = profile.avatarDataUrl;
+      avatar.append(image);
+    } else {
+      avatar.textContent = initials(displayName);
+    }
   }
 
   function api(path, body) {
@@ -260,6 +291,10 @@
           avatarDataUrl: await readAvatar(formData.get('avatar')) || existing.avatarDataUrl || ''
         });
         dialog.remove();
+        activeProfile = profile;
+        if (isClassroomServer) {
+          api('/api/participants/profile', profile).catch(() => {});
+        }
         resolve(profile);
       });
     });
@@ -320,6 +355,13 @@
   }
 
   async function start() {
+    updateProfileEntry();
+    document.querySelector('[data-open-profile]')?.addEventListener('click', () => {
+      showProfileWizard().then((profile) => {
+        activeProfile = profile;
+      });
+    });
+
     if (!isClassroomServer) {
       applyStaticTranslations();
       return;
@@ -328,6 +370,7 @@
     applyStaticTranslations();
     await refreshReleases();
     const profile = await ensureProfile();
+    activeProfile = profile;
     await api('/api/participants/profile', profile);
     addProgressControls(profile);
     window.setInterval(() => {
