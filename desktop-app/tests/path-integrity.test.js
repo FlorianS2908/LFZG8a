@@ -127,6 +127,7 @@ test('electron desktop app integrates course html pages through the app shell ca
   const courseHtml = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'renderer', 'course.html'), 'utf8');
   const courseJs = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'renderer', 'course.js'), 'utf8');
   const courseGroupsJs = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'renderer', 'course-content-groups.js'), 'utf8');
+  const courseScheduleJs = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'renderer', 'course-schedule.js'), 'utf8');
   const { flattenCatalog } = require('../app/lib/course-catalog');
   const missingCatalogTargets = flattenCatalog()
     .map((target) => path.join(repoRoot, target))
@@ -148,10 +149,19 @@ test('electron desktop app integrates course html pages through the app shell ca
   assert.doesNotMatch(courseHtml, /data-panel="projects"/);
   assert.doesNotMatch(courseHtml, /data-panel="releases"/);
   assert.match(courseHtml, /<section class="viewer-shell"[\s\S]+data-viewer-shell hidden/);
-  assert.match(courseHtml, /course-navigation\.js[\s\S]+course-content-groups\.js[\s\S]+course\.js/);
+  assert.match(courseHtml, /course-navigation\.js[\s\S]+course-content-groups\.js[\s\S]+course-schedule\.js[\s\S]+course\.js/);
   assert.match(courseHtml, /course-content-groups\.js/);
+  assert.match(courseHtml, /data-break-overlay/);
+  assert.match(courseHtml, /data-break-close/);
+  assert.match(courseHtml, /data-break-hide/);
   assert.match(courseJs, /window\.LFZQ8aCourseContent \|\| fallbackContentGroups/);
   assert.match(courseJs, /window\.LFZQ8aCourseNavigation \|\| fallbackCourseNavigation/);
+  assert.match(courseJs, /window\.LFZQ8aCourseSchedule/);
+  assert.match(courseScheduleJs, /const COURSE_SCHEDULE = \{/);
+  assert.match(courseScheduleJs, /id: 'break-1000'[\s\S]+start: '10:00'[\s\S]+end: '10:15'/);
+  assert.match(courseScheduleJs, /id: 'break-1145'[\s\S]+label: 'Mittagspause'[\s\S]+start: '11:45'[\s\S]+end: '12:15'/);
+  assert.match(courseScheduleJs, /function updateBreakPopupState/);
+  assert.match(courseScheduleJs, /module\.exports = api/);
   assert.match(courseJs, /window\.lfzq8aDesktop\.getCourseState\(\)/);
   assert.match(courseJs, /function getInitialView\(\)/);
   assert.match(courseJs, /new URLSearchParams\(window\.location\.search\)\.get\('view'\)/);
@@ -163,9 +173,11 @@ test('electron desktop app integrates course html pages through the app shell ca
   assert.match(courseJs, /async function renderDashboard\(\)/);
   assert.match(courseJs, /const contentGroups = window\.LFZQ8aCourseContent/);
   assert.match(courseJs, /const courseNavigation = window\.LFZQ8aCourseNavigation/);
-  assert.match(courseJs, /await renderParticipants\(panel\)/);
-  assert.match(courseJs, /renderReleases\(panel\)/);
-  assert.match(courseJs, /contentGroups\.getTeacherSupportItems\(state\.catalog\)/);
+  assert.match(courseJs, /const outline = createElement\('div', 'course-outline'\)/);
+  assert.match(courseJs, /contentGroups\.getTeacherDays\(state\.catalog\)\.forEach\(\(day\) => renderCourseDay\(outline, day\)\)/);
+  assert.match(courseJs, /await renderCourseTools\(outline\)/);
+  assert.doesNotMatch(courseJs, /renderReleases\(panel\)/);
+  assert.doesNotMatch(courseJs, /renderTaskReleaseManager\(panel\)/);
   assert.match(courseGroupsJs, /getTeacherTools\(catalog\)/);
   assert.match(courseGroupsJs, /getParticipantProjects\(catalog\)/);
   assert.match(courseJs, /window\.lfzq8aDesktop\.openInEditor\(project\.workspace\)/);
@@ -173,6 +185,77 @@ test('electron desktop app integrates course html pages through the app shell ca
   assert.match(courseJs, /async function handleParticipantReleasesChanged\(releases\)/);
   assert.match(courseJs, /onParticipantReleasesChanged\?\.\(handleParticipantReleasesChanged\)/);
   assert.deepEqual(missingCatalogTargets.map((targetPath) => path.relative(repoRoot, targetPath)), []);
+});
+
+test('task package registry integrates the canonical teacher task structure', () => {
+  const registry = require('../app/lib/task-packages.json');
+  const taskRegistryBuilder = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'scripts', 'build-task-registry.js'), 'utf8');
+  const participantTaskRegistry = JSON.parse(fs.readFileSync(path.join(participantRoot, 'assets', 'data', 'task-packages.json'), 'utf8'));
+  const packageCounts = registry.tasks.reduce((counts, task) => {
+    const key = task.category === 'allgemein' ? `allgemein-${task.difficulty}` : `${task.project}`;
+    counts[key] = (counts[key] || 0) + 1;
+    return counts;
+  }, {});
+
+  assert.equal(registry.version, 2);
+  assert.equal(registry.packages.length, 3);
+  assert.equal(registry.tasks.length, 180);
+  assert.equal(packageCounts['allgemein-normal'], 25);
+  assert.equal(packageCounts['allgemein-schwer'], 5);
+  assert.equal(packageCounts.akkordeon, 75);
+  assert.equal(packageCounts.wunderland, 75);
+  registry.tasks.forEach((task) => {
+    assert.match(task.id, /^tag0[1-5]-(allgemein-(normal|schwer)|akkordeon|akkordeon-zusatz|wunderland|wunderland-zusatz)-\d{3}$/);
+    assert.ok(['allgemein', 'projekt'].includes(task.category));
+    assert.ok([1, 2, 3, 4, 5].includes(task.day));
+    assert.equal(path.isAbsolute(task.taskFile), false);
+    if (task.solutionFile) {
+      assert.equal(path.isAbsolute(task.solutionFile), false);
+      assert.equal(fs.existsSync(path.join(repoRoot, task.solutionFile.split('#')[0])), true, task.solutionFile);
+    }
+    assert.equal(task.taskUnlocked, false);
+    assert.equal(task.solutionUnlocked, false);
+    assert.equal(fs.existsSync(path.join(repoRoot, task.taskFile.split('#')[0])), true, task.taskFile);
+    assert.equal(typeof task.shortInfo, 'string');
+    assert.ok(Array.isArray(task.relatedHtmlTags));
+  });
+  assert.equal(participantTaskRegistry.tasks.length, registry.tasks.length);
+  assert.equal(participantTaskRegistry.tasks.some((task) => Object.hasOwn(task, 'solutionFile')), false);
+  assert.match(taskRegistryBuilder, /ensureTaskAnchors/);
+  assert.match(taskRegistryBuilder, /participantSafeRegistry/);
+  [1, 2, 3, 4, 5].forEach((day) => {
+    const daySlug = String(day).padStart(2, '0');
+    ['allgemein/normal', 'allgemein/schwer', 'projekt_akkordeon', 'projekt_wunderland'].forEach((area) => {
+      assert.equal(fs.existsSync(path.join(teacherRoot, 'aufgaben', `tag_${daySlug}`, area)), true);
+      assert.equal(fs.existsSync(path.join(teacherRoot, 'loesungen', `tag_${daySlug}`, area)), true);
+    });
+  });
+  assert.equal(fs.existsSync(path.join(teacherRoot, 'aufgaben', 'AUFGABEN_MIGRATION_REPORT.md')), true);
+});
+
+test('task release APIs and participant-safe task endpoints are wired', () => {
+  const mainSource = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'main.js'), 'utf8');
+  const preloadSource = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'preload.js'), 'utf8');
+  const appDataSource = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'lib', 'app-data.js'), 'utf8');
+  const classroomSource = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'lib', 'classroom-server.js'), 'utf8');
+
+  assert.match(appDataSource, /const taskReleasesPath = path\.join\(dataDir, 'task-releases\.json'\)/);
+  assert.match(appDataSource, /function getTaskReleases\(\)/);
+  assert.match(appDataSource, /function saveTaskRelease\(taskId, releaseInput\)/);
+  assert.match(appDataSource, /function bulkUpdateTaskReleases\(filterInput = \{\}, valuesInput = \{\}\)/);
+  assert.match(appDataSource, /function resetTaskReleases\(\)/);
+  assert.match(mainSource, /task-packages:get/);
+  assert.match(mainSource, /task-release:save/);
+  assert.match(mainSource, /task-release:bulk/);
+  assert.match(mainSource, /task-release:reset/);
+  assert.match(preloadSource, /getTaskPackages/);
+  assert.match(preloadSource, /saveTaskRelease/);
+  assert.match(preloadSource, /bulkUpdateTaskReleases/);
+  assert.match(preloadSource, /onTaskReleasesChanged/);
+  assert.match(classroomSource, /url\.pathname === '\/api\/task-packages'/);
+  assert.match(classroomSource, /url\.pathname === '\/api\/task-packages\/view'/);
+  assert.match(classroomSource, /solutionUnlocked === true/);
+  assert.match(classroomSource, /Loesung noch nicht freigegeben/);
 });
 
 test('course catalog is split into maintainable content modules', () => {
@@ -227,13 +310,24 @@ test('electron teacher view keeps only the compact dashboard visible', () => {
   });
 });
 
-test('electron teacher view renders participant status releases and tools only', () => {
+test('electron teacher view renders days and tools as the only top-level areas', () => {
   const courseJs = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'renderer', 'course.js'), 'utf8');
+  const courseCss = fs.readFileSync(path.join(repoRoot, 'desktop-app', 'app', 'renderer', 'course.css'), 'utf8');
+  const participantIndex = fs.readFileSync(path.join(participantRoot, 'index_teilnehmer.html'), 'utf8');
+  const participantTasks = fs.readFileSync(path.join(participantRoot, 'assets', 'js', 'task-packages.js'), 'utf8');
+  const dashboardBody = courseJs.match(/async function renderDashboard\(\) \{[\s\S]+?\n\}/)?.[0] || '';
 
   assert.match(courseJs, /async function renderDashboard\(\)/);
-  assert.match(courseJs, /await renderParticipants\(panel\)/);
-  assert.match(courseJs, /renderReleases\(panel\)/);
-  assert.match(courseJs, /contentGroups\.getTeacherSupportItems\(state\.catalog\)\.forEach/);
+  assert.match(courseJs, /dashboardRenderId: 0/);
+  assert.match(courseJs, /function renderCourseDay\(outline, day\)/);
+  assert.match(courseJs, /async function renderCourseTools\(outline\)/);
+  assert.match(dashboardBody, /const renderId = \+\+state\.dashboardRenderId/);
+  assert.match(dashboardBody, /if \(renderId !== state\.dashboardRenderId\) \{[\s\S]+return;/);
+  assert.match(dashboardBody, /contentGroups\.getTeacherDays\(state\.catalog\)\.forEach\(\(day\) => renderCourseDay\(outline, day\)\)/);
+  assert.match(dashboardBody, /await renderCourseTools\(outline\)/);
+  assert.doesNotMatch(dashboardBody, /renderReleases\(panel\)/);
+  assert.doesNotMatch(dashboardBody, /renderTaskReleaseManager\(panel\)/);
+  assert.doesNotMatch(dashboardBody, /getTeacherSupportItems/);
   assert.doesNotMatch(courseJs, /appendSectionTitle\(panel, t\('courseDays'/);
   assert.doesNotMatch(courseJs, /appendSectionTitle\(panel, t\('projects'/);
 
@@ -241,29 +335,62 @@ test('electron teacher view renders participant status releases and tools only',
   assert.match(courseJs, /function renderProjects\(\)/);
   assert.match(courseJs, /function renderTools\(targetPanel\)/);
   assert.match(courseJs, /async function renderParticipants\(targetPanel\)/);
-  assert.match(courseJs, /function renderReleases\(targetPanel\)/);
-  assert.match(courseJs, /const releaseSections = \[/);
+  assert.match(courseJs, /function renderDayMaterials\(dayDetails, day\)/);
+  assert.match(courseJs, /function renderDayTasks\(dayDetails, day, dayTasks\)/);
+  assert.match(courseJs, /function renderDaySolutions\(dayDetails, day, dayTasks\)/);
+  assert.match(courseJs, /function saveParticipantReleaseKey\(key, enabled\)/);
+  assert.match(courseJs, /function createReleaseToggle\(label, key\)/);
   assert.doesNotMatch(courseJs, /Tag 1 insgesamt/);
   assert.doesNotMatch(courseJs, /Tag 5 insgesamt/);
-  assert.match(courseJs, /createElement\('details', 'release-section'\)/);
-  assert.match(courseJs, /createElement\('summary', 'release-section-summary'\)/);
-  assert.match(courseJs, /section\.open = sectionIndex === 0/);
-  assert.match(courseJs, /createElement\('table', 'release-table'\)/);
-  assert.match(courseJs, /title: 'Fragenpools'/);
-  assert.match(courseJs, /type: 'Tag 1', key: 'tag_01_quiz25', title: 'Tag 1 - Quiz 25'/);
-  assert.match(courseJs, /type: 'Tag 5', key: 'tag_05_quiz50', title: 'Tag 5 - Quiz 50'/);
-  assert.match(courseJs, /Allgemeine Uebungsaufgabe/);
-  assert.match(courseJs, /Projektvorbereitung Wunderland/);
-  assert.match(courseJs, /Projektvorbereitung Akkordeon/);
-  assert.match(courseJs, /tag_01_task_html_css_tag_overview/);
-  assert.match(courseJs, /tag_02_task_wunderland_hero_button/);
-  assert.match(courseJs, /tag_01_task_wunderland_custom_properties/);
-  assert.match(courseJs, /tag_04_task_akkordeon_responsive/);
-  assert.match(courseJs, /title: 'Projekt Wunderland'/);
-  assert.match(courseJs, /title: 'Projekt Akkordeon'/);
-  assert.match(courseJs, /input\.dataset\.releaseKey = rowData\.key/);
+  assert.match(courseJs, /createCourseDetails\(`course-day-\$\{dayId\}`/);
+  assert.match(courseJs, /appendCourseSummary\(details, releaseLabels\[day\.releaseKey\]/);
+  assert.match(courseJs, /appendCourseSummary\(section, 'Materialien'/);
+  assert.match(courseJs, /appendCourseSummary\(section, 'Aufgaben'/);
+  assert.match(courseJs, /appendCourseSummary\(section, 'Loesungen'/);
+  assert.match(courseJs, /appendCourseSummary\(details, 'Tools'/);
+  assert.match(courseJs, /releaseKeyForDay\(day, 'quiz25'\)/);
+  assert.match(courseJs, /releaseKeyForDay\(day, 'quiz50'\)/);
+  assert.match(courseJs, /Loesungsuebersicht Teilnehmer/);
+  assert.match(courseJs, /Settings oeffnen/);
+  assert.match(courseJs, /Testbericht erstellen/);
+  assert.match(courseJs, /function renderTaskDayGroup\(target, day, visibleTasks\)/);
+  assert.match(courseJs, /function renderTaskDifficultyGroup\(dayDetails, day, label, difficulty, visibleTasks\)/);
+  assert.match(courseJs, /function renderProjectTaskGroup\(dayDetails, day, project, visibleTasks\)/);
+  assert.match(courseJs, /Allgemeine Aufgaben/);
+  assert.match(courseJs, /Allgemeine Loesungen/);
+  assert.match(courseJs, /Projektaufgaben Akkordeon/);
+  assert.match(courseJs, /Projektaufgaben Wunderland/);
+  assert.match(courseJs, /Projektloesungen Akkordeon/);
+  assert.match(courseJs, /Projektloesungen Wunderland/);
+  assert.match(courseJs, /Tages-Aufgabenbereich/);
+  assert.match(courseJs, /Alle Aufgaben freigeben/);
+  assert.match(courseJs, /Alle Loesungen sperren/);
+  assert.match(courseJs, /Aufgabe ansehen/);
+  assert.match(courseJs, /Loesung ansehen/);
+  assert.doesNotMatch(courseJs, /createElement\('table', 'task-table'\)/);
+  assert.match(courseCss, /\.course-outline/);
+  assert.match(courseCss, /\.course-day/);
+  assert.match(courseCss, /\.course-tools/);
+  assert.match(courseCss, /\.course-subsection/);
+  assert.match(courseCss, /\.material-release-card/);
+  assert.match(courseCss, /\.solution-release-card/);
+  assert.match(courseCss, /\.task-day-group/);
+  assert.match(courseCss, /\.task-release-card/);
+  assert.match(courseCss, /\.task-toggle/);
+  assert.match(courseCss, /\.status-badge\.is-open/);
+  assert.match(participantIndex, /data-task-packages/);
+  assert.match(participantIndex, /assets\/js\/task-packages\.js/);
+  assert.match(participantTasks, /fetch\('\/api\/task-packages'\)/);
+  assert.match(participantTasks, /groupDefinitions/);
+  assert.match(participantTasks, /Allgemeine Aufgaben/);
+  assert.match(participantTasks, /Projektaufgaben Akkordeon/);
+  assert.match(participantTasks, /Projektaufgaben Wunderland/);
+  assert.match(participantTasks, /kind=solution/);
+  assert.doesNotMatch(participantTasks, /Loesung noch nicht freigegeben/);
   assert.match(courseJs, /async function renderAll\(\)\s*\{\s*await renderDashboard\(\);/);
-  assert.match(courseJs, /renderParticipants\(byData\('\[data-panel="dashboard"\]'\)\)/);
+  assert.match(courseJs, /function refreshParticipantStatusCard\(\)/);
+  assert.match(courseJs, /setInterval\(\(\) => \{[\s\S]+refreshParticipantStatusCard\(\);/);
+  assert.doesNotMatch(courseJs, /setInterval\(\(\) => \{[\s\S]{0,120}renderDashboard\(\);/);
 });
 
 test('electron and participant views expose configurable app languages', () => {
@@ -662,7 +789,9 @@ test('teacher tag tool opens teacher info automatically when a tag card is opene
 
 test('quiz tool can preload released question pools from the course overview', () => {
   const quizTool = path.join(teacherRoot, 'tools', 'quiz', 'QuizTool_Timer_v9_LFZQ8a_CSS_Pools.html');
+  const participantQuizTool = path.join(participantRoot, 'tools', 'quiz', 'QuizTool_Timer_v9_LFZQ8a_CSS_Pools.html');
   const content = fs.readFileSync(quizTool, 'utf8');
+  const participantContent = fs.readFileSync(participantQuizTool, 'utf8');
 
   assert.match(content, /function loadJsonPoolFromParameter\(\)/);
   assert.match(content, /new URLSearchParams\(window\.location\.search\)\.get\('pool'\)/);
@@ -671,8 +800,18 @@ test('quiz tool can preload released question pools from the course overview', (
   assert.match(content, /useBuiltInFallback/);
   assert.match(content, /String\(pool\.id \|\| ''\)\.includes\(`tag_\$\{tagMatch\[1\]\}_\$\{tagMatch\[2\]\}`\)/);
   assert.match(content, /loadJsonPoolFromParameter\(\)/);
-  assert.match(content, /background: #eef6fa/);
+  assert.match(content, /LFZQ8a Electron-App Integration/);
+  assert.match(content, /background: #f4f9fb/);
   assert.match(content, /border-top: 6px solid var\(--cyan\)/);
+  assert.match(content, /id="poolStatus"/);
+  assert.doesNotMatch(content, /id="fileInput"/);
+  assert.doesNotMatch(content, /loadJsonBtn/);
+  assert.doesNotMatch(content, /FileReader/);
+  assert.doesNotMatch(content, /loadJsonFiles/);
+  assert.equal((content.match(/LFZQ8a Electron-App Integration/g) || []).length, 1);
+  assert.match(participantContent, /LFZQ8a Electron-App Integration/);
+  assert.match(participantContent, /id="poolStatus"/);
+  assert.doesNotMatch(participantContent, /id="fileInput"|loadJsonBtn|FileReader|loadJsonFiles/);
 });
 
 test('teacher tag tool provides five css variants with richer demo content', () => {

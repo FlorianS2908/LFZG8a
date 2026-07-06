@@ -8,6 +8,16 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
   openParticipantReleases: () => ipcRenderer.invoke('teacher:open-releases'),
   openInEditor: (target) => ipcRenderer.invoke('editor:open', target),
   getCourseState: () => ipcRenderer.invoke('course:get-state'),
+  getTaskPackages: () => ipcRenderer.invoke('task-packages:get'),
+  getTaskReleases: () => ipcRenderer.invoke('task-releases:get'),
+  saveTaskRelease: (taskId, release) => ipcRenderer.invoke('task-release:save', taskId, release),
+  bulkUpdateTaskReleases: (filter, values) => ipcRenderer.invoke('task-release:bulk', filter, values),
+  resetTaskReleases: () => ipcRenderer.invoke('task-release:reset'),
+  onTaskReleasesChanged: (callback) => {
+    const listener = (event, releases) => callback(releases);
+    ipcRenderer.on('task-releases:changed', listener);
+    return () => ipcRenderer.removeListener('task-releases:changed', listener);
+  },
   getParticipantReleases: () => ipcRenderer.invoke('participant-releases:get'),
   saveParticipantReleases: (releases) => ipcRenderer.invoke('participant-releases:save', releases),
   onParticipantReleasesChanged: (callback) => {

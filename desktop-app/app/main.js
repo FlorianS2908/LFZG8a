@@ -7,6 +7,7 @@ const { fileURLToPath, pathToFileURL } = require('url');
 const { createAppData } = require('./lib/app-data');
 const { createClassroomServer } = require('./lib/classroom-server');
 const { courseCatalog } = require('./lib/course-catalog');
+const taskPackageRegistry = require('./lib/task-packages.json');
 const { getTranslations, supportedLanguages } = require('./lib/i18n');
 const {
   chooseTargetDisplay,
@@ -46,7 +47,9 @@ function getClassroomServer() {
   if (!classroomServer) {
     classroomServer = createClassroomServer({
       appData: getAppData(),
-      participantRoot
+      participantRoot,
+      projectRoot,
+      taskPackageRegistry
     });
   }
   return classroomServer;
@@ -236,6 +239,27 @@ function notifyParticipantReleasesChanged(releases) {
       window.webContents.send('participant-releases:changed', releases);
     }
   });
+}
+
+function notifyTaskReleasesChanged(releases) {
+  BrowserWindow.getAllWindows().forEach((window) => {
+    if (!window.isDestroyed()) {
+      window.webContents.send('task-releases:changed', releases);
+    }
+  });
+}
+
+function getHydratedTaskPackages() {
+  const releases = getAppData().getTaskReleases();
+  return {
+    ...taskPackageRegistry,
+    tasks: taskPackageRegistry.tasks.map((task) => ({
+      ...task,
+      ...releases[task.id],
+      taskFileInfo: getProjectFileUrl(task.taskFile.split('#')[0]),
+      solutionFileInfo: task.solutionFile ? getProjectFileUrl(task.solutionFile.split('#')[0]) : null
+    }))
+  };
 }
 
 function getVsCodeLaunchers() {
@@ -476,6 +500,8 @@ ipcMain.handle('course:get-state', () => {
   return {
     catalog: getHydratedCourseCatalog(),
     releases: getAppData().getParticipantReleases(),
+    taskPackages: getHydratedTaskPackages(),
+    taskReleases: getAppData().getTaskReleases(),
     settings: getAppData().getSettings(),
     translations: getTranslations(getAppData().getSettings().teacherLanguage),
     supportedLanguages,
@@ -568,6 +594,32 @@ ipcMain.handle('participant-releases:save', (event, releases) => {
   const saved = getAppData().saveParticipantReleases(releases);
   syncParticipantReleaseScript();
   notifyParticipantReleasesChanged(saved);
+  return saved;
+});
+
+ipcMain.handle('task-packages:get', () => {
+  return getHydratedTaskPackages();
+});
+
+ipcMain.handle('task-releases:get', () => {
+  return getAppData().getTaskReleases();
+});
+
+ipcMain.handle('task-release:save', (event, taskId, release) => {
+  const saved = getAppData().saveTaskRelease(taskId, release);
+  notifyTaskReleasesChanged(saved);
+  return saved;
+});
+
+ipcMain.handle('task-release:bulk', (event, filter, values) => {
+  const saved = getAppData().bulkUpdateTaskReleases(filter, values);
+  notifyTaskReleasesChanged(saved);
+  return saved;
+});
+
+ipcMain.handle('task-release:reset', () => {
+  const saved = getAppData().resetTaskReleases();
+  notifyTaskReleasesChanged(saved);
   return saved;
 });
 

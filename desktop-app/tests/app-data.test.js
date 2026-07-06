@@ -2,7 +2,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const assert = require('node:assert/strict');
-const { createAppData, defaultSettings, defaultParticipantReleases } = require('../app/lib/app-data');
+const { createAppData, defaultSettings, defaultParticipantReleases, defaultTaskReleases } = require('../app/lib/app-data');
+const taskPackageRegistry = require('../app/lib/task-packages.json');
 
 function createTempAppData() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-app-data-'));
@@ -338,6 +339,102 @@ test('app data stores participant releases and writes participant script', () =>
     assert.match(script, /window\.LFZQ8A_PARTICIPANT_LANGUAGE = "en"/);
     assert.match(script, /"tag_02": true/);
     assert.match(defaultScript, /"tool_quiz": true/);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data stores task and solution releases separately', () => {
+  const { appData, cleanup } = createTempAppData();
+  const task = taskPackageRegistry.tasks[0];
+
+  try {
+    appData.ensureDataFiles();
+
+    assert.deepEqual(appData.getTaskReleases()[task.id], defaultTaskReleases[task.id]);
+
+    let releases = appData.saveTaskRelease(task.id, { taskUnlocked: true });
+    assert.equal(releases[task.id].taskUnlocked, true);
+    assert.equal(releases[task.id].solutionUnlocked, false);
+
+    releases = appData.saveTaskRelease(task.id, { solutionUnlocked: true });
+    assert.equal(releases[task.id].taskUnlocked, true);
+    assert.equal(releases[task.id].solutionUnlocked, true);
+
+    const persisted = createAppData(path.dirname(appData.dataDir)).getTaskReleases();
+    assert.equal(persisted[task.id].taskUnlocked, true);
+    assert.equal(persisted[task.id].solutionUnlocked, true);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data supports task release bulk updates and reset', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const releases = appData.bulkUpdateTaskReleases(
+      { project: 'akkordeon', packageType: 'zusatzaufgaben', day: 1, difficulty: 'normal' },
+      { taskUnlocked: true }
+    );
+    const affectedTasks = taskPackageRegistry.tasks.filter((task) => (
+      task.project === 'akkordeon'
+      && task.packageType === 'zusatzaufgaben'
+      && task.day === 1
+      && task.difficulty === 'normal'
+    ));
+
+    assert.equal(affectedTasks.length, 5);
+    affectedTasks.forEach((task) => {
+      assert.equal(releases[task.id].taskUnlocked, true);
+      assert.equal(releases[task.id].solutionUnlocked, false);
+    });
+
+    const solutionReleases = appData.bulkUpdateTaskReleases(
+      { project: 'akkordeon', packageType: 'zusatzaufgaben', day: 1 },
+      { solutionUnlocked: true }
+    );
+    affectedTasks.forEach((task) => {
+      assert.equal(solutionReleases[task.id].solutionUnlocked, true);
+    });
+
+    appData.resetTaskReleases();
+    const generalReleases = appData.bulkUpdateTaskReleases(
+      { category: 'allgemein', day: 1 },
+      { taskUnlocked: true }
+    );
+    const generalTasks = taskPackageRegistry.tasks.filter((task) => task.category === 'allgemein' && task.day === 1);
+    const projectTasks = taskPackageRegistry.tasks.filter((task) => task.category === 'projekt' && task.day === 1);
+    assert.equal(generalTasks.length > 0, true);
+    assert.equal(generalTasks.every((task) => generalReleases[task.id].taskUnlocked), true);
+    assert.equal(projectTasks.every((task) => !generalReleases[task.id].taskUnlocked), true);
+
+    const reset = appData.resetTaskReleases();
+    affectedTasks.forEach((task) => {
+      assert.equal(reset[task.id].taskUnlocked, false);
+      assert.equal(reset[task.id].solutionUnlocked, false);
+    });
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data ignores invalid task release ids and can bulk update all tasks', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const unchanged = appData.saveTaskRelease('does-not-exist', { taskUnlocked: true });
+    assert.equal(Object.values(unchanged).some((release) => release.taskUnlocked), false);
+
+    const allReleased = appData.bulkUpdateTaskReleases({}, {
+      taskUnlocked: true,
+      solutionUnlocked: true
+    });
+    assert.equal(Object.keys(allReleased).length, taskPackageRegistry.tasks.length);
+    assert.equal(Object.values(allReleased).every((release) => release.taskUnlocked && release.solutionUnlocked), true);
+
+    const onlyTasksLocked = appData.bulkUpdateTaskReleases({}, { taskUnlocked: false });
+    assert.equal(Object.values(onlyTasksLocked).every((release) => !release.taskUnlocked && release.solutionUnlocked), true);
   } finally {
     cleanup();
   }

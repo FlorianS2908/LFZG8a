@@ -97,6 +97,7 @@ async function main() {
   require('./i18n.test');
   require('./json-store.test');
   require('./course-navigation.test');
+  require('./course-schedule.test');
   require('./path-integrity.test');
 
   let failed = 0;

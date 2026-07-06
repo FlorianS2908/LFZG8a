@@ -62,6 +62,26 @@
     </main>
   </div>
 
+  <section class="break-overlay" data-break-overlay role="dialog" aria-modal="true" aria-labelledby="break-title" hidden>
+    <article class="break-card" tabindex="-1" data-break-card>
+      <span class="pill">Kurszeit</span>
+      <h2 id="break-title" data-break-title>Achtung Pause</h2>
+      <p class="break-label" data-break-label>Vormittagspause</p>
+      <p class="break-time" data-break-time>10:00 - 10:15 Uhr</p>
+      <p class="break-next" data-break-next>Weiter geht es um 10:15 Uhr.</p>
+      <p class="break-remaining" data-break-remaining>Restzeit: 00:00</p>
+      <div class="button-row break-actions">
+        <button class="card-button" type="button" data-break-close>Popup schliessen</button>
+        <button class="card-button" type="button" data-break-hide>Bis Pausenende ausblenden</button>
+      </div>
+    </article>
+  </section>
+
+  <aside class="break-toast" data-break-toast hidden>
+    <strong>Pause beendet</strong>
+    <span>Weiter geht es im Unterricht.</span>
+  </aside>
+
   <div class="settings-dialog" data-settings-dialog hidden>
     <form class="settings-panel" data-settings-form>
       <div class="settings-head">
@@ -112,6 +132,7 @@
 
   <script src="course-navigation.js"></script>
   <script src="course-content-groups.js"></script>
+  <script src="course-schedule.js"></script>
   <script src="course.js"></script>
 </body>
 </html>

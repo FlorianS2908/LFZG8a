@@ -235,6 +235,30 @@ Wichtige Projektbereiche:
 - `dozent/Projektmaterialien/`
 - `dozent/Projektmaterialien/projektvorbereitung/`
 
+## Aufgabenpaket-Verwaltung in der App
+
+Die neuen Aufgabenpakete sind nicht nur als lose HTML-Dateien abgelegt, sondern ueber eine zentrale Registry in die Electron-App eingebunden.
+
+- Integriert sind 4 Pakete mit zusammen 150 Aufgaben:
+  - Akkordeon Hauptaufgaben Tag 1 bis Tag 5,
+  - Akkordeon Zusatzaufgaben mit 10 Aufgaben pro Tag,
+  - Wunderland Hauptaufgaben Tag 1 bis Tag 5,
+  - Wunderland Zusatzaufgaben mit 10 Aufgaben pro Tag.
+- Jede Aufgabe kann einzeln freigegeben werden.
+- Aufgabenfreigabe und Loesungsfreigabe sind getrennt.
+- Teilnehmer sehen nur freigegebene Aufgaben.
+- Loesungen erscheinen im Teilnehmerbereich erst, wenn die jeweilige Loesung separat freigegeben wurde.
+- Die lokale Freigabehistorie liegt in den App-Daten als `task-releases.json`.
+
+Die Registry wird aus den HTML-Paketen erzeugt:
+
+```powershell
+cd desktop-app
+node scripts/build-task-registry.js
+```
+
+Neue Aufgabenpakete werden in `desktop-app/scripts/build-task-registry.js` als Quelle ergaenzt. Die erzeugten Registry-Dateien liegen danach unter `desktop-app/app/lib/task-packages.json` und `teilnehmer/assets/data/task-packages.json`.
+
 ## Tools
 
 - Dozenten-Tool: `dozent/tools/html-css-tag-tool-dozent.html`

@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>LFZQ8a Akkordeon - Lösungen Zusatzaufgaben</title><style>
+:root{--brand:#003964;--accent:#00abc7;--lime:#bdf77a;--ink:#173248;--muted:#5f7284;--bg:#f2f8fb;--card:#fff;--line:#d8e8ee;--soft:#e8fbff;--code:#0b1725;--warn:#fff7db;--hard:#fff1f1;--normal:#eefaf1;--shadow:0 16px 40px rgba(0,57,100,.12)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:linear-gradient(180deg,#eef8fb 0,#fff 45%,#f7fbf4 100%);line-height:1.55}a{color:inherit}.hero{background:var(--brand);color:#fff;padding:2.2rem 1.25rem}.wrap{width:min(1180px,100%);margin:0 auto}.hero h1{margin:.35rem 0;font-size:clamp(2rem,5vw,3.6rem);line-height:1.05}.hero p{max-width:960px;color:#d9eef4}.kicker{display:inline-block;color:var(--lime);font-weight:900;text-transform:uppercase;letter-spacing:.06em}.toplink{display:inline-block;color:#fff;font-weight:800;text-decoration:none;margin-bottom:1rem}.toplink:hover{text-decoration:underline}.nav{position:sticky;top:0;z-index:4;background:rgba(255,255,255,.94);border-bottom:1px solid var(--line);backdrop-filter:blur(8px)}.nav .wrap{display:flex;gap:.55rem;flex-wrap:wrap;padding:.85rem 1.25rem}.nav a{padding:.6rem .8rem;border-radius:999px;background:#fff;border:1px solid var(--line);text-decoration:none;color:var(--brand);font-weight:800}.nav a:hover,.nav a:focus-visible{background:var(--brand);color:#fff;outline:3px solid rgba(0,171,199,.28);outline-offset:2px}main{padding:1.25rem}.intro,.day,.task,.solution,.readme-card{background:#fff;border:1px solid var(--line);border-radius:.75rem;box-shadow:var(--shadow);padding:1.1rem;margin:1rem 0}.intro{background:var(--soft)}.day h2{margin:.2rem 0;color:var(--brand);font-size:clamp(1.55rem,3vw,2.35rem)}.lead{color:var(--muted);max-width:960px}.tag-list,.meta,.links{display:flex;gap:.45rem;flex-wrap:wrap}.tag-list span,.pill{padding:.3rem .55rem;border-radius:999px;background:var(--soft);color:var(--brand);font-weight:800;font-size:.9rem}.section-title{display:flex;align-items:center;gap:.7rem;margin:1.2rem 0 .7rem}.section-title h3{margin:0;color:var(--brand)}.count{background:#fff;border:1px solid var(--line);border-radius:999px;padding:.25rem .55rem;font-weight:900;color:var(--brand)}.task-list{list-style:none;margin:0;padding:0;display:grid;gap:.85rem}.task{box-shadow:0 10px 24px rgba(0,57,100,.08);border-left:6px solid var(--accent);margin:0}.task.hard{border-left-color:#b42318;background:linear-gradient(90deg,var(--hard),#fff 22rem)}.task.normal{border-left-color:#0b8f4d;background:linear-gradient(90deg,var(--normal),#fff 22rem)}.task h4,.solution h3{margin:.1rem 0 .35rem;color:var(--brand)}.task p{margin:.35rem 0}.task ul,.solution ul{margin:.45rem 0;padding-left:1.2rem}.task li+li,.solution li+li{margin-top:.2rem}.task-meta{color:var(--muted);font-weight:800;font-size:.93rem}.box{border-left:4px solid var(--accent);background:#f8fcff;padding:.7rem .8rem;border-radius:.35rem;margin:.65rem 0}.check{border-left:4px solid #f1b700;background:var(--warn);padding:.7rem .8rem;border-radius:.35rem;margin:.65rem 0}.btn{display:inline-block;padding:.6rem .78rem;border-radius:.45rem;background:var(--brand);color:#fff;text-decoration:none;font-weight:800;border:0}.btn.secondary{background:#e6fbff;color:var(--brand);border:1px solid var(--line)}.btn.success{background:#0b6b3a}.btn.warn{background:#9a6400}.btn:hover,.btn:focus-visible{outline:3px solid rgba(0,171,199,.35);outline-offset:2px;background:#005180;color:#fff}.mini{font-size:.88rem;padding:.35rem .5rem}.label{font-weight:900;color:var(--brand)}pre{overflow:auto;background:var(--code);color:#e8fbff;padding:1rem;border-radius:.55rem;line-height:1.45}code{font-family:Consolas,Monaco,monospace}details.solution{padding:.8rem}summary{cursor:pointer;font-weight:900;color:var(--brand)}table{width:100%;border-collapse:collapse;background:#fff;margin:.8rem 0}th,td{border:1px solid var(--line);padding:.55rem;text-align:left;vertical-align:top}th{background:#f3fbff;color:var(--brand)}.toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:.6rem}.toc-grid a{display:block;border:1px solid var(--line);background:#fff;border-radius:.55rem;padding:.7rem;text-decoration:none;color:var(--brand);font-weight:800}.toc-grid a:hover{background:var(--soft)}@media(max-width:720px){.btn{width:100%;text-align:center}.hero{padding:1.6rem 1rem}main{padding:1rem}.nav{position:static}}
+</style><link rel="stylesheet" href="../../../../../assets/css/unified-layout.css"></head>
+<body>
+<header class="hero"><div class="wrap"><a class="toplink" href="zusatzaufgaben_10_pro_tag.html">Zurück zu den Zusatzaufgaben</a><span class="kicker">Akkordeon · Lösungen</span><h1>Lösungen zu den 50 Zusatzaufgaben</h1><p>Diese Datei enthält Lösungshinweise, Musterstrukturen und Codeauszüge zu allen zusätzlichen Akkordeon-Aufgaben für Tag 1 bis Tag 5.</p></div></header>
+<nav class="nav"><div class="wrap"><a href="#tag-1">Tag 1</a><a href="#tag-2">Tag 2</a><a href="#tag-3">Tag 3</a><a href="#tag-4">Tag 4</a><a href="#tag-5">Tag 5</a></div></nav>
+<main class="wrap">
+<section class="intro"><h2>Hinweis zur Nutzung</h2><p>Die Lösungen sind als Musterlösungen zu verstehen. Bei HTML/CSS gibt es oft mehrere fachlich richtige Wege. Entscheidend sind Semantik, Wartbarkeit, Responsiveness, Bedienbarkeit und nachvollziehbare CSS-Struktur.</p></section>
+
+<section class="day" id="tag-1">
+  <span class="kicker">Tag 1</span>
+  <h2>Lösungen zu Tag 1: HTML-Grundstruktur und CSS-Basics</h2>
+  <p class="lead">Fundament für sauberes HTML, sichtbare Grundstruktur, CSS-Basisregeln, Box-Modell, Farben, Abstände und einfache Selektoren.</p>
+  <div class="links"><a class="btn secondary" href="zusatzaufgaben_10_pro_tag.html#tag-1">Aufgaben Tag 1</a></div>
+  <details class="solution" id="t1-n1">
+  <summary>Normal: Akkordeon-Seite mit sauberem HTML-Grundgerüst anlegen</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden erstellen eine vollständige HTML-Datei für das Akkordeon und erklären die Rolle von head, body, title und meta.</p>
+  <ul><li>Ein vollständiges Dokument besitzt genau eine Wurzelstruktur mit `html`, einen technischen `head` und sichtbare Inhalte im `body`.</li><li>Der Viewport-Meta-Tag ist Pflicht, damit später responsive CSS-Regeln sinnvoll wirken.</li><li>Die Überschrift gehört nicht in den `head`, sondern sichtbar in den `body`.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;!doctype html&gt;
+&lt;html lang="de"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;title&gt;Akkordeon Tag 1&lt;/title&gt;
+  &lt;link rel="stylesheet" href="style.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;header class="site-header"&gt;
+    &lt;h1&gt;CSS-Akkordeon&lt;/h1&gt;
+  &lt;/header&gt;
+  &lt;main class="accordion-shell"&gt;
+    &lt;p&gt;Start des Akkordeon-Projekts.&lt;/p&gt;
+  &lt;/main&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Browser zeigt Titel, Überschrift und Hauptbereich; DevTools zeigen korrekte Grundstruktur.</p>
+</details><details class="solution" id="t1-n2">
+  <summary>Normal: Semantische Seitenbereiche für das Akkordeon strukturieren</summary>
+  <p><strong>Ziel:</strong> Die Akkordeon-Seite wird mit header, main, section, article und footer logisch gegliedert.</p>
+  <ul><li>`section` beschreibt den thematischen Bereich „Akkordeon“.</li><li>`article` eignet sich für einzelne, eigenständig verständliche Akkordeon-Einträge.</li><li>`div` wird nur benötigt, wenn kein semantisches Element passt.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;main&gt;
+  &lt;section class="accordion" aria-labelledby="acc-title"&gt;
+    &lt;h2 id="acc-title"&gt;Akkordeon-Inhalte&lt;/h2&gt;
+    &lt;article class="accordion-item"&gt;
+      &lt;h3&gt;Panel 1&lt;/h3&gt;
+      &lt;p&gt;Kurzer Inhalt zum ersten Panel.&lt;/p&gt;
+    &lt;/article&gt;
+  &lt;/section&gt;
+&lt;/main&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Im HTML sind die Seitenbereiche fachlich sinnvoll erkennbar und nicht nur aus div-Containern aufgebaut.</p>
+</details><details class="solution" id="t1-n3">
+  <summary>Normal: CSS-Basis mit Farben, Schrift und Abständen erstellen</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden setzen Grundregeln für body, Überschriften, Absätze und den Akkordeon-Container.</p>
+  <ul><li>Globale Regeln gehören an `body`; komponentenbezogene Regeln an Klassen wie `.accordion-shell`.</li><li>`box-sizing:border-box` erleichtert spätere Breitenberechnung.</li><li>Padding erzeugt Innenabstand, margin Außenabstand, border einen sichtbaren Rahmen.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: #173248;
+  background: #eef8fb;
+}
+.accordion-shell {
+  max-width: 960px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #d8e8ee;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Seite wirkt sichtbar gestaltet; Abstände sind bewusst gesetzt und nicht zufällig vom Browserstandard abhängig.</p>
+</details><details class="solution" id="t1-n4">
+  <summary>Normal: Listen, Links und Bildplatzhalter im Akkordeon sinnvoll verwenden</summary>
+  <p><strong>Ziel:</strong> Ein Akkordeon-Eintrag bekommt einen Text, eine ungeordnete Liste, einen Link und einen Bildplatzhalter.</p>
+  <ul><li>Listen ersetzen keine Absätze mit Bindestrichen; sie geben Struktur.</li><li>Links brauchen aussagekräftige Linktexte.</li><li>Bilder brauchen `alt`; bei einem reinen CSS-Platzhalter kann eine Beschriftung im Text reichen.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;article class="accordion-item" id="panel-html"&gt;
+  &lt;h3&gt;HTML-Grundlagen&lt;/h3&gt;
+  &lt;p&gt;Dieses Panel zeigt wichtige Bestandteile.&lt;/p&gt;
+  &lt;ul&gt;
+    &lt;li&gt;Überschrift&lt;/li&gt;
+    &lt;li&gt;Absatz&lt;/li&gt;
+    &lt;li&gt;Liste&lt;/li&gt;
+  &lt;/ul&gt;
+  &lt;a href="#panel-css"&gt;Zum CSS-Panel&lt;/a&gt;
+&lt;/article&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Die Inhalte sind semantisch passend: Liste als Liste, Link als Link, Bild/Platzhalter mit Beschreibung.</p>
+</details><details class="solution" id="t1-n5">
+  <summary>Normal: Klassen und IDs fachlich sauber unterscheiden</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden benennen HTML-Elemente so, dass später CSS eindeutig und wartbar bleibt.</p>
+  <ul><li>Klassen sind für wiederholbare Gestaltung gedacht.</li><li>IDs sind eindeutig und eignen sich für Anker, `for`/`id`-Verknüpfungen oder gezielte Sprungmarken.</li><li>Für fünf Panels ist `.accordion-item` besser als fünf komplett unterschiedliche Klassen.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;section class="accordion" id="akkordeon-start"&gt;
+  &lt;article class="accordion-item" id="panel-1"&gt;...&lt;/article&gt;
+  &lt;article class="accordion-item" id="panel-2"&gt;...&lt;/article&gt;
+&lt;/section&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Die Akkordeon-Items verwenden wiederholbare Klassen; IDs sind eindeutig und nicht mehrfach vorhanden.</p>
+</details><details class="solution" id="t1-s1">
+  <summary>Schwer: Divitis im Akkordeon reduzieren und semantisch refactoren</summary>
+  <p><strong>Ziel:</strong> Eine absichtlich div-lastige Akkordeon-Struktur wird in semantische HTML-Elemente überführt.</p>
+  <ul><li>Semantik verbessert Lesbarkeit, Barrierefreiheit und Wartbarkeit.</li><li>Nicht jeder Container ist falsch, aber fachliche Inhalte sollten passende HTML-Elemente bekommen.</li><li>CSS-Klassen können nach dem Refactoring meist erhalten bleiben.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;!-- vorher: &lt;div class="item"&gt; --&gt;
+&lt;article class="accordion-item"&gt;
+  &lt;h3&gt;Semantisches Panel&lt;/h3&gt;
+  &lt;p&gt;Inhalt bleibt erhalten, Bedeutung wird klarer.&lt;/p&gt;
+&lt;/article&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Die Seite sieht gleich oder besser aus, hat aber eine fachlich klarere HTML-Struktur.</p>
+</details><details class="solution" id="t1-s2">
+  <summary>Schwer: CSS-Variablen für das Akkordeon-Farbsystem einführen</summary>
+  <p><strong>Ziel:</strong> Farben und Abstände werden über Custom Properties zentral steuerbar gemacht.</p>
+  <ul><li>Custom Properties eignen sich für wiederkehrende Werte wie Farben, Abstände, Radius und Schatten.</li><li>Sie erhöhen Konsistenz und reduzieren Sucharbeit im CSS.</li><li>Variablen dürfen sprechend benannt werden, nicht nur `--blue1`.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>:root {
+  --brand: #003964;
+  --accent: #00abc7;
+  --surface: #ffffff;
+  --line: #d8e8ee;
+  --space: 1rem;
+}
+.accordion-item {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: var(--space);
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Mehrere Komponenten nutzen dieselben Variablen; Farbanpassung ist zentral möglich.</p>
+</details><details class="solution" id="t1-s3">
+  <summary>Schwer: Spezifitätsfehler im Start-CSS finden und beheben</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden analysieren, warum bestimmte CSS-Regeln nicht greifen, und lösen Konflikte nachvollziehbar.</p>
+  <ul><li>`!important` ist in Unterrichtsprojekten meist ein Warnsignal.</li><li>Spezifität steigt durch Klassen, IDs und Kontextselektoren.</li><li>Besser ist eine klare Komponentenklasse mit kontrollierter Reihenfolge.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>/* problematisch */
+h3 { color: red; }
+.accordion-item h3 { color: #003964; }
+
+/* sauber */
+.accordion-title { color: var(--brand); }</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Konflikt ist behoben; Erklärung nennt mindestens zwei Ursachen: Reihenfolge, Spezifität oder falscher Selektor.</p>
+</details><details class="solution" id="t1-s4">
+  <summary>Schwer: HTML-Kommentare als technische Dokumentation einsetzen</summary>
+  <p><strong>Ziel:</strong> Der Startstand des Akkordeons wird so kommentiert, dass ein anderer Entwickler die Struktur versteht.</p>
+  <ul><li>Gute Kommentare erklären das Warum, nicht das Offensichtliche.</li><li>Bei HTML/CSS-Projekten sind Kommentare für Strukturentscheidungen und Abhängigkeiten sinnvoll.</li><li>Kommentare dürfen später im Produktivcode reduziert werden, sind im Lernprojekt aber wertvoll.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;!-- Akkordeon-Item: Titel und Inhalt bleiben zusammen, damit die Komponente später kopierbar bleibt. --&gt;
+&lt;article class="accordion-item"&gt;
+  &lt;h3 class="accordion-title"&gt;Panel 1&lt;/h3&gt;
+  &lt;p class="accordion-content"&gt;Inhalt...&lt;/p&gt;
+&lt;/article&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Kommentare helfen beim Verständnis, ohne den Code zu überladen.</p>
+</details><details class="solution" id="t1-s5">
+  <summary>Schwer: Mini-Abnahme für die HTML- und CSS-Basis durchführen</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden prüfen ihren Tag-1-Stand systematisch anhand technischer Kriterien.</p>
+  <ul><li>Eine Abnahme ist fachlich stärker als „sieht gut aus“.</li><li>Prüfkriterien sollten beobachtbar sein.</li><li>TODO-Kommentare helfen, offene Punkte später gezielt zu bearbeiten.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;!-- TODO: Alt-Text ergänzen --&gt;
+&lt;!-- TODO: Klasse vereinheitlichen: acc-item statt panel-box --&gt;
+&lt;!-- TODO: Feste Breite durch max-width ersetzen --&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Checkliste liegt vor; mindestens drei konkrete Korrekturen wurden umgesetzt.</p>
+</details>
+</section>
+<section class="day" id="tag-2">
+  <span class="kicker">Tag 2</span>
+  <h2>Lösungen zu Tag 2: Navigation, Buttons und Flexbox</h2>
+  <p class="lead">Navigation, klickbare Elemente, Button-/Link-Unterscheidung und Flexbox für Bedienleisten, Panel-Köpfe und Komponentenlayout.</p>
+  <div class="links"><a class="btn secondary" href="zusatzaufgaben_10_pro_tag.html#tag-2">Aufgaben Tag 2</a></div>
+  <details class="solution" id="t2-n1">
+  <summary>Normal: Akkordeon-Navigation mit nav und Linkliste bauen</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden erstellen eine interne Navigation zu den Akkordeon-Panels.</p>
+  <ul><li>`nav` ist für zentrale Navigation sinnvoll.</li><li>Eine Linkliste bleibt auch dann eine Liste, wenn sie optisch als Buttonleiste aussieht.</li><li>IDs müssen zu den href-Ankern passen.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;nav class="panel-nav" aria-label="Akkordeon-Panels"&gt;
+  &lt;ul&gt;
+    &lt;li&gt;&lt;a href="#panel-1"&gt;Panel 1&lt;/a&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/nav&gt;
+
+.panel-nav ul { display:flex; gap:.5rem; flex-wrap:wrap; }</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Navigation ist semantisch als nav umgesetzt und alle Anker funktionieren.</p>
+</details><details class="solution" id="t2-n2">
+  <summary>Normal: Panel-Kopf mit Flexbox ausrichten</summary>
+  <p><strong>Ziel:</strong> Titel, Nummer und Icon eines Akkordeon-Panels werden in einer Zeile flexibel ausgerichtet.</p>
+  <ul><li>Flexbox eignet sich für eine horizontale Ausrichtung innerhalb einer Komponente.</li><li>`gap` ist sauberer als viele Einzel-margins.</li><li>Nummer und Icon sollten nicht die Überschrift verdrängen.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.accordion-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Panel-Kopf bleibt übersichtlich und bricht sauber um oder bleibt lesbar.</p>
+</details><details class="solution" id="t2-n3">
+  <summary>Normal: Link und Button fachlich unterscheiden</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden entscheiden, wann ein a-Element und wann ein button-Element korrekt ist.</p>
+  <ul><li>Ein Link navigiert zu einem Ziel.</li><li>Ein Button löst eine Aktion aus.</li><li>Im CSS können beide ähnlich aussehen, ihre Bedeutung bleibt aber unterschiedlich.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;a class="btn-link" href="#panel-2"&gt;Zum Panel&lt;/a&gt;
+&lt;button class="btn" type="button"&gt;Ansicht prüfen&lt;/button&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Navigation nutzt a; Aktionen nutzen button. Keine Buttons werden als reine Sprunglinks missbraucht.</p>
+</details><details class="solution" id="t2-n4">
+  <summary>Normal: Hover- und Fokuszustände für Akkordeon-Bedienung gestalten</summary>
+  <p><strong>Ziel:</strong> Klickbare Elemente erhalten sichtbare Zustände für Maus- und Tastaturbedienung.</p>
+  <ul><li>Hover allein reicht nicht, weil Tastatur- und Touch-Nutzung anders funktionieren.</li><li>`outline` sollte nicht ersatzlos entfernt werden.</li><li>`:focus-visible` ist für moderne Tastaturfokusse gut geeignet.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.panel-nav a:hover { background:#003964; color:#fff; }
+.panel-nav a:focus-visible, button:focus-visible {
+  outline: 3px solid #00abc7;
+  outline-offset: 3px;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Aktive Bedienflächen sind mit Maus und Tastatur klar erkennbar.</p>
+</details><details class="solution" id="t2-n5">
+  <summary>Normal: Flex-Wrap für eine stabile Panel-Leiste nutzen</summary>
+  <p><strong>Ziel:</strong> Eine horizontale Leiste mit Panel-Links bricht bei wenig Platz sauber um.</p>
+  <ul><li>`flex-wrap` verhindert Überlauf, wenn Elemente zu breit werden.</li><li>`gap` arbeitet in Zeilen und Spalten gleichmäßig.</li><li>Feste Breiten sind für Navigationschips meist schlechter als flexible Inhalte.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.panel-nav ul {
+  display:flex;
+  flex-wrap:wrap;
+  gap:.5rem;
+  padding:0;
+  list-style:none;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Die Leiste verursacht keinen horizontalen Scrollbalken.</p>
+</details><details class="solution" id="t2-s1">
+  <summary>Schwer: CSS-only Bedienzustand mit Radio und Label vorbereiten</summary>
+  <p><strong>Ziel:</strong> Die spätere Akkordeon-Interaktion wird mit input type=radio und label strukturell vorbereitet.</p>
+  <ul><li>Radio-Buttons ermöglichen einen exklusiven Zustand: genau ein Panel aktiv.</li><li>Das label ist die klickbare Oberfläche.</li><li>Inputs dürfen nicht mit `display:none` versteckt werden, wenn Fokus/Bedienbarkeit erhalten bleiben soll.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;input class="acc-toggle" type="radio" name="accordion" id="acc-1" checked&gt;
+&lt;label class="acc-label" for="acc-1"&gt;Panel 1&lt;/label&gt;
+
+.acc-toggle { position:absolute; opacity:0; }</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Labels steuern die passenden Radio-Inputs; IDs und for-Attribute stimmen eindeutig überein.</p>
+</details><details class="solution" id="t2-s2">
+  <summary>Schwer: Komponenten-CSS für Panel-Köpfe refactoren</summary>
+  <p><strong>Ziel:</strong> Mehrfach vorhandene Panel-Kopf-Regeln werden in eine wiederverwendbare Komponentenklasse überführt.</p>
+  <ul><li>Komponentenklassen beschreiben Rollen innerhalb der Komponente.</li><li>Wiederverwendbare CSS-Struktur macht spätere Änderungen sicherer.</li><li>Spezielle Abweichungen werden als Modifier ergänzt, nicht als komplette Kopie.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.accordion-head { display:flex; align-items:center; gap:.75rem; }
+.accordion-title { flex:1; margin:0; }
+.accordion-icon { font-weight:900; }</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Doppelte CSS-Regeln sind reduziert; Komponentenklassen sind sprechend benannt.</p>
+</details><details class="solution" id="t2-s3">
+  <summary>Schwer: Flexbox-Fehleranalyse mit DevTools durchführen</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden finden und beheben ein Layoutproblem in einer Flexbox-Leiste.</p>
+  <ul><li>Flex-Items können durch lange Texte oder feste Breiten überlaufen.</li><li>`min-width:0` ist oft nötig, damit Text in Flex-Items schrumpfen darf.</li><li>Flexbox löst Ausrichtung, aber nicht automatisch jede Inhaltsbreite.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.accordion-head &gt; .accordion-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Kein horizontaler Überlauf; Ursache ist schriftlich nachvollziehbar.</p>
+</details><details class="solution" id="t2-s4">
+  <summary>Schwer: Accessible Name für klickbare Akkordeon-Elemente prüfen</summary>
+  <p><strong>Ziel:</strong> Klickbare Labels, Links und Buttons bekommen verständliche sichtbare Texte und bei Bedarf ARIA-Ergänzungen.</p>
+  <ul><li>Der sichtbare Text sollte Ziel oder Aktion beschreiben.</li><li>Icon-only Buttons brauchen einen zugänglichen Namen.</li><li>ARIA ergänzt Bedeutung, ersetzt aber keine saubere HTML-Struktur.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;button type="button" aria-label="Panel 2 öffnen"&gt;+&lt;/button&gt;
+&lt;a href="#panel-3"&gt;Zum Akkordeon-Panel „CSS Grid“&lt;/a&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Alle interaktiven Elemente sind ohne Kontext verständlich beschriftet.</p>
+</details><details class="solution" id="t2-s5">
+  <summary>Schwer: Zustandsdesign für aktiv, hover und focus entwerfen</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden definieren ein konsistentes Zustandsdesign für alle Akkordeon-Steuerelemente.</p>
+  <ul><li>Aktivzustände sollten mit Farbe plus Form, Rahmen oder Icon erkennbar sein.</li><li>Fokuszustände dürfen nicht von Hoverzuständen überdeckt werden.</li><li>Konsistenz über alle Steuerelemente reduziert Bedienfehler.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.acc-label { border:1px solid var(--line); }
+.acc-label:hover { background:var(--soft); }
+.acc-label:focus-visible { outline:3px solid var(--accent); }
+.acc-toggle:checked + .acc-label { border-left:6px solid var(--accent); }</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Zustände sind visuell unterscheidbar und barriereärmer umgesetzt.</p>
+</details>
+</section>
+<section class="day" id="tag-3">
+  <span class="kicker">Tag 3</span>
+  <h2>Lösungen zu Tag 3: Struktur, Karten und Grid</h2>
+  <p class="lead">Struktur, Karten, Grid, figure/figcaption, aside und mehrspaltige Akkordeon-Layouts.</p>
+  <div class="links"><a class="btn secondary" href="zusatzaufgaben_10_pro_tag.html#tag-3">Aufgaben Tag 3</a></div>
+  <details class="solution" id="t3-n1">
+  <summary>Normal: Akkordeon-Panels als Karten gestalten</summary>
+  <p><strong>Ziel:</strong> Jedes Akkordeon-Panel erhält Kartenoptik mit Rahmen, Radius, Schatten und Innenabstand.</p>
+  <ul><li>Kartenoptik entsteht durch Hintergrund, Abstand, Rahmen, Radius und Schatten.</li><li>Zu starke Schatten wirken schnell unprofessionell.</li><li>Einheitliche Klassen vermeiden Stilbrüche.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.accordion-card {
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #d8e8ee;
+  border-radius: .75rem;
+  box-shadow: 0 10px 24px rgba(0,57,100,.08);
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Alle Panels wirken als einheitliche Karten, ohne unruhige Einzelgestaltung.</p>
+</details><details class="solution" id="t3-n2">
+  <summary>Normal: Kartenübersicht mit CSS Grid erstellen</summary>
+  <p><strong>Ziel:</strong> Mehrere Zusatzkarten zum Akkordeon werden mit Grid in Spalten angeordnet.</p>
+  <ul><li>Grid eignet sich für zweidimensionale Raster.</li><li>`gap` ist für Rasterabstände übersichtlich.</li><li>Für starre drei Spalten ist `repeat(3, 1fr)` geeignet.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Infokarten stehen auf Desktop nebeneinander und haben gleichmäßige Abstände.</p>
+</details><details class="solution" id="t3-n3">
+  <summary>Normal: Aside als Zusatzbereich zum Akkordeon einbauen</summary>
+  <p><strong>Ziel:</strong> Ein ergänzender Hinweisbereich wird semantisch mit aside umgesetzt.</p>
+  <ul><li>`aside` ist für ergänzende Inhalte geeignet.</li><li>Die Infobox sollte den Hauptinhalt unterstützen, nicht ersetzen.</li><li>Ein border-left eignet sich gut für Hinweischarakter.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;aside class="help-box"&gt;
+  &lt;h2&gt;Hinweis&lt;/h2&gt;
+  &lt;p&gt;Wähle ein Panel aus, um den Inhalt zu öffnen.&lt;/p&gt;
+&lt;/aside&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> aside enthält Zusatzinformationen und ist optisch vom Hauptinhalt getrennt.</p>
+</details><details class="solution" id="t3-n4">
+  <summary>Normal: Figure und Figcaption für Akkordeon-Bildmaterial verwenden</summary>
+  <p><strong>Ziel:</strong> Ein Bild oder Platzhalter im Akkordeon wird mit figure und figcaption fachlich korrekt eingebunden.</p>
+  <ul><li>`figure` gruppiert Medien und Beschriftung.</li><li>`figcaption` beschreibt das Bild oder seinen Zweck.</li><li>Bei echten Bildern bleibt `alt` trotzdem wichtig.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;figure class="media-card"&gt;
+  &lt;img src="bild.jpg" alt="Akkordeon-Demo"&gt;
+  &lt;figcaption&gt;Beispiel für ein Panelbild.&lt;/figcaption&gt;
+&lt;/figure&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Bild und Beschreibung sind semantisch gekoppelt.</p>
+</details><details class="solution" id="t3-n5">
+  <summary>Normal: Footer und Header im Kartenlayout vereinheitlichen</summary>
+  <p><strong>Ziel:</strong> Panelkarten erhalten klare Kopf- und Fußbereiche.</p>
+  <ul><li>Header/Footer können auch innerhalb von article sinnvoll sein.</li><li>Eine Karte kann intern ebenfalls strukturiert sein.</li><li>Gleiche Struktur erleichtert CSS und spätere Pflege.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;article class="accordion-card"&gt;
+  &lt;header&gt;&lt;h3&gt;Panel&lt;/h3&gt;&lt;/header&gt;
+  &lt;p&gt;Inhalt&lt;/p&gt;
+  &lt;footer&gt;Stand: Tag 3&lt;/footer&gt;
+&lt;/article&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Karten haben ein konsistentes Innenlayout mit wiedererkennbaren Bereichen.</p>
+</details><details class="solution" id="t3-s1">
+  <summary>Schwer: Auto-fit Grid für variable Kartenanzahl umsetzen</summary>
+  <p><strong>Ziel:</strong> Die Kartenübersicht passt sich automatisch an verfügbare Breite und Anzahl der Karten an.</p>
+  <ul><li>`auto-fit` und `minmax` machen Grid besonders flexibel.</li><li>Eine Mindestbreite verhindert unlesbare Karten.</li><li>`1fr` verteilt verfügbaren Restplatz gleichmäßig.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.info-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap:1rem;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Kartenraster reagiert flexibel und benötigt keine zusätzliche Media Query für jede Breite.</p>
+</details><details class="solution" id="t3-s2">
+  <summary>Schwer: Grid-Template-Areas für Seitenlayout bauen</summary>
+  <p><strong>Ziel:</strong> Akkordeon, aside und Zusatzkarten werden mit benannten Grid-Bereichen angeordnet.</p>
+  <ul><li>Grid-Areas machen komplexere Layouts verständlich.</li><li>Die HTML-Reihenfolge sollte weiterhin logisch bleiben.</li><li>CSS entscheidet Darstellung, HTML bleibt semantisch.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.page-layout {
+  display:grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-areas: "intro intro" "accordion aside";
+  gap:1rem;
+}
+.intro{grid-area:intro}.accordion{grid-area:accordion}.help-box{grid-area:aside}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Layout nutzt benannte Bereiche und ist im CSS verständlich lesbar.</p>
+</details><details class="solution" id="t3-s3">
+  <summary>Schwer: Kartenhöhe und Inhaltsüberlauf kontrollieren</summary>
+  <p><strong>Ziel:</strong> Unterschiedlich lange Panelinhalte werden so behandelt, dass das Kartenlayout stabil bleibt.</p>
+  <ul><li>Nicht jeder Inhalt sollte hart begrenzt werden.</li><li>Für Kartenübersichten kann eine Mindesthöhe helfen.</li><li>Bei Begrenzung muss Scroll- oder „Mehr lesen“-Logik klar sein.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.accordion-card {
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+  min-height: 220px;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Lange Inhalte zerstören das Layout nicht; Entscheidung ist nachvollziehbar.</p>
+</details><details class="solution" id="t3-s4">
+  <summary>Schwer: Figure-Karten responsiv in das Grid integrieren</summary>
+  <p><strong>Ziel:</strong> Medienkarten mit figure/img/figcaption bleiben im Grid sauber und überlaufen nicht.</p>
+  <ul><li>Browser geben figure standardmäßig margin; das kann Layout stören.</li><li>Bilder brauchen flexible Breiten.</li><li>Beschriftungen dürfen umbrechen und sollten lesbar bleiben.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>figure { margin:0; }
+.media-card img {
+  display:block;
+  width:100%;
+  height:auto;
+}
+.media-card figcaption { font-size:.9rem; }</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Medienkarten bleiben sauber im Raster; Bilder überlaufen nicht.</p>
+</details><details class="solution" id="t3-s5">
+  <summary>Schwer: Grid- und Flexbox-Einsatz fachlich begründen</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden begründen im Codekommentar, warum sie Grid oder Flexbox verwenden.</p>
+  <ul><li>Flexbox ist stark für eine Achse.</li><li>Grid ist stark für Zeilen und Spalten gleichzeitig.</li><li>Die Methode sollte nach Layoutproblem gewählt werden, nicht nach Gewohnheit.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>/* Flexbox: Panelkopf richtet Titel und Icon in einer Zeile aus. */
+.accordion-head { display:flex; }
+
+/* Grid: Kartenübersicht braucht Zeilen und Spalten. */
+.info-grid { display:grid; }</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Kommentare zeigen fachliche Entscheidung: eindimensional = Flexbox, zweidimensional = Grid.</p>
+</details>
+</section>
+<section class="day" id="tag-4">
+  <span class="kicker">Tag 4</span>
+  <h2>Lösungen zu Tag 4: Responsive HTML-Elemente</h2>
+  <p class="lead">Mobile First, Viewport, responsive Bilder, flexible Navigation, Media Queries, clamp/min/max und Bedienbarkeit auf kleinen Bildschirmen.</p>
+  <div class="links"><a class="btn secondary" href="zusatzaufgaben_10_pro_tag.html#tag-4">Aufgaben Tag 4</a></div>
+  <details class="solution" id="t4-n1">
+  <summary>Normal: Viewport und mobile Grunddarstellung prüfen</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden prüfen, ob die Akkordeon-Seite auf mobilen Breiten korrekt skaliert.</p>
+  <ul><li>Ohne Viewport wirkt die Seite auf Mobilgeräten oft künstlich verkleinert.</li><li>Mobile Prüfung ist keine Geschmacksfrage, sondern technischer Test.</li><li>Probleme wie Überlauf, zu kleine Schrift oder zu enge Buttons müssen konkret benannt werden.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Viewport ist vorhanden; Probleme sind beobachtbar dokumentiert.</p>
+</details><details class="solution" id="t4-n2">
+  <summary>Normal: Akkordeon-Container mit width, max-width und margin responsiv machen</summary>
+  <p><strong>Ziel:</strong> Der Hauptcontainer passt sich an Bildschirmbreiten an und bleibt auf Desktop begrenzt.</p>
+  <ul><li>Feste Breiten sind ein häufiger Responsiveness-Fehler.</li><li>`max-width` begrenzt die Lesebreite.</li><li>`width:min(100%, 960px)` ist eine moderne, klare Lösung.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.accordion-shell {
+  width: min(100% - 2rem, 960px);
+  margin-inline: auto;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Kein horizontaler Scrollbalken; Container bleibt auf Desktop angenehm lesbar.</p>
+</details><details class="solution" id="t4-n3">
+  <summary>Normal: Bilder und Medien im Akkordeon flexibel machen</summary>
+  <p><strong>Ziel:</strong> Bilder in Panels überlaufen nicht und behalten ihr Seitenverhältnis.</p>
+  <ul><li>`max-width:100%` verhindert Überlauf.</li><li>`height:auto` erhält das Seitenverhältnis.</li><li>`display:block` entfernt unerwünschte Inline-Abstände.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Bild passt in das Panel und verursacht keinen horizontalen Scrollbalken.</p>
+</details><details class="solution" id="t4-n4">
+  <summary>Normal: Responsive Navigation mit Media Query anpassen</summary>
+  <p><strong>Ziel:</strong> Die Panelnavigation verhält sich auf kleinen Bildschirmen anders als auf Desktop.</p>
+  <ul><li>Mobile-first bedeutet: Grundzustand für kleine Screens, Erweiterung für größere.</li><li>Breakpoints sollten inhaltlich begründet sein, nicht zufällig.</li><li>Klickflächen brauchen ausreichend Höhe und Abstand.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.panel-nav ul { display:grid; gap:.5rem; }
+@media (min-width:700px) {
+  .panel-nav ul { display:flex; flex-wrap:wrap; }
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Navigation ist mobil gut bedienbar und auf Desktop platzsparend.</p>
+</details><details class="solution" id="t4-n5">
+  <summary>Normal: Schriftgrößen mit clamp flexibel gestalten</summary>
+  <p><strong>Ziel:</strong> Überschriften reagieren auf Bildschirmbreiten, ohne zu klein oder zu groß zu werden.</p>
+  <ul><li>`clamp(min, bevorzugt, max)` begrenzt flexible Werte.</li><li>Für große Überschriften ist clamp oft besser als viele Breakpoints.</li><li>Lesbarkeit bleibt wichtiger als Effekt.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>h1 {
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1.05;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Schriftgröße skaliert kontrolliert zwischen Mindest- und Maximalwert.</p>
+</details><details class="solution" id="t4-s1">
+  <summary>Schwer: Mobile-first Refactoring des gesamten Akkordeons</summary>
+  <p><strong>Ziel:</strong> Das Akkordeon-CSS wird so umgebaut, dass kleine Screens die Basis bilden und Desktop nur erweitert wird.</p>
+  <ul><li>Mobile-first CSS ist meist stabiler, weil kleine Bildschirme strenger sind.</li><li>Desktop-Regeln sind Erweiterungen, nicht Grundvoraussetzung.</li><li>Überläufe müssen aktiv getestet werden.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.accordion { display:grid; gap:1rem; }
+@media (min-width:900px) {
+  .accordion { grid-template-columns: 1fr 1fr; }
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> CSS ist mobile-first lesbar aufgebaut und erzeugt keine Überläufe.</p>
+</details><details class="solution" id="t4-s2">
+  <summary>Schwer: Picture und Source für responsive Akkordeon-Bilder einsetzen</summary>
+  <p><strong>Ziel:</strong> Je nach Bildschirmbreite wird eine passende Bildquelle verwendet.</p>
+  <ul><li>`picture` steuert Bildquellen, nicht die Beschriftung.</li><li>Das `img` bleibt Pflicht als Fallback und Träger des alt-Texts.</li><li>source ist selbst nicht sichtbar.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;picture&gt;
+  &lt;source media="(min-width: 800px)" srcset="akkordeon-gross.jpg"&gt;
+  &lt;img src="akkordeon-klein.jpg" alt="Akkordeon-Panel mit Bild"&gt;
+&lt;/picture&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> picture-Struktur ist korrekt; Fallback-img bleibt vorhanden.</p>
+</details><details class="solution" id="t4-s3">
+  <summary>Schwer: CSS-only Akkordeon auf kleinen Screens gestapelt darstellen</summary>
+  <p><strong>Ziel:</strong> Das Akkordeon wechselt mobil von nebeneinanderliegenden Panels zu einer gestapelten Darstellung.</p>
+  <ul><li>Absolute Positionierung kann auf mobilen Screens schnell Probleme erzeugen.</li><li>Eine gestapelte Darstellung ist für kleine Breiten oft verständlicher.</li><li>Aktive Zustände müssen auf beiden Layouts funktionieren.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.accordion-list { display:grid; gap:1rem; }
+@media (min-width:900px){
+  .accordion-list { grid-template-columns: repeat(5, 1fr); }
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Mobil sind Panels gestapelt und bedienbar; Desktop nutzt erweitertes Layout.</p>
+</details><details class="solution" id="t4-s4">
+  <summary>Schwer: Reduced Motion für Übergänge berücksichtigen</summary>
+  <p><strong>Ziel:</strong> Animationen und Übergänge werden für Nutzer mit reduzierter Bewegung entschärft.</p>
+  <ul><li>Barrierearmes Design berücksichtigt Bewegungsempfindlichkeit.</li><li>Transitions dürfen nicht zwingend zum Verständnis nötig sein.</li><li>Die Media Query wirkt nur bei entsprechender Nutzereinstellung.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Motion-Reduktion ist umgesetzt, ohne Bedienbarkeit zu verlieren.</p>
+</details><details class="solution" id="t4-s5">
+  <summary>Schwer: Responsiveness-Testmatrix für das Akkordeon erstellen</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden entwickeln eine kleine Testmatrix für verschiedene Gerätebreiten und Bedienformen.</p>
+  <ul><li>Eine Testmatrix macht Responsiveness nachvollziehbar.</li><li>„Passt“ ist kein ausreichendes Testergebnis.</li><li>Korrekturen sollten mit Ursache und Maßnahme dokumentiert werden.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>| Breite | Prüfung | Ergebnis | Maßnahme |
+|---|---|---|---|
+| 375px | kein horizontaler Scroll | Fehler | feste Breite entfernen |</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Testmatrix enthält konkrete Beobachtungen und Korrekturen.</p>
+</details>
+</section>
+<section class="day" id="tag-5">
+  <span class="kicker">Tag 5</span>
+  <h2>Lösungen zu Tag 5: Formulare, Webfonts und CSS-Struktur</h2>
+  <p class="lead">Formulare, Label/Input-Zuordnung, Webfonts, CSS-Struktur, Fokuszustände, Wartbarkeit und Abschlussabnahme.</p>
+  <div class="links"><a class="btn secondary" href="zusatzaufgaben_10_pro_tag.html#tag-5">Aufgaben Tag 5</a></div>
+  <details class="solution" id="t5-n1">
+  <summary>Normal: Kontaktformular unter dem Akkordeon aufbauen</summary>
+  <p><strong>Ziel:</strong> Die Akkordeon-Seite erhält ein kleines Kontakt- oder Feedbackformular mit sauberer Struktur.</p>
+  <ul><li>Formulare brauchen klare Beschriftungen.</li><li>`for` und `id` stellen eine bedienbare Verbindung her.</li><li>Der Submit-Button bekommt explizit `type="submit"`.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;form class="feedback-form"&gt;
+  &lt;label for="name"&gt;Name&lt;/label&gt;
+  &lt;input id="name" name="name" type="text"&gt;
+  &lt;button type="submit"&gt;Feedback senden&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Formularfelder haben Labels; Buttontyp ist korrekt gesetzt.</p>
+</details><details class="solution" id="t5-n2">
+  <summary>Normal: Formularfelder einheitlich gestalten</summary>
+  <p><strong>Ziel:</strong> Input, textarea und select erhalten gemeinsame CSS-Regeln.</p>
+  <ul><li>Formularfelder erben Schrift nicht immer automatisch sauber.</li><li>Gemeinsame Regeln reduzieren Wiederholung.</li><li>`width:100%` funktioniert mit `box-sizing:border-box` zuverlässig.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>input, textarea, select {
+  width:100%;
+  font: inherit;
+  padding:.75rem;
+  border:1px solid #d8e8ee;
+  border-radius:.5rem;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Formularfelder sind optisch konsistent und passen in den Container.</p>
+</details><details class="solution" id="t5-n3">
+  <summary>Normal: Fokuszustände für Formular und Akkordeon vereinheitlichen</summary>
+  <p><strong>Ziel:</strong> Alle bedienbaren Elemente bekommen einen einheitlichen Fokuszustand.</p>
+  <ul><li>Fokuszustände sind wichtig für Tastaturbedienung.</li><li>Outline sollte nicht deaktiviert werden.</li><li>Eine zentrale Regel verhindert uneinheitliche Bedienzustände.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 3px solid #00abc7;
+  outline-offset: 3px;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Fokus ist überall sichtbar und konsistent.</p>
+</details><details class="solution" id="t5-n4">
+  <summary>Normal: CSS-Datei in Bereiche gliedern</summary>
+  <p><strong>Ziel:</strong> Das CSS wird durch Kommentarblöcke in Grundregeln, Layout, Komponenten und Utilities strukturiert.</p>
+  <ul><li>CSS-Struktur ist ein Qualitätsmerkmal.</li><li>Eine sinnvolle Reihenfolge reduziert Suchzeit.</li><li>Kommentarblöcke helfen besonders in Lernprojekten.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>/* 1. Basis */
+/* 2. Layout */
+/* 3. Akkordeon-Komponenten */
+/* 4. Formular */
+/* 5. Utilities */</code></pre>
+  <p class="box"><strong>Prüfung:</strong> CSS ist lesbar gegliedert und neue Regeln lassen sich logisch einordnen.</p>
+</details><details class="solution" id="t5-n5">
+  <summary>Normal: Webfont mit Fallback-System vorbereiten</summary>
+  <p><strong>Ziel:</strong> Eine Schriftfamilie wird bewusst mit Fallbacks eingesetzt.</p>
+  <ul><li>Fallbacks greifen, wenn die erste Schrift nicht verfügbar ist.</li><li>Systemschriften sind robust und schnell.</li><li>Webfonts sollten sparsam und bewusst genutzt werden.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>body {
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+}</code></pre>
+  <p class="box"><strong>Prüfung:</strong> font-family enthält mehrere sinnvolle Fallbacks und ist zentral gesetzt.</p>
+</details><details class="solution" id="t5-s1">
+  <summary>Schwer: Formularvalidierung visuell und barriereärmer darstellen</summary>
+  <p><strong>Ziel:</strong> Pflichtfelder und Fehlerzustände werden nicht nur über Farbe kommuniziert.</p>
+  <ul><li>Farbe allein ist keine ausreichende Fehlermeldung.</li><li>Hilfetexte können über `aria-describedby` zugeordnet werden.</li><li>Fehlermeldungen sollten konkret sagen, was korrigiert werden muss.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>&lt;label for="email"&gt;E-Mail &lt;span aria-hidden="true"&gt;*&lt;/span&gt;&lt;/label&gt;
+&lt;input id="email" aria-describedby="email-help"&gt;
+&lt;p id="email-help"&gt;Bitte eine gültige E-Mail-Adresse eingeben.&lt;/p&gt;</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Fehler sind auch ohne Farbwahrnehmung verständlich.</p>
+</details><details class="solution" id="t5-s2">
+  <summary>Schwer: CSS-Architektur mit Komponenten und Modifiern refactoren</summary>
+  <p><strong>Ziel:</strong> Das Akkordeon-CSS wird in wiederverwendbare Komponentenklassen und Modifier aufgeteilt.</p>
+  <ul><li>Komponentenklassen sind stabiler als tiefe Strukturselektoren.</li><li>Modifier beschreiben Varianten, ohne neue komplette Komponente zu bauen.</li><li>Wartbarkeit steigt, wenn Selektoren flach und sprechend sind.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>.btn { padding:.75rem 1rem; border-radius:.5rem; }
+.btn--primary { background:var(--brand); color:#fff; }
+.btn--secondary { background:var(--soft); color:var(--brand); }</code></pre>
+  <p class="box"><strong>Prüfung:</strong> CSS ist komponentenorientiert und weniger abhängig von starker Verschachtelung.</p>
+</details><details class="solution" id="t5-s3">
+  <summary>Schwer: @font-face lokal einbinden und Performance reflektieren</summary>
+  <p><strong>Ziel:</strong> Ein lokaler Webfont wird technisch korrekt vorbereitet und mit Fallbacks abgesichert.</p>
+  <ul><li>`font-display:swap` verhindert unsichtbaren Text während des Ladens.</li><li>Webfonts erhöhen Gestaltungsmöglichkeiten, können aber Ladezeit verursachen.</li><li>Lizenz und Dateigröße müssen in echten Projekten beachtet werden.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>@font-face {
+  font-family: "CourseFont";
+  src: url("fonts/coursefont.woff2") format("woff2");
+  font-display: swap;
+}
+body { font-family:"CourseFont", Arial, sans-serif; }</code></pre>
+  <p class="box"><strong>Prüfung:</strong> @font-face ist syntaktisch korrekt und Fallbacks sind weiterhin vorhanden.</p>
+</details><details class="solution" id="t5-s4">
+  <summary>Schwer: Abschluss-Checkliste für Codequalität erstellen</summary>
+  <p><strong>Ziel:</strong> Die Teilnehmenden prüfen das gesamte Akkordeon-Projekt auf Struktur, Bedienbarkeit, Responsiveness und CSS-Wartbarkeit.</p>
+  <ul><li>Eine Abschlussabnahme bündelt fachliche Qualität.</li><li>Kriterien müssen überprüfbar formuliert sein.</li><li>Nachbesserungen sollten nicht nur optisch, sondern technisch begründet sein.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code>HTML: eindeutige IDs, sinnvolle Semantik
+CSS: keine unnötige Dopplung, klare Struktur
+Responsive: kein horizontaler Scroll
+Bedienung: Fokus sichtbar</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Abschlusscheck ist nachvollziehbar und führt zu konkreten Verbesserungen.</p>
+</details><details class="solution" id="t5-s5">
+  <summary>Schwer: Finales Akkordeon als Dozenten-Demo vorbereiten</summary>
+  <p><strong>Ziel:</strong> Das fertige Akkordeon wird so aufbereitet, dass es im Unterricht als Musterstand gezeigt werden kann.</p>
+  <ul><li>Ein Demo-Stand braucht mehr Ordnung als ein reiner Übungsstand.</li><li>README-Dateien helfen bei Übergabe und Wiederverwendung.</li><li>Dozentenkommentare erklären Stolperstellen, nicht jeden Standardbefehl.</li></ul>
+  <p><strong>Muster / Codeauszug:</strong></p>
+  <pre><code># Akkordeon Demo
+Startdatei: index.html
+Schwerpunkt: HTML-Struktur, CSS-Komponenten, Responsive Design
+Prüfung: Navigation, Fokus, mobile Ansicht</code></pre>
+  <p class="box"><strong>Prüfung:</strong> Projekt ist vorführbar, sauber strukturiert und für andere nachvollziehbar.</p>
+</details>
+</section>
+</main></body></html>

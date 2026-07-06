@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const { ensureDir, readJson, writeJson } = require('./json-store');
 const { normalizeLanguage } = require('./i18n');
+const taskPackageRegistry = require('./task-packages.json');
 
 const defaultSettings = {
   configured: false,
@@ -88,6 +89,13 @@ const defaultParticipantReleases = {
   ...Object.fromEntries(individualAssignmentReleaseKeys.map((key) => [key, false]))
 };
 
+const defaultTaskReleases = Object.fromEntries(
+  taskPackageRegistry.tasks.map((task) => [task.id, {
+    taskUnlocked: false,
+    solutionUnlocked: false
+  }])
+);
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -160,6 +168,7 @@ function createAppData(baseDir, options = {}) {
   const settingsPath = path.join(dataDir, 'settings.json');
   const historyPath = path.join(dataDir, 'history.json');
   const participantReleasesPath = path.join(dataDir, 'participant-releases.json');
+  const taskReleasesPath = path.join(dataDir, 'task-releases.json');
   const participantsPath = path.join(dataDir, 'participants.json');
   const testReportsDir = path.join(dataDir, 'testprotokolle');
 
@@ -173,6 +182,9 @@ function createAppData(baseDir, options = {}) {
     }
     if (!readJson(participantReleasesPath, null)) {
       writeJson(participantReleasesPath, defaultParticipantReleases);
+    }
+    if (!readJson(taskReleasesPath, null)) {
+      writeJson(taskReleasesPath, defaultTaskReleases);
     }
     if (!readJson(participantsPath, null)) {
       writeJson(participantsPath, []);
@@ -258,6 +270,58 @@ function createAppData(baseDir, options = {}) {
     };
     writeJson(participantReleasesPath, merged);
     return merged;
+  }
+
+  function getTaskReleases() {
+    ensureDataFiles();
+    const stored = readJson(taskReleasesPath, {});
+    return Object.fromEntries(taskPackageRegistry.tasks.map((task) => {
+      const release = stored[task.id] || {};
+      return [task.id, {
+        taskUnlocked: release.taskUnlocked === true,
+        solutionUnlocked: release.solutionUnlocked === true
+      }];
+    }));
+  }
+
+  function saveTaskRelease(taskId, releaseInput) {
+    const current = getTaskReleases();
+    if (!current[taskId]) {
+      return current;
+    }
+    current[taskId] = {
+      ...current[taskId],
+      taskUnlocked: releaseInput.taskUnlocked === undefined ? current[taskId].taskUnlocked : releaseInput.taskUnlocked === true,
+      solutionUnlocked: releaseInput.solutionUnlocked === undefined ? current[taskId].solutionUnlocked : releaseInput.solutionUnlocked === true
+    };
+    writeJson(taskReleasesPath, current);
+    return current;
+  }
+
+  function bulkUpdateTaskReleases(filterInput = {}, valuesInput = {}) {
+    const current = getTaskReleases();
+    taskPackageRegistry.tasks
+      .filter((task) => (
+        (!filterInput.project || task.project === filterInput.project)
+        && (!filterInput.category || task.category === filterInput.category)
+        && (!filterInput.packageType || task.packageType === filterInput.packageType)
+        && (!filterInput.day || task.day === Number(filterInput.day))
+        && (!filterInput.difficulty || task.difficulty === filterInput.difficulty)
+      ))
+      .forEach((task) => {
+        current[task.id] = {
+          ...current[task.id],
+          taskUnlocked: valuesInput.taskUnlocked === undefined ? current[task.id].taskUnlocked : valuesInput.taskUnlocked === true,
+          solutionUnlocked: valuesInput.solutionUnlocked === undefined ? current[task.id].solutionUnlocked : valuesInput.solutionUnlocked === true
+        };
+      });
+    writeJson(taskReleasesPath, current);
+    return current;
+  }
+
+  function resetTaskReleases() {
+    writeJson(taskReleasesPath, defaultTaskReleases);
+    return getTaskReleases();
   }
 
   function writeParticipantReleaseScript(scriptPath, releases = getParticipantReleases()) {
@@ -397,6 +461,7 @@ function createAppData(baseDir, options = {}) {
     settingsPath,
     historyPath,
     participantReleasesPath,
+    taskReleasesPath,
     participantsPath,
     testReportsDir,
     ensureDataFiles,
@@ -407,6 +472,10 @@ function createAppData(baseDir, options = {}) {
     resetHistory,
     getParticipantReleases,
     saveParticipantReleases,
+    getTaskReleases,
+    saveTaskRelease,
+    bulkUpdateTaskReleases,
+    resetTaskReleases,
     writeParticipantReleaseScript,
     listParticipants,
     saveParticipantProfile,
@@ -419,5 +488,6 @@ function createAppData(baseDir, options = {}) {
 module.exports = {
   createAppData,
   defaultSettings,
-  defaultParticipantReleases
+  defaultParticipantReleases,
+  defaultTaskReleases
 };

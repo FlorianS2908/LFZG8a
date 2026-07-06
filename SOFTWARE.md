@@ -64,6 +64,7 @@ Fuer den aktuellen Branch `codex/startview-neustruktur` bleibt im Root-Ordner nu
 | Externer Uebersetzungsdienst | Die Sprachen Deutsch, Englisch, Tuerkisch, Ukrainisch und Russisch liegen lokal in der App; keine Cloud-API oder Internetverbindung fuer die App-Uebersetzung noetig |
 | Zusaetzliches Navigationsframework | Die zentrale Dozenten-Startseite wird mit der bestehenden Electron/HTML/JS-Struktur aus dem Kurskatalog gerendert |
 | Zusaetzliche Profil- oder Report-Software | Profil, Settings und lokale Testberichte werden mit den bestehenden Electron-/Browser-Funktionen gespeichert |
+| Zusaetzliches Aufgaben-Backend | Aufgabenpakete werden lokal ueber Registry-Dateien und den bestehenden Electron-Kursserver verwaltet |
 
 ## Wartbarkeit und Modularitaet
 
@@ -76,8 +77,13 @@ Fuer die Trennung von Tagen, Projekten und Tools wird keine weitere Software ben
 | Tools und Leitfaeden | `desktop-app/app/lib/catalog/teacher-tools.js` | Toolliste, Leitfaeden und zentrale Dozentenmaterialien |
 | Teilnehmerinhalte | `desktop-app/app/lib/catalog/participant-content.js` | Teilnehmer-Tools und Teilnehmer-Projektordner |
 | App-Gruppierung | `desktop-app/app/renderer/course-content-groups.js` | Sortiert die Katalogdaten fuer die App-Ansichten |
+| Aufgabenpakete | `desktop-app/scripts/build-task-registry.js` | Erzeugt die zentrale Aufgabenregistry aus den HTML-Aufgabenpaketen |
+| Aufgabenregistry | `desktop-app/app/lib/task-packages.json` | Registry fuer Aufgaben, Loesungsreferenzen, Tage, Projekte und Schwierigkeitsgrade |
+| Aufgabenfreigaben | lokale App-Daten `task-releases.json` | Speichert, welche Aufgaben und Loesungen freigegeben sind |
 
 `desktop-app/app/lib/course-catalog.js` bleibt als stabile Schnittstelle erhalten, damit Electron-App, Tests und spaetere Erweiterungen nicht direkt von einzelnen Inhaltsdateien abhaengen.
+
+Die Aufgabenfreigaben selbst werden zur Laufzeit lokal als App-Daten gespeichert. Dafuer wird keine Datenbank und keine externe Server-Software benoetigt.
 
 ## Lokale App-Abhaengigkeiten
 

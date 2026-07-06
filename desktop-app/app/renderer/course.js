@@ -8,7 +8,32 @@ const state = {
   settings: {},
   supportedLanguages: [],
   displays: [],
-  testReports: []
+  testReports: [],
+  taskPackages: { packages: [], tasks: [] },
+  taskReleases: {},
+  taskFilters: {
+    category: '',
+    project: '',
+    packageType: '',
+    day: '',
+    difficulty: '',
+    status: '',
+    query: ''
+  },
+  taskOpenSections: new Set(['task-day-1', 'task-day-1-general', 'task-day-1-general-normal']),
+  taskClosedSections: new Set(),
+  courseOpenSections: new Set(['course-day-1', 'course-day-1-materials', 'course-day-1-tasks']),
+  courseClosedSections: new Set(),
+  breakPopup: window.LFZQ8aCourseSchedule?.createBreakPopupState?.() || {
+    activeBreakId: null,
+    dismissedBreakId: null,
+    hiddenUntilEndBreakId: null,
+    lastEndedBreakId: null
+  },
+  breakPopupTimer: null,
+  breakToastTimer: null,
+  breakPreviousFocus: null,
+  dashboardRenderId: 0
 };
 
 const releaseLabels = {
@@ -199,6 +224,19 @@ const releaseSections = [
     ]
   }
 ];
+
+function isMaterialReleaseRow(row) {
+  return !/^tag_\d{2}_(?:tasks|solutions)$/.test(row.key)
+    && !/^tag_\d{2}_task_/.test(row.key)
+    && !/^project_(?:accordion|wunderland)_tasks$/.test(row.key);
+}
+
+const materialReleaseSections = releaseSections
+  .map((section) => ({
+    ...section,
+    rows: section.rows.filter(isMaterialReleaseRow)
+  }))
+  .filter((section) => section.rows.length);
 
 const viewTitles = {
   dashboard: 'dashboardTitle',
@@ -424,6 +462,21 @@ function fileFrom(item, key = 'path') {
   return item && item[`${key}File`];
 }
 
+function taskFileInfo(task, kind) {
+  const field = kind === 'solution' ? 'solutionFileInfo' : 'taskFileInfo';
+  const source = task[field];
+  const target = kind === 'solution' ? task.solutionFile : task.taskFile;
+  if (!source || !target) {
+    return null;
+  }
+  const hash = String(target).includes('#') ? `#${String(target).split('#').slice(1).join('#')}` : '';
+  return {
+    ...source,
+    path: target,
+    url: `${source.url}${hash}`
+  };
+}
+
 function isReleased(item) {
   return !item.releaseKey || state.releases[item.releaseKey] === true;
 }
@@ -567,13 +620,768 @@ function appendSectionTitle(panel, title, description) {
   panel.appendChild(sectionTitle);
 }
 
-async function renderDashboard() {
-  const panel = byData('[data-panel="dashboard"]');
-  clearElement(panel);
+function dayNumber(day) {
+  return Number(String(day.releaseKey || day.id || '').match(/\d+/)?.[0] || 0);
+}
 
-  await renderParticipants(panel);
-  renderReleases(panel);
-  contentGroups.getTeacherSupportItems(state.catalog).forEach((item) => panel.appendChild(createCard(item)));
+function releaseKeyForDay(day, suffix) {
+  return `${day.releaseKey}_${suffix}`;
+}
+
+function createCourseDetails(id, className, defaultOpen = false) {
+  const details = createElement('details', className);
+  details.dataset.courseSectionId = id;
+  details.open = state.courseOpenSections.has(id) || (defaultOpen && !state.courseClosedSections.has(id));
+  details.addEventListener('toggle', () => {
+    if (details.open) {
+      state.courseOpenSections.add(id);
+      state.courseClosedSections.delete(id);
+    } else {
+      state.courseOpenSections.delete(id);
+      state.courseClosedSections.add(id);
+    }
+  });
+  return details;
+}
+
+function appendCourseSummary(details, title, meta) {
+  const summary = createElement('summary', 'course-section-summary');
+  summary.appendChild(createElement('span', '', title));
+  if (meta) {
+    summary.appendChild(createElement('small', '', meta));
+  }
+  details.appendChild(summary);
+}
+
+async function saveParticipantReleaseKey(key, enabled) {
+  state.releases = await window.lfzq8aDesktop.saveParticipantReleases({ [key]: enabled });
+  await renderDashboard();
+}
+
+function createReleaseToggle(label, key) {
+  return createTaskToggle(label, state.releases[key] === true, (checked) => saveParticipantReleaseKey(key, checked));
+}
+
+function createMaterialReleaseCard(title, kind, fileInfo, releaseKey) {
+  const card = createElement('article', 'material-release-card');
+  card.appendChild(createElement('span', 'pill', kind));
+  card.appendChild(createElement('h4', '', title));
+  card.appendChild(createElement('p', 'muted', releaseKey ? 'Freigabe direkt in diesem Tagesbereich.' : 'Nur fuer die Dozentenansicht.'));
+
+  const actions = createElement('div', 'task-card-actions');
+  actions.appendChild(taskActionButton('In App oeffnen', () => loadContent(title, kind, fileInfo)));
+  if (fileInfo?.url) {
+    actions.appendChild(taskActionButton('Fenster', () => window.lfzq8aDesktop.openTeacherInfo(fileInfo.url)));
+  }
+  if (releaseKey) {
+    actions.appendChild(createReleaseToggle('Teilnehmer', releaseKey));
+  }
+  card.appendChild(actions);
+  return card;
+}
+
+function renderDayMaterials(dayDetails, day) {
+  const dayId = dayNumber(day);
+  const section = createCourseDetails(`course-day-${dayId}-materials`, 'course-subsection', dayId === 1);
+  appendCourseSummary(section, 'Materialien', 'Web, Uebersicht, Quizpools');
+  const list = createElement('div', 'course-card-list');
+  [
+    ['Webvariante', 'Webvariante', 'web', releaseKeyForDay(day, 'web')],
+    ['Aufgabenuebersicht', 'Aufgabenuebersicht', 'tasks', releaseKeyForDay(day, 'tasks')],
+    ['Quiz 25', 'Quiz', 'quiz25', releaseKeyForDay(day, 'quiz25')],
+    ['Quiz 50', 'Quiz', 'quiz50', releaseKeyForDay(day, 'quiz50')]
+  ].forEach(([title, kind, fileKey, releaseKey]) => {
+    list.appendChild(createMaterialReleaseCard(`${releaseLabels[day.releaseKey]} - ${title}`, kind, fileFrom(day, fileKey), releaseKey));
+  });
+  section.appendChild(list);
+  dayDetails.appendChild(section);
+}
+
+function createSolutionReleaseCard(task) {
+  const release = taskRelease(task);
+  const card = createElement('article', 'solution-release-card');
+  card.dataset.taskId = task.id;
+  card.appendChild(createElement('span', 'task-id', task.id));
+  card.appendChild(createElement('h4', '', task.title));
+  card.appendChild(createElement('p', 'task-card-meta', `Tag ${task.day} Â· ${taskAreaLabel(task)} Â· ${taskDifficultyLabel(task)}`));
+  const actions = createElement('div', 'task-card-actions');
+  if (task.solutionFile) {
+    actions.appendChild(taskActionButton('Loesung ansehen', () => loadContent(`Loesung: ${task.title}`, 'Loesung', taskFileInfo(task, 'solution'))));
+  }
+  actions.appendChild(createTaskToggle('Loesung', release.solutionUnlocked, (checked) => saveSingleTaskRelease(task.id, { solutionUnlocked: checked })));
+  card.appendChild(actions);
+  return card;
+}
+
+function createSolutionList(tasks) {
+  const list = createElement('div', 'task-release-list');
+  if (!tasks.length) {
+    list.appendChild(createElement('p', 'muted task-empty', 'Keine Loesungen in diesem Bereich.'));
+    return list;
+  }
+  tasks.forEach((task) => list.appendChild(createSolutionReleaseCard(task)));
+  return list;
+}
+
+function renderSolutionDifficultyGroup(target, day, label, difficulty, dayTasks) {
+  const id = `solution-day-${day}-general-${difficulty}`;
+  const filter = { day, category: 'allgemein', difficulty };
+  const tasks = dayTasks.filter((task) => taskMatchesGroup(task, { filter }));
+  const details = createTaskDetails(id, 'task-subgroup', day === 1 && difficulty === 'normal');
+  appendSummary(details, label, tasks.length);
+  details.appendChild(createGroupActions({ ...filter }));
+  details.appendChild(createSolutionList(tasks));
+  target.appendChild(details);
+}
+
+function renderProjectSolutionGroup(target, day, project, dayTasks) {
+  const label = project === 'akkordeon' ? 'Projektloesungen Akkordeon' : 'Projektloesungen Wunderland';
+  const id = `solution-day-${day}-project-${project}`;
+  const filter = { day, category: 'projekt', project };
+  const tasks = dayTasks.filter((task) => taskMatchesGroup(task, { filter }));
+  const details = createTaskDetails(id, 'task-area-group');
+  appendSummary(details, label, tasks.length);
+  details.appendChild(createGroupActions(filter));
+  details.appendChild(createSolutionList(tasks));
+  target.appendChild(details);
+}
+
+function renderDaySolutions(dayDetails, day, dayTasks) {
+  const dayId = dayNumber(day);
+  const section = createCourseDetails(`course-day-${dayId}-solutions`, 'course-subsection');
+  appendCourseSummary(section, 'Loesungen', `${dayTasks.length} Eintraege`);
+  const actions = createElement('div', 'task-group-actions task-day-actions');
+  actions.appendChild(createReleaseToggle('Loesungsuebersicht Teilnehmer', releaseKeyForDay(day, 'solutions')));
+  actions.appendChild(createCompactAction('Alle Loesungen freigeben', () => bulkUpdateByFilter({ day: dayId }, { solutionUnlocked: true })));
+  actions.appendChild(createCompactAction('Alle Loesungen sperren', () => bulkUpdateByFilter({ day: dayId }, { solutionUnlocked: false }), true));
+  section.appendChild(actions);
+
+  const overview = createElement('div', 'course-card-list');
+  overview.appendChild(createMaterialReleaseCard(`${releaseLabels[day.releaseKey]} - Loesungsuebersicht`, 'Loesungen', fileFrom(day, 'solutions'), releaseKeyForDay(day, 'solutions')));
+  section.appendChild(overview);
+
+  const generalDetails = createTaskDetails(`solution-day-${dayId}-general`, 'task-area-group', dayId === 1);
+  appendSummary(generalDetails, 'Allgemeine Loesungen', dayTasks.filter((task) => task.category === 'allgemein').length);
+  generalDetails.appendChild(createGroupActions({ day: dayId, category: 'allgemein' }));
+  renderSolutionDifficultyGroup(generalDetails, dayId, 'normal', 'normal', dayTasks);
+  renderSolutionDifficultyGroup(generalDetails, dayId, 'schwer', 'schwer', dayTasks);
+  section.appendChild(generalDetails);
+
+  renderProjectSolutionGroup(section, dayId, 'akkordeon', dayTasks);
+  renderProjectSolutionGroup(section, dayId, 'wunderland', dayTasks);
+  dayDetails.appendChild(section);
+}
+
+function renderDayTasks(dayDetails, day, dayTasks) {
+  const dayId = dayNumber(day);
+  const section = createCourseDetails(`course-day-${dayId}-tasks`, 'course-subsection', dayId === 1);
+  appendCourseSummary(section, 'Aufgaben', `${dayTasks.length} Aufgaben`);
+
+  const dayActions = createElement('div', 'task-group-actions task-day-actions');
+  dayActions.appendChild(createTaskToggle('Tages-Aufgabenbereich', state.releases[taskDayReleaseKey(dayId)] === true, (checked) => saveDayTaskAreaRelease(dayId, checked)));
+  dayActions.appendChild(createCompactAction('Alle Aufgaben freigeben', () => bulkUpdateByFilter({ day: dayId }, { taskUnlocked: true })));
+  dayActions.appendChild(createCompactAction('Alle Aufgaben sperren', () => bulkUpdateByFilter({ day: dayId }, { taskUnlocked: false }), true));
+  dayActions.appendChild(createCompactAction('Alle Loesungen sperren', () => bulkUpdateByFilter({ day: dayId }, { solutionUnlocked: false }), true));
+  section.appendChild(dayActions);
+
+  const generalDetails = createTaskDetails(`task-day-${dayId}-general`, 'task-area-group', dayId === 1);
+  appendSummary(generalDetails, 'Allgemeine Aufgaben', dayTasks.filter((task) => task.category === 'allgemein').length);
+  generalDetails.appendChild(createGroupActions({ day: dayId, category: 'allgemein' }));
+  renderTaskDifficultyGroup(generalDetails, dayId, 'normal', 'normal', dayTasks);
+  renderTaskDifficultyGroup(generalDetails, dayId, 'schwer', 'schwer', dayTasks);
+  section.appendChild(generalDetails);
+
+  renderProjectTaskGroup(section, dayId, 'akkordeon', dayTasks);
+  renderProjectTaskGroup(section, dayId, 'wunderland', dayTasks);
+  dayDetails.appendChild(section);
+}
+
+function renderCourseDay(outline, day) {
+  const dayId = dayNumber(day);
+  const dayTasks = state.taskPackages.tasks.filter((task) => task.day === dayId);
+  const details = createCourseDetails(`course-day-${dayId}`, 'course-day', dayId === 1);
+  appendCourseSummary(details, releaseLabels[day.releaseKey] || `Tag ${dayId}`, day.theme);
+  details.appendChild(createElement('p', 'course-day-intro', day.title));
+  renderDayMaterials(details, day);
+  renderDayTasks(details, day, dayTasks);
+  renderDaySolutions(details, day, dayTasks);
+  outline.appendChild(details);
+}
+
+async function renderCourseTools(outline) {
+  const details = createCourseDetails('course-tools', 'course-tools');
+  appendCourseSummary(details, 'Tools', 'Kursserver, Settings, Testberichte und Werkzeuge');
+  const toolsBody = createElement('div', 'tools-section');
+  const participantsSlot = createElement('div', 'participant-status-slot');
+  participantsSlot.dataset.participantStatusSlot = '';
+  toolsBody.appendChild(participantsSlot);
+  await renderParticipants(participantsSlot);
+
+  const systemCard = createElement('article', 'course-card');
+  systemCard.dataset.accent = 'blue';
+  systemCard.appendChild(createElement('span', 'pill', 'App'));
+  systemCard.appendChild(createElement('h3', '', 'Dozenten-Settings'));
+  systemCard.appendChild(createElement('p', '', 'Monitorwahl, Testbericht und lokale Kursdaten.'));
+  const systemActions = createElement('div', 'button-row');
+  [
+    ['Settings oeffnen', 'openSettings'],
+    ['Testbericht erstellen', 'createReport'],
+    ['Berichtsordner', 'openReportDir'],
+    ['Kursdatenordner', 'openDataDir']
+  ].forEach(([label, action]) => {
+    const button = createElement('button', 'card-button', label);
+    button.type = 'button';
+    button.dataset[action] = '';
+    systemActions.appendChild(button);
+  });
+  systemCard.appendChild(systemActions);
+  toolsBody.appendChild(systemCard);
+
+  const toolsGrid = createElement('div', 'tools-grid');
+  const toolItems = [
+    ...contentGroups.getTeacherTools(state.catalog),
+    ...state.catalog.teacher.quickLinks.filter((item) => item.kind !== 'Tool'),
+    ...state.catalog.teacher.guides
+  ];
+  toolItems.forEach((item) => toolsGrid.appendChild(createCard(item, { showReleaseState: Boolean(item.releaseKey) })));
+  toolsBody.appendChild(toolsGrid);
+  details.appendChild(toolsBody);
+  outline.appendChild(details);
+}
+
+async function renderDashboard() {
+  const renderId = ++state.dashboardRenderId;
+  const panel = byData('[data-panel="dashboard"]');
+
+  const outline = createElement('div', 'course-outline');
+  contentGroups.getTeacherDays(state.catalog).forEach((day) => renderCourseDay(outline, day));
+  await renderCourseTools(outline);
+  if (renderId !== state.dashboardRenderId) {
+    return;
+  }
+  clearElement(panel);
+  panel.appendChild(outline);
+}
+
+async function refreshParticipantStatusCard() {
+  const slot = byData('[data-participant-status-slot]');
+  if (!slot) {
+    return;
+  }
+  await renderParticipants(slot);
+}
+
+function formatBreakRange(breakData) {
+  return `${breakData.start} - ${breakData.end} Uhr`;
+}
+
+function formatRemaining(seconds) {
+  const safeSeconds = Math.max(0, seconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const restSeconds = safeSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(restSeconds).padStart(2, '0')}`;
+}
+
+function remainingSecondsUntil(timeText, now = new Date()) {
+  const [hours, minutes] = String(timeText).split(':').map(Number);
+  const endDate = new Date(now);
+  endDate.setHours(hours, minutes, 0, 0);
+  return Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / 1000));
+}
+
+function isBreakOverlayAllowed() {
+  const settingsDialog = byData('[data-settings-dialog]');
+  return state.activeView === 'dashboard' && (!settingsDialog || settingsDialog.hidden);
+}
+
+function updateBreakOverlayContent(breakData, now = new Date()) {
+  byData('[data-break-title]').textContent = 'Achtung Pause';
+  byData('[data-break-label]').textContent = breakData.label;
+  byData('[data-break-time]').textContent = formatBreakRange(breakData);
+  byData('[data-break-next]').textContent = `Weiter geht es um ${breakData.end} Uhr.`;
+  byData('[data-break-remaining]').textContent = `Restzeit: ${formatRemaining(remainingSecondsUntil(breakData.end, now))}`;
+}
+
+function showBreakOverlay(breakData, now = new Date()) {
+  const overlay = byData('[data-break-overlay]');
+  const card = byData('[data-break-card]');
+  updateBreakOverlayContent(breakData, now);
+  if (!overlay || !card || !overlay.hidden) {
+    return;
+  }
+  state.breakPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  overlay.hidden = false;
+  window.requestAnimationFrame(() => card.focus());
+}
+
+function hideBreakOverlay(restoreFocus = true) {
+  const overlay = byData('[data-break-overlay]');
+  if (!overlay || overlay.hidden) {
+    return;
+  }
+  overlay.hidden = true;
+  if (restoreFocus && state.breakPreviousFocus?.focus) {
+    state.breakPreviousFocus.focus();
+  }
+  state.breakPreviousFocus = null;
+}
+
+function showBreakEndedToast() {
+  const toast = byData('[data-break-toast]');
+  if (!toast) {
+    return;
+  }
+  toast.hidden = false;
+  window.clearTimeout(state.breakToastTimer);
+  state.breakToastTimer = window.setTimeout(() => {
+    toast.hidden = true;
+  }, 4200);
+}
+
+function closeBreakPopup(mode = 'close') {
+  if (!state.breakPopup.activeBreakId || !window.LFZQ8aCourseSchedule?.dismissBreakPopup) {
+    hideBreakOverlay();
+    return;
+  }
+  state.breakPopup = window.LFZQ8aCourseSchedule.dismissBreakPopup(
+    state.breakPopup,
+    state.breakPopup.activeBreakId,
+    mode
+  );
+  hideBreakOverlay();
+}
+
+function tickBreakPopup(now = new Date()) {
+  const schedule = window.LFZQ8aCourseSchedule;
+  if (!schedule?.updateBreakPopupState) {
+    return;
+  }
+  const result = schedule.updateBreakPopupState(state.breakPopup, now);
+  state.breakPopup = result.state;
+
+  if (result.endedBreak) {
+    hideBreakOverlay(false);
+    showBreakEndedToast();
+    return;
+  }
+
+  if (!result.activeBreak || !result.shouldShow || !isBreakOverlayAllowed()) {
+    hideBreakOverlay(false);
+    return;
+  }
+
+  showBreakOverlay(result.activeBreak, now);
+  updateBreakOverlayContent(result.activeBreak, now);
+}
+
+function focusableBreakElements() {
+  return [...byData('[data-break-overlay]')?.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])') || []]
+    .filter((element) => !element.disabled && element.offsetParent !== null);
+}
+
+function trapBreakOverlayFocus(event) {
+  const overlay = byData('[data-break-overlay]');
+  if (!overlay || overlay.hidden) {
+    return;
+  }
+  if (event.key === 'Escape') {
+    closeBreakPopup('close');
+    event.preventDefault();
+    return;
+  }
+  if (event.key !== 'Tab') {
+    return;
+  }
+  const focusable = focusableBreakElements();
+  if (!focusable.length) {
+    byData('[data-break-card]')?.focus();
+    event.preventDefault();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    last.focus();
+    event.preventDefault();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    first.focus();
+    event.preventDefault();
+  }
+}
+
+function initBreakPopup() {
+  tickBreakPopup();
+  window.clearInterval(state.breakPopupTimer);
+  state.breakPopupTimer = window.setInterval(() => tickBreakPopup(), 1000);
+  document.addEventListener('keydown', trapBreakOverlayFocus);
+}
+
+function taskRelease(task) {
+  return {
+    taskUnlocked: task.taskUnlocked === true || state.taskReleases[task.id]?.taskUnlocked === true,
+    solutionUnlocked: task.solutionUnlocked === true || state.taskReleases[task.id]?.solutionUnlocked === true
+  };
+}
+
+function taskMatchesFilters(task) {
+  const release = taskRelease(task);
+  const filters = state.taskFilters;
+  const query = filters.query.trim().toLowerCase();
+  const statusMatches = !filters.status
+    || (filters.status === 'task-unlocked' && release.taskUnlocked)
+    || (filters.status === 'task-locked' && !release.taskUnlocked)
+    || (filters.status === 'solution-unlocked' && release.solutionUnlocked)
+    || (filters.status === 'solution-locked' && !release.solutionUnlocked);
+  return (!filters.project || task.project === filters.project)
+    && (!filters.category || task.category === filters.category)
+    && (!filters.packageType || task.packageType === filters.packageType)
+    && (!filters.day || task.day === Number(filters.day))
+    && (!filters.difficulty || task.difficulty === filters.difficulty)
+    && statusMatches
+    && (!query || `${task.id} ${task.number} ${task.title} ${task.shortInfo || ''} ${(task.tags || []).join(' ')} ${task.packageLabel}`.toLowerCase().includes(query));
+}
+
+function createFilterSelect(label, key, options) {
+  const wrapper = createElement('label', 'task-filter');
+  wrapper.appendChild(createElement('span', '', label));
+  const select = document.createElement('select');
+  select.dataset.taskFilter = key;
+  options.forEach((optionData) => {
+    const option = document.createElement('option');
+    option.value = optionData.value;
+    option.textContent = optionData.label;
+    option.selected = optionData.value === state.taskFilters[key];
+    select.appendChild(option);
+  });
+  wrapper.appendChild(select);
+  return wrapper;
+}
+
+function renderPackageSummary(card) {
+  const grid = createElement('div', 'task-package-grid');
+  state.taskPackages.packages.forEach((pkg) => {
+    const tasks = state.taskPackages.tasks.filter((task) => (
+      task.category === pkg.category
+      && (pkg.project === undefined || pkg.project === null || task.project === pkg.project)
+    ));
+    const taskCount = tasks.filter((task) => taskRelease(task).taskUnlocked).length;
+    const solutionCount = tasks.filter((task) => taskRelease(task).solutionUnlocked).length;
+    const item = createElement('div', 'task-package-card');
+    item.appendChild(createElement('strong', '', pkg.label));
+    item.appendChild(createElement('span', '', `${taskCount} von ${tasks.length} Aufgaben freigegeben`));
+    item.appendChild(createElement('span', '', `${solutionCount} von ${tasks.length} Loesungen freigegeben`));
+    grid.appendChild(item);
+  });
+  card.appendChild(grid);
+}
+
+function taskDayReleaseKey(day) {
+  return `tag_${String(day).padStart(2, '0')}_tasks`;
+}
+
+function taskAreaLabel(task) {
+  if (task.category === 'allgemein') {
+    return 'Allgemeine Aufgaben';
+  }
+  return task.project === 'akkordeon' ? 'Projektaufgaben Akkordeon' : 'Projektaufgaben Wunderland';
+}
+
+function taskDifficultyLabel(task) {
+  return task.category === 'allgemein' ? task.difficulty : 'Projekt';
+}
+
+function createTaskDetails(id, className, defaultOpen = false) {
+  const details = createElement('details', className);
+  details.dataset.taskGroupId = id;
+  details.open = state.taskOpenSections.has(id) || (defaultOpen && !state.taskClosedSections.has(id));
+  details.addEventListener('toggle', () => {
+    if (details.open) {
+      state.taskOpenSections.add(id);
+      state.taskClosedSections.delete(id);
+    } else {
+      state.taskOpenSections.delete(id);
+      state.taskClosedSections.add(id);
+    }
+  });
+  return details;
+}
+
+function appendSummary(details, title, count, extraClass = '') {
+  const summary = createElement('summary', `task-group-summary ${extraClass}`.trim());
+  summary.appendChild(createElement('span', '', title));
+  summary.appendChild(createElement('small', '', `${count} Aufgaben`));
+  details.appendChild(summary);
+}
+
+function createCompactAction(label, handler, danger = false) {
+  const button = createElement('button', `task-compact-button${danger ? ' danger-button' : ''}`, label);
+  button.type = 'button';
+  button.addEventListener('click', handler);
+  return button;
+}
+
+function createGroupActions(filter) {
+  const actions = createElement('div', 'task-group-actions');
+  [
+    ['Aufgaben freigeben', { taskUnlocked: true }],
+    ['Aufgaben sperren', { taskUnlocked: false }, true],
+    ['Loesungen freigeben', { solutionUnlocked: true }],
+    ['Loesungen sperren', { solutionUnlocked: false }, true]
+  ].forEach(([label, values, danger]) => {
+    actions.appendChild(createCompactAction(label, () => bulkUpdateByFilter(filter, values), danger));
+  });
+  return actions;
+}
+
+function createTaskToggle(label, checked, handler) {
+  const wrapper = createElement('label', 'task-toggle');
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = checked;
+  input.setAttribute('aria-label', `${label} ${checked ? 'sperren' : 'freigeben'}`);
+  input.addEventListener('change', () => handler(input.checked));
+  wrapper.appendChild(createElement('span', 'task-toggle-label', label));
+  wrapper.appendChild(input);
+  wrapper.appendChild(createElement('span', `status-badge ${checked ? 'is-open' : 'is-locked'}`, checked ? 'frei' : 'gesperrt'));
+  return wrapper;
+}
+
+function createTaskReleaseCard(task) {
+  const release = taskRelease(task);
+  const card = createElement('article', 'task-release-card');
+  card.dataset.taskId = task.id;
+  card.appendChild(createElement('span', 'task-id', task.id));
+  card.appendChild(createElement('h4', '', task.title));
+  card.appendChild(createElement('p', 'task-short-info', task.shortInfo || 'Tagesaufgabe aus dem bestehenden Aufgabenpaket.'));
+  card.appendChild(createElement('p', 'task-card-meta', `Tag ${task.day} · ${taskAreaLabel(task)} · ${taskDifficultyLabel(task)} · ca. ${task.estimatedMinutes} Min.`));
+  card.appendChild(createElement('p', 'task-card-tags', `Tags: ${(task.tags || []).join(', ')}`));
+
+  const actions = createElement('div', 'task-card-actions');
+  actions.appendChild(taskActionButton('Aufgabe ansehen', () => loadContent(task.title, 'Aufgabe', taskFileInfo(task, 'task'))));
+  if (task.solutionFile) {
+    actions.appendChild(taskActionButton('Loesung ansehen', () => loadContent(`Loesung: ${task.title}`, 'Loesung', taskFileInfo(task, 'solution'))));
+  }
+  actions.appendChild(createTaskToggle('Aufgabe', release.taskUnlocked, (checked) => saveSingleTaskRelease(task.id, { taskUnlocked: checked })));
+  actions.appendChild(createTaskToggle('Loesung', release.solutionUnlocked, (checked) => saveSingleTaskRelease(task.id, { solutionUnlocked: checked })));
+  card.appendChild(actions);
+  return card;
+}
+
+function taskMatchesGroup(task, group) {
+  return Object.entries(group.filter).every(([key, value]) => task[key] === value);
+}
+
+function createTaskList(tasks) {
+  const list = createElement('div', 'task-release-list');
+  if (!tasks.length) {
+    list.appendChild(createElement('p', 'muted task-empty', 'Keine Aufgaben passend zum Filter.'));
+    return list;
+  }
+  tasks.forEach((task) => list.appendChild(createTaskReleaseCard(task)));
+  return list;
+}
+
+function renderTaskDifficultyGroup(dayDetails, day, label, difficulty, visibleTasks) {
+  const id = `task-day-${day}-general-${difficulty}`;
+  const filter = { day, category: 'allgemein', difficulty };
+  const tasks = visibleTasks.filter((task) => taskMatchesGroup(task, { filter }));
+  const details = createTaskDetails(id, 'task-subgroup', day === 1 && difficulty === 'normal');
+  appendSummary(details, label, tasks.length);
+  details.appendChild(createGroupActions(filter));
+  details.appendChild(createTaskList(tasks));
+  dayDetails.appendChild(details);
+}
+
+function renderProjectTaskGroup(dayDetails, day, project, visibleTasks) {
+  const projectLabel = project === 'akkordeon' ? 'Projektaufgaben Akkordeon' : 'Projektaufgaben Wunderland';
+  const id = `task-day-${day}-project-${project}`;
+  const filter = { day, category: 'projekt', project };
+  const tasks = visibleTasks.filter((task) => taskMatchesGroup(task, { filter }));
+  const details = createTaskDetails(id, 'task-area-group');
+  appendSummary(details, projectLabel, tasks.length);
+  details.appendChild(createGroupActions(filter));
+  details.appendChild(createTaskList(tasks));
+  dayDetails.appendChild(details);
+}
+
+function renderTaskDayGroup(target, day, visibleTasks) {
+  const dayTasks = visibleTasks.filter((task) => task.day === day);
+  const dayDetails = createTaskDetails(`task-day-${day}`, 'task-day-group', day === 1);
+  const summary = createElement('summary', 'task-day-summary');
+  summary.appendChild(createElement('span', '', `Tag ${day}`));
+  summary.appendChild(createElement('small', '', `${dayTasks.length} Aufgaben sichtbar`));
+  dayDetails.appendChild(summary);
+
+  const dayActions = createElement('div', 'task-group-actions task-day-actions');
+  const releaseKey = taskDayReleaseKey(day);
+  dayActions.appendChild(createTaskToggle('Tages-Aufgabenbereich', state.releases[releaseKey] === true, (checked) => saveDayTaskAreaRelease(day, checked)));
+  [
+    ['Alle Aufgaben freigeben', { taskUnlocked: true }],
+    ['Alle Aufgaben sperren', { taskUnlocked: false }, true],
+    ['Alle Loesungen freigeben', { solutionUnlocked: true }],
+    ['Alle Loesungen sperren', { solutionUnlocked: false }, true]
+  ].forEach(([label, values, danger]) => {
+    dayActions.appendChild(createCompactAction(label, () => bulkUpdateByFilter({ day }, values), danger));
+  });
+  dayDetails.appendChild(dayActions);
+
+  const generalDetails = createTaskDetails(`task-day-${day}-general`, 'task-area-group', day === 1);
+  appendSummary(generalDetails, 'Allgemeine Aufgaben', dayTasks.filter((task) => task.category === 'allgemein').length);
+  generalDetails.appendChild(createGroupActions({ day, category: 'allgemein' }));
+  renderTaskDifficultyGroup(generalDetails, day, 'normal', 'normal', dayTasks);
+  renderTaskDifficultyGroup(generalDetails, day, 'schwer', 'schwer', dayTasks);
+  dayDetails.appendChild(generalDetails);
+
+  renderProjectTaskGroup(dayDetails, day, 'akkordeon', dayTasks);
+  renderProjectTaskGroup(dayDetails, day, 'wunderland', dayTasks);
+  target.appendChild(dayDetails);
+}
+
+function renderTaskReleaseManager(targetPanel) {
+  const card = createElement('article', 'wide-card task-manager');
+  card.dataset.dashboardSection = 'tasks';
+  card.appendChild(createElement('span', 'pill', 'Aufgabenverwaltung'));
+  card.appendChild(createElement('h2', '', 'Aufgaben nach Tagen freigeben'));
+  card.appendChild(createElement('p', '', 'Die neue Aufgabenstruktur ist pro Tag in allgemeine Aufgaben sowie Projektaufgaben Akkordeon und Wunderland gegliedert. Aufgaben und Loesungen bleiben getrennt steuerbar.'));
+  renderPackageSummary(card);
+
+  const filters = createElement('div', 'task-filters');
+  filters.appendChild(createFilterSelect('Bereich', 'category', [
+    { value: '', label: 'Alle Bereiche' },
+    { value: 'allgemein', label: 'Allgemein' },
+    { value: 'projekt', label: 'Projekt' }
+  ]));
+  filters.appendChild(createFilterSelect('Projekt', 'project', [
+    { value: '', label: 'Alle / ohne Projekt' },
+    { value: 'akkordeon', label: 'Akkordeon' },
+    { value: 'wunderland', label: 'Wunderland' }
+  ]));
+  filters.appendChild(createFilterSelect('Pakettyp', 'packageType', [
+    { value: '', label: 'Alle Pakete' },
+    { value: 'allgemein', label: 'Allgemeine Aufgaben' },
+    { value: 'hauptaufgaben', label: 'Hauptaufgaben Tag 1-5' },
+    { value: 'zusatzaufgaben', label: 'Zusatzaufgaben Tag 1-5' },
+    { value: 'projekt', label: 'Projektpaket' }
+  ]));
+  filters.appendChild(createFilterSelect('Tag', 'day', [
+    { value: '', label: 'Alle Tage' },
+    ...[1, 2, 3, 4, 5].map((day) => ({ value: String(day), label: `Tag ${day}` }))
+  ]));
+  filters.appendChild(createFilterSelect('Schwierigkeit', 'difficulty', [
+    { value: '', label: 'Alle Stufen' },
+    { value: 'normal', label: 'Normal' },
+    { value: 'schwer', label: 'Schwer' }
+  ]));
+  filters.appendChild(createFilterSelect('Status', 'status', [
+    { value: '', label: 'Alle Status' },
+    { value: 'task-unlocked', label: 'Aufgabe freigegeben' },
+    { value: 'task-locked', label: 'Aufgabe gesperrt' },
+    { value: 'solution-unlocked', label: 'Loesung freigegeben' },
+    { value: 'solution-locked', label: 'Loesung gesperrt' }
+  ]));
+  const queryLabel = createElement('label', 'task-filter task-search');
+  queryLabel.appendChild(createElement('span', '', 'Suche'));
+  const query = document.createElement('input');
+  query.type = 'search';
+  query.placeholder = 'Aufgabentitel oder Nummer';
+  query.value = state.taskFilters.query;
+  query.dataset.taskFilter = 'query';
+  queryLabel.appendChild(query);
+  filters.appendChild(queryLabel);
+  card.appendChild(filters);
+
+  const bulkActions = createElement('div', 'button-row task-bulk-actions compact-only');
+  [
+    ['Gefilterte Aufgaben freigeben', { taskUnlocked: true }],
+    ['Gefilterte Aufgaben sperren', { taskUnlocked: false }],
+    ['Gefilterte Loesungen freigeben', { solutionUnlocked: true }],
+    ['Gefilterte Loesungen sperren', { solutionUnlocked: false }]
+  ].forEach(([label, values]) => {
+    const button = createElement('button', 'card-button', label);
+    button.type = 'button';
+    button.addEventListener('click', () => bulkUpdateVisibleTasks(values));
+    bulkActions.appendChild(button);
+  });
+  const releaseDay = createElement('button', 'card-button', 'Alle Aufgaben dieses Tages freigeben');
+  releaseDay.type = 'button';
+  releaseDay.disabled = !state.taskFilters.day;
+  releaseDay.addEventListener('click', () => bulkUpdateByFilter({ day: state.taskFilters.day }, { taskUnlocked: true }));
+  bulkActions.appendChild(releaseDay);
+  const releaseProject = createElement('button', 'card-button', 'Alle Aufgaben dieses Projekts freigeben');
+  releaseProject.type = 'button';
+  releaseProject.disabled = !state.taskFilters.project;
+  releaseProject.addEventListener('click', () => bulkUpdateByFilter({ project: state.taskFilters.project }, { taskUnlocked: true }));
+  bulkActions.appendChild(releaseProject);
+  const reset = createElement('button', 'card-button danger-button', 'Alles sperren');
+  reset.type = 'button';
+  reset.addEventListener('click', resetAllTaskReleases);
+  bulkActions.appendChild(reset);
+  card.appendChild(bulkActions);
+
+  const visibleTasks = state.taskPackages.tasks.filter(taskMatchesFilters);
+  if (!visibleTasks.length) {
+    card.appendChild(createElement('p', 'muted task-empty', 'Keine Aufgaben passend zum Filter.'));
+    targetPanel.appendChild(card);
+    return;
+  }
+  const grouped = createElement('div', 'task-group-tree');
+  [1, 2, 3, 4, 5]
+    .filter((day) => !state.taskFilters.day || Number(state.taskFilters.day) === day)
+    .forEach((day) => renderTaskDayGroup(grouped, day, visibleTasks));
+  card.appendChild(grouped);
+  targetPanel.appendChild(card);
+}
+
+function taskActionButton(label, handler) {
+  const button = createElement('button', 'small-button', label);
+  button.type = 'button';
+  button.addEventListener('click', handler);
+  return button;
+}
+
+async function refreshTaskPackages() {
+  state.taskPackages = await window.lfzq8aDesktop.getTaskPackages();
+  state.taskReleases = Object.fromEntries(state.taskPackages.tasks.map((task) => [task.id, {
+    taskUnlocked: task.taskUnlocked === true,
+    solutionUnlocked: task.solutionUnlocked === true
+  }]));
+}
+
+async function saveSingleTaskRelease(taskId, release) {
+  state.taskReleases = await window.lfzq8aDesktop.saveTaskRelease(taskId, release);
+  await refreshTaskPackages();
+  await renderDashboard();
+}
+
+async function bulkUpdateVisibleTasks(values) {
+  state.taskReleases = await window.lfzq8aDesktop.bulkUpdateTaskReleases({
+    category: state.taskFilters.category || undefined,
+    project: state.taskFilters.project || undefined,
+    packageType: state.taskFilters.packageType || undefined,
+    day: state.taskFilters.day || undefined,
+    difficulty: state.taskFilters.difficulty || undefined
+  }, values);
+  await refreshTaskPackages();
+  await renderDashboard();
+}
+
+async function bulkUpdateByFilter(filter, values) {
+  state.taskReleases = await window.lfzq8aDesktop.bulkUpdateTaskReleases(filter, values);
+  await refreshTaskPackages();
+  await renderDashboard();
+}
+
+async function saveDayTaskAreaRelease(day, enabled) {
+  state.releases = await window.lfzq8aDesktop.saveParticipantReleases({
+    [taskDayReleaseKey(day)]: enabled
+  });
+  await renderDashboard();
+}
+
+async function resetAllTaskReleases() {
+  state.taskReleases = await window.lfzq8aDesktop.resetTaskReleases();
+  await refreshTaskPackages();
+  await renderDashboard();
 }
 
 function renderDays() {
@@ -616,7 +1424,7 @@ function renderReleases(targetPanel) {
   card.appendChild(createElement('p', '', t('releasesText')));
 
   const list = createElement('div', 'release-list');
-  releaseSections.forEach((sectionData, sectionIndex) => {
+  materialReleaseSections.forEach((sectionData, sectionIndex) => {
     const section = createElement('details', 'release-section');
     section.open = sectionIndex === 0;
     const summary = createElement('summary', 'release-section-summary');
@@ -744,6 +1552,8 @@ async function loadInitialState() {
   state.supportedLanguages = courseState.supportedLanguages || [];
   state.displays = courseState.displays || [];
   state.testReports = courseState.testReports || [];
+  state.taskPackages = courseState.taskPackages || { packages: [], tasks: [] };
+  state.taskReleases = courseState.taskReleases || {};
   state.language = courseState.settings?.teacherLanguage || 'de';
   state.translations = courseState.translations || {};
   state.activeView = getInitialView();
@@ -751,7 +1561,13 @@ async function loadInitialState() {
   updateProfileEntry();
   showView(state.activeView);
   await renderAll();
+  initBreakPopup();
   window.lfzq8aDesktop.onParticipantReleasesChanged?.(handleParticipantReleasesChanged);
+  window.lfzq8aDesktop.onTaskReleasesChanged?.(async (releases) => {
+    state.taskReleases = releases || {};
+    await refreshTaskPackages();
+    await renderDashboard();
+  });
 }
 
 document.addEventListener('click', (event) => {
@@ -777,10 +1593,12 @@ document.addEventListener('click', (event) => {
 
   if (event.target.closest('[data-open-settings]')) {
     openSettingsDialog();
+    hideBreakOverlay(false);
   }
 
   if (event.target.closest('[data-close-settings]')) {
     closeSettingsDialog();
+    tickBreakPopup();
   }
 
   if (event.target.closest('[data-create-report]')) {
@@ -790,13 +1608,39 @@ document.addEventListener('click', (event) => {
   if (event.target.closest('[data-open-report-dir]')) {
     window.lfzq8aDesktop.openTestReportDir();
   }
+
+  if (event.target.closest('[data-break-close]')) {
+    closeBreakPopup('close');
+  }
+
+  if (event.target.closest('[data-break-hide]')) {
+    closeBreakPopup('hide-until-end');
+  }
+});
+
+document.addEventListener('input', (event) => {
+  const filter = event.target.closest('[data-task-filter]');
+  if (!filter) {
+    return;
+  }
+  state.taskFilters[filter.dataset.taskFilter] = filter.value;
+  renderDashboard();
+});
+
+document.addEventListener('change', (event) => {
+  const filter = event.target.closest('[data-task-filter]');
+  if (!filter) {
+    return;
+  }
+  state.taskFilters[filter.dataset.taskFilter] = filter.value;
+  renderDashboard();
 });
 
 byData('[data-settings-form]').addEventListener('submit', saveSettingsFromDialog);
 
 setInterval(() => {
   if (state.activeView === 'dashboard') {
-    renderParticipants(byData('[data-panel="dashboard"]'));
+    refreshParticipantStatusCard();
   }
 }, 5000);
 
