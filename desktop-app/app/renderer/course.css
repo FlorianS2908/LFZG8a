@@ -1102,6 +1102,38 @@ h1 {
   accent-color: var(--cyan);
 }
 
+.settings-break-list {
+  display: grid;
+  gap: 8px;
+}
+
+.settings-break-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.2fr) minmax(110px, .8fr) minmax(110px, .8fr) auto;
+  gap: 8px;
+  align-items: end;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.settings-break-row button {
+  min-width: 42px;
+}
+
+.settings-break-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.settings-break-summary.is-invalid strong,
+.settings-break-summary.is-invalid span {
+  color: var(--red);
+}
+
 .report-list {
   display: grid;
   gap: 8px;
@@ -1138,5 +1170,9 @@ h1 {
 
   .main-nav {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .settings-break-row {
+    grid-template-columns: 1fr;
   }
 }

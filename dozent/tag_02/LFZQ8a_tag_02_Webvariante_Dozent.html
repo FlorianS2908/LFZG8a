@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LFZQ8a · Tag 2 · Flexbox und Komponenten · Webvariante</title>
+<title>LFZQ8a Â· Tag 2 Â· Flexbox und Komponenten Â· Webvariante</title>
 <style>
 :root {
   --ink: #0b1b4d;
@@ -83,7 +83,7 @@ section { margin-top: 44px; }
 .tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; background: #eef9fc; color: var(--cyan-dark); font-size: 12px; text-transform: uppercase; font-weight: 900; letter-spacing: .04em; margin-bottom: 12px; }
 .flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
 .flow-step { position: relative; min-height: 118px; padding: 18px; background: white; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 12px 28px rgba(9,31,66,.08); }
-.flow-step::after { content: "›"; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); font-size: 34px; color: var(--cyan); font-weight: 900; z-index: 2; }
+.flow-step::after { content: "â€º"; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); font-size: 34px; color: var(--cyan); font-weight: 900; z-index: 2; }
 .flow-step:last-child::after { display: none; }
 .flow-step strong { display: block; font-size: 16px; margin-bottom: 6px; }
 .flow-step span { display: block; color: var(--ink-soft); font-size: 13px; font-weight: 600; }
@@ -105,7 +105,7 @@ ul.clean { padding-left: 20px; margin: 10px 0 0; color: var(--ink-soft); font-we
 .panel-headline h3 { margin: 0; font-size: 22px; } .panel-headline p { margin: 2px 0 0; color: var(--ink-soft); }
 .benefit-list, .steps-list, .note-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
 .benefit-list li, .steps-list li, .note-list li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
-.benefit-list li::before, .note-list li::before { content: "✓"; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 900; background: linear-gradient(135deg, var(--cyan), var(--blue)); }
+.benefit-list li::before, .note-list li::before { content: "âœ“"; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 900; background: linear-gradient(135deg, var(--cyan), var(--blue)); }
 .steps-list { counter-reset: step; }
 .steps-list li::before { counter-increment: step; content: counter(step); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 900; background: linear-gradient(135deg, var(--blue), #0c58a7); }
 .full-note { margin-top: 18px; border-radius: 20px; border: 2px solid #8bd0a5; background: #f6fcf7; padding: 18px 20px; display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; font-size: 18px; font-weight: 700; }
@@ -176,7 +176,6 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
 @media (max-width: 1120px) { .property-grid, .axis-note { grid-template-columns:1fr; } }
 
 </style>
-  <link rel="stylesheet" href="">
 </head>
 <body>
 <div class="app">
@@ -185,11 +184,11 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
     <div class="brand-mark">02</div>
     <div><small>LFZQ8a</small><strong>HTML & CSS<br/>Tag 2</strong></div>
   </div>
-  <a class="backlink" href="../index_dozent.html">← Bereichsübersicht</a>
+  <a class="backlink" href="../index_dozent.html">â† BereichsÃ¼bersicht</a>
   <nav aria-label="Seitennavigation">
     <a href="#top">Start</a>
     <a href="#ziele">Lernziele</a>
-    <a href="#rueckblick">Rückblick Tag 1</a>
+    <a href="#rueckblick">RÃ¼ckblick Tag 1</a>
     <a href="#prinzip">Flexbox-Prinzip</a>
     <a href="#achsen">Achsen & Ausrichtung</a>
     <a href="#container-items">Container & Items</a>
@@ -198,17 +197,17 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
     <a href="#responsive">Umbruch & Responsive</a>
     <a href="#grid">Flexbox oder Grid?</a>
     <a href="#praxis">Praxisauftrag</a>
-    <a href="#check">Übung & Check</a>
+    <a href="#check">Ãœbung & Check</a>
   </nav>
   <div class="nav-hint">
     <strong>Unterrichtsidee:</strong><br/>
-    Erst Achsen und Verteilung fachlich klären, dann Navigation und Kartenlayout praktisch umsetzen und mit DevTools prüfen.
+    Erst Achsen und Verteilung fachlich klÃ¤ren, dann Navigation und Kartenlayout praktisch umsetzen und mit DevTools prÃ¼fen.
   </div>
 </aside>
 <main>
 <header class="hero" id="top">
   <div>
-    <div class="eyebrow">LFZQ8a · Tag 2 · Flexbox und Komponenten</div>
+    <div class="eyebrow">LFZQ8a Â· Tag 2 Â· Flexbox und Komponenten</div>
     <h1>Flexbox fachlich verstehen und Komponenten sauber aufbauen</h1>
     <p>Diese Webvariante vertieft moderne CSS-Layouts mit Flexbox. Im Mittelpunkt stehen Hauptachse, Querachse, Container- und Item-Eigenschaften, Navigationsleisten, Kartenlayouts, wiederverwendbare Komponenten und fachliche Abnahmekriterien.</p>
   </div>
@@ -216,49 +215,49 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
     <div class="css-stack">
       <div class="layer l-html">Flex-Container<br/><small>ordnet Elemente</small></div>
       <div class="layer l-css">Flex-Items<br/><small>reagieren flexibel</small></div>
-      <div class="layer l-browser">Komponente<br/><small>prüfbares Ergebnis</small></div>
+      <div class="layer l-browser">Komponente<br/><small>prÃ¼fbares Ergebnis</small></div>
     </div>
   </div>
 </header>
 <section id="ziele">
   <div class="section-head">
     <h2>1. Lernziele und fachlicher Rahmen</h2>
-    <p>Tag 2 baut auf den CSS-Grundlagen auf. Die Teilnehmenden sollen Flexbox nicht nur kopieren, sondern die Wirkung der Eigenschaften gezielt begründen können.</p>
+    <p>Tag 2 baut auf den CSS-Grundlagen auf. Die Teilnehmenden sollen Flexbox nicht nur kopieren, sondern die Wirkung der Eigenschaften gezielt begrÃ¼nden kÃ¶nnen.</p>
   </div>
   <div class="kpi-grid">
-    <article class="card accent-cyan"><div class="tag">Layout</div><h3>Flexbox erklären</h3><p>Die Teilnehmenden unterscheiden Flex-Container und Flex-Items und erklären Hauptachse sowie Querachse.</p></article>
+    <article class="card accent-cyan"><div class="tag">Layout</div><h3>Flexbox erklÃ¤ren</h3><p>Die Teilnehmenden unterscheiden Flex-Container und Flex-Items und erklÃ¤ren Hauptachse sowie Querachse.</p></article>
     <article class="card accent-blue"><div class="tag">Umsetzung</div><h3>Navigation strukturieren</h3><p>Eine Navigation wird mit Logo, Linkgruppe und Aktionsbereich flexibel ausgerichtet.</p></article>
     <article class="card accent-green"><div class="tag">Komponenten</div><h3>Kartenlayout aufbauen</h3><p>Karten, Buttons und Badges werden als wiederverwendbare UI-Bausteine umgesetzt.</p></article>
-    <article class="card accent-orange"><div class="tag">Qualität</div><h3>Responsive prüfen</h3><p>Umbrüche, Abstände und flexible Breiten werden im Browser kontrolliert und fachlich bewertet.</p></article>
+    <article class="card accent-orange"><div class="tag">QualitÃ¤t</div><h3>Responsive prÃ¼fen</h3><p>UmbrÃ¼che, AbstÃ¤nde und flexible Breiten werden im Browser kontrolliert und fachlich bewertet.</p></article>
   </div>
-  <div class="full-note"><div class="star">★</div><div><strong>Merke:</strong> Flexbox ist kein Ersatz für saubere Struktur. Erst muss die HTML-Struktur stimmen, dann wird das Layout über den passenden Flex-Container gesteuert.</div></div>
+  <div class="full-note"><div class="star">â˜…</div><div><strong>Merke:</strong> Flexbox ist kein Ersatz fÃ¼r saubere Struktur. Erst muss die HTML-Struktur stimmen, dann wird das Layout Ã¼ber den passenden Flex-Container gesteuert.</div></div>
 </section>
 <section id="rueckblick">
-  <div class="section-head"><h2>2. Rückblick auf Tag 1</h2><p>Für Flexbox werden die Grundlagen aus Tag 1 wieder benötigt: Selektoren, Klassen, Box-Modell, Kaskade und DevTools.</p></div>
+  <div class="section-head"><h2>2. RÃ¼ckblick auf Tag 1</h2><p>FÃ¼r Flexbox werden die Grundlagen aus Tag 1 wieder benÃ¶tigt: Selektoren, Klassen, Box-Modell, Kaskade und DevTools.</p></div>
   <div class="three-col">
-    <article class="card accent-cyan"><div class="tag">Selektoren</div><h3>Gezielt ansprechen</h3><p>Flexbox wird meistens über Klassen auf Container angewendet, zum Beispiel auf Navigationen oder Kartenbereiche.</p></article>
-    <article class="card accent-blue"><div class="tag">Box-Modell</div><h3>Abstände kontrollieren</h3><p><code>gap</code>, <code>padding</code> und <code>margin</code> müssen fachlich unterschieden werden, damit Layouts stabil bleiben.</p></article>
-    <article class="card accent-green"><div class="tag">DevTools</div><h3>Wirkung prüfen</h3><p>Browser-DevTools zeigen aktive Flex-Container, Abstände, Ausrichtung und überschriebenen CSS-Code.</p></article>
+    <article class="card accent-cyan"><div class="tag">Selektoren</div><h3>Gezielt ansprechen</h3><p>Flexbox wird meistens Ã¼ber Klassen auf Container angewendet, zum Beispiel auf Navigationen oder Kartenbereiche.</p></article>
+    <article class="card accent-blue"><div class="tag">Box-Modell</div><h3>AbstÃ¤nde kontrollieren</h3><p><code>gap</code>, <code>padding</code> und <code>margin</code> mÃ¼ssen fachlich unterschieden werden, damit Layouts stabil bleiben.</p></article>
+    <article class="card accent-green"><div class="tag">DevTools</div><h3>Wirkung prÃ¼fen</h3><p>Browser-DevTools zeigen aktive Flex-Container, AbstÃ¤nde, Ausrichtung und Ã¼berschriebenen CSS-Code.</p></article>
   </div>
-  <div class="example-box" style="margin-top:20px;"><h3>Wiederholungscheck</h3><table class="mini-table"><tr><th>Frage</th><th>Erwartung</th></tr><tr><td>Welche Datei enthält die Struktur?</td><td>HTML enthält Elemente, Reihenfolge und Inhalte.</td></tr><tr><td>Welche Datei enthält die Darstellung?</td><td>CSS definiert Aussehen, Abstände, Layout und Zustände.</td></tr><tr><td>Warum sind Klassen wichtig?</td><td>Klassen ermöglichen wiederverwendbare Komponenten und gezielte Selektoren.</td></tr><tr><td>Wo prüfe ich aktive CSS-Regeln?</td><td>Im Browser über DevTools → Elements → Styles.</td></tr></table></div>
+  <div class="example-box" style="margin-top:20px;"><h3>Wiederholungscheck</h3><table class="mini-table"><tr><th>Frage</th><th>Erwartung</th></tr><tr><td>Welche Datei enthÃ¤lt die Struktur?</td><td>HTML enthÃ¤lt Elemente, Reihenfolge und Inhalte.</td></tr><tr><td>Welche Datei enthÃ¤lt die Darstellung?</td><td>CSS definiert Aussehen, AbstÃ¤nde, Layout und ZustÃ¤nde.</td></tr><tr><td>Warum sind Klassen wichtig?</td><td>Klassen ermÃ¶glichen wiederverwendbare Komponenten und gezielte Selektoren.</td></tr><tr><td>Wo prÃ¼fe ich aktive CSS-Regeln?</td><td>Im Browser Ã¼ber DevTools â†’ Elements â†’ Styles.</td></tr></table></div>
 </section>
 <section id="prinzip">
-  <div class="section-head"><h2>3. Grundprinzip von Flexbox</h2><p>Flexbox ist ein Layoutmodell für eine Hauptausrichtung: Elemente werden entlang einer Achse verteilt und auf der anderen Achse ausgerichtet.</p></div>
+  <div class="section-head"><h2>3. Grundprinzip von Flexbox</h2><p>Flexbox ist ein Layoutmodell fÃ¼r eine Hauptausrichtung: Elemente werden entlang einer Achse verteilt und auf der anderen Achse ausgerichtet.</p></div>
   <div class="two-col">
     <article class="example-box"><h3>Flexbox in einem Satz</h3><p>Ein Element wird durch <code>display: flex</code> zum Flex-Container. Die direkten Kind-Elemente dieses Containers werden automatisch zu Flex-Items.</p><div class="code"><div class="code-title"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>Grundmuster</div><pre>.card-row {
   display: flex;
   gap: 1rem;
 }</pre></div></article>
-    <article class="example-box"><h3>Visuelle Idee</h3><div class="flex-demo"><div class="flex-item">Item 1</div><div class="flex-item">Item 2</div><div class="flex-item">Item 3</div></div><div class="full-note"><div class="star">✓</div><div><strong>Direkte Kinder:</strong> Nur die direkten Kind-Elemente des Flex-Containers werden zu Flex-Items.</div></div></article>
+    <article class="example-box"><h3>Visuelle Idee</h3><div class="flex-demo"><div class="flex-item">Item 1</div><div class="flex-item">Item 2</div><div class="flex-item">Item 3</div></div><div class="full-note"><div class="star">âœ“</div><div><strong>Direkte Kinder:</strong> Nur die direkten Kind-Elemente des Flex-Containers werden zu Flex-Items.</div></div></article>
   </div>
 </section>
 <section id="achsen">
-  <div class="section-head"><h2>4. Hauptachse, Querachse und Ausrichtung</h2><p>Die häufigsten Fehler entstehen, weil <code>justify-content</code> und <code>align-items</code> ohne Verständnis der aktuellen Achsen verwendet werden.</p></div>
+  <div class="section-head"><h2>4. Hauptachse, Querachse und Ausrichtung</h2><p>Die hÃ¤ufigsten Fehler entstehen, weil <code>justify-content</code> und <code>align-items</code> ohne VerstÃ¤ndnis der aktuellen Achsen verwendet werden.</p></div>
   <div class="ref-grid">
-    <article class="ref-panel blue"><div class="panel-headline"><div class="icon-disc">↔</div><div><h3>Hauptachse</h3><p>Die Hauptachse wird durch <code>flex-direction</code> bestimmt.</p></div></div><ul class="benefit-list"><li><code>row</code>: Hauptachse läuft horizontal</li><li><code>column</code>: Hauptachse läuft vertikal</li><li><code>justify-content</code> verteilt entlang der Hauptachse</li></ul></article>
-    <article class="ref-panel cyan"><div class="panel-headline"><div class="icon-disc">↕</div><div><h3>Querachse</h3><p>Die Querachse liegt senkrecht zur Hauptachse.</p></div></div><ul class="benefit-list"><li><code>align-items</code> richtet entlang der Querachse aus</li><li><code>align-self</code> überschreibt die Ausrichtung für ein einzelnes Item</li><li>Die Wirkung ändert sich bei <code>flex-direction: column</code></li></ul></article>
+    <article class="ref-panel blue"><div class="panel-headline"><div class="icon-disc">â†”</div><div><h3>Hauptachse</h3><p>Die Hauptachse wird durch <code>flex-direction</code> bestimmt.</p></div></div><ul class="benefit-list"><li><code>row</code>: Hauptachse lÃ¤uft horizontal</li><li><code>column</code>: Hauptachse lÃ¤uft vertikal</li><li><code>justify-content</code> verteilt entlang der Hauptachse</li></ul></article>
+    <article class="ref-panel cyan"><div class="panel-headline"><div class="icon-disc">â†•</div><div><h3>Querachse</h3><p>Die Querachse liegt senkrecht zur Hauptachse.</p></div></div><ul class="benefit-list"><li><code>align-items</code> richtet entlang der Querachse aus</li><li><code>align-self</code> Ã¼berschreibt die Ausrichtung fÃ¼r ein einzelnes Item</li><li>Die Wirkung Ã¤ndert sich bei <code>flex-direction: column</code></li></ul></article>
   </div>
-  <div class="example-box" style="margin-top:20px;"><h3>Eigenschaften im Überblick</h3><table class="mini-table"><tr><th>Eigenschaft</th><th>Wirkung</th><th>Fachliche Einordnung</th></tr><tr><td><code>flex-direction</code></td><td>legt Hauptachse fest</td><td>entscheidet, ob eine Reihe oder Spalte entsteht</td></tr><tr><td><code>justify-content</code></td><td>verteilt auf Hauptachse</td><td>z. B. links, mittig, Abstand zwischen Items</td></tr><tr><td><code>align-items</code></td><td>richtet auf Querachse aus</td><td>z. B. oben, mittig, gestreckt</td></tr><tr><td><code>gap</code></td><td>Abstand zwischen Items</td><td>sauberer als einzelne Außenabstände zwischen Komponenten</td></tr></table></div>
+  <div class="example-box" style="margin-top:20px;"><h3>Eigenschaften im Ãœberblick</h3><table class="mini-table"><tr><th>Eigenschaft</th><th>Wirkung</th><th>Fachliche Einordnung</th></tr><tr><td><code>flex-direction</code></td><td>legt Hauptachse fest</td><td>entscheidet, ob eine Reihe oder Spalte entsteht</td></tr><tr><td><code>justify-content</code></td><td>verteilt auf Hauptachse</td><td>z. B. links, mittig, Abstand zwischen Items</td></tr><tr><td><code>align-items</code></td><td>richtet auf Querachse aus</td><td>z. B. oben, mittig, gestreckt</td></tr><tr><td><code>gap</code></td><td>Abstand zwischen Items</td><td>sauberer als einzelne AuÃŸenabstÃ¤nde zwischen Komponenten</td></tr></table></div>
 </section>
 <section id="container-items">
   <div class="section-head"><h2>5. Flex-Container und Flex-Items</h2><p>Flexbox besteht aus zwei Ebenen: Eigenschaften am Container steuern die Gruppe, Eigenschaften am Item steuern einzelne Elemente.</p></div>
@@ -275,12 +274,12 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
 .card {
   flex: 1 1 260px;
 }</pre></div>
-  <div class="full-note"><div class="star">!</div><div><strong>Prüffrage:</strong> Steht die Eigenschaft auf dem richtigen Element? <code>justify-content</code> gehört auf den Container, <code>flex</code> gehört auf das Item.</div></div>
+  <div class="full-note"><div class="star">!</div><div><strong>PrÃ¼ffrage:</strong> Steht die Eigenschaft auf dem richtigen Element? <code>justify-content</code> gehÃ¶rt auf den Container, <code>flex</code> gehÃ¶rt auf das Item.</div></div>
 </section>
 <section id="navigation">
   <div class="section-head"><h2>6. Navigation mit Flexbox aufbauen</h2><p>Navigationsleisten sind ein typischer Flexbox-Anwendungsfall, weil Logo, Links und Aktionen in einer Zeile ausgerichtet und verteilt werden.</p></div>
   <div class="two-col">
-    <article class="example-box"><h3>Fachliche Struktur</h3><ol class="steps-list"><li><code>nav</code> als semantischen Navigationsbereich nutzen</li><li>Logo/Brand als eigenen Bereich vorbereiten</li><li>Linkgruppe als Liste oder Linkcontainer abbilden</li><li>Aktionsbutton getrennt platzieren</li><li>Abstände über <code>gap</code> und Verteilung über <code>justify-content</code> steuern</li></ol></article>
+    <article class="example-box"><h3>Fachliche Struktur</h3><ol class="steps-list"><li><code>nav</code> als semantischen Navigationsbereich nutzen</li><li>Logo/Brand als eigenen Bereich vorbereiten</li><li>Linkgruppe als Liste oder Linkcontainer abbilden</li><li>Aktionsbutton getrennt platzieren</li><li>AbstÃ¤nde Ã¼ber <code>gap</code> und Verteilung Ã¼ber <code>justify-content</code> steuern</li></ol></article>
     <article class="example-box"><h3>Visualisierung</h3><div class="flex-nav-demo"><span>Brand</span><div class="links"><a href="#">Start</a><a href="#">Kurse</a><a href="#">Kontakt</a></div><span>Login</span></div><div class="code"><div class="code-title"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>Navigation</div><pre>.main-nav {
   display: flex;
   align-items: center;
@@ -290,18 +289,18 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
   </div>
 </section>
 <section id="komponenten">
-  <div class="section-head"><h2>7. Karten, Buttons und Komponenten</h2><p>Komponenten sind wiederverwendbare UI-Bausteine. Sie sollten konsistent benannt, gestaltet und geprüft werden.</p></div>
+  <div class="section-head"><h2>7. Karten, Buttons und Komponenten</h2><p>Komponenten sind wiederverwendbare UI-Bausteine. Sie sollten konsistent benannt, gestaltet und geprÃ¼ft werden.</p></div>
   <div class="ref-grid">
-    <article class="ref-panel green"><div class="panel-headline"><div class="icon-disc">UI</div><div><h3>Karten</h3><p>Karten bündeln zusammengehörige Informationen.</p></div></div><ul class="benefit-list"><li>einheitlicher Innenabstand</li><li>klare Überschrift und Textstruktur</li><li>stabile Mindestbreite über <code>flex-basis</code></li><li>sichtbare Zustände bei Hover oder Fokus</li></ul></article>
-    <article class="ref-panel orange"><div class="panel-headline"><div class="icon-disc">B</div><div><h3>Buttons und Badges</h3><p>Interaktive und informative Elemente brauchen klare Rollen.</p></div></div><ul class="benefit-list"><li>Buttons für Aktionen</li><li>Links für Navigation</li><li>Badges für Status oder Kategorie</li><li>Fokuszustände für Bedienbarkeit</li></ul></article>
+    <article class="ref-panel green"><div class="panel-headline"><div class="icon-disc">UI</div><div><h3>Karten</h3><p>Karten bÃ¼ndeln zusammengehÃ¶rige Informationen.</p></div></div><ul class="benefit-list"><li>einheitlicher Innenabstand</li><li>klare Ãœberschrift und Textstruktur</li><li>stabile Mindestbreite Ã¼ber <code>flex-basis</code></li><li>sichtbare ZustÃ¤nde bei Hover oder Fokus</li></ul></article>
+    <article class="ref-panel orange"><div class="panel-headline"><div class="icon-disc">B</div><div><h3>Buttons und Badges</h3><p>Interaktive und informative Elemente brauchen klare Rollen.</p></div></div><ul class="benefit-list"><li>Buttons fÃ¼r Aktionen</li><li>Links fÃ¼r Navigation</li><li>Badges fÃ¼r Status oder Kategorie</li><li>FokuszustÃ¤nde fÃ¼r Bedienbarkeit</li></ul></article>
   </div>
-  <div class="example-box" style="margin-top:20px;"><h3>Kartenreihe mit Flexbox</h3><div class="flex-cards-demo"><article><strong>HTML</strong><p>Struktur und Inhalt.</p></article><article><strong>CSS</strong><p>Gestaltung und Layout.</p></article><article><strong>Browser</strong><p>Prüfung und Darstellung.</p></article></div></div>
+  <div class="example-box" style="margin-top:20px;"><h3>Kartenreihe mit Flexbox</h3><div class="flex-cards-demo"><article><strong>HTML</strong><p>Struktur und Inhalt.</p></article><article><strong>CSS</strong><p>Gestaltung und Layout.</p></article><article><strong>Browser</strong><p>PrÃ¼fung und Darstellung.</p></article></div></div>
 </section>
 <section id="responsive">
-  <div class="section-head"><h2>8. Umbruch, flexible Breiten und Responsive-Verhalten</h2><p>Flexbox wird fachlich besonders sinnvoll, wenn Elemente nicht starr bleiben, sondern je nach verfügbarem Platz umbrechen können.</p></div>
+  <div class="section-head"><h2>8. Umbruch, flexible Breiten und Responsive-Verhalten</h2><p>Flexbox wird fachlich besonders sinnvoll, wenn Elemente nicht starr bleiben, sondern je nach verfÃ¼gbarem Platz umbrechen kÃ¶nnen.</p></div>
   <div class="two-col">
-    <article class="example-box"><h3>Wichtige Eigenschaften</h3><table class="mini-table"><tr><th>Eigenschaft</th><th>Bedeutung</th></tr><tr><td><code>flex-wrap: wrap</code></td><td>Items dürfen in eine neue Zeile umbrechen.</td></tr><tr><td><code>flex: 1 1 260px</code></td><td>Item darf wachsen, schrumpfen und startet bei ca. 260px.</td></tr><tr><td><code>min-width</code></td><td>verhindert zu starkes Zusammenschieben.</td></tr><tr><td><code>gap</code></td><td>bleibt auch bei Umbruch als sauberer Abstand erhalten.</td></tr></table></article>
-    <article class="card accent-blue"><div class="tag">Responsive Denken</div><h3>Nicht jede Änderung braucht eine Media Query</h3><p>Viele Kartenlayouts können mit <code>flex-wrap</code>, <code>flex-basis</code> und relativen Breiten bereits flexibel reagieren.</p><ul class="clean"><li>erst intrinsisches Layout nutzen</li><li>dann Breakpoints ergänzen</li><li>im Browser schrittweise verkleinern</li><li>auf Lesbarkeit und Bedienbarkeit achten</li></ul></article>
+    <article class="example-box"><h3>Wichtige Eigenschaften</h3><table class="mini-table"><tr><th>Eigenschaft</th><th>Bedeutung</th></tr><tr><td><code>flex-wrap: wrap</code></td><td>Items dÃ¼rfen in eine neue Zeile umbrechen.</td></tr><tr><td><code>flex: 1 1 260px</code></td><td>Item darf wachsen, schrumpfen und startet bei ca. 260px.</td></tr><tr><td><code>min-width</code></td><td>verhindert zu starkes Zusammenschieben.</td></tr><tr><td><code>gap</code></td><td>bleibt auch bei Umbruch als sauberer Abstand erhalten.</td></tr></table></article>
+    <article class="card accent-blue"><div class="tag">Responsive Denken</div><h3>Nicht jede Ã„nderung braucht eine Media Query</h3><p>Viele Kartenlayouts kÃ¶nnen mit <code>flex-wrap</code>, <code>flex-basis</code> und relativen Breiten bereits flexibel reagieren.</p><ul class="clean"><li>erst intrinsisches Layout nutzen</li><li>dann Breakpoints ergÃ¤nzen</li><li>im Browser schrittweise verkleinern</li><li>auf Lesbarkeit und Bedienbarkeit achten</li></ul></article>
   </div>
   <div class="code"><div class="code-title"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>Robustes Kartenlayout</div><pre>.card-list {
   display: flex;
@@ -314,44 +313,44 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
 }</pre></div>
 </section>
 <section id="grid">
-  <div class="section-head"><h2>9. Flexbox oder Grid?</h2><p>Flexbox und Grid sind keine Gegensätze. Beide lösen unterschiedliche Layoutprobleme und werden oft kombiniert.</p></div>
+  <div class="section-head"><h2>9. Flexbox oder Grid?</h2><p>Flexbox und Grid sind keine GegensÃ¤tze. Beide lÃ¶sen unterschiedliche Layoutprobleme und werden oft kombiniert.</p></div>
   <div class="compare">
     <div><h3>Flexbox</h3><ul class="clean"><li>eindimensionale Layouts</li><li>Navigationen</li><li>Buttonleisten</li><li>Kartenreihen</li><li>Ausrichtung von Items</li></ul></div>
-    <div><h3>CSS Grid</h3><ul class="clean"><li>zweidimensionale Raster</li><li>Seitenlayouts</li><li>Dashboards</li><li>Zeilen und Spalten gleichzeitig</li><li>komplexe Flächenaufteilung</li></ul></div>
+    <div><h3>CSS Grid</h3><ul class="clean"><li>zweidimensionale Raster</li><li>Seitenlayouts</li><li>Dashboards</li><li>Zeilen und Spalten gleichzeitig</li><li>komplexe FlÃ¤chenaufteilung</li></ul></div>
   </div>
-  <div class="full-note"><div class="star">✓</div><div><strong>Faustregel:</strong> Geht es primär um eine Richtung, ist Flexbox meist passend. Geht es um Zeilen und Spalten gleichzeitig, ist Grid meist klarer.</div></div>
+  <div class="full-note"><div class="star">âœ“</div><div><strong>Faustregel:</strong> Geht es primÃ¤r um eine Richtung, ist Flexbox meist passend. Geht es um Zeilen und Spalten gleichzeitig, ist Grid meist klarer.</div></div>
 </section>
 <section id="praxis">
-  <div class="section-head"><h2>10. Praxisauftrag und Materialien</h2><p>Die Übungen bauen aufeinander auf. Am Ende soll eine fachlich nachvollziehbare Oberfläche mit Navigation, Karten und Buttons entstehen.</p></div>
+  <div class="section-head"><h2>10. Praxisauftrag und Materialien</h2><p>Die Ãœbungen bauen aufeinander auf. Am Ende soll eine fachlich nachvollziehbare OberflÃ¤che mit Navigation, Karten und Buttons entstehen.</p></div>
   <div class="property-grid">
-    <article class="property-card"><strong>1 · Achsen markieren</strong>Ein bestehendes Flexbox-Beispiel lesen und Hauptachse, Querachse sowie aktive Ausrichtung erklären.</article>
-    <article class="property-card"><strong>2 · Navigation bauen</strong>Brand, Linkgruppe und Aktionsbutton mit Flexbox ausrichten.</article>
-    <article class="property-card"><strong>3 · Kartenlayout erstellen</strong>Kurskarten mit <code>display:flex</code>, <code>flex-wrap</code>, <code>gap</code> und <code>flex-basis</code> anordnen.</article>
-    <article class="property-card"><strong>4 · Komponenten vereinheitlichen</strong>Button-, Badge- und Card-Klassen wiederverwendbar gestalten.</article>
-    <article class="property-card"><strong>5 · Responsive prüfen</strong>Browserbreite verändern und Umbruch, Lesbarkeit und Abstände kontrollieren.</article>
-    <article class="property-card"><strong>6 · Ergebnis sichern</strong>Mit DevTools prüfen und offene Fehler fachlich begründen.</article>
+    <article class="property-card"><strong>1 Â· Achsen markieren</strong>Ein bestehendes Flexbox-Beispiel lesen und Hauptachse, Querachse sowie aktive Ausrichtung erklÃ¤ren.</article>
+    <article class="property-card"><strong>2 Â· Navigation bauen</strong>Brand, Linkgruppe und Aktionsbutton mit Flexbox ausrichten.</article>
+    <article class="property-card"><strong>3 Â· Kartenlayout erstellen</strong>Kurskarten mit <code>display:flex</code>, <code>flex-wrap</code>, <code>gap</code> und <code>flex-basis</code> anordnen.</article>
+    <article class="property-card"><strong>4 Â· Komponenten vereinheitlichen</strong>Button-, Badge- und Card-Klassen wiederverwendbar gestalten.</article>
+    <article class="property-card"><strong>5 Â· Responsive prÃ¼fen</strong>Browserbreite verÃ¤ndern und Umbruch, Lesbarkeit und AbstÃ¤nde kontrollieren.</article>
+    <article class="property-card"><strong>6 Â· Ergebnis sichern</strong>Mit DevTools prÃ¼fen und offene Fehler fachlich begrÃ¼nden.</article>
   </div>
-  <div class="example-box" style="margin-top:20px;"><h3>Bereitgestellte Dateien</h3><table class="mini-table"><tr><th>Datei / Bereich</th><th>Zweck</th></tr><tr><td><code>webvariante.html</code></td><td>Tagesfolien und fachlicher Überblick.</td></tr><tr><td><code>aufgaben_teilnehmer.html</code></td><td>Arbeitsaufträge zur Kurskarten-Oberfläche.</td></tr><tr><td><code>loesungen_dozent.html</code></td><td>Erwartungshorizont und Lösungshinweise.</td></tr><tr><td><code>starter/kurskarten/</code></td><td>unvollständiger Arbeitsstand.</td></tr><tr><td><code>loesung/kurskarten/</code></td><td>Musterlösung für den späteren Abgleich.</td></tr></table></div>
+  <div class="example-box" style="margin-top:20px;"><h3>Bereitgestellte Dateien</h3><table class="mini-table"><tr><th>Datei / Bereich</th><th>Zweck</th></tr><tr><td><code>webvariante.html</code></td><td>Tagesfolien und fachlicher Ãœberblick.</td></tr><tr><td><code>aufgaben_teilnehmer.html</code></td><td>ArbeitsauftrÃ¤ge zur Kurskarten-OberflÃ¤che.</td></tr><tr><td><code>loesungen_dozent.html</code></td><td>Erwartungshorizont und LÃ¶sungshinweise.</td></tr><tr><td><code>starter/kurskarten/</code></td><td>unvollstÃ¤ndiger Arbeitsstand.</td></tr><tr><td><code>loesung/kurskarten/</code></td><td>MusterlÃ¶sung fÃ¼r den spÃ¤teren Abgleich.</td></tr></table></div>
 </section>
 <section id="check">
-  <div class="section-head"><h2>11. Übung, Fehleranalyse und Unterrichtscheck</h2><p>Zum Abschluss wird geprüft, ob die Teilnehmenden die Flexbox-Eigenschaften fachlich anwenden und typische Fehler erklären können.</p></div>
+  <div class="section-head"><h2>11. Ãœbung, Fehleranalyse und Unterrichtscheck</h2><p>Zum Abschluss wird geprÃ¼ft, ob die Teilnehmenden die Flexbox-Eigenschaften fachlich anwenden und typische Fehler erklÃ¤ren kÃ¶nnen.</p></div>
   <div class="two-col">
-    <article class="example-box"><h3>Typische Fehlerdiagnose</h3><table class="mini-table"><tr><th>Symptom</th><th>Mögliche Ursache</th><th>Prüfung</th></tr><tr><td>Items stehen nicht nebeneinander</td><td><code>display:flex</code> fehlt oder steht auf falschem Element</td><td>Container im Inspector auswählen</td></tr><tr><td>Ausrichtung wirkt „falsch“</td><td>Hauptachse verwechselt</td><td><code>flex-direction</code> kontrollieren</td></tr><tr><td>Karten werden zu schmal</td><td>fehlende Mindestbreite oder ungeeignete <code>flex-basis</code></td><td>Viewport verkleinern und Layout prüfen</td></tr><tr><td>Abstände uneinheitlich</td><td>Margin-Mischung statt zentralem <code>gap</code></td><td>Abstände im Box-Modell prüfen</td></tr></table></article>
+    <article class="example-box"><h3>Typische Fehlerdiagnose</h3><table class="mini-table"><tr><th>Symptom</th><th>MÃ¶gliche Ursache</th><th>PrÃ¼fung</th></tr><tr><td>Items stehen nicht nebeneinander</td><td><code>display:flex</code> fehlt oder steht auf falschem Element</td><td>Container im Inspector auswÃ¤hlen</td></tr><tr><td>Ausrichtung wirkt â€žfalschâ€œ</td><td>Hauptachse verwechselt</td><td><code>flex-direction</code> kontrollieren</td></tr><tr><td>Karten werden zu schmal</td><td>fehlende Mindestbreite oder ungeeignete <code>flex-basis</code></td><td>Viewport verkleinern und Layout prÃ¼fen</td></tr><tr><td>AbstÃ¤nde uneinheitlich</td><td>Margin-Mischung statt zentralem <code>gap</code></td><td>AbstÃ¤nde im Box-Modell prÃ¼fen</td></tr></table></article>
     <div class="quiz">
       <div class="quiz-card"><h3>Frage 1: Was bewirkt <code>display:flex</code>?</h3><button class="answer" data-correct="false">Es macht alle Elemente automatisch zweispaltig.</button><button class="answer" data-correct="true">Es macht das Element zum Flex-Container und dessen direkte Kinder zu Flex-Items.</button><button class="answer" data-correct="false">Es ersetzt HTML-Listen durch Tabellen.</button></div>
       <div class="quiz-card"><h3>Frage 2: Welche Eigenschaft verteilt Items entlang der Hauptachse?</h3><button class="answer" data-correct="true"><code>justify-content</code></button><button class="answer" data-correct="false"><code>font-weight</code></button><button class="answer" data-correct="false"><code>background-size</code></button></div>
-      <div class="quiz-card"><h3>Frage 3: Wofür ist <code>flex-wrap</code> wichtig?</h3><button class="answer" data-correct="false">Zum Drehen einzelner Buchstaben.</button><button class="answer" data-correct="true">Damit Flex-Items bei zu wenig Platz in eine neue Zeile umbrechen können.</button><button class="answer" data-correct="false">Zum Laden externer Schriftarten.</button></div>
+      <div class="quiz-card"><h3>Frage 3: WofÃ¼r ist <code>flex-wrap</code> wichtig?</h3><button class="answer" data-correct="false">Zum Drehen einzelner Buchstaben.</button><button class="answer" data-correct="true">Damit Flex-Items bei zu wenig Platz in eine neue Zeile umbrechen kÃ¶nnen.</button><button class="answer" data-correct="false">Zum Laden externer Schriftarten.</button></div>
     </div>
   </div>
-  <div class="full-note"><div class="star">✓</div><div><strong>Tagesabschluss:</strong> Die Teilnehmenden sollen erklären können, welches Element der Flex-Container ist, welche Elemente Flex-Items sind und welche Eigenschaft auf welcher Ebene wirken muss.</div></div>
+  <div class="full-note"><div class="star">âœ“</div><div><strong>Tagesabschluss:</strong> Die Teilnehmenden sollen erklÃ¤ren kÃ¶nnen, welches Element der Flex-Container ist, welche Elemente Flex-Items sind und welche Eigenschaft auf welcher Ebene wirken muss.</div></div>
 </section>
 </main>
 </div>
-<div class="key-hint">Navigation: ← zurück · → weiter</div>
+<div class="key-hint">Navigation: â† zurÃ¼ck Â· â†’ weiter</div>
 <div aria-label="Seitensteuerung" class="slide-controls">
-  <button class="btn" id="prevSlide" type="button">← Zurück</button>
+  <button class="btn" id="prevSlide" type="button">â† ZurÃ¼ck</button>
   <span class="slide-counter" id="slideCounter">1 / 12</span>
-  <button class="btn primary" id="nextSlide" type="button">Weiter →</button>
+  <button class="btn primary" id="nextSlide" type="button">Weiter â†’</button>
 </div>
 <div class="printbar">
   <button class="btn" id="startSlide" type="button">Startseite</button>

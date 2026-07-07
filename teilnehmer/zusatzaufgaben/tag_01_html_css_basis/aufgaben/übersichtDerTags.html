@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
      <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,11 +15,11 @@
         function getTagDescription(tagName) {
             var descriptions = {
                 'html': {
-                    description: 'Das Wurzelelement, das den gesamten HTML-Inhalt umschließt.',
+                    description: 'Das Wurzelelement, das den gesamten HTML-Inhalt umschlieÃŸt.',
                     attributes: ['manifest']
                 },
                 'head': {
-                    description: 'Enthält Metadaten wie den Titel des Dokuments und andere Informationen für Suchmaschinen.',
+                    description: 'EnthÃ¤lt Metadaten wie den Titel des Dokuments und andere Informationen fÃ¼r Suchmaschinen.',
                     attributes: ['profile']
                 },
                 'title': {
@@ -27,11 +27,11 @@
                     attributes: []
                 },
                 'base': {
-                    description: 'Definiert die Basis-URL für relative URLs in der Seite.',
+                    description: 'Definiert die Basis-URL fÃ¼r relative URLs in der Seite.',
                     attributes: ['href', 'target']
                 },
                 'link': {
-                    description: 'Verknüpft das Dokument mit externen Ressourcen wie Stylesheets oder Favicons.',
+                    description: 'VerknÃ¼pft das Dokument mit externen Ressourcen wie Stylesheets oder Favicons.',
                     attributes: ['href', 'rel', 'type']
                 },
                 'meta': {
@@ -39,11 +39,11 @@
                     attributes: ['charset', 'name', 'content']
                 },
                 'style': {
-                    description: 'Enthält CSS-Regeln zur Gestaltung der Seite.',
+                    description: 'EnthÃ¤lt CSS-Regeln zur Gestaltung der Seite.',
                     attributes: ['type', 'media']
                 },
                 'script': {
-                    description: 'Ermöglicht das Einbetten von JavaScript-Code in die Seite.',
+                    description: 'ErmÃ¶glicht das Einbetten von JavaScript-Code in die Seite.',
                     attributes: ['type', 'src', 'async']
                 },
                 'noscript': {
@@ -51,7 +51,7 @@
                     attributes: []
                 },
                 'body': {
-                    description: 'Der sichtbare Inhalt der Webseite, der den eigentlichen Text und die Struktur enthält.',
+                    description: 'Der sichtbare Inhalt der Webseite, der den eigentlichen Text und die Struktur enthÃ¤lt.',
                     attributes: ['onload', 'onunload']
                 },
                 'section': {
@@ -67,19 +67,19 @@
                     attributes: []
                 },
                 'aside': {
-                    description: 'Kennzeichnet Inhalte, die nicht direkt zum Hauptinhalt gehören, z.B. Seitenleisten.',
+                    description: 'Kennzeichnet Inhalte, die nicht direkt zum Hauptinhalt gehÃ¶ren, z.B. Seitenleisten.',
                     attributes: []
                 },
                 'h1': {
-                    description: 'Überschrift erster Ordnung, die normalerweise für den Haupttitel einer Seite verwendet wird.',
+                    description: 'Ãœberschrift erster Ordnung, die normalerweise fÃ¼r den Haupttitel einer Seite verwendet wird.',
                     attributes: []
                 },
                 'h2': {
-                    description: 'Überschrift zweiter Ordnung.',
+                    description: 'Ãœberschrift zweiter Ordnung.',
                     attributes: []
                 },
                 'p': {
-                    description: 'Absatz, der normalerweise Text enthält.',
+                    description: 'Absatz, der normalerweise Text enthÃ¤lt.',
                     attributes: []
                 },
                 'ul': {
@@ -95,7 +95,7 @@
                     attributes: []
                 },
                 'a': {
-                    description: 'Verknüpfung zu einer anderen Seite oder Ressource.',
+                    description: 'VerknÃ¼pfung zu einer anderen Seite oder Ressource.',
                     attributes: ['href', 'target', 'title']
                 },
                 'img': {
@@ -119,23 +119,23 @@
                     attributes: []
                 },
                 'form': {
-                    description: 'Ermöglicht das Erstellen von Eingabeformularen.',
+                    description: 'ErmÃ¶glicht das Erstellen von Eingabeformularen.',
                     attributes: ['action', 'method', 'enctype']
                 },
                 'input': {
-                    description: 'Eingabefeld für Formulare.',
+                    description: 'Eingabefeld fÃ¼r Formulare.',
                     attributes: ['type', 'name', 'value']
                 },
                 'button': {
-                    description: 'Schaltfläche in einem Formular.',
+                    description: 'SchaltflÃ¤che in einem Formular.',
                     attributes: ['type', 'name', 'value']
                 },
                 'textarea': {
-                    description: 'Bereich für langen Text in Formularen.',
+                    description: 'Bereich fÃ¼r langen Text in Formularen.',
                     attributes: ['name', 'rows', 'cols']
                 },
                 'label': {
-                    description: 'Beschriftung für Formularelemente.',
+                    description: 'Beschriftung fÃ¼r Formularelemente.',
                     attributes: ['for']
                 },
                 'select': {
@@ -147,11 +147,11 @@
                     attributes: ['value', 'selected']
                 },
                 'footer': {
-                    description: 'Enthält Abschlussinformationen oder -elemente am Ende eines Dokuments.',
+                    description: 'EnthÃ¤lt Abschlussinformationen oder -elemente am Ende eines Dokuments.',
                     attributes: []
                 },
                 'header': {
-                    description: 'Enthält Kopfelemente oder -informationen am Anfang eines Dokuments.',
+                    description: 'EnthÃ¤lt Kopfelemente oder -informationen am Anfang eines Dokuments.',
                     attributes: []
                 },
                 'hr': {
@@ -175,7 +175,7 @@
                     attributes: []
                 },
                 'small': {
-                    description: 'Kleinerer Text für Untertitel oder Feinheiten.',
+                    description: 'Kleinerer Text fÃ¼r Untertitel oder Feinheiten.',
                     attributes: []
                 },
                 'cite': {
@@ -187,11 +187,11 @@
                     attributes: []
                 },
                 'mark': {
-                    description: 'Hervorgehobener Text für Betonung.',
+                    description: 'Hervorgehobener Text fÃ¼r Betonung.',
                     attributes: []
                 },
                 'abbr': {
-                    description: 'Abgekürzter Text mit einem erweiterten Titel.',
+                    description: 'AbgekÃ¼rzter Text mit einem erweiterten Titel.',
                     attributes: ['title']
                 },
                 'time': {
@@ -215,15 +215,15 @@
                     attributes: []
                 },
                 'pre': {
-                    description: 'Vorformatierter Text mit Beibehaltung der Zeilenumbrüche und Leerzeichen.',
+                    description: 'Vorformatierter Text mit Beibehaltung der ZeilenumbrÃ¼che und Leerzeichen.',
                     attributes: []
                 },
                 'blockquote': {
-                    description: 'Blockzitat oder längeres Zitat mit Einrückung.',
+                    description: 'Blockzitat oder lÃ¤ngeres Zitat mit EinrÃ¼ckung.',
                     attributes: ['cite']
                 },
                 'q': {
-                    description: 'Kurzes Zitat oder wörtliche Rede.',
+                    description: 'Kurzes Zitat oder wÃ¶rtliche Rede.',
                     attributes: ['cite']
                 },
                 'cite': {
@@ -235,11 +235,11 @@
                     attributes: []
                 },
                 'bdo': {
-                    description: 'Richtungsänderung für Text (bidirektionales Textobjekt).',
+                    description: 'RichtungsÃ¤nderung fÃ¼r Text (bidirektionales Textobjekt).',
                     attributes: ['dir']
                 },
                 'ruby': {
-                    description: 'Anzeige von Text mit Ruby-Anmerkungen für die Aussprache.',
+                    description: 'Anzeige von Text mit Ruby-Anmerkungen fÃ¼r die Aussprache.',
                     attributes: []
                 },
                 'rt': {
@@ -247,7 +247,7 @@
                     attributes: []
                 },
                 'rp': {
-                    description: 'Fall-back-Anzeige für Browser, die Ruby nicht unterstützen.',
+                    description: 'Fall-back-Anzeige fÃ¼r Browser, die Ruby nicht unterstÃ¼tzen.',
                     attributes: []
                 },
                 'bdi': {
@@ -263,19 +263,19 @@
                     attributes: []
                 },
                 'br': {
-                    description: 'Zeilenumbruch für Text oder Inline-Inhalte.',
+                    description: 'Zeilenumbruch fÃ¼r Text oder Inline-Inhalte.',
                     attributes: []
                 },
                 'wbr': {
-                    description: 'Möglicher Zeilenumbruchpunkt für lange Wörter oder URLs.',
+                    description: 'MÃ¶glicher Zeilenumbruchpunkt fÃ¼r lange WÃ¶rter oder URLs.',
                     attributes: []
                 },
                 'ins': {
-                    description: 'Eingefügter Text oder Hinzufügungen in einem Dokument.',
+                    description: 'EingefÃ¼gter Text oder HinzufÃ¼gungen in einem Dokument.',
                     attributes: ['cite', 'datetime']
                 },
                 'del': {
-                    description: 'Gelöschter Text oder Änderungen in einem Dokument.',
+                    description: 'GelÃ¶schter Text oder Ã„nderungen in einem Dokument.',
                     attributes: ['cite', 'datetime']
                 },
                 'img': {
@@ -291,11 +291,11 @@
                     attributes: ['src', 'type', 'width', 'height']
                 },
                 'object': {
-                    description: 'Allgemeines Container-Element für eingebettete Inhalte.',
+                    description: 'Allgemeines Container-Element fÃ¼r eingebettete Inhalte.',
                     attributes: ['data', 'type', 'usemap', 'form', 'width', 'height']
                 },
                 'param': {
-                    description: 'Parameter für Objekte wie Flash-Filme oder Java-Applets.',
+                    description: 'Parameter fÃ¼r Objekte wie Flash-Filme oder Java-Applets.',
                     attributes: ['name', 'value']
                 },
                 'video': {
@@ -303,15 +303,15 @@
                     attributes: ['src', 'poster', 'preload', 'autoplay', 'controls', 'loop', 'muted', 'width', 'height']
                 },
                 'audio': {
-                    description: 'Einbettung von Audioinhalten, z.B. Musik oder Töne.',
+                    description: 'Einbettung von Audioinhalten, z.B. Musik oder TÃ¶ne.',
                     attributes: ['src', 'preload', 'autoplay', 'controls', 'loop', 'muted']
                 },
                 'source': {
-                    description: 'Definiert verschiedene Medienquellen für Audio- oder Videodateien.',
+                    description: 'Definiert verschiedene Medienquellen fÃ¼r Audio- oder Videodateien.',
                     attributes: ['src', 'type']
                 },
                 'track': {
-                    description: 'Untertitel- oder Textspuren für Audio- oder Videodateien.',
+                    description: 'Untertitel- oder Textspuren fÃ¼r Audio- oder Videodateien.',
                     attributes: ['kind', 'src', 'srclang', 'label', 'default']
                 },
                 'canvas': {
@@ -319,7 +319,7 @@
                     attributes: ['width', 'height']
                 },
                 'map': {
-                    description: 'Bereichskarte zur Verknüpfung von Teilen eines Bildes oder einer Grafik mit URLs.',
+                    description: 'Bereichskarte zur VerknÃ¼pfung von Teilen eines Bildes oder einer Grafik mit URLs.',
                     attributes: ['name']
                 },
                 'area': {
@@ -331,11 +331,11 @@
                     attributes: ['border', 'cellpadding', 'cellspacing', 'width', 'summary']
                 },
                 'caption': {
-                    description: 'Titel oder Überschrift für eine Tabelle.',
+                    description: 'Titel oder Ãœberschrift fÃ¼r eine Tabelle.',
                     attributes: []
                 },
                 'colgroup': {
-                    description: 'Gruppen von Tabellenspalten für Formatierung und Stil.',
+                    description: 'Gruppen von Tabellenspalten fÃ¼r Formatierung und Stil.',
                     attributes: ['span']
                 },
                 'col': {
@@ -343,39 +343,39 @@
                     attributes: ['span']
                 },
                 'tbody': {
-                    description: 'Tabellenkörper, der Gruppen von Tabellenzeilen enthält.',
+                    description: 'TabellenkÃ¶rper, der Gruppen von Tabellenzeilen enthÃ¤lt.',
                     attributes: []
                 },
                 'thead': {
-                    description: 'Tabellenkopf, der Spaltenüberschriften enthält.',
+                    description: 'Tabellenkopf, der SpaltenÃ¼berschriften enthÃ¤lt.',
                     attributes: []
                 },
                 'tfoot': {
-                    description: 'Tabellenfuß, der Zusammenfassungen oder Fußnoten enthält.',
+                    description: 'TabellenfuÃŸ, der Zusammenfassungen oder FuÃŸnoten enthÃ¤lt.',
                     attributes: []
                 },
                 'tr': {
-                    description: 'Tabellenzeile, die Tabellendatenzellen enthält.',
+                    description: 'Tabellenzeile, die Tabellendatenzellen enthÃ¤lt.',
                     attributes: []
                 },
                 'td': {
-                    description: 'Tabellendatenzelle, die Daten in einer Tabelle enthält.',
+                    description: 'Tabellendatenzelle, die Daten in einer Tabelle enthÃ¤lt.',
                     attributes: ['colspan', 'rowspan', 'headers']
                 },
                 'th': {
-                    description: 'Tabellenkopfzelle, die Überschriften in einer Tabelle enthält.',
+                    description: 'Tabellenkopfzelle, die Ãœberschriften in einer Tabelle enthÃ¤lt.',
                     attributes: ['colspan', 'rowspan', 'headers', 'scope', 'abbr']
                 },
                 'form': {
-                    description: 'Ermöglicht das Erstellen von Eingabeformularen.',
+                    description: 'ErmÃ¶glicht das Erstellen von Eingabeformularen.',
                     attributes: ['action', 'method', 'target', 'enctype', 'accept-charset', 'autocomplete', 'novalidate']
                 },
                 'input': {
-                    description: 'Eingabefeld für Formulare, z.B. Textfeld oder Schaltfläche.',
+                    description: 'Eingabefeld fÃ¼r Formulare, z.B. Textfeld oder SchaltflÃ¤che.',
                     attributes: ['type', 'name', 'value', 'checked', 'disabled', 'readonly', 'size', 'maxlength', 'placeholder', 'autocomplete']
                 },
                 'button': {
-                    description: 'Schaltfläche in einem Formular.',
+                    description: 'SchaltflÃ¤che in einem Formular.',
                     attributes: ['name', 'value', 'disabled', 'form', 'type']
                 },
                 'select': {
@@ -383,7 +383,7 @@
                     attributes: ['name', 'size', 'multiple', 'disabled', 'form', 'required']
                 },
                 'datalist': {
-                    description: 'Verknüpfung mit einer Liste von Optionen für ein Eingabefeld.',
+                    description: 'VerknÃ¼pfung mit einer Liste von Optionen fÃ¼r ein Eingabefeld.',
                     attributes: []
                 },
                 'optgroup': {
@@ -395,11 +395,11 @@
                     attributes: ['value', 'disabled', 'selected', 'label']
                 },
                 'textarea': {
-                    description: 'Bereich für langen Text in Formularen.',
+                    description: 'Bereich fÃ¼r langen Text in Formularen.',
                     attributes: ['name', 'rows', 'cols', 'disabled', 'readonly', 'maxlength', 'placeholder', 'autocomplete']
                 },
                 'label': {
-                    description: 'Beschriftung für Formularelemente.',
+                    description: 'Beschriftung fÃ¼r Formularelemente.',
                     attributes: ['for', 'form']
                 },
                 'fieldset': {
@@ -407,7 +407,7 @@
                     attributes: ['name', 'disabled']
                 },
                 'legend': {
-                    description: 'Legende für ein Feldset.',
+                    description: 'Legende fÃ¼r ein Feldset.',
                     attributes: []
                 },
                 'iframe': {
@@ -415,7 +415,7 @@
                     attributes: ['src', 'name', 'width', 'height', 'sandbox', 'seamless', 'frameborder', 'scrolling']
                 },
                 'progress': {
-                    description: 'Fortschrittsbalken zur Anzeige von Ladezuständen oder Fortschritten.',
+                    description: 'Fortschrittsbalken zur Anzeige von LadezustÃ¤nden oder Fortschritten.',
                     attributes: ['value', 'max']
                 },
                 'meter': {
@@ -427,15 +427,15 @@
                     attributes: ['open']
                 },
                 'summary': {
-                    description: 'Überschrift oder Titel für ein Details-Element.',
+                    description: 'Ãœberschrift oder Titel fÃ¼r ein Details-Element.',
                     attributes: []
                 },
                 'menu': {
-                    description: 'Liste von Menüoptionen oder Befehlen.',
+                    description: 'Liste von MenÃ¼optionen oder Befehlen.',
                     attributes: ['type', 'label']
                 },
                 'menuitem': {
-                    description: 'Ein Element in einem Menü.',
+                    description: 'Ein Element in einem MenÃ¼.',
                     attributes: ['type', 'label', 'icon', 'disabled', 'checked', 'radiogroup', 'command']
                 },
                 'dialog': {
@@ -455,11 +455,9 @@
                 return description + '<br><h4>Attribute:</h4>' +(attributesList.length > 0 ? '<ul>' + attributesList + '</ul>' : '');
             }
     
-            return 'Beschreibung für dieses Tag fehlt.';
+            return 'Beschreibung fÃ¼r dieses Tag fehlt.';
         };
     </script>
-    
-  <link rel="stylesheet" href="">
   <link rel="stylesheet" href="../../../assets/css/unified-layout.css">
 </head>
 <body>

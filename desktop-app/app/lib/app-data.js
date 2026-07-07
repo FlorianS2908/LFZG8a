@@ -12,12 +12,61 @@ const defaultSettings = {
   includeDeviceNetworkData: false,
   teacherLanguage: 'de',
   participantLanguage: 'de',
+  breaks: [],
   teacherProfile: {
     displayName: 'Dozent',
     email: '',
     avatarDataUrl: ''
   }
 };
+
+const MAX_TOTAL_BREAK_MINUTES = 75;
+
+function parseTimeToMinutes(timeText) {
+  const match = /^(\d{2}):(\d{2})$/.exec(String(timeText || ''));
+  if (!match) {
+    return null;
+  }
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) {
+    return null;
+  }
+  return (hours * 60) + minutes;
+}
+
+function normalizeBreaks(breaksInput) {
+  if (!Array.isArray(breaksInput)) {
+    return [];
+  }
+
+  const normalizedBreaks = breaksInput
+    .map((breakData, index) => {
+      const start = String(breakData?.start || '').trim();
+      const end = String(breakData?.end || '').trim();
+      const startMinutes = parseTimeToMinutes(start);
+      const endMinutes = parseTimeToMinutes(end);
+      if (startMinutes === null || endMinutes === null || endMinutes <= startMinutes) {
+        return null;
+      }
+      const duration = endMinutes - startMinutes;
+      return {
+        id: String(breakData?.id || `custom-break-${index + 1}`),
+        label: String(breakData?.label || `Pause ${index + 1}`).trim() || `Pause ${index + 1}`,
+        start,
+        end,
+        duration
+      };
+    })
+    .filter(Boolean);
+
+  const totalMinutes = normalizedBreaks.reduce((sum, breakData) => sum + breakData.duration, 0);
+  if (totalMinutes > MAX_TOTAL_BREAK_MINUTES) {
+    return [];
+  }
+
+  return normalizedBreaks.map(({ duration, ...breakData }) => breakData);
+}
 
 const individualAssignmentReleaseKeys = [
   'tag_01_task_tag_sheet',
@@ -200,7 +249,8 @@ function createAppData(baseDir, options = {}) {
     return {
       ...settings,
       teacherLanguage: normalizeLanguage(settings.teacherLanguage),
-      participantLanguage: normalizeLanguage(settings.participantLanguage)
+      participantLanguage: normalizeLanguage(settings.participantLanguage),
+      breaks: normalizeBreaks(settings.breaks)
     };
   }
 
@@ -217,6 +267,7 @@ function createAppData(baseDir, options = {}) {
     };
     merged.teacherLanguage = normalizeLanguage(merged.teacherLanguage);
     merged.participantLanguage = normalizeLanguage(merged.participantLanguage);
+    merged.breaks = normalizeBreaks(merged.breaks);
     writeJson(settingsPath, merged);
     return merged;
   }
@@ -488,6 +539,7 @@ function createAppData(baseDir, options = {}) {
 module.exports = {
   createAppData,
   defaultSettings,
+  normalizeBreaks,
   defaultParticipantReleases,
   defaultTaskReleases
 };

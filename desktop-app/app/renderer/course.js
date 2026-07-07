@@ -33,8 +33,11 @@ const state = {
   breakPopupTimer: null,
   breakToastTimer: null,
   breakPreviousFocus: null,
+  courseSchedule: null,
   dashboardRenderId: 0
 };
+
+const MAX_TOTAL_BREAK_MINUTES = window.LFZQ8aCourseSchedule?.MAX_TOTAL_BREAK_MINUTES || 75;
 
 const releaseLabels = {
   tag_01: 'Tag 1',
@@ -381,6 +384,94 @@ function renderReportList() {
   });
 }
 
+function createDefaultSettingsBreak() {
+  const index = (state.settings.breaks || []).length + 1;
+  return {
+    id: `custom-break-${Date.now()}-${index}`,
+    label: `Pause ${index}`,
+    start: '10:00',
+    end: '10:15'
+  };
+}
+
+function parseSettingsTime(timeText) {
+  const match = /^(\d{2}):(\d{2})$/.exec(String(timeText || ''));
+  if (!match) {
+    return null;
+  }
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) {
+    return null;
+  }
+  return (hours * 60) + minutes;
+}
+
+function getSettingsBreakDuration(breakData) {
+  const start = parseSettingsTime(breakData.start);
+  const end = parseSettingsTime(breakData.end);
+  return start === null || end === null || end <= start ? 0 : end - start;
+}
+
+function getSettingsBreakValidation() {
+  const breaks = Array.isArray(state.settings.breaks) ? state.settings.breaks : [];
+  const total = breaks.reduce((sum, breakData) => sum + getSettingsBreakDuration(breakData), 0);
+  const hasInvalidTime = breaks.some((breakData) => getSettingsBreakDuration(breakData) <= 0);
+  return {
+    total,
+    valid: !hasInvalidTime && total <= MAX_TOTAL_BREAK_MINUTES
+  };
+}
+
+function updateSettingsBreakSummary() {
+  const validation = getSettingsBreakValidation();
+  const summary = byData('[data-setting-break-summary]');
+  byData('[data-setting-break-total]').textContent = `${validation.total} / ${MAX_TOTAL_BREAK_MINUTES} Minuten`;
+  byData('[data-setting-break-status]').textContent = validation.valid
+    ? ''
+    : 'Die Pausen muessen gueltig sein und duerfen insgesamt 75 Minuten nicht ueberschreiten.';
+  summary.classList.toggle('is-invalid', !validation.valid);
+}
+
+function renderSettingsBreaks() {
+  const list = byData('[data-setting-break-list]');
+  const breaks = Array.isArray(state.settings.breaks) ? state.settings.breaks : [];
+  clearElement(list);
+
+  if (!breaks.length) {
+    list.appendChild(createElement('p', 'muted', 'Keine eigenen Pausen gesetzt. Die Standardzeiten bleiben aktiv.'));
+  }
+
+  breaks.forEach((breakData, index) => {
+    const row = createElement('div', 'settings-break-row');
+    [
+      ['Name', 'label', 'text'],
+      ['Start', 'start', 'time'],
+      ['Ende', 'end', 'time']
+    ].forEach(([labelText, field, type]) => {
+      const label = document.createElement('label');
+      const span = document.createElement('span');
+      const input = document.createElement('input');
+      span.textContent = labelText;
+      input.type = type;
+      input.value = breakData[field] || '';
+      input.dataset.settingBreakField = field;
+      input.dataset.settingBreakIndex = String(index);
+      label.append(span, input);
+      row.appendChild(label);
+    });
+
+    const removeButton = createElement('button', 'card-button', 'x');
+    removeButton.type = 'button';
+    removeButton.dataset.removeSettingBreak = String(index);
+    removeButton.setAttribute('aria-label', 'Pause entfernen');
+    row.appendChild(removeButton);
+    list.appendChild(row);
+  });
+
+  updateSettingsBreakSummary();
+}
+
 function populateSettingsDialog() {
   const profile = state.settings.teacherProfile || {};
   byData('[data-setting-display-name]').value = profile.displayName || '';
@@ -405,6 +496,7 @@ function populateSettingsDialog() {
   );
   byData('[data-setting-second-monitor]').checked = state.settings.openTeacherOnSecondMonitor !== false;
   byData('[data-setting-network]').checked = state.settings.includeDeviceNetworkData === true;
+  renderSettingsBreaks();
   renderReportList();
 }
 
@@ -421,6 +513,11 @@ async function saveSettingsFromDialog(event) {
   event.preventDefault();
   const form = event.currentTarget;
   const formData = new FormData(form);
+  const breakValidation = getSettingsBreakValidation();
+  if (!breakValidation.valid) {
+    byData('[data-settings-status]').textContent = 'Die Pausen muessen gueltig sein und duerfen insgesamt 75 Minuten nicht ueberschreiten.';
+    return;
+  }
   const previousProfile = state.settings.teacherProfile || {};
   const avatarDataUrl = await readFileAsDataUrl(formData.get('avatar'));
   state.settings = await window.lfzq8aDesktop.saveSetup({
@@ -429,6 +526,7 @@ async function saveSettingsFromDialog(event) {
     includeDeviceNetworkData: formData.get('includeDeviceNetworkData') === 'on',
     teacherLanguage: String(formData.get('teacherLanguage') || 'de'),
     participantLanguage: String(formData.get('participantLanguage') || 'de'),
+    breaks: state.settings.breaks || [],
     teacherProfile: {
       displayName: String(formData.get('displayName') || '').trim() || 'Dozent',
       email: String(formData.get('email') || '').trim(),
@@ -442,6 +540,7 @@ async function saveSettingsFromDialog(event) {
   state.displays = courseState.displays || state.displays;
   state.testReports = courseState.testReports || state.testReports;
   state.language = state.settings.teacherLanguage || 'de';
+  state.courseSchedule = window.LFZQ8aCourseSchedule?.createSchedule?.(state.settings) || null;
   applyTranslations();
   updateProfileEntry();
   populateSettingsDialog();
@@ -956,7 +1055,7 @@ function tickBreakPopup(now = new Date()) {
   if (!schedule?.updateBreakPopupState) {
     return;
   }
-  const result = schedule.updateBreakPopupState(state.breakPopup, now);
+  const result = schedule.updateBreakPopupState(state.breakPopup, now, state.courseSchedule || undefined);
   state.breakPopup = result.state;
 
   if (result.endedBreak) {
@@ -1556,6 +1655,7 @@ async function loadInitialState() {
   state.taskReleases = courseState.taskReleases || {};
   state.language = courseState.settings?.teacherLanguage || 'de';
   state.translations = courseState.translations || {};
+  state.courseSchedule = window.LFZQ8aCourseSchedule?.createSchedule?.(state.settings) || null;
   state.activeView = getInitialView();
   applyTranslations();
   updateProfileEntry();
@@ -1609,6 +1709,23 @@ document.addEventListener('click', (event) => {
     window.lfzq8aDesktop.openTestReportDir();
   }
 
+  if (event.target.closest('[data-add-setting-break]')) {
+    state.settings.breaks = [...(state.settings.breaks || []), createDefaultSettingsBreak()];
+    renderSettingsBreaks();
+  }
+
+  if (event.target.closest('[data-reset-setting-breaks]')) {
+    state.settings.breaks = [];
+    renderSettingsBreaks();
+  }
+
+  const removeSettingBreakButton = event.target.closest('[data-remove-setting-break]');
+  if (removeSettingBreakButton) {
+    const index = Number(removeSettingBreakButton.dataset.removeSettingBreak);
+    state.settings.breaks = (state.settings.breaks || []).filter((breakData, breakIndex) => breakIndex !== index);
+    renderSettingsBreaks();
+  }
+
   if (event.target.closest('[data-break-close]')) {
     closeBreakPopup('close');
   }
@@ -1619,6 +1736,17 @@ document.addEventListener('click', (event) => {
 });
 
 document.addEventListener('input', (event) => {
+  const breakInput = event.target.closest('[data-setting-break-field]');
+  if (breakInput) {
+    const index = Number(breakInput.dataset.settingBreakIndex);
+    state.settings.breaks[index] = {
+      ...state.settings.breaks[index],
+      [breakInput.dataset.settingBreakField]: breakInput.value
+    };
+    updateSettingsBreakSummary();
+    return;
+  }
+
   const filter = event.target.closest('[data-task-filter]');
   if (!filter) {
     return;

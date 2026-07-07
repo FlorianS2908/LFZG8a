@@ -83,6 +83,24 @@ test('active project files do not contain absolute Windows or root-relative path
   assert.deepEqual(offenders.map((filePath) => path.relative(repoRoot, filePath)), []);
 });
 
+test('active project tree has no temporary files, backup html duplicates, or empty stylesheet links', () => {
+  const files = walkFiles(repoRoot, isTextFile);
+  const forbiddenNames = files
+    .map((filePath) => path.relative(repoRoot, filePath).replace(/\\/g, '/'))
+    .filter((filePath) => (
+      /(^|\/)_tmp_/.test(filePath)
+      || /_backup(?:_|_vor_|\.|$)/i.test(filePath)
+      || / - Kopie\.html$/i.test(filePath)
+      || /LFZQ8a_Tag_0[45]_Webvariante_fachlich_Testlayout\.html$/i.test(filePath)
+    ));
+  const emptyStylesheetLinks = files
+    .filter((filePath) => /<link\s+rel=["']stylesheet["']\s+href=["']\s*["']\s*>/i.test(fs.readFileSync(filePath, 'utf8')))
+    .map((filePath) => path.relative(repoRoot, filePath).replace(/\\/g, '/'));
+
+  assert.deepEqual(forbiddenNames, []);
+  assert.deepEqual(emptyStylesheetLinks, []);
+});
+
 test('participant folder is standalone and does not link outside itself', () => {
   const files = walkFiles(participantRoot, isWebFile);
   const escapingReferences = [];
@@ -526,11 +544,8 @@ test('teacher workplace opens all dashboard links through the desktop window bri
 
 test('teacher main view shows dashboard cards while legacy navigation is preserved', () => {
   const teacherIndex = path.join(teacherRoot, 'index_dozent.html');
-  const backupIndex = path.join(teacherRoot, 'index_dozent_backup_vor_neustruktur.html');
   const content = fs.readFileSync(teacherIndex, 'utf8');
-  const backupContent = fs.readFileSync(backupIndex, 'utf8');
 
-  assert.equal(fs.existsSync(backupIndex), true);
   assert.match(content, /<!-- Neue Kursuebersicht: Start -->/);
   assert.match(content, /class="start-shell"/);
   assert.match(content, /class="topbar"/);
@@ -565,17 +580,15 @@ test('teacher main view shows dashboard cards while legacy navigation is preserv
   assert.match(content, /class="legacy-navigation" hidden/);
   assert.match(content, /href="tag_01\/LFZQ8a_tag_01_Webvariante_Dozent\.html"/);
   assert.match(content, /href="tools\/html-css-tag-tool-dozent\.html"/);
-  assert.match(backupContent, /Dozentenarbeitsplatz - LFZQ8a HTML &amp; CSS/);
-  assert.match(backupContent, /href="tag_05\/LFZQ8a_tag_05_Webvariante_Dozent\.html"/);
+  assert.match(content, /href="Projektmaterialien\/aufgaben\/akkordeon\/Ausgangssituation\/"/);
+  assert.match(content, /href="Projektmaterialien\/aufgaben\/wunderland\/Ausgangssituation\/"/);
+  assert.doesNotMatch(content, /Projektmaterialien\/loesungen\/(?:akkordeon|wunderland)\/ausgangssituation/);
 });
 
 test('teacher and participant start views keep the shared shell and preserved legacy content', () => {
   const teacherContent = fs.readFileSync(path.join(teacherRoot, 'index_dozent.html'), 'utf8');
-  const participantBackup = path.join(participantRoot, 'index_teilnehmer_backup_vor_neustruktur.html');
   const participantContent = fs.readFileSync(path.join(participantRoot, 'index_teilnehmer.html'), 'utf8');
-  const participantBackupContent = fs.readFileSync(participantBackup, 'utf8');
 
-  assert.equal(fs.existsSync(participantBackup), true);
   [
     /class="start-shell"/,
     /class="topbar"/,
@@ -600,7 +613,6 @@ test('teacher and participant start views keep the shared shell and preserved le
   assert.match(participantContent, /data-release-key="tag_01_web"/);
   assert.match(participantContent, /data-release-key="tag_05_quiz50"/);
   assert.match(participantContent, /href="Projektmaterialien\/index\.html"/);
-  assert.match(participantBackupContent, /Teilnehmerbereich - LFZQ8a HTML &amp; CSS/);
 });
 
 test('start view profile settings are stored locally for teacher and participant', () => {

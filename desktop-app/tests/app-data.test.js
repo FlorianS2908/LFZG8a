@@ -2,7 +2,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const assert = require('node:assert/strict');
-const { createAppData, defaultSettings, defaultParticipantReleases, defaultTaskReleases } = require('../app/lib/app-data');
+const { createAppData, defaultSettings, defaultParticipantReleases, defaultTaskReleases, normalizeBreaks } = require('../app/lib/app-data');
 const taskPackageRegistry = require('../app/lib/task-packages.json');
 
 function createTempAppData() {
@@ -59,6 +59,7 @@ test('app data saves setup without losing existing settings', () => {
       includeDeviceNetworkData: false,
       teacherLanguage: 'de',
       participantLanguage: 'de',
+      breaks: [],
       teacherProfile: {
         displayName: 'Dozent',
         email: '',
@@ -107,6 +108,7 @@ test('app data resets only history and keeps settings untouched', () => {
       includeDeviceNetworkData: false,
       teacherLanguage: 'de',
       participantLanguage: 'de',
+      breaks: [],
       teacherProfile: {
         displayName: 'Dozent',
         email: '',
@@ -118,10 +120,61 @@ test('app data resets only history and keeps settings untouched', () => {
   }
 });
 
+test('app data stores valid custom breaks and rejects over-limit schedules', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const validSettings = appData.saveSettings({
+      breaks: [
+        { label: 'Vormittag', start: '10:00', end: '10:15' },
+        { label: 'Mittag', start: '11:45', end: '12:45' }
+      ]
+    });
+
+    assert.deepEqual(validSettings.breaks, [
+      { id: 'custom-break-1', label: 'Vormittag', start: '10:00', end: '10:15' },
+      { id: 'custom-break-2', label: 'Mittag', start: '11:45', end: '12:45' }
+    ]);
+
+    const overLimitSettings = appData.saveSettings({
+      breaks: [
+        { label: 'Zu lang', start: '10:00', end: '11:16' }
+      ]
+    });
+
+    assert.deepEqual(overLimitSettings.breaks, []);
+  } finally {
+    cleanup();
+  }
+});
+
+test('break normalization keeps only complete valid schedules', () => {
+  assert.deepEqual(normalizeBreaks(null), []);
+  assert.deepEqual(normalizeBreaks({ start: '10:00', end: '10:15' }), []);
+  assert.deepEqual(normalizeBreaks([{ end: '10:15' }]), []);
+  assert.deepEqual(normalizeBreaks([{ start: '10:00' }]), []);
+  assert.deepEqual(normalizeBreaks([{ start: '10:00', end: '10:00' }]), []);
+  assert.deepEqual(normalizeBreaks([{ start: '99:00', end: '10:15' }]), []);
+  assert.deepEqual(normalizeBreaks([{ start: '10:00', end: '11:16' }]), []);
+  assert.deepEqual(normalizeBreaks([{ start: '10:00', end: '10:15' }]), [
+    { id: 'custom-break-1', label: 'Pause 1', start: '10:00', end: '10:15' }
+  ]);
+  assert.deepEqual(normalizeBreaks([
+    { label: 'Gueltig', start: '10:00', end: '10:15' },
+    { label: 'Ungueltig', start: '10:30', end: '10:20' }
+  ]), [
+    { id: 'custom-break-1', label: 'Gueltig', start: '10:00', end: '10:15' }
+  ]);
+  assert.deepEqual(normalizeBreaks([{ id: 'b1', label: '', start: '10:00', end: '10:15' }]), [
+    { id: 'b1', label: 'Pause 1', start: '10:00', end: '10:15' }
+  ]);
+});
+
 test('app data stores teacher profile settings with defaults', () => {
   const { appData, cleanup } = createTempAppData();
 
   try {
+    const defaults = appData.saveSettings();
     const settings = appData.saveSettings({
       teacherProfile: {
         displayName: 'Florian Schaffer',
@@ -131,6 +184,8 @@ test('app data stores teacher profile settings with defaults', () => {
     });
     const persisted = appData.getSettings();
 
+    assert.equal(defaults.configured, true);
+    assert.deepEqual(defaults.teacherProfile, defaultSettings.teacherProfile);
     assert.deepEqual(settings.teacherProfile, {
       displayName: 'Florian Schaffer',
       email: 'florian@example.test',
@@ -215,6 +270,15 @@ test('app data omits network identifiers from test reports unless enabled', () =
     const json = JSON.parse(fs.readFileSync(report.paths.json, 'utf8'));
 
     assert.deepEqual(json.device.network, []);
+
+    appData.saveSettings({ includeDeviceNetworkData: true });
+    const reportWithoutNetwork = appData.saveTestReport({
+      device: { hostname: 'CLIENT-03' },
+      results: { status: 'ok', checks: [] }
+    }, new Date('2026-07-01T12:36:00.000Z'));
+    const jsonWithoutNetwork = JSON.parse(fs.readFileSync(reportWithoutNetwork.paths.json, 'utf8'));
+
+    assert.deepEqual(jsonWithoutNetwork.device.network, []);
   } finally {
     cleanup();
   }
@@ -485,13 +549,17 @@ test('app data keeps participant defaults and progress fallbacks stable', () => 
     const fallback = appData.updateParticipantProgress(generated.participantId, null, new Date('2026-07-01T11:03:00.000Z'));
 
     fs.writeFileSync(appData.participantsPath, JSON.stringify([{ participantId: 'tn-alt', displayName: 'Alt' }]), 'utf8');
+    const legacyFallback = appData.updateParticipantProgress('tn-alt', {}, new Date('2026-07-01T11:04:00.000Z'));
 
     assert.match(generated.participantId, /^tn-/);
     assert.equal(refreshed.displayName, 'Teilnehmer');
     assert.equal(clamped.status.progress, 100);
     assert.equal(fallback.status.currentTask, '');
     assert.equal(fallback.status.state, 'online');
-    assert.equal(appData.listParticipants(new Date('2026-07-01T11:04:00.000Z'))[0].online, false);
+    assert.equal(legacyFallback.status.currentTask, '');
+    assert.equal(legacyFallback.status.progress, 0);
+    assert.equal(legacyFallback.status.state, 'online');
+    assert.equal(appData.listParticipants(new Date('2026-07-01T11:05:00.000Z'))[0].online, false);
   } finally {
     cleanup();
   }

@@ -15,6 +15,7 @@
       </div>
       <nav aria-label="Einrichtung">
         <a href="#sprache" data-i18n="setupNavLanguage">Sprache</a>
+        <a href="#pausen" data-i18n="setupNavBreaks">Pausen</a>
         <a href="#monitor" data-i18n="setupNavMonitor">Monitor</a>
         <a href="#inhalte" data-i18n="setupNavContent">Inhalte</a>
         <a href="#protokolle" data-i18n="setupNavReports">Protokolle</a>
@@ -62,15 +63,30 @@
           <p class="muted" data-i18n="languageNote">Fachliche Unterrichtsmaterialien bleiben in ihrer Originalsprache. Uebersetzt werden App-Navigation, Wizard, Status und Bedienoberflaechen.</p>
         </article>
 
+        <article id="pausen" class="panel accent-green panel-wide">
+          <div class="tag" data-i18n="stepBreaks">Schritt 2</div>
+          <h2 data-i18n="breaksTitle">Pausenzeiten</h2>
+          <p class="muted" data-i18n="breaksText">Lege eigene Pausenbloecke fest. Insgesamt sind maximal 75 Minuten Pause moeglich. Ohne eigene Eintraege bleiben die Standardzeiten aktiv.</p>
+          <div id="breakList" class="break-list"></div>
+          <div class="break-summary">
+            <strong id="breakTotal">0 / 75 Minuten</strong>
+            <span id="breakStatus" class="muted"></span>
+          </div>
+          <div class="actions">
+            <button id="addBreak" type="button" data-i18n="addBreak">Pause hinzufuegen</button>
+            <button id="resetBreaks" type="button" data-i18n="useDefaultBreaks">Standardzeiten verwenden</button>
+          </div>
+        </article>
+
         <article id="monitor" class="panel accent-cyan">
-          <div class="tag" data-i18n="stepMonitor">Schritt 2</div>
+          <div class="tag" data-i18n="stepMonitor">Schritt 3</div>
           <h2 data-i18n="monitorTitle">Monitor fuer Dozenteninfo</h2>
           <p class="muted" data-i18n="monitorText">Waehle den Bildschirm, auf dem die Dozenteninfos automatisch erscheinen sollen.</p>
           <div id="displayList" class="display-list"></div>
         </article>
 
         <article id="inhalte" class="panel accent-blue">
-          <div class="tag" data-i18n="stepContent">Schritt 3</div>
+          <div class="tag" data-i18n="stepContent">Schritt 4</div>
           <h2 data-i18n="contentTitle">Inhalte pruefen</h2>
           <dl class="meta-list">
             <dt data-i18n="overviewLabel">Uebersicht</dt>
@@ -83,7 +99,7 @@
         </article>
 
         <article id="protokolle" class="panel accent-green">
-          <div class="tag" data-i18n="stepReports">Schritt 4</div>
+          <div class="tag" data-i18n="stepReports">Schritt 5</div>
           <h2 data-i18n="reportsTitle">Testprotokolle</h2>
           <label class="check-option">
             <input id="saveLocalTestReports" type="checkbox" checked>
@@ -101,7 +117,7 @@
         </article>
 
         <article id="start" class="panel accent-orange">
-          <div class="tag" data-i18n="stepStart">Schritt 5</div>
+          <div class="tag" data-i18n="stepStart">Schritt 6</div>
           <h2 data-i18n="startTitle">Unterricht starten</h2>
           <p class="muted" data-i18n="startText">Speichere die Konfiguration und oeffne danach die Dozenten-Zentrale.</p>
           <div class="actions">

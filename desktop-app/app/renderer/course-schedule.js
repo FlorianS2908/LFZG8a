@@ -10,12 +10,62 @@
     ]
   };
 
+  const MAX_TOTAL_BREAK_MINUTES = 75;
+
   function parseTimeToMinutes(timeText) {
-    const [hours, minutes] = String(timeText || '').split(':').map(Number);
-    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    const match = /^(\d{2}):(\d{2})$/.exec(String(timeText || ''));
+    if (!match) {
+      return 0;
+    }
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    if (hours > 23 || minutes > 59) {
       return 0;
     }
     return (hours * 60) + minutes;
+  }
+
+  function normalizeBreaks(breaksInput) {
+    if (!Array.isArray(breaksInput)) {
+      return [];
+    }
+
+    const normalizedBreaks = breaksInput
+      .map((breakData, index) => {
+        const start = String(breakData?.start || '').trim();
+        const end = String(breakData?.end || '').trim();
+        const startMinutes = parseTimeToMinutes(start);
+        const endMinutes = parseTimeToMinutes(end);
+        if (!start || !end || endMinutes <= startMinutes) {
+          return null;
+        }
+        const duration = endMinutes - startMinutes;
+        return {
+          id: String(breakData?.id || `custom-break-${index + 1}`),
+          label: String(breakData?.label || `Pause ${index + 1}`).trim() || `Pause ${index + 1}`,
+          start,
+          end,
+          duration
+        };
+      })
+      .filter(Boolean);
+
+    const totalMinutes = normalizedBreaks.reduce((sum, breakData) => sum + breakData.duration, 0);
+    if (totalMinutes > MAX_TOTAL_BREAK_MINUTES) {
+      return [];
+    }
+
+    return normalizedBreaks
+      .map(({ duration, ...breakData }) => breakData)
+      .sort((first, second) => parseTimeToMinutes(first.start) - parseTimeToMinutes(second.start));
+  }
+
+  function createSchedule(settings = {}) {
+    const breaks = normalizeBreaks(settings.breaks);
+    return {
+      ...COURSE_SCHEDULE,
+      breaks: breaks.length ? breaks : COURSE_SCHEDULE.breaks
+    };
   }
 
   function minutesFromDate(date) {
@@ -117,6 +167,8 @@
 
   const api = {
     COURSE_SCHEDULE,
+    MAX_TOTAL_BREAK_MINUTES,
+    createSchedule,
     createBreakPopupState,
     dismissBreakPopup,
     getActiveBreakAt,

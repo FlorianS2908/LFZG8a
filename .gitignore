@@ -1,2 +1,4 @@
 _tmp_*
 dist/
+node_modules/
+desktop-app/node_modules/

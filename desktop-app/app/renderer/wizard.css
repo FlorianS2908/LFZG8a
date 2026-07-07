@@ -293,7 +293,8 @@ h1 {
 }
 
 .display-list,
-.history-list {
+.history-list,
+.break-list {
   display: grid;
   gap: 0.65rem;
   margin-top: 1rem;
@@ -323,6 +324,58 @@ h1 {
   color: var(--ink);
   font: inherit;
   font-weight: 800;
+}
+
+.break-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(130px, .8fr) minmax(130px, .8fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+  padding: 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fbfdfe;
+}
+
+.break-row label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.break-row input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0 12px;
+  background: #ffffff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+}
+
+.break-row button {
+  min-width: 46px;
+  padding-inline: 0.85rem;
+}
+
+.break-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.9rem;
+}
+
+.break-summary strong {
+  color: var(--ink);
+}
+
+.break-summary.is-invalid strong,
+.break-summary.is-invalid span {
+  color: var(--red);
 }
 
 .display-option,
@@ -411,4 +464,5 @@ h1 {
   .hero { padding: 26px 18px; }
   nav { grid-template-columns: 1fr; }
   .meta-list { grid-template-columns: 1fr; }
+  .break-row { grid-template-columns: 1fr; }
 }
