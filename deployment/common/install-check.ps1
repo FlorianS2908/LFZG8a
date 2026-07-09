@@ -4,6 +4,7 @@ param(
   [switch]$Start,
   [switch]$WizardTest,
   [switch]$TeacherStartviewTest,
+  [switch]$TestAllViews,
   [string]$ParticipantUrl = ''
 )
 
@@ -134,6 +135,9 @@ function Start-TeacherApp {
   }
   if ($TeacherStartviewTest) {
     $args += '--teacher-startview'
+  }
+  if ($TestAllViews) {
+    $args += '--test-all-views'
   }
 
   Write-Step "Starte Dozenten-App..."

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ueTool_asSaaS Kursverwaltung</title>
+  <link rel="stylesheet" href="workspace.css">
+</head>
+<body>
+  <div class="tool-center-shell factory-shell">
+    <header class="workspace-header">
+      <div class="workspace-title">
+        <img class="workspace-company-logo" src="assets/ploglan-logo.png" alt="Ploglan">
+        <div>
+          <p class="eyebrow">Kursverwaltung</p>
+          <h1>Kursverwaltung</h1>
+        </div>
+      </div>
+      <div class="workspace-actions">
+        <button class="secondary-button" type="button" data-open-landing>ueTool_asSaaS</button>
+        <button class="primary-button" type="button" data-refresh>Aktualisieren</button>
+      </div>
+    </header>
+
+    <main class="factory-layout">
+      <article class="tool-card">
+        <h2>Kurs anlegen</h2>
+        <div class="factory-form-grid">
+          <label>Kursname<input data-course-name placeholder="HTML/CSS Kurs Gruppe B"></label>
+          <label>Kurs-ID<input data-course-id placeholder="html-css-gruppe-b"></label>
+          <label>Fachbereich
+            <select data-course-department>
+              <option value="FIAE">FIAE</option>
+              <option value="FISI">FISI</option>
+              <option value="KABUE">KABUe</option>
+              <option value="KITS">KiTS</option>
+              <option value="ALLGEMEIN">Allgemein</option>
+            </select>
+          </label>
+          <label>Status
+            <select data-course-status>
+              <option value="draft">Draft</option>
+              <option value="active">Aktiv</option>
+              <option value="paused">Pausiert</option>
+              <option value="completed">Abgeschlossen</option>
+            </select>
+          </label>
+          <label>Startdatum<input data-course-start-date type="date"></label>
+          <label>Enddatum<input data-course-end-date type="date"></label>
+        </div>
+        <button class="primary-button" type="button" data-create-course>Kurs erstellen</button>
+        <p class="status-line" data-course-status-line></p>
+      </article>
+
+      <article class="tool-card">
+        <h2>Kurszuordnung</h2>
+        <div class="factory-form-grid">
+          <label>Kurs<select data-selected-course></select></label>
+          <label>Kurscontainer<select data-selected-container></select></label>
+          <label>Dozent<select data-selected-teacher></select></label>
+          <label>Teilnehmer<select data-selected-participant></select></label>
+        </div>
+        <div class="button-row">
+          <button class="secondary-button" type="button" data-assign-container>Container zuweisen</button>
+          <button class="secondary-button" type="button" data-assign-teacher>Dozent zuweisen</button>
+          <button class="secondary-button" type="button" data-assign-participant>Teilnehmer zuweisen</button>
+        </div>
+        <p class="status-line" data-assignment-status></p>
+      </article>
+
+      <article class="tool-card">
+        <h2>Kursuebersicht</h2>
+        <section class="factory-grid" data-course-list></section>
+      </article>
+
+      <article class="tool-card">
+        <h2>Synchronisationsstatus</h2>
+        <section class="history-list" data-sync-events></section>
+      </article>
+
+      <article class="tool-card">
+        <h2>Aenderungsprotokoll</h2>
+        <section class="history-list" data-audit-log></section>
+      </article>
+    </main>
+  </div>
+  <script src="course-management.js"></script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LFZQ8a Â· Tag 3 Â· CSS Grid und Layoutsysteme Â· Webvariante</title>
+<title>LFZQ8a · Tag 3 · CSS Grid und Layoutsysteme · Webvariante</title>
 <style>
 :root {
   --ink: #0b1b4d;
@@ -83,7 +83,7 @@ section { margin-top: 44px; }
 .tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; background: #eef9fc; color: var(--cyan-dark); font-size: 12px; text-transform: uppercase; font-weight: 900; letter-spacing: .04em; margin-bottom: 12px; }
 .flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
 .flow-step { position: relative; min-height: 118px; padding: 18px; background: white; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 12px 28px rgba(9,31,66,.08); }
-.flow-step::after { content: "â€º"; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); font-size: 34px; color: var(--cyan); font-weight: 900; z-index: 2; }
+.flow-step::after { content: ">"; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); font-size: 34px; color: var(--cyan); font-weight: 900; z-index: 2; }
 .flow-step:last-child::after { display: none; }
 .flow-step strong { display: block; font-size: 16px; margin-bottom: 6px; }
 .flow-step span { display: block; color: var(--ink-soft); font-size: 13px; font-weight: 600; }
@@ -105,7 +105,7 @@ ul.clean { padding-left: 20px; margin: 10px 0 0; color: var(--ink-soft); font-we
 .panel-headline h3 { margin: 0; font-size: 22px; } .panel-headline p { margin: 2px 0 0; color: var(--ink-soft); }
 .benefit-list, .steps-list, .note-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
 .benefit-list li, .steps-list li, .note-list li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
-.benefit-list li::before, .note-list li::before { content: "âœ“"; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 900; background: linear-gradient(135deg, var(--cyan), var(--blue)); }
+.benefit-list li::before, .note-list li::before { content: "✓"; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 900; background: linear-gradient(135deg, var(--cyan), var(--blue)); }
 .steps-list { counter-reset: step; }
 .steps-list li::before { counter-increment: step; content: counter(step); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 900; background: linear-gradient(135deg, var(--blue), #0c58a7); }
 .full-note { margin-top: 18px; border-radius: 20px; border: 2px solid #8bd0a5; background: #f6fcf7; padding: 18px 20px; display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; font-size: 18px; font-weight: 700; }
@@ -176,7 +176,7 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
 @media (max-width: 1120px) { .property-grid, .axis-note { grid-template-columns:1fr; } }
 
 
-/* Tag 3 ErgÃ¤nzungen */
+/* Tag 3 Ergänzungen */
 .grid-board{display:grid;grid-template-columns:1.1fr .75fr 1fr;grid-template-rows:74px 96px 96px;gap:12px;min-height:320px}
 .grid-board div,.track-card,.area-cell,.mini-css-box{border-radius:16px;border:2px solid var(--line);background:#f8fbfd;display:grid;place-items:center;text-align:center;font-weight:900;color:var(--ink);padding:12px;box-shadow:0 8px 18px rgba(9,31,66,.06)}
 .grid-board .head{grid-column:1/4;background:#eaf8ef;border-color:#8bd0a5}.grid-board .navcell{grid-row:2/4;background:#eef5ff;border-color:#89b8ec}.grid-board .chart{grid-column:2/4;background:#eef9fc;border-color:#95ddd9}.grid-board .wide{grid-column:2/4;background:#fff7ed;border-color:#ffc37c}
@@ -188,7 +188,7 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
 <body>
 <div class="app">
 <aside>
-<a class="backlink" href="../index_dozent.html">â† BereichsÃ¼bersicht</a>
+<a class="backlink" href="../index_dozent.html">← Bereichsübersicht</a>
 <div class="brand">
 <div class="brand-mark">03</div>
 <div><small>LFZQ8a</small><strong>HTML &amp; CSS<br/>Tag 3</strong></div>
@@ -206,12 +206,12 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
 <a href="#praxis">Praxisauftrag</a>
 <a href="#check">Check & Sicherung</a>
 </nav>
-<div class="nav-hint"><strong>Unterrichtsidee:</strong><br/>Erst Raster und Begriffe klÃ¤ren, dann Grid Areas und responsive Kachelraster praktisch anwenden.</div>
+<div class="nav-hint"><strong>Unterrichtsidee:</strong><br/>Erst Raster und Begriffe klären, dann Grid Areas und responsive Kachelraster praktisch anwenden.</div>
 </aside>
 <main>
 <header class="hero" id="top">
 <div>
-<div class="eyebrow">LFZQ8a Â· HTML &amp; CSS Â· Tag 3</div>
+<div class="eyebrow">LFZQ8a · HTML &amp; CSS · Tag 3</div>
 <h1>CSS Grid und Layoutsysteme</h1>
 <p>Diese Webvariante vertieft CSS Grid als zweidimensionales Layoutsystem. Im Fokus stehen Raster, Spalten, Zeilen, benannte Bereiche, responsive Kacheln und die fachliche Abgrenzung zu Flexbox.</p>
 </div>
@@ -223,20 +223,20 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
 </header>
 
 <section id="lernziele">
-<div class="section-head"><h2>1. Lernziele des Tages</h2><p>Am Ende sollen die Teilnehmenden Grid nicht nur kopieren, sondern fachlich begrÃ¼nden kÃ¶nnen.</p></div>
+<div class="section-head"><h2>1. Lernziele des Tages</h2><p>Am Ende sollen die Teilnehmenden Grid nicht nur kopieren, sondern fachlich begründen können.</p></div>
 <div class="kpi-grid">
 <article class="card accent-cyan"><div class="tag">Verstehen</div><h3>Grid als Rastermodell</h3><p>Zeilen, Spalten, Tracks, Zellen, Linien und Bereiche korrekt benennen.</p></article>
 <article class="card accent-blue"><div class="tag">Anwenden</div><h3>Layout strukturieren</h3><p>Seitenbereiche mit <code>display:grid</code>, <code>gap</code> und Template-Regeln aufbauen.</p></article>
 <article class="card accent-green"><div class="tag">Responsiv</div><h3>Kacheln flexibel machen</h3><p>Mit <code>repeat()</code>, <code>auto-fit</code> und <code>minmax()</code> robuste Raster erzeugen.</p></article>
-<article class="card accent-orange"><div class="tag">Entscheiden</div><h3>Grid vs. Flexbox</h3><p>Fachlich begrÃ¼nden, wann ein Raster und wann eine eindimensionale Ausrichtung sinnvoller ist.</p></article>
+<article class="card accent-orange"><div class="tag">Entscheiden</div><h3>Grid vs. Flexbox</h3><p>Fachlich begründen, wann ein Raster und wann eine eindimensionale Ausrichtung sinnvoller ist.</p></article>
 </div>
 </section>
 
 <section id="grundidee">
-<div class="section-head"><h2>2. Grundidee von CSS Grid</h2><p>CSS Grid ist fÃ¼r zweidimensionale Layouts gedacht: Es steuert Spalten und Zeilen gleichzeitig.</p></div>
+<div class="section-head"><h2>2. Grundidee von CSS Grid</h2><p>CSS Grid ist für zweidimensionale Layouts gedacht: Es steuert Spalten und Zeilen gleichzeitig.</p></div>
 <div class="split-panel">
-<div class="split-side accent-cyan"><h3>Fachliche Einordnung</h3><p>Grid beschreibt einen Container als Raster. Die direkten Kind-Elemente werden als Grid-Items in dieses Raster eingeordnet. Dadurch lassen sich groÃŸe Seitenbereiche, Dashboards und komplexe Kachelstrukturen kontrolliert aufbauen.</p><ul class="clean"><li>geeignet fÃ¼r Seitenlayout und Raster</li><li>arbeitet mit Spalten und Zeilen</li><li>unterstÃ¼tzt feste, flexible und automatische GrÃ¶ÃŸen</li><li>lÃ¤sst sich mit Media Queries oder responsiven Funktionen kombinieren</li></ul></div>
-<div class="split-side"><div class="grid-board"><div class="head">Header</div><div class="navcell">Navigation</div><div class="chart">DiagrammflÃ¤che</div><div>Kachel A</div><div>Kachel B</div><div class="wide">Detailbereich</div></div></div>
+<div class="split-side accent-cyan"><h3>Fachliche Einordnung</h3><p>Grid beschreibt einen Container als Raster. Die direkten Kind-Elemente werden als Grid-Items in dieses Raster eingeordnet. Dadurch lassen sich große Seitenbereiche, Dashboards und komplexe Kachelstrukturen kontrolliert aufbauen.</p><ul class="clean"><li>geeignet für Seitenlayout und Raster</li><li>arbeitet mit Spalten und Zeilen</li><li>unterstützt feste, flexible und automatische Größen</li><li>lässt sich mit Media Queries oder responsiven Funktionen kombinieren</li></ul></div>
+<div class="split-side"><div class="grid-board"><div class="head">Header</div><div class="navcell">Navigation</div><div class="chart">Diagrammfläche</div><div>Kachel A</div><div>Kachel B</div><div class="wide">Detailbereich</div></div></div>
 </div>
 </section>
 
@@ -244,33 +244,33 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
 <div class="section-head"><h2>3. Wichtige Grid-Begriffe</h2><p>Die Begriffe helfen, CSS-Regeln sauber zu lesen und Fehler gezielt zu finden.</p></div>
 <div class="three-col">
 <article class="card accent-cyan"><div class="tag">Container</div><h3>Grid Container</h3><p>Das Element mit <code>display:grid</code>. Nur seine direkten Kinder werden automatisch zu Grid-Items.</p></article>
-<article class="card accent-blue"><div class="tag">Items</div><h3>Grid Items</h3><p>Direkte Kind-Elemente des Containers. Sie kÃ¶nnen automatisch platziert oder gezielt positioniert werden.</p></article>
+<article class="card accent-blue"><div class="tag">Items</div><h3>Grid Items</h3><p>Direkte Kind-Elemente des Containers. Sie können automatisch platziert oder gezielt positioniert werden.</p></article>
 <article class="card accent-green"><div class="tag">Tracks</div><h3>Spalten und Zeilen</h3><p>Grid Tracks sind die Spalten und Zeilen des Rasters. Sie entstehen durch Template-Regeln.</p></article>
 </div>
 <div class="two-col" style="margin-top:18px;">
-<article class="card"><h3>Linien, Zellen und Bereiche</h3><table class="mini-table"><tr><th>Begriff</th><th>Bedeutung</th></tr><tr><td>Grid Line</td><td>Trennlinie zwischen Spalten oder Zeilen.</td></tr><tr><td>Grid Cell</td><td>Eine einzelne Rasterzelle.</td></tr><tr><td>Grid Area</td><td>ZusammenhÃ¤ngender Bereich aus mehreren Zellen.</td></tr><tr><td>Gap</td><td>Abstand zwischen Tracks, ohne Extra-Margins an Items.</td></tr></table></article>
-<article class="card"><h3>Typischer Denkfehler</h3><p>Grid-Eigenschaften wirken nicht immer auf derselben Ebene. <code>grid-template-columns</code> gehÃ¶rt auf den Container. Eigenschaften wie <code>grid-column</code> oder <code>grid-area</code> gehÃ¶ren auf das jeweilige Item.</p><div class="full-note compact"><div class="star">!</div><div><strong>PrÃ¼ffrage:</strong> Will ich das Raster definieren oder ein Element im Raster platzieren?</div></div></article>
+<article class="card"><h3>Linien, Zellen und Bereiche</h3><table class="mini-table"><tr><th>Begriff</th><th>Bedeutung</th></tr><tr><td>Grid Line</td><td>Trennlinie zwischen Spalten oder Zeilen.</td></tr><tr><td>Grid Cell</td><td>Eine einzelne Rasterzelle.</td></tr><tr><td>Grid Area</td><td>Zusammenhängender Bereich aus mehreren Zellen.</td></tr><tr><td>Gap</td><td>Abstand zwischen Tracks, ohne Extra-Margins an Items.</td></tr></table></article>
+<article class="card"><h3>Typischer Denkfehler</h3><p>Grid-Eigenschaften wirken nicht immer auf derselben Ebene. <code>grid-template-columns</code> gehört auf den Container. Eigenschaften wie <code>grid-column</code> oder <code>grid-area</code> gehören auf das jeweilige Item.</p><div class="full-note compact"><div class="star">!</div><div><strong>Prüffrage:</strong> Will ich das Raster definieren oder ein Element im Raster platzieren?</div></div></article>
 </div>
 </section>
 
 <section id="spalten">
-<div class="section-head"><h2>4. Spalten, Zeilen und Gap</h2><p>Die Grundstruktur entsteht Ã¼ber Template-Regeln. <code>fr</code> verteilt den verfÃ¼gbaren Raum anteilig.</p></div>
+<div class="section-head"><h2>4. Spalten, Zeilen und Gap</h2><p>Die Grundstruktur entsteht über Template-Regeln. <code>fr</code> verteilt den verfügbaren Raum anteilig.</p></div>
 <div class="two-col">
-<article class="example-box"><h3>Grid Tracks lesen</h3><div class="track-grid"><div class="track-card"><strong>1fr</strong><small>flexibler Anteil</small></div><div class="track-card"><strong>2fr</strong><small>doppelter Anteil</small></div><div class="track-card"><strong>240px</strong><small>feste Breite</small></div><div class="track-card"><strong>auto</strong><small>inhaltlich abhÃ¤ngig</small></div></div><div class="axis-note"><div><strong>Spalten</strong><code>grid-template-columns</code> definiert die horizontale Rasterstruktur.</div><div><strong>Zeilen</strong><code>grid-template-rows</code> definiert die vertikale Rasterstruktur.</div></div></article>
+<article class="example-box"><h3>Grid Tracks lesen</h3><div class="track-grid"><div class="track-card"><strong>1fr</strong><small>flexibler Anteil</small></div><div class="track-card"><strong>2fr</strong><small>doppelter Anteil</small></div><div class="track-card"><strong>240px</strong><small>feste Breite</small></div><div class="track-card"><strong>auto</strong><small>inhaltlich abhängig</small></div></div><div class="axis-note"><div><strong>Spalten</strong><code>grid-template-columns</code> definiert die horizontale Rasterstruktur.</div><div><strong>Zeilen</strong><code>grid-template-rows</code> definiert die vertikale Rasterstruktur.</div></div></article>
 <article><div class="code"><div class="code-title"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span> Grundraster</div><pre>.layout {
   display: grid;
   grid-template-columns: 220px 1fr 320px;
   grid-template-rows: auto 1fr auto;
   gap: 1rem;
-}</pre></div><div class="full-note compact"><div class="star">âœ“</div><div><strong>Merke:</strong> <code>gap</code> erzeugt den Abstand im Raster. FÃ¼r gleichmÃ¤ÃŸige LayoutabstÃ¤nde ist das sauberer als viele einzelne Margins.</div></div></article>
+}</pre></div><div class="full-note compact"><div class="star">✓</div><div><strong>Merke:</strong> <code>gap</code> erzeugt den Abstand im Raster. Für gleichmäßige Layoutabstände ist das sauberer als viele einzelne Margins.</div></div></article>
 </div>
 </section>
 
 <section id="placement">
-<div class="section-head"><h2>5. Positionierung im Raster</h2><p>Grid-Items kÃ¶nnen automatisch flieÃŸen oder gezielt Ã¼ber Linien und Spannen platziert werden.</p></div>
+<div class="section-head"><h2>5. Positionierung im Raster</h2><p>Grid-Items können automatisch fließen oder gezielt über Linien und Spannen platziert werden.</p></div>
 <div class="split-panel">
-<div class="split-side"><h3>Line-based Placement</h3><p>Ein Item kann Ã¼ber Start- und Endlinien platziert werden. Dadurch wird es unabhÃ¤ngig von seiner Reihenfolge im HTML an eine bestimmte Stelle im Raster gesetzt.</p><ul class="clean"><li><code>grid-column</code> steuert horizontale Ausdehnung</li><li><code>grid-row</code> steuert vertikale Ausdehnung</li><li><code>span</code> gibt an, Ã¼ber wie viele Tracks ein Item lÃ¤uft</li></ul></div>
-<div class="split-side"><div class="line-demo"><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div class="span">Item Ã¼ber mehrere Zellen</div><div>9</div></div></div>
+<div class="split-side"><h3>Line-based Placement</h3><p>Ein Item kann über Start- und Endlinien platziert werden. Dadurch wird es unabhängig von seiner Reihenfolge im HTML an eine bestimmte Stelle im Raster gesetzt.</p><ul class="clean"><li><code>grid-column</code> steuert horizontale Ausdehnung</li><li><code>grid-row</code> steuert vertikale Ausdehnung</li><li><code>span</code> gibt an, über wie viele Tracks ein Item läuft</li></ul></div>
+<div class="split-side"><div class="line-demo"><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div class="span">Item über mehrere Zellen</div><div>9</div></div></div>
 </div>
 <div class="code"><div class="code-title"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span> Beispiel</div><pre>.highlight {
   grid-column: 2 / 5;
@@ -279,7 +279,7 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
 </section>
 
 <section id="areas">
-<div class="section-head"><h2>6. Grid Areas</h2><p>Benannte Bereiche machen Seitenlayouts lesbarer und erleichtern spÃ¤tere responsive Umbauten.</p></div>
+<div class="section-head"><h2>6. Grid Areas</h2><p>Benannte Bereiche machen Seitenlayouts lesbarer und erleichtern spätere responsive Umbauten.</p></div>
 <div class="two-col">
 <article class="example-box"><h3>Lesbares Seitenlayout</h3><div class="areas"><div class="area-cell header">header</div><div class="area-cell nav">nav</div><div class="area-cell main">main</div><div class="area-cell aside">aside</div><div class="area-cell footer">footer</div></div></article>
 <article><div class="code"><div class="code-title"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span> grid-template-areas</div><pre>.layout {
@@ -290,14 +290,14 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
     "footer footer footer";
 }
 
-header { grid-area: header; }</pre></div><div class="full-note compact"><div class="star">âœ“</div><div><strong>Praxisnutzen:</strong> Die CSS-Regel zeigt auf einen Blick, wie die Seite aufgebaut ist.</div></div></article>
+header { grid-area: header; }</pre></div><div class="full-note compact"><div class="star">✓</div><div><strong>Praxisnutzen:</strong> Die CSS-Regel zeigt auf einen Blick, wie die Seite aufgebaut ist.</div></div></article>
 </div>
 </section>
 
 <section id="responsive">
 <div class="section-head"><h2>7. Responsive Grids mit auto-fit und minmax</h2><p>Viele Kachelraster brauchen keine harte Anzahl an Spalten. Der Browser kann selbst entscheiden, wie viele Kacheln passen.</p></div>
 <div class="split-panel">
-<div class="split-side"><h3>Fachliche Bedeutung</h3><p><code>repeat(auto-fit, minmax(220px, 1fr))</code> bedeutet: Erzeuge so viele Spalten wie mÃ¶glich. Jede Spalte ist mindestens 220px breit und darf sich ansonsten flexibel ausdehnen.</p><ul class="clean"><li>weniger feste Breakpoints</li><li>robuste Kartenraster</li><li>sauberes Verhalten bei breiten und schmalen Ansichten</li><li>gut fÃ¼r Dashboards, Produktkarten und Ãœbersichten</li></ul></div>
+<div class="split-side"><h3>Fachliche Bedeutung</h3><p><code>repeat(auto-fit, minmax(220px, 1fr))</code> bedeutet: Erzeuge so viele Spalten wie möglich. Jede Spalte ist mindestens 220px breit und darf sich ansonsten flexibel ausdehnen.</p><ul class="clean"><li>weniger feste Breakpoints</li><li>robuste Kartenraster</li><li>sauberes Verhalten bei breiten und schmalen Ansichten</li><li>gut für Dashboards, Produktkarten und Übersichten</li></ul></div>
 <div class="split-side"><div class="responsive-cards"><div>Karte 1</div><div>Karte 2</div><div>Karte 3</div><div>Karte 4</div><div>Karte 5</div><div>Karte 6</div></div></div>
 </div>
 <div class="code"><div class="code-title"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span> Responsives Kartenraster</div><pre>.cards {
@@ -308,53 +308,53 @@ header { grid-area: header; }</pre></div><div class="full-note compact"><div cla
 </section>
 
 <section id="dashboard">
-<div class="section-head"><h2>8. Dashboard-Layout als Praxisbeispiel</h2><p>Ein Dashboard kombiniert mehrere Layoutanforderungen: Navigationsbereich, Kennzahlen, groÃŸe Auswertung und Detailinformationen.</p></div>
+<div class="section-head"><h2>8. Dashboard-Layout als Praxisbeispiel</h2><p>Ein Dashboard kombiniert mehrere Layoutanforderungen: Navigationsbereich, Kennzahlen, große Auswertung und Detailinformationen.</p></div>
 <div class="two-col">
-<article class="card accent-cyan"><div class="tag">Analyse</div><h3>Welche Bereiche gibt es?</h3><ul class="clean"><li>Header mit Titel und Aktionen</li><li>Sidebar oder Navigation</li><li>Kennzahlenkarten</li><li>Hauptdiagramm oder AuswertungsflÃ¤che</li><li>Detailbereich oder Tabelle</li></ul></article>
-<article class="card accent-green"><div class="tag">Umsetzung</div><h3>Welche Technik passt?</h3><p>Das grobe Seitenraster wird mit Grid aufgebaut. Innerhalb einzelner Bereiche kann Flexbox sinnvoll sein, zum Beispiel fÃ¼r Buttonleisten, Badges oder kleine Ausrichtungen.</p></article>
+<article class="card accent-cyan"><div class="tag">Analyse</div><h3>Welche Bereiche gibt es?</h3><ul class="clean"><li>Header mit Titel und Aktionen</li><li>Sidebar oder Navigation</li><li>Kennzahlenkarten</li><li>Hauptdiagramm oder Auswertungsfläche</li><li>Detailbereich oder Tabelle</li></ul></article>
+<article class="card accent-green"><div class="tag">Umsetzung</div><h3>Welche Technik passt?</h3><p>Das grobe Seitenraster wird mit Grid aufgebaut. Innerhalb einzelner Bereiche kann Flexbox sinnvoll sein, zum Beispiel für Buttonleisten, Badges oder kleine Ausrichtungen.</p></article>
 </div>
 <div class="example-box" style="margin-top:18px;"><div class="grid-board"><div class="head">Dashboard Header</div><div class="navcell">Sidebar</div><div class="chart">Chartbereich</div><div>KPI Umsatz</div><div>KPI Tickets</div><div class="wide">Tabelle / Details</div></div></div>
 </section>
 
 <section id="abgrenzung">
-<div class="section-head"><h2>9. Grid oder Flexbox?</h2><p>Die Entscheidung hÃ¤ngt davon ab, ob eine oder zwei Dimensionen gesteuert werden sollen.</p></div>
+<div class="section-head"><h2>9. Grid oder Flexbox?</h2><p>Die Entscheidung hängt davon ab, ob eine oder zwei Dimensionen gesteuert werden sollen.</p></div>
 <div class="compare">
-<div><h3>Grid</h3><ul><li>zwei Achsen: Zeilen und Spalten</li><li>Seitenlayout, Dashboard, komplexe Raster</li><li>benannte Bereiche mÃ¶glich</li><li>gut fÃ¼r gleichmÃ¤ÃŸige Kachelstrukturen</li></ul></div>
-<div><h3>Flexbox</h3><ul><li>eine Hauptachse mit Querachse</li><li>Navigation, Buttonleisten, kleine Komponenten</li><li>flexible Verteilung innerhalb einer Reihe oder Spalte</li><li>gut fÃ¼r Ausrichtung von Elementgruppen</li></ul></div>
+<div><h3>Grid</h3><ul><li>zwei Achsen: Zeilen und Spalten</li><li>Seitenlayout, Dashboard, komplexe Raster</li><li>benannte Bereiche möglich</li><li>gut für gleichmäßige Kachelstrukturen</li></ul></div>
+<div><h3>Flexbox</h3><ul><li>eine Hauptachse mit Querachse</li><li>Navigation, Buttonleisten, kleine Komponenten</li><li>flexible Verteilung innerhalb einer Reihe oder Spalte</li><li>gut für Ausrichtung von Elementgruppen</li></ul></div>
 </div>
 <div class="full-note"><div class="star">?</div><div><strong>Entscheidungsfrage:</strong> Baue ich ein gesamtes Raster oder richte ich Elemente innerhalb eines Bereichs aus?</div></div>
 </section>
 
 <section id="praxis">
-<div class="section-head"><h2>10. Praxisauftrag Tag 3</h2><p>Die Aufgaben fÃ¼hren von der Analyse Ã¼ber ein Grundraster bis zu einem responsiven Dashboard.</p></div>
+<div class="section-head"><h2>10. Praxisauftrag Tag 3</h2><p>Die Aufgaben führen von der Analyse über ein Grundraster bis zu einem responsiven Dashboard.</p></div>
 <div class="task-grid">
-<div class="task-card"><strong>Aufgabe 1 Â· Raster analysieren</strong>HTML-Struktur lesen und sinnvolle Layoutbereiche markieren.<small>Analyse</small></div>
-<div class="task-card"><strong>Aufgabe 2 Â· Grundraster setzen</strong>Container mit <code>display:grid</code>, Spalten, Zeilen und <code>gap</code> aufbauen.<small>Grid-Basis</small></div>
-<div class="task-card"><strong>Aufgabe 3 Â· Areas nutzen</strong>Header, Navigation, Main, Aside und Footer Ã¼ber benannte Bereiche anordnen.<small>Grid Areas</small></div>
-<div class="task-card"><strong>Aufgabe 4 Â· Kachelbereich bauen</strong>KPI-Karten mit <code>repeat()</code>, <code>auto-fit</code> und <code>minmax()</code> responsiv darstellen.<small>Responsive Grid</small></div>
-<div class="task-card"><strong>Aufgabe 5 Â· Kombinieren</strong>Im Dashboard entscheiden, wo Grid und wo Flexbox sinnvoller ist.<small>Abgrenzung</small></div>
-<div class="task-card"><strong>Aufgabe 6 Â· Abnahme</strong>Browserbreiten testen, DevTools nutzen und Fehler dokumentieren.<small>Sicherung</small></div>
+<div class="task-card"><strong>Aufgabe 1 · Raster analysieren</strong>HTML-Struktur lesen und sinnvolle Layoutbereiche markieren.<small>Analyse</small></div>
+<div class="task-card"><strong>Aufgabe 2 · Grundraster setzen</strong>Container mit <code>display:grid</code>, Spalten, Zeilen und <code>gap</code> aufbauen.<small>Grid-Basis</small></div>
+<div class="task-card"><strong>Aufgabe 3 · Areas nutzen</strong>Header, Navigation, Main, Aside und Footer über benannte Bereiche anordnen.<small>Grid Areas</small></div>
+<div class="task-card"><strong>Aufgabe 4 · Kachelbereich bauen</strong>KPI-Karten mit <code>repeat()</code>, <code>auto-fit</code> und <code>minmax()</code> responsiv darstellen.<small>Responsive Grid</small></div>
+<div class="task-card"><strong>Aufgabe 5 · Kombinieren</strong>Im Dashboard entscheiden, wo Grid und wo Flexbox sinnvoller ist.<small>Abgrenzung</small></div>
+<div class="task-card"><strong>Aufgabe 6 · Abnahme</strong>Browserbreiten testen, DevTools nutzen und Fehler dokumentieren.<small>Sicherung</small></div>
 </div>
-<div class="two-col" style="margin-top:18px;"><article class="file-card"><strong>Starterprojekt</strong><span>UnvollstÃ¤ndiges Dashboard mit HTML-Grundstruktur.</span><br/><code>starter/dashboard_grid/</code></article><article class="file-card"><strong>Fragenpool</strong><span>Tagespool zur fachlichen Sicherung.</span><br/><code>Tag_03_CSS_Grid_Layout_*.json</code></article></div>
+<div class="two-col" style="margin-top:18px;"><article class="file-card"><strong>Starterprojekt</strong><span>Unvollständiges Dashboard mit HTML-Grundstruktur.</span><br/><code>starter/dashboard_grid/</code></article><article class="file-card"><strong>Fragenpool</strong><span>Tagespool zur fachlichen Sicherung.</span><br/><code>Tag_03_CSS_Grid_Layout_*.json</code></article></div>
 </section>
 
 <section id="check">
-<div class="section-head"><h2>11. Check und Sicherung</h2><p>Die Checkfragen eignen sich als mÃ¼ndliche Wiederholung oder als kurzer Abschluss vor dem Fragenpool.</p></div>
+<div class="section-head"><h2>11. Check und Sicherung</h2><p>Die Checkfragen eignen sich als mündliche Wiederholung oder als kurzer Abschluss vor dem Fragenpool.</p></div>
 <div class="quiz">
-<div class="quiz-card"><h3>Frage 1: WofÃ¼r eignet sich CSS Grid besonders?</h3><button class="answer" data-correct="false">FÃ¼r reine Textformatierung wie SchriftgrÃ¶ÃŸe und Farbe.</button><button class="answer" data-correct="true">FÃ¼r zweidimensionale Layouts mit Zeilen und Spalten.</button><button class="answer" data-correct="false">Nur fÃ¼r Animationen und Hover-Effekte.</button></div>
-<div class="quiz-card"><h3>Frage 2: Auf welches Element gehÃ¶rt <code>grid-template-columns</code>?</h3><button class="answer" data-correct="true">Auf den Grid-Container.</button><button class="answer" data-correct="false">Auf jedes einzelne Grid-Item.</button><button class="answer" data-correct="false">AusschlieÃŸlich auf das body-Element.</button></div>
-<div class="quiz-card"><h3>Frage 3: Was leistet <code>minmax()</code> in einem responsiven Grid?</h3><button class="answer" data-correct="false">Es ersetzt HTML-Ãœberschriften.</button><button class="answer" data-correct="true">Es definiert eine minimale und maximale GrÃ¶ÃŸe fÃ¼r Grid-Tracks.</button><button class="answer" data-correct="false">Es schaltet JavaScript ein und aus.</button></div>
+<div class="quiz-card"><h3>Frage 1: Wofür eignet sich CSS Grid besonders?</h3><button class="answer" data-correct="false">Für reine Textformatierung wie Schriftgröße und Farbe.</button><button class="answer" data-correct="true">Für zweidimensionale Layouts mit Zeilen und Spalten.</button><button class="answer" data-correct="false">Nur für Animationen und Hover-Effekte.</button></div>
+<div class="quiz-card"><h3>Frage 2: Auf welches Element gehört <code>grid-template-columns</code>?</h3><button class="answer" data-correct="true">Auf den Grid-Container.</button><button class="answer" data-correct="false">Auf jedes einzelne Grid-Item.</button><button class="answer" data-correct="false">Ausschließlich auf das body-Element.</button></div>
+<div class="quiz-card"><h3>Frage 3: Was leistet <code>minmax()</code> in einem responsiven Grid?</h3><button class="answer" data-correct="false">Es ersetzt HTML-Überschriften.</button><button class="answer" data-correct="true">Es definiert eine minimale und maximale Größe für Grid-Tracks.</button><button class="answer" data-correct="false">Es schaltet JavaScript ein und aus.</button></div>
 </div>
 <div style="margin-top:18px;display:grid;gap:12px;">
-<details><summary>Mini-Aufgabe: Grid Areas erklÃ¤ren</summary><div class="detail-body">ErklÃ¤re mit eigenen Worten, warum <code>grid-template-areas</code> fÃ¼r ein Seitenlayout lesbarer sein kann als reine Liniennummern.</div></details>
-<details><summary>Mini-Aufgabe: Grid vs. Flexbox entscheiden</summary><div class="detail-body">Ein Dashboard bekommt eine Buttonleiste im Header und ein Kachelraster im Inhalt. BegrÃ¼nde, warum die Buttonleiste eher Flexbox und das Kachelraster eher Grid nutzt.</div></details>
+<details><summary>Mini-Aufgabe: Grid Areas erklären</summary><div class="detail-body">Erkläre mit eigenen Worten, warum <code>grid-template-areas</code> für ein Seitenlayout lesbarer sein kann als reine Liniennummern.</div></details>
+<details><summary>Mini-Aufgabe: Grid vs. Flexbox entscheiden</summary><div class="detail-body">Ein Dashboard bekommt eine Buttonleiste im Header und ein Kachelraster im Inhalt. Begründe, warum die Buttonleiste eher Flexbox und das Kachelraster eher Grid nutzt.</div></details>
 </div>
-<div class="full-note"><div class="star">âœ“</div><div><strong>Tagesabschluss:</strong> Die Teilnehmenden sollen ein responsives Grid erklÃ¤ren, aufbauen und im Browser mit DevTools prÃ¼fen kÃ¶nnen.</div></div>
+<div class="full-note"><div class="star">✓</div><div><strong>Tagesabschluss:</strong> Die Teilnehmenden sollen ein responsives Grid erklären, aufbauen und im Browser mit DevTools prüfen können.</div></div>
 </section>
 </main>
 </div>
-<div class="key-hint">Navigation: â† zurÃ¼ck Â· â†’ weiter</div>
-<div aria-label="Seitensteuerung" class="slide-controls"><button class="btn" id="prevSlide" type="button">â† ZurÃ¼ck</button><span class="slide-counter" id="slideCounter">1 / 12</span><button class="btn primary" id="nextSlide" type="button">Weiter â†’</button></div>
+<div class="key-hint">Navigation: ← zurück · → weiter</div>
+<div aria-label="Seitensteuerung" class="slide-controls"><button class="btn" id="prevSlide" type="button">← Zurück</button><span class="slide-counter" id="slideCounter">1 / 12</span><button class="btn primary" id="nextSlide" type="button">Weiter →</button></div>
 <div class="printbar"><button class="btn" id="startSlide" type="button">Startseite</button><button class="btn primary" onclick="window.print()">Drucken / PDF</button></div>
 <script>
   document.querySelectorAll('.answer').forEach(btn => {
@@ -410,3 +410,5 @@ header { grid-area: header; }</pre></div><div class="full-note compact"><div cla
 </script>
 </body>
 </html>
+
+

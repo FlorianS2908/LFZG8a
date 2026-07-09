@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LFZQ8a Einrichtung</title>
+  <title>HTML/CSS Einrichtung</title>
   <link rel="stylesheet" href="wizard.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
     <aside>
       <div class="brand">
         <div class="brand-mark">LF</div>
-        <div><small>LFZQ8a Desktop</small><strong data-i18n="setupBrand">Workshop<br>Einrichtung</strong></div>
+        <div><small>HTML/CSS Desktop</small><strong data-i18n="setupBrand">Workshop<br>Einrichtung</strong></div>
       </div>
       <nav aria-label="Einrichtung">
         <a href="#sprache" data-i18n="setupNavLanguage">Sprache</a>
@@ -26,13 +26,14 @@
         <strong data-i18n="setupHintTitle">Setup-Idee:</strong><br>
         <span data-i18n="setupHintText">Einmal konfigurieren, lokal speichern und danach den Workshop direkt aus der Desktop-App starten.</span>
       </div>
+      <button id="backToMainView" class="aside-button primary" type="button">Main View</button>
       <button id="openDataDir" class="aside-button" type="button" data-i18n="dataFolder">Datenordner</button>
     </aside>
 
     <main>
       <header class="hero">
         <div>
-          <div class="eyebrow">LFZQ8a Desktop</div>
+          <div class="eyebrow">HTML/CSS Desktop</div>
           <h1 data-i18n="setupHeadline">Workshop-App einrichten</h1>
           <p data-i18n="setupIntro">Monitor, lokale Berichte und Unterrichtshistorie werden hier vorbereitet. Danach startet die Dozenten-Zentrale im gleichen Layout wie die Webvarianten.</p>
         </div>
@@ -72,6 +73,7 @@
             <strong id="breakTotal">0 / 75 Minuten</strong>
             <span id="breakStatus" class="muted"></span>
           </div>
+          <p id="breakEditWindow" class="muted"></p>
           <div class="actions">
             <button id="addBreak" type="button" data-i18n="addBreak">Pause hinzufuegen</button>
             <button id="resetBreaks" type="button" data-i18n="useDefaultBreaks">Standardzeiten verwenden</button>
@@ -82,6 +84,10 @@
           <div class="tag" data-i18n="stepMonitor">Schritt 3</div>
           <h2 data-i18n="monitorTitle">Monitor fuer Dozenteninfo</h2>
           <p class="muted" data-i18n="monitorText">Waehle den Bildschirm, auf dem die Dozenteninfos automatisch erscheinen sollen.</p>
+          <label class="check-option">
+            <input id="openTeacherOnSecondMonitor" type="checkbox" checked>
+            <span><strong>Zweitfenster automatisch oeffnen</strong><small>Beim Kursstart wird die Freigabeansicht auf dem gewaehlten Monitor geoeffnet.</small></span>
+          </label>
           <div id="displayList" class="display-list"></div>
         </article>
 

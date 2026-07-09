@@ -1,19 +1,49 @@
 {
-  "name": "lfzq8a-workshop-desktop",
-  "version": "0.1.0",
-  "description": "Desktop-App fuer LFZQ8a Workshop-Materialien mit Dozentenfenster auf zweitem Monitor.",
-  "main": "app/main.js",
-  "private": true,
-  "scripts": {
-    "start": "electron .",
-    "dev": "electron .",
-    "check": "node --check app/main.js && node --check app/preload.js && node --check app/renderer/wizard.js && node --check app/renderer/course-navigation.js && node --check app/renderer/course-content-groups.js && node --check app/renderer/course-schedule.js && node --check app/renderer/course.js && node --check app/lib/app-data.js && node --check app/lib/course-catalog.js && node --check app/lib/catalog/index.js && node --check app/lib/catalog/teacher-days.js && node --check app/lib/catalog/teacher-projects.js && node --check app/lib/catalog/teacher-tools.js && node --check app/lib/catalog/participant-content.js && node --check app/lib/display.js && node --check app/lib/i18n.js && node --check app/lib/json-store.js",
-    "test": "node tests/run-tests.js",
-    "test:electron": "electron tests/electron-course-smoke.js",
-    "test:watch": "node tests/run-tests.js",
-    "verify": "node --check app/main.js && node --check app/preload.js && node --check app/renderer/wizard.js && node --check app/renderer/course-navigation.js && node --check app/renderer/course-content-groups.js && node --check app/renderer/course-schedule.js && node --check app/renderer/course.js && node --check app/lib/app-data.js && node --check app/lib/course-catalog.js && node --check app/lib/catalog/index.js && node --check app/lib/catalog/teacher-days.js && node --check app/lib/catalog/teacher-projects.js && node --check app/lib/catalog/teacher-tools.js && node --check app/lib/catalog/participant-content.js && node --check app/lib/display.js && node --check app/lib/i18n.js && node --check app/lib/json-store.js && node tests/run-tests.js"
-  },
-  "devDependencies": {
-    "electron": "^31.7.7"
-  }
+    "name":  "uetool-assass",
+    "version":  "0.1.0",
+    "description":  "ueTool_asSaaS Desktop-App fuer ContentFactory, DokuTool, QuizTools und HTML/CSS-Unterrichtsumgebung.",
+    "main":  "app/main.js",
+    "private":  true,
+    "author":  "Ploglan",
+    "productName":  "ueTool_asSaaS",
+    "scripts":  {
+                    "start":  "electron .",
+                    "dev":  "electron .",
+                    "check":  "node --check app/main.js \u0026\u0026 node --check app/preload.js \u0026\u0026 node --check app/renderer/wizard.js \u0026\u0026 node --check app/renderer/course-navigation.js \u0026\u0026 node --check app/renderer/course-content-groups.js \u0026\u0026 node --check app/renderer/course-schedule.js \u0026\u0026 node --check app/renderer/course.js \u0026\u0026 node --check app/renderer/tool-center/login.js \u0026\u0026 node --check app/renderer/tool-center/workspace.js \u0026\u0026 node --check app/renderer/tool-center/factory.js \u0026\u0026 node --check app/renderer/tool-center/release-center.js \u0026\u0026 node --check app/renderer/tool-center/user-create.js \u0026\u0026 node --check app/renderer/tool-center/admin-tool.js \u0026\u0026 node --check app/renderer/tool-center/course-management.js \u0026\u0026 node --check app/lib/app-data.js \u0026\u0026 node --check app/lib/dokutool-service.js \u0026\u0026 node --check app/lib/course-catalog.js \u0026\u0026 node --check app/lib/workflow/role-access.js \u0026\u0026 node --check app/lib/modules/module-types.js \u0026\u0026 node --check app/lib/modules/lfzq8a-container.js \u0026\u0026 node --check app/lib/modules/content-factory-container.js \u0026\u0026 node --check app/lib/modules/release-center-container.js \u0026\u0026 node --check app/lib/modules/teacher-create-container.js \u0026\u0026 node --check app/lib/modules/participant-create-container.js \u0026\u0026 node --check app/lib/modules/course-management-container.js \u0026\u0026 node --check app/lib/modules/admin-tool-containers.js \u0026\u0026 node --check app/lib/modules/module-registry.js \u0026\u0026 node --check app/lib/admin-tools/admin-tool-types.js \u0026\u0026 node --check app/lib/admin-tools/admin-tool-registry.js \u0026\u0026 node --check app/lib/admin-tools/admin-tool-config-store.js \u0026\u0026 node --check app/lib/admin-tools/admin-tool-guide-service.js \u0026\u0026 node --check app/lib/admin-tools/admin-tool-runner.js \u0026\u0026 node --check app/lib/container-registry/container-id-service.js \u0026\u0026 node --check app/lib/container-registry/container-metadata-store.js \u0026\u0026 node --check app/lib/container-registry/container-repository.js \u0026\u0026 node --check app/lib/container-registry/container-registry-service.js \u0026\u0026 node --check app/lib/course-management/course-management-types.js \u0026\u0026 node --check app/lib/course-management/central-course-store.js \u0026\u0026 node --check app/lib/course-management/course-management-repository.js \u0026\u0026 node --check app/lib/course-management/course-management-service.js \u0026\u0026 node --check app/lib/content-factory/target-areas.js \u0026\u0026 node --check app/lib/content-factory/file-type-rules.js \u0026\u0026 node --check app/lib/content-factory/mapping-service.js \u0026\u0026 node --check app/lib/content-factory/import-adapters.js \u0026\u0026 node --check app/lib/content-factory/manifest-service.js \u0026\u0026 node --check app/lib/content-factory/container-storage-service.js \u0026\u0026 node --check app/lib/content-factory/content-factory-service.js \u0026\u0026 node --check app/lib/catalog/index.js \u0026\u0026 node --check app/lib/catalog/teacher-days.js \u0026\u0026 node --check app/lib/catalog/teacher-projects.js \u0026\u0026 node --check app/lib/catalog/teacher-tools.js \u0026\u0026 node --check app/lib/catalog/participant-content.js \u0026\u0026 node --check app/lib/display.js \u0026\u0026 node --check app/lib/i18n.js \u0026\u0026 node --check app/lib/json-store.js \u0026\u0026 node --check scripts/workflow-check.js \u0026\u0026 node --check tests/admin-tools.test.js \u0026\u0026 node --check tests/container-registry.test.js \u0026\u0026 node --check tests/course-management.test.js \u0026\u0026 node --check tests/electron-course-smoke.js \u0026\u0026 node --check tests/electron-workspace-smoke.js",
+                    "test":  "node tests/run-tests.js",
+                    "test:electron":  "electron tests/electron-course-smoke.js \u0026\u0026 electron tests/electron-workspace-smoke.js",
+                    "test:watch":  "node tests/run-tests.js",
+                    "verify":  "node --check app/main.js \u0026\u0026 node --check app/preload.js \u0026\u0026 node --check app/renderer/wizard.js \u0026\u0026 node --check app/renderer/course-navigation.js \u0026\u0026 node --check app/renderer/course-content-groups.js \u0026\u0026 node --check app/renderer/course-schedule.js \u0026\u0026 node --check app/renderer/course.js \u0026\u0026 node --check app/renderer/tool-center/login.js \u0026\u0026 node --check app/renderer/tool-center/workspace.js \u0026\u0026 node --check app/renderer/tool-center/factory.js \u0026\u0026 node --check app/renderer/tool-center/release-center.js \u0026\u0026 node --check app/renderer/tool-center/user-create.js \u0026\u0026 node --check app/renderer/tool-center/admin-tool.js \u0026\u0026 node --check app/renderer/tool-center/course-management.js \u0026\u0026 node --check app/lib/app-data.js \u0026\u0026 node --check app/lib/dokutool-service.js \u0026\u0026 node --check app/lib/course-catalog.js \u0026\u0026 node --check app/lib/workflow/role-access.js \u0026\u0026 node --check app/lib/modules/module-types.js \u0026\u0026 node --check app/lib/modules/lfzq8a-container.js \u0026\u0026 node --check app/lib/modules/content-factory-container.js \u0026\u0026 node --check app/lib/modules/release-center-container.js \u0026\u0026 node --check app/lib/modules/teacher-create-container.js \u0026\u0026 node --check app/lib/modules/participant-create-container.js \u0026\u0026 node --check app/lib/modules/course-management-container.js \u0026\u0026 node --check app/lib/modules/admin-tool-containers.js \u0026\u0026 node --check app/lib/modules/module-registry.js \u0026\u0026 node --check app/lib/admin-tools/admin-tool-types.js \u0026\u0026 node --check app/lib/admin-tools/admin-tool-registry.js \u0026\u0026 node --check app/lib/admin-tools/admin-tool-config-store.js \u0026\u0026 node --check app/lib/admin-tools/admin-tool-guide-service.js \u0026\u0026 node --check app/lib/admin-tools/admin-tool-runner.js \u0026\u0026 node --check app/lib/container-registry/container-id-service.js \u0026\u0026 node --check app/lib/container-registry/container-metadata-store.js \u0026\u0026 node --check app/lib/container-registry/container-repository.js \u0026\u0026 node --check app/lib/container-registry/container-registry-service.js \u0026\u0026 node --check app/lib/course-management/course-management-types.js \u0026\u0026 node --check app/lib/course-management/central-course-store.js \u0026\u0026 node --check app/lib/course-management/course-management-repository.js \u0026\u0026 node --check app/lib/course-management/course-management-service.js \u0026\u0026 node --check app/lib/content-factory/target-areas.js \u0026\u0026 node --check app/lib/content-factory/file-type-rules.js \u0026\u0026 node --check app/lib/content-factory/mapping-service.js \u0026\u0026 node --check app/lib/content-factory/import-adapters.js \u0026\u0026 node --check app/lib/content-factory/manifest-service.js \u0026\u0026 node --check app/lib/content-factory/container-storage-service.js \u0026\u0026 node --check app/lib/content-factory/content-factory-service.js \u0026\u0026 node --check app/lib/catalog/index.js \u0026\u0026 node --check app/lib/catalog/teacher-days.js \u0026\u0026 node --check app/lib/catalog/teacher-projects.js \u0026\u0026 node --check app/lib/catalog/teacher-tools.js \u0026\u0026 node --check app/lib/catalog/participant-content.js \u0026\u0026 node --check app/lib/display.js \u0026\u0026 node --check app/lib/i18n.js \u0026\u0026 node --check app/lib/json-store.js \u0026\u0026 node --check scripts/workflow-check.js \u0026\u0026 node --check tests/admin-tools.test.js \u0026\u0026 node --check tests/container-registry.test.js \u0026\u0026 node --check tests/course-management.test.js \u0026\u0026 node --check tests/electron-course-smoke.js \u0026\u0026 node --check tests/electron-workspace-smoke.js \u0026\u0026 node tests/run-tests.js",
+                    "dist":  "electron-builder --win"
+                },
+    "build":  {
+                  "appId":  "de.ploglan.toolzentrale",
+                  "productName":  "ueTool_asSaaS",
+                  "directories":  {
+                                      "output":  "dist"
+                                  },
+                  "files":  [
+                                "app/**/*",
+                                "package.json"
+                            ],
+                  "win":  {
+                              "icon":  "app/assets/icons/app-icon.ico",
+                              "signAndEditExecutable":  false,
+                              "target":  [
+                                             "nsis"
+                                         ]
+                          },
+                  "nsis":  {
+                               "oneClick":  false,
+                               "perMachine":  false,
+                               "allowToChangeInstallationDirectory":  true,
+                               "createDesktopShortcut":  true,
+                               "createStartMenuShortcut":  true,
+                               "shortcutName":  "ueTool_asSaaS"
+                           }
+              },
+    "devDependencies":  {
+                            "electron":  "^31.7.7",
+                            "electron-builder":  "^24.13.3"
+                        }
 }

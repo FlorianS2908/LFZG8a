@@ -35,7 +35,64 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
   openTestReportDir: () => ipcRenderer.invoke('test-report:open-dir'),
   moveViewToMonitor: (viewType, displayId) => ipcRenderer.invoke('display:move-view', viewType, displayId),
   highlightMonitor: (displayId, label) => ipcRenderer.invoke('display:highlight', displayId, label),
-  openDataDir: () => ipcRenderer.invoke('app:open-data-dir')
+  openDataDir: () => ipcRenderer.invoke('app:open-data-dir'),
+  getWorkspaceState: () => ipcRenderer.invoke('workspace:get-state'),
+  saveWorkspaceProfile: (profile) => ipcRenderer.invoke('workspace:save-profile', profile),
+  openLanding: () => ipcRenderer.invoke('workspace:open-landing'),
+  openLfzq8a: () => ipcRenderer.invoke('workspace:open-lfzq8a'),
+  openModule: (moduleId) => ipcRenderer.invoke('workspace:open-module', moduleId),
+  openWizard: () => ipcRenderer.invoke('workspace:open-wizard'),
+  auth: {
+    getState: () => ipcRenderer.invoke('auth:get-state'),
+    login: (credentials) => ipcRenderer.invoke('auth:login', credentials),
+    register: (input) => ipcRenderer.invoke('auth:register', input),
+    logout: () => ipcRenderer.invoke('auth:logout'),
+    changePassword: (input) => ipcRenderer.invoke('auth:change-password', input)
+  },
+  courseSettings: {
+    get: (courseId) => ipcRenderer.invoke('course-settings:get', courseId),
+    save: (courseId, settings) => ipcRenderer.invoke('course-settings:save', courseId, settings)
+  },
+  factory: {
+    getState: () => ipcRenderer.invoke('factory:get-state'),
+    duplicateContainer: (options) => ipcRenderer.invoke('factory:duplicate-container', options),
+    importFiles: (input) => ipcRenderer.invoke('factory:import-files', input),
+    updateMapping: (batchId, fileId, mapping) => ipcRenderer.invoke('factory:update-mapping', batchId, fileId, mapping),
+    validateBatch: (batchId) => ipcRenderer.invoke('factory:validate-batch', batchId),
+    createContainerFromBatch: (batchId, options) => ipcRenderer.invoke('factory:create-container-from-batch', batchId, options),
+    publishContainer: (containerId, options) => ipcRenderer.invoke('factory:publish-container', containerId, options),
+    disableContainer: (containerId) => ipcRenderer.invoke('factory:disable-container', containerId),
+    archiveContainer: (containerId) => ipcRenderer.invoke('factory:archive-container', containerId)
+  },
+  releaseCenter: {
+    getState: () => ipcRenderer.invoke('release-center:get-state'),
+    saveAssignments: (userId, moduleIds) => ipcRenderer.invoke('release-center:save-assignments', userId, moduleIds),
+    revokePendingRegistration: (id) => ipcRenderer.invoke('release-center:revoke-pending-registration', id)
+  },
+  userCreate: {
+    createPendingRegistration: (input) => ipcRenderer.invoke('user-create:create-pending-registration', input)
+  },
+  adminTools: {
+    list: () => ipcRenderer.invoke('admin-tools:list'),
+    getState: (toolId) => ipcRenderer.invoke('admin-tools:get-state', toolId),
+    saveConfig: (toolId, config) => ipcRenderer.invoke('admin-tools:save-config', toolId, config),
+    runPreview: (toolId) => ipcRenderer.invoke('admin-tools:run-preview', toolId)
+  },
+  courseManagement: {
+    getState: () => ipcRenderer.invoke('course-management:get-state'),
+    createCourse: (input) => ipcRenderer.invoke('course-management:create-course', input),
+    assignMember: (courseInstanceId, userId, roleInCourse) => ipcRenderer.invoke('course-management:assign-member', courseInstanceId, userId, roleInCourse),
+    assignContainer: (courseInstanceId, contentContainerId) => ipcRenderer.invoke('course-management:assign-container', courseInstanceId, contentContainerId),
+    updateStatus: (courseInstanceId, status, expectedRevision) => ipcRenderer.invoke('course-management:update-status', courseInstanceId, status, expectedRevision)
+  },
+  dokuTool: {
+    getQuizConfig: () => ipcRenderer.invoke('dokutool:quiz-config'),
+    getQuizQuestions: (query) => ipcRenderer.invoke('dokutool:quiz-questions', query),
+    saveQuizProfile: (profile) => ipcRenderer.invoke('dokutool:quiz-profile-save', profile),
+    analyze: (input) => ipcRenderer.invoke('dokutool:analyze', input),
+    listReports: () => ipcRenderer.invoke('dokutool:reports-list'),
+    getReport: (reportId) => ipcRenderer.invoke('dokutool:report-get', reportId)
+  }
 });
 
 window.addEventListener('DOMContentLoaded', () => {

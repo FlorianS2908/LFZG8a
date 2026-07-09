@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ueTool_asSaaS Login</title>
+  <link rel="stylesheet" href="workspace.css">
+</head>
+<body class="login-body">
+  <main class="login-shell">
+    <section class="login-panel">
+      <img class="login-logo" src="assets/ploglan-logo.png" alt="Ploglan">
+      <p class="eyebrow">Lokaler MVP Login</p>
+      <h1>ueTool_asSaaS</h1>
+      <div class="auth-switch">
+        <button class="workspace-track-tab is-active" type="button" data-auth-mode="login">Einloggen</button>
+        <button class="workspace-track-tab" type="button" data-auth-mode="register">Registrieren</button>
+      </div>
+      <form class="login-form" data-login-form data-auth-panel="login">
+        <label>E-Mail
+          <input data-login-email type="email" autocomplete="username" value="admin@admin.de" required>
+        </label>
+        <label>Passwort
+          <input data-login-password type="password" autocomplete="current-password" required>
+        </label>
+        <button class="primary-button" type="submit">Einloggen</button>
+      </form>
+      <form class="login-form" data-register-form data-auth-panel="register" hidden>
+        <p class="login-note">Eine Registrierung ist nur moeglich, wenn Ihre E-Mail-Adresse vorher vom Administrator freigegeben wurde.</p>
+        <label>Name
+          <input data-register-name autocomplete="name" required>
+        </label>
+        <label>E-Mail
+          <input data-register-email type="email" autocomplete="username" required>
+        </label>
+        <label>Rolle
+          <select data-register-role>
+            <option value="Teilnehmer">Teilnehmer</option>
+            <option value="Dozent">Dozent</option>
+          </select>
+        </label>
+        <label>Passwort
+          <input data-register-password type="password" autocomplete="new-password" required>
+        </label>
+        <label>Passwort bestaetigen
+          <input data-register-confirmation type="password" autocomplete="new-password" required>
+        </label>
+        <button class="primary-button" type="submit">Registrieren</button>
+      </form>
+      <p class="status-line" data-login-status></p>
+      <p class="login-note">Lokale MVP-Authentifizierung. Admin, Dozent und Teilnehmer werden beim ersten Start automatisch mit Passwort-Hash angelegt.</p>
+    </section>
+  </main>
+  <script src="login.js"></script>
+</body>
+</html>

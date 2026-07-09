@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ueTool_asSaaS Admin-Werkzeug</title>
+  <link rel="stylesheet" href="workspace.css">
+</head>
+<body>
+  <div class="tool-center-shell factory-shell">
+    <header class="workspace-header">
+      <div class="workspace-title">
+        <img class="workspace-company-logo" src="assets/ploglan-logo.png" alt="Ploglan">
+        <div>
+          <p class="eyebrow">Admin-Werkzeug</p>
+          <h1 data-tool-title>Admin-Werkzeug</h1>
+        </div>
+      </div>
+      <div class="workspace-actions">
+        <button class="secondary-button" type="button" data-open-landing>ueTool_asSaaS</button>
+        <button class="primary-button" type="button" data-run-preview>Vorschau starten</button>
+      </div>
+    </header>
+
+    <main class="factory-layout">
+      <article class="tool-card">
+        <h2>Kurzbeschreibung</h2>
+        <p data-tool-summary></p>
+      </article>
+
+      <article class="tool-card">
+        <h2>Was macht dieses Tool?</h2>
+        <p data-tool-what></p>
+        <h3>Wann nutzt man dieses Tool?</h3>
+        <p data-tool-when></p>
+      </article>
+
+      <article class="tool-card">
+        <h2>Schritt-fuer-Schritt-Anleitung</h2>
+        <ol class="mapping-list" data-tool-steps></ol>
+      </article>
+
+      <article class="tool-card">
+        <h2>Konfiguration</h2>
+        <textarea data-tool-config rows="14" spellcheck="false"></textarea>
+        <button class="primary-button" type="button" data-save-config>Konfiguration speichern</button>
+        <p class="status-line" data-config-status></p>
+      </article>
+
+      <article class="tool-card">
+        <h2>Vorschau / Ergebnis</h2>
+        <pre class="diagnostic-output" data-tool-result>Keine Vorschau gestartet.</pre>
+      </article>
+    </main>
+  </div>
+  <script src="admin-tool.js"></script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LFZQ8a Â· Tag 1 Â· CSS-Grundlagen Â· Webvariante</title>
+<title>LFZQ8a · Tag 1 · CSS-Grundlagen · Webvariante</title>
 <style>
 :root {
   --ink: #0b1b4d;
@@ -83,7 +83,7 @@ section { margin-top: 44px; }
 .tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; background: #eef9fc; color: var(--cyan-dark); font-size: 12px; text-transform: uppercase; font-weight: 900; letter-spacing: .04em; margin-bottom: 12px; }
 .flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
 .flow-step { position: relative; min-height: 118px; padding: 18px; background: white; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 12px 28px rgba(9,31,66,.08); }
-.flow-step::after { content: "â€º"; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); font-size: 34px; color: var(--cyan); font-weight: 900; z-index: 2; }
+.flow-step::after { content: ">"; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); font-size: 34px; color: var(--cyan); font-weight: 900; z-index: 2; }
 .flow-step:last-child::after { display: none; }
 .flow-step strong { display: block; font-size: 16px; margin-bottom: 6px; }
 .flow-step span { display: block; color: var(--ink-soft); font-size: 13px; font-weight: 600; }
@@ -105,7 +105,7 @@ ul.clean { padding-left: 20px; margin: 10px 0 0; color: var(--ink-soft); font-we
 .panel-headline h3 { margin: 0; font-size: 22px; } .panel-headline p { margin: 2px 0 0; color: var(--ink-soft); }
 .benefit-list, .steps-list, .note-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
 .benefit-list li, .steps-list li, .note-list li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
-.benefit-list li::before, .note-list li::before { content: "âœ“"; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 900; background: linear-gradient(135deg, var(--cyan), var(--blue)); }
+.benefit-list li::before, .note-list li::before { content: "✓"; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 900; background: linear-gradient(135deg, var(--cyan), var(--blue)); }
 .steps-list { counter-reset: step; }
 .steps-list li::before { counter-increment: step; content: counter(step); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 900; background: linear-gradient(135deg, var(--blue), #0c58a7); }
 .full-note { margin-top: 18px; border-radius: 20px; border: 2px solid #8bd0a5; background: #f6fcf7; padding: 18px 20px; display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; font-size: 18px; font-weight: 700; }
@@ -166,7 +166,7 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
     <div class="brand-mark">01</div>
     <div><small>LFZQ8a</small><strong>HTML & CSS<br/>Tag 1</strong></div>
   </div>
-  <a class="backlink" href="../index_dozent.html">â† BereichsÃ¼bersicht</a>
+  <a class="backlink" href="../index_dozent.html">← Bereichsübersicht</a>
   <nav aria-label="Seitennavigation">
     <a href="#top">Start</a>
     <a href="#ziele">Lernziele</a>
@@ -177,41 +177,41 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
     <a href="#werte">Werte & Einheiten</a>
     <a href="#variablen">CSS Custom Properties</a>
     <a href="#layout">Layout-Grundlagen</a>
-    <a href="#devtools">PrÃ¼fen mit DevTools</a>
-    <a href="#aufgaben">Ãœbung & Check</a>
+    <a href="#devtools">Prüfen mit DevTools</a>
+    <a href="#aufgaben">Übung & Check</a>
   </nav>
   <div class="nav-hint">
     <strong>Unterrichtsidee:</strong><br/>
-    Erst Prinzip klÃ¤ren, dann am kleinen Codebeispiel prÃ¼fen, anschlieÃŸend in der Profilkarte oder WebÃ¼bung anwenden.
+    Erst Prinzip klären, dann am kleinen Codebeispiel prüfen, anschließend in der Profilkarte oder Webübung anwenden.
   </div>
 </aside>
 <main>
 <header class="hero" id="top">
   <div>
-    <div class="eyebrow">LFZQ8a Â· Tag 1 Â· CSS-Grundlagen</div>
+    <div class="eyebrow">LFZQ8a · Tag 1 · CSS-Grundlagen</div>
     <h1>CSS fachlich verstehen und gezielt anwenden</h1>
-    <p>Diese Webvariante behandelt den Einstieg in CSS mit fachlichem Fokus: Einbindung, Regelaufbau, Selektoren, Kaskade, Box-Modell, moderne CSS-Werte, Custom Properties und systematische PrÃ¼fung im Browser.</p>
+    <p>Diese Webvariante behandelt den Einstieg in CSS mit fachlichem Fokus: Einbindung, Regelaufbau, Selektoren, Kaskade, Box-Modell, moderne CSS-Werte, Custom Properties und systematische Prüfung im Browser.</p>
   </div>
   <div aria-label="HTML CSS Browser" class="hero-visual">
     <div class="css-stack">
       <div class="layer l-html">HTML<br/><small>Struktur und Inhalt</small></div>
       <div class="layer l-css">CSS<br/><small>Darstellung und Layout</small></div>
-      <div class="layer l-browser">Browser<br/><small>Rendering und PrÃ¼fung</small></div>
+      <div class="layer l-browser">Browser<br/><small>Rendering und Prüfung</small></div>
     </div>
   </div>
 </header>
 <section id="ziele">
   <div class="section-head">
     <h2>1. Lernziele und fachlicher Rahmen</h2>
-    <p>Tag 1 legt die Grundlage fÃ¼r sauberes Arbeiten mit CSS. Es geht nicht nur um Farben, sondern um nachvollziehbare Gestaltungssysteme.</p>
+    <p>Tag 1 legt die Grundlage für sauberes Arbeiten mit CSS. Es geht nicht nur um Farben, sondern um nachvollziehbare Gestaltungssysteme.</p>
   </div>
   <div class="kpi-grid">
-    <article class="card accent-cyan"><div class="tag">Kompetenz</div><h3>CSS-Dateien verstehen</h3><p>Die Teilnehmenden kÃ¶nnen CSS-Regeln lesen, erklÃ¤ren und einer HTML-Struktur zuordnen.</p></article>
-    <article class="card accent-blue"><div class="tag">Technik</div><h3>Styles korrekt einbinden</h3><p>Externe Stylesheets werden Ã¼ber relative Pfade eingebunden und im Browser Ã¼berprÃ¼ft.</p></article>
-    <article class="card accent-green"><div class="tag">Gestaltung</div><h3>Boxen kontrollieren</h3><p>AbstÃ¤nde, Rahmen, GrÃ¶ÃŸen und das Box-Modell werden bewusst eingesetzt.</p></article>
-    <article class="card accent-orange"><div class="tag">QualitÃ¤t</div><h3>Fehler systematisch finden</h3><p>DevTools werden genutzt, um CSS-Regeln, Ãœberschreibungen und Pfadprobleme zu prÃ¼fen.</p></article>
+    <article class="card accent-cyan"><div class="tag">Kompetenz</div><h3>CSS-Dateien verstehen</h3><p>Die Teilnehmenden können CSS-Regeln lesen, erklären und einer HTML-Struktur zuordnen.</p></article>
+    <article class="card accent-blue"><div class="tag">Technik</div><h3>Styles korrekt einbinden</h3><p>Externe Stylesheets werden über relative Pfade eingebunden und im Browser überprüft.</p></article>
+    <article class="card accent-green"><div class="tag">Gestaltung</div><h3>Boxen kontrollieren</h3><p>Abstände, Rahmen, Größen und das Box-Modell werden bewusst eingesetzt.</p></article>
+    <article class="card accent-orange"><div class="tag">Qualität</div><h3>Fehler systematisch finden</h3><p>DevTools werden genutzt, um CSS-Regeln, Überschreibungen und Pfadprobleme zu prüfen.</p></article>
   </div>
-  <div class="full-note"><div class="star">â˜…</div><div><strong>Merke:</strong> Gutes CSS ist nicht zufÃ¤llig. Es folgt einer Struktur aus Basisregeln, wiederverwendbaren Werten und prÃ¼fbaren Komponenten.</div></div>
+  <div class="full-note"><div class="star">★</div><div><strong>Merke:</strong> Gutes CSS ist nicht zufällig. Es folgt einer Struktur aus Basisregeln, wiederverwendbaren Werten und prüfbaren Komponenten.</div></div>
 </section>
 <section id="css-rolle">
   <div class="section-head">
@@ -219,21 +219,21 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
     <p>HTML beschreibt die Bedeutung und Struktur der Inhalte. CSS beschreibt, wie diese Inhalte dargestellt werden.</p>
   </div>
   <div class="flow">
-    <div class="flow-step"><strong>HTML</strong><span>Ãœberschriften, AbsÃ¤tze, Links, Bilder und Bereiche.</span></div>
-    <div class="flow-step"><strong>CSS-Regeln</strong><span>Selektoren wÃ¤hlen Elemente aus und deklarieren Eigenschaften.</span></div>
+    <div class="flow-step"><strong>HTML</strong><span>Überschriften, Absätze, Links, Bilder und Bereiche.</span></div>
+    <div class="flow-step"><strong>CSS-Regeln</strong><span>Selektoren wählen Elemente aus und deklarieren Eigenschaften.</span></div>
     <div class="flow-step"><strong>Kaskade</strong><span>Browser entscheidet, welche Regel bei Konflikten gewinnt.</span></div>
-    <div class="flow-step"><strong>Layout</strong><span>GrÃ¶ÃŸen, AbstÃ¤nde, Positionierung und Anordnung entstehen.</span></div>
+    <div class="flow-step"><strong>Layout</strong><span>Größen, Abstände, Positionierung und Anordnung entstehen.</span></div>
     <div class="flow-step"><strong>Rendering</strong><span>Browser baut aus DOM und CSSOM die sichtbare Webseite.</span></div>
   </div>
   <div class="two-col" style="margin-top:20px;">
-    <article class="card"><h3>Trennung der ZustÃ¤ndigkeiten</h3><ul class="clean"><li>HTML: Inhalt und semantische Struktur</li><li>CSS: Gestaltung, AbstÃ¤nde und Layout</li><li>Assets: Bilder, Schriften und Medien</li><li>Browser: Interpretation und Darstellung</li></ul></article>
-    <article class="card"><h3>Warum externe CSS-Dateien?</h3><ul class="clean"><li>Styles lassen sich wiederverwenden.</li><li>HTML bleibt Ã¼bersichtlicher.</li><li>Ã„nderungen sind zentral mÃ¶glich.</li><li>Fehler kÃ¶nnen gezielter gesucht werden.</li></ul></article>
+    <article class="card"><h3>Trennung der Zuständigkeiten</h3><ul class="clean"><li>HTML: Inhalt und semantische Struktur</li><li>CSS: Gestaltung, Abstände und Layout</li><li>Assets: Bilder, Schriften und Medien</li><li>Browser: Interpretation und Darstellung</li></ul></article>
+    <article class="card"><h3>Warum externe CSS-Dateien?</h3><ul class="clean"><li>Styles lassen sich wiederverwenden.</li><li>HTML bleibt übersichtlicher.</li><li>Änderungen sind zentral möglich.</li><li>Fehler können gezielter gesucht werden.</li></ul></article>
   </div>
 </section>
 <section id="syntax">
   <div class="section-head">
     <h2>3. Syntax und Einbindung</h2>
-    <p>Eine CSS-Regel besteht aus Selektor, Deklarationsblock, Eigenschaft und Wert. Die externe Datei wird im head der HTML-Datei verknÃ¼pft.</p>
+    <p>Eine CSS-Regel besteht aus Selektor, Deklarationsblock, Eigenschaft und Wert. Die externe Datei wird im head der HTML-Datei verknüpft.</p>
   </div>
   <div class="two-col">
     <article class="example-box">
@@ -243,7 +243,7 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
   padding: 1.5rem;
   border-radius: 1rem;
 }</code></pre></div>
-      <div class="selector-visual"><div>Selektor<br/><code>.profilkarte</code></div><b>â†’</b><div>Deklarationen<br/><code>Eigenschaft: Wert;</code></div></div>
+      <div class="selector-visual"><div>Selektor<br/><code>.profilkarte</code></div><b>→</b><div>Deklarationen<br/><code>Eigenschaft: Wert;</code></div></div>
     </article>
     <article class="example-box">
       <h3>Einbindung in HTML</h3>
@@ -251,31 +251,31 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
   &lt;meta charset="utf-8"&gt;
   &lt;link rel="stylesheet" href="css/style.css"&gt;
 &lt;/head&gt;</code></pre></div>
-      <table class="mini-table"><tr><th>Begriff</th><th>Bedeutung</th></tr><tr><td>rel</td><td>legt fest, dass eine Stylesheet-Ressource geladen wird</td></tr><tr><td>href</td><td>relativer oder absoluter Pfad zur CSS-Datei</td></tr><tr><td>PfadprÃ¼fung</td><td>Browser-DevTools zeigen, ob die Datei geladen wurde</td></tr></table>
+      <table class="mini-table"><tr><th>Begriff</th><th>Bedeutung</th></tr><tr><td>rel</td><td>legt fest, dass eine Stylesheet-Ressource geladen wird</td></tr><tr><td>href</td><td>relativer oder absoluter Pfad zur CSS-Datei</td></tr><tr><td>Pfadprüfung</td><td>Browser-DevTools zeigen, ob die Datei geladen wurde</td></tr></table>
     </article>
   </div>
 </section>
 <section id="selektoren">
-  <div class="section-head"><div><h2>4. Selektoren, Kaskade und SpezifitÃ¤t</h2><p class="page-subtitle">Selektoren bestimmen die Zielgruppe einer Regel. Die Kaskade und SpezifitÃ¤t entscheiden, welche Regel sich bei Konkurrenz durchsetzt.</p></div></div>
+  <div class="section-head"><div><h2>4. Selektoren, Kaskade und Spezifität</h2><p class="page-subtitle">Selektoren bestimmen die Zielgruppe einer Regel. Die Kaskade und Spezifität entscheiden, welche Regel sich bei Konkurrenz durchsetzt.</p></div></div>
   <div class="ref-grid">
-    <article class="ref-panel blue"><div class="panel-headline"><div class="icon-disc">#</div><div><h3>Selektorarten</h3><p>Elemente kÃ¶nnen unterschiedlich prÃ¤zise ausgewÃ¤hlt werden.</p></div></div><table class="mini-table"><tr><th>Selektor</th><th>Beispiel</th><th>Wirkung</th></tr><tr><td>Typselektor</td><td><code>p</code></td><td>alle AbsÃ¤tze</td></tr><tr><td>Klassenselektor</td><td><code>.card</code></td><td>alle Elemente mit Klasse card</td></tr><tr><td>ID-Selektor</td><td><code>#main</code></td><td>Element mit eindeutiger ID</td></tr><tr><td>Kombinator</td><td><code>nav a</code></td><td>Links innerhalb der Navigation</td></tr></table></article>
-    <article class="ref-panel orange"><div class="panel-headline"><div class="icon-disc">!</div><div><h3>Kaskadenlogik</h3><p>Der Browser bewertet Regeln nach Herkunft, SpezifitÃ¤t und Reihenfolge.</p></div></div><ol class="steps-list"><li>Passt der Selektor auf das Element?</li><li>Hat eine Regel eine hÃ¶here SpezifitÃ¤t?</li><li>Kommt eine gleich starke Regel spÃ¤ter im Stylesheet?</li><li>Wird die Eigenschaft vererbt oder direkt gesetzt?</li></ol></article>
+    <article class="ref-panel blue"><div class="panel-headline"><div class="icon-disc">#</div><div><h3>Selektorarten</h3><p>Elemente können unterschiedlich präzise ausgewählt werden.</p></div></div><table class="mini-table"><tr><th>Selektor</th><th>Beispiel</th><th>Wirkung</th></tr><tr><td>Typselektor</td><td><code>p</code></td><td>alle Absätze</td></tr><tr><td>Klassenselektor</td><td><code>.card</code></td><td>alle Elemente mit Klasse card</td></tr><tr><td>ID-Selektor</td><td><code>#main</code></td><td>Element mit eindeutiger ID</td></tr><tr><td>Kombinator</td><td><code>nav a</code></td><td>Links innerhalb der Navigation</td></tr></table></article>
+    <article class="ref-panel orange"><div class="panel-headline"><div class="icon-disc">!</div><div><h3>Kaskadenlogik</h3><p>Der Browser bewertet Regeln nach Herkunft, Spezifität und Reihenfolge.</p></div></div><ol class="steps-list"><li>Passt der Selektor auf das Element?</li><li>Hat eine Regel eine höhere Spezifität?</li><li>Kommt eine gleich starke Regel später im Stylesheet?</li><li>Wird die Eigenschaft vererbt oder direkt gesetzt?</li></ol></article>
   </div>
   <div class="specificity"><div><strong>0</strong>Universal / Vererbung</div><div><strong>1</strong>Element<br/><code>p</code></div><div><strong>10</strong>Klasse<br/><code>.card</code></div><div><strong>100</strong>ID<br/><code>#main</code></div></div>
-  <div class="full-note" style="border-color:#ffc37c;background:#fffaf5;"><div class="star" style="background:var(--orange);">ðŸ’¡</div><div><strong>Praxisregel:</strong> Lieber mit klaren Klassen arbeiten als mit unnÃ¶tig langen oder Ã¼berstarken Selektoren. Das macht CSS wartbarer.</div></div>
+  <div class="full-note" style="border-color:#ffc37c;background:#fffaf5;"><div class="star" style="background:var(--orange);">ðŸ’¡</div><div><strong>Praxisregel:</strong> Lieber mit klaren Klassen arbeiten als mit unnötig langen oder überstarken Selektoren. Das macht CSS wartbarer.</div></div>
 </section>
 <section id="boxmodell">
-  <div class="section-head"><div><h2>5. Box-Modell und GrÃ¶ÃŸenberechnung</h2><p class="page-subtitle">Jedes sichtbare Element wird als Box betrachtet. Diese Box besteht aus Inhalt, Innenabstand, Rahmen und AuÃŸenabstand.</p></div></div>
+  <div class="section-head"><div><h2>5. Box-Modell und Größenberechnung</h2><p class="page-subtitle">Jedes sichtbare Element wird als Box betrachtet. Diese Box besteht aus Inhalt, Innenabstand, Rahmen und Außenabstand.</p></div></div>
   <div class="two-col">
     <div class="boxmodel"><div class="box-outer">margin<div class="box-border">border<div class="box-padding">padding<div class="box-content">content</div></div></div></div></div>
-    <article class="example-box"><h3>Warum ist das wichtig?</h3><p>Das Box-Modell erklÃ¤rt, warum Elemente grÃ¶ÃŸer wirken als erwartet. Wird <code>box-sizing: border-box</code> gesetzt, werden Padding und Border in die angegebene Breite eingerechnet.</p><div class="code"><div class="code-title"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>Basisregel</div><pre><code>* {
+    <article class="example-box"><h3>Warum ist das wichtig?</h3><p>Das Box-Modell erklärt, warum Elemente größer wirken als erwartet. Wird <code>box-sizing: border-box</code> gesetzt, werden Padding und Border in die angegebene Breite eingerechnet.</p><div class="code"><div class="code-title"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>Basisregel</div><pre><code>* {
   box-sizing: border-box;
-}</code></pre></div><table class="mini-table"><tr><th>Eigenschaft</th><th>Wirkung</th></tr><tr><td><code>margin</code></td><td>AuÃŸenabstand zu anderen Elementen</td></tr><tr><td><code>padding</code></td><td>Innenabstand zwischen Inhalt und Rahmen</td></tr><tr><td><code>border</code></td><td>Rahmen der Box</td></tr><tr><td><code>width/height</code></td><td>GrÃ¶ÃŸe der Box, abhÃ¤ngig von box-sizing</td></tr></table></article>
+}</code></pre></div><table class="mini-table"><tr><th>Eigenschaft</th><th>Wirkung</th></tr><tr><td><code>margin</code></td><td>Außenabstand zu anderen Elementen</td></tr><tr><td><code>padding</code></td><td>Innenabstand zwischen Inhalt und Rahmen</td></tr><tr><td><code>border</code></td><td>Rahmen der Box</td></tr><tr><td><code>width/height</code></td><td>Größe der Box, abhängig von box-sizing</td></tr></table></article>
   </div>
 </section>
 <section id="werte">
-  <div class="section-head"><h2>6. Werte, Einheiten und moderne CSS-Funktionen</h2><p>Moderne CSS-Grundlagen bedeuten, GrÃ¶ÃŸen nicht nur fest zu setzen, sondern flexibel und nachvollziehbar zu berechnen.</p></div>
-  <div class="unit-grid"><div><strong>px</strong>feste Pixelwerte, gut fÃ¼r Rahmen oder sehr konkrete GrÃ¶ÃŸen</div><div><strong>rem</strong>relative Einheit zur Root-SchriftgrÃ¶ÃŸe, gut fÃ¼r AbstÃ¤nde und Schrift</div><div><strong>%</strong>relative GrÃ¶ÃŸe zum Ã¼bergeordneten Kontext</div><div><strong>vw/vh</strong>relative GrÃ¶ÃŸe zur Breite oder HÃ¶he des Viewports</div></div>
+  <div class="section-head"><h2>6. Werte, Einheiten und moderne CSS-Funktionen</h2><p>Moderne CSS-Grundlagen bedeuten, Größen nicht nur fest zu setzen, sondern flexibel und nachvollziehbar zu berechnen.</p></div>
+  <div class="unit-grid"><div><strong>px</strong>feste Pixelwerte, gut für Rahmen oder sehr konkrete Größen</div><div><strong>rem</strong>relative Einheit zur Root-Schriftgröße, gut für Abstände und Schrift</div><div><strong>%</strong>relative Größe zum übergeordneten Kontext</div><div><strong>vw/vh</strong>relative Größe zur Breite oder Höhe des Viewports</div></div>
   <div class="two-col" style="margin-top:20px;">
     <article class="example-box"><h3><code>calc()</code> und <code>clamp()</code></h3><div class="code"><div class="code-title"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>responsive Werte</div><pre><code>.seite {
   width: min(1100px, 100%);
@@ -285,7 +285,7 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
 .box {
   width: calc(100% - 2rem);
 }</code></pre></div></article>
-    <article class="card accent-green"><div class="tag">Fachlicher Nutzen</div><h3>Weniger SonderfÃ¤lle</h3><p>Mit flexiblen Werten kÃ¶nnen Layouts besser auf unterschiedliche BildschirmgrÃ¶ÃŸen reagieren. Dadurch entstehen weniger harte Breakpoints und weniger doppelte Regeln.</p><ul class="clean"><li><code>min()</code>: nimmt den kleineren Wert</li><li><code>max()</code>: nimmt den grÃ¶ÃŸeren Wert</li><li><code>clamp()</code>: begrenzt Werte zwischen Minimum und Maximum</li></ul></article>
+    <article class="card accent-green"><div class="tag">Fachlicher Nutzen</div><h3>Weniger Sonderfälle</h3><p>Mit flexiblen Werten können Layouts besser auf unterschiedliche Bildschirmgrößen reagieren. Dadurch entstehen weniger harte Breakpoints und weniger doppelte Regeln.</p><ul class="clean"><li><code>min()</code>: nimmt den kleineren Wert</li><li><code>max()</code>: nimmt den größeren Wert</li><li><code>clamp()</code>: begrenzt Werte zwischen Minimum und Maximum</li></ul></article>
   </div>
 </section>
 <section id="variablen">
@@ -303,48 +303,48 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
   border-radius: var(--radius);
   padding: var(--abstand);
 }</code></pre></div></article>
-    <article class="ref-panel cyan"><div class="panel-headline"><div class="icon-disc">var</div><div><h3>Warum fachlich sinnvoll?</h3><p>Werte werden zentral gepflegt und kÃ¶nnen konsistent wiederverwendet werden.</p></div></div><ul class="benefit-list"><li>einheitliche Farben, AbstÃ¤nde und Radien</li><li>leichtere Anpassung eines Designs</li><li>weniger Copy-Paste-Fehler</li><li>bessere Lesbarkeit bei grÃ¶ÃŸeren CSS-Dateien</li></ul><div class="full-note"><div class="star">âœ“</div><div><strong>Praxis:</strong> Farben und AbstÃ¤nde zuerst als Variablen definieren, dann in Komponenten verwenden.</div></div></article>
+    <article class="ref-panel cyan"><div class="panel-headline"><div class="icon-disc">var</div><div><h3>Warum fachlich sinnvoll?</h3><p>Werte werden zentral gepflegt und können konsistent wiederverwendet werden.</p></div></div><ul class="benefit-list"><li>einheitliche Farben, Abstände und Radien</li><li>leichtere Anpassung eines Designs</li><li>weniger Copy-Paste-Fehler</li><li>bessere Lesbarkeit bei größeren CSS-Dateien</li></ul><div class="full-note"><div class="star">✓</div><div><strong>Praxis:</strong> Farben und Abstände zuerst als Variablen definieren, dann in Komponenten verwenden.</div></div></article>
   </div>
 </section>
 <section id="layout">
-  <div class="section-head"><h2>8. Layout-Grundlagen fÃ¼r Tag 1</h2><p>Am ersten Tag reicht ein sicherer Ãœberblick: Welche Darstellung hat ein Element und wann wird welches Layoutprinzip verwendet?</p></div>
+  <div class="section-head"><h2>8. Layout-Grundlagen für Tag 1</h2><p>Am ersten Tag reicht ein sicherer Überblick: Welche Darstellung hat ein Element und wann wird welches Layoutprinzip verwendet?</p></div>
   <div class="three-col">
     <article class="card accent-cyan"><div class="tag">Normalfluss</div><h3>block und inline</h3><p>Block-Elemente beginnen meist in einer neuen Zeile. Inline-Elemente laufen innerhalb des Textflusses.</p></article>
-    <article class="card accent-blue"><div class="tag">Flexbox</div><h3>eine Achse</h3><p>Flexbox eignet sich besonders fÃ¼r horizontale oder vertikale Anordnung von Elementen in einer Reihe.</p></article>
-    <article class="card accent-violet"><div class="tag">Grid</div><h3>zwei Achsen</h3><p>CSS Grid eignet sich fÃ¼r Zeilen und Spalten, also fÃ¼r komplexere Seitenbereiche.</p></article>
+    <article class="card accent-blue"><div class="tag">Flexbox</div><h3>eine Achse</h3><p>Flexbox eignet sich besonders für horizontale oder vertikale Anordnung von Elementen in einer Reihe.</p></article>
+    <article class="card accent-violet"><div class="tag">Grid</div><h3>zwei Achsen</h3><p>CSS Grid eignet sich für Zeilen und Spalten, also für komplexere Seitenbereiche.</p></article>
   </div>
   <div class="example-box" style="margin-top:20px;"><h3>Entscheidungshilfe</h3><table class="mini-table"><tr><th>Frage</th><th>Passendes Prinzip</th></tr><tr><td>Sollen Elemente einfach untereinander stehen?</td><td>Normalfluss / Blocklayout</td></tr><tr><td>Sollen Elemente in einer Richtung verteilt werden?</td><td>Flexbox</td></tr><tr><td>Sollen Elemente in Zeilen und Spalten angeordnet werden?</td><td>Grid</td></tr><tr><td>Soll ein Element aus dem Normalfluss heraus?</td><td>Positionierung, aber vorsichtig einsetzen</td></tr></table></div>
 </section>
 <section id="devtools">
-  <div class="section-head"><h2>9. PrÃ¼fen mit Browser-DevTools</h2><p>Fachlich sauberes CSS entsteht durch Kontrolle: Welche Regel greift, welche wird Ã¼berschrieben und ob Pfade korrekt geladen werden.</p></div>
+  <div class="section-head"><h2>9. Prüfen mit Browser-DevTools</h2><p>Fachlich sauberes CSS entsteht durch Kontrolle: Welche Regel greift, welche wird überschrieben und ob Pfade korrekt geladen werden.</p></div>
   <div class="devtools-grid">
-    <article class="devtools-card"><div class="tag">Elements</div><h3>DOM prÃ¼fen</h3><p>HTML-Struktur sichtbar machen und kontrollieren, ob Klassen, IDs und Elemente vorhanden sind.</p></article>
-    <article class="devtools-card"><div class="tag">Styles</div><h3>Regeln prÃ¼fen</h3><p>Aktive CSS-Regeln, Ã¼berschriebene Deklarationen und SpezifitÃ¤tsprobleme erkennen.</p></article>
-    <article class="devtools-card"><div class="tag">Network</div><h3>Dateien prÃ¼fen</h3><p>Fehlende CSS-Dateien, Bilder oder Fonts Ã¼ber Statuscodes und Pfade finden.</p></article>
+    <article class="devtools-card"><div class="tag">Elements</div><h3>DOM prüfen</h3><p>HTML-Struktur sichtbar machen und kontrollieren, ob Klassen, IDs und Elemente vorhanden sind.</p></article>
+    <article class="devtools-card"><div class="tag">Styles</div><h3>Regeln prüfen</h3><p>Aktive CSS-Regeln, überschriebene Deklarationen und Spezifitätsprobleme erkennen.</p></article>
+    <article class="devtools-card"><div class="tag">Network</div><h3>Dateien prüfen</h3><p>Fehlende CSS-Dateien, Bilder oder Fonts über Statuscodes und Pfade finden.</p></article>
   </div>
   <div class="two-col" style="margin-top:20px;">
-    <article class="example-box"><h3>Typische Fehlerdiagnose</h3><ol class="steps-list"><li>HTML-Element im Inspector auswÃ¤hlen</li><li>prÃ¼fen, ob der erwartete Selektor im Styles-Bereich erscheint</li><li>Ã¼berschriebene Eigenschaften erkennen</li><li>Pfadfehler im Network-Tab prÃ¼fen</li><li>Ã„nderung im Code dauerhaft Ã¼bernehmen</li></ol></article>
-    <article class="card accent-orange"><div class="tag">QualitÃ¤tssicherung</div><h3>Abnahme im Kleinen</h3><p>Jede Ãœbung wird nicht nur optisch bewertet. Wichtig ist auch, ob Struktur, Pfade, Selektoren und Wiederverwendbarkeit fachlich sauber sind.</p><ul class="clean"><li>HTML valide und sinnvoll strukturiert?</li><li>CSS extern und nachvollziehbar?</li><li>keine unnÃ¶tigen Inline-Styles?</li><li>Werte konsistent verwendet?</li></ul></article>
+    <article class="example-box"><h3>Typische Fehlerdiagnose</h3><ol class="steps-list"><li>HTML-Element im Inspector auswählen</li><li>prüfen, ob der erwartete Selektor im Styles-Bereich erscheint</li><li>überschriebene Eigenschaften erkennen</li><li>Pfadfehler im Network-Tab prüfen</li><li>Änderung im Code dauerhaft übernehmen</li></ol></article>
+    <article class="card accent-orange"><div class="tag">Qualitätssicherung</div><h3>Abnahme im Kleinen</h3><p>Jede Übung wird nicht nur optisch bewertet. Wichtig ist auch, ob Struktur, Pfade, Selektoren und Wiederverwendbarkeit fachlich sauber sind.</p><ul class="clean"><li>HTML valide und sinnvoll strukturiert?</li><li>CSS extern und nachvollziehbar?</li><li>keine unnötigen Inline-Styles?</li><li>Werte konsistent verwendet?</li></ul></article>
   </div>
 </section>
 <section id="aufgaben">
-  <div class="section-head"><h2>10. Ãœbung, Sicherung und Unterrichtscheck</h2><p>Die Ãœbungen verbinden CodeverstÃ¤ndnis, Umsetzung und PrÃ¼fung. Ziel ist ein nachvollziehbarer Arbeitsstand, kein blindes Kopieren.</p></div>
+  <div class="section-head"><h2>10. Übung, Sicherung und Unterrichtscheck</h2><p>Die Übungen verbinden Codeverständnis, Umsetzung und Prüfung. Ziel ist ein nachvollziehbarer Arbeitsstand, kein blindes Kopieren.</p></div>
   <div class="two-col">
-    <article class="example-box"><h3>Aufgabenfolge</h3><ol class="steps-list"><li>Projektordner Ã¶ffnen und HTML/CSS-Dateien zuordnen</li><li>CSS extern einbinden und Pfade prÃ¼fen</li><li>erste Grundregeln fÃ¼r body, Typografie und Boxen setzen</li><li>eine Profilkarte oder Komponente mit Klassen gestalten</li><li>CSS Custom Properties fÃ¼r Farben und AbstÃ¤nde ergÃ¤nzen</li><li>Ergebnis mit DevTools fachlich kontrollieren</li></ol></article>
+    <article class="example-box"><h3>Aufgabenfolge</h3><ol class="steps-list"><li>Projektordner öffnen und HTML/CSS-Dateien zuordnen</li><li>CSS extern einbinden und Pfade prüfen</li><li>erste Grundregeln für body, Typografie und Boxen setzen</li><li>eine Profilkarte oder Komponente mit Klassen gestalten</li><li>CSS Custom Properties für Farben und Abstände ergänzen</li><li>Ergebnis mit DevTools fachlich kontrollieren</li></ol></article>
     <div class="quiz">
-      <div class="quiz-card"><h3>Frage 1: WofÃ¼r ist CSS fachlich zustÃ¤ndig?</h3><button class="answer" data-correct="false">FÃ¼r die Speicherung von Benutzerdaten.</button><button class="answer" data-correct="true">FÃ¼r Darstellung, Layout, AbstÃ¤nde, Farben und visuelle ZustÃ¤nde.</button><button class="answer" data-correct="false">FÃ¼r die Datenbankanbindung einer Webseite.</button></div>
-      <div class="quiz-card"><h3>Frage 2: Was beschreibt die Kaskade?</h3><button class="answer" data-correct="true">Wie der Browser entscheidet, welche CSS-Regel am Ende wirkt.</button><button class="answer" data-correct="false">Wie Bilder komprimiert werden.</button><button class="answer" data-correct="false">Wie JavaScript-Funktionen ausgefÃ¼hrt werden.</button></div>
+      <div class="quiz-card"><h3>Frage 1: Wofür ist CSS fachlich zuständig?</h3><button class="answer" data-correct="false">Für die Speicherung von Benutzerdaten.</button><button class="answer" data-correct="true">Für Darstellung, Layout, Abstände, Farben und visuelle Zustände.</button><button class="answer" data-correct="false">Für die Datenbankanbindung einer Webseite.</button></div>
+      <div class="quiz-card"><h3>Frage 2: Was beschreibt die Kaskade?</h3><button class="answer" data-correct="true">Wie der Browser entscheidet, welche CSS-Regel am Ende wirkt.</button><button class="answer" data-correct="false">Wie Bilder komprimiert werden.</button><button class="answer" data-correct="false">Wie JavaScript-Funktionen ausgeführt werden.</button></div>
     </div>
   </div>
-  <div class="full-note"><div class="star">âœ“</div><div><strong>Tagesabschluss:</strong> Die Teilnehmenden sollen erklÃ¤ren kÃ¶nnen, warum eine CSS-Regel wirkt, warum eine andere Ã¼berschrieben wird und wie das Ergebnis im Browser Ã¼berprÃ¼ft wird.</div></div>
+  <div class="full-note"><div class="star">✓</div><div><strong>Tagesabschluss:</strong> Die Teilnehmenden sollen erklären können, warum eine CSS-Regel wirkt, warum eine andere überschrieben wird und wie das Ergebnis im Browser überprüft wird.</div></div>
 </section>
 </main>
 </div>
-<div class="key-hint">Navigation: â† zurÃ¼ck Â· â†’ weiter</div>
+<div class="key-hint">Navigation: ← zurück · → weiter</div>
 <div aria-label="Seitensteuerung" class="slide-controls">
-  <button class="btn" id="prevSlide" type="button">â† ZurÃ¼ck</button>
+  <button class="btn" id="prevSlide" type="button">← Zurück</button>
   <span class="slide-counter" id="slideCounter">1 / 11</span>
-  <button class="btn primary" id="nextSlide" type="button">Weiter â†’</button>
+  <button class="btn primary" id="nextSlide" type="button">Weiter →</button>
 </div>
 <div class="printbar">
   <button class="btn" id="startSlide" type="button">Startseite</button>
@@ -420,3 +420,5 @@ main > header.slide-left, main > section.slide-left { transform: translateX(-70p
 </script>
 </body>
 </html>
+
+

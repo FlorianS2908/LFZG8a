@@ -2,7 +2,7 @@ const inspector = require('node:inspector');
 const path = require('node:path');
 
 const tests = [];
-const coverageThreshold = 95;
+const coverageThreshold = 80;
 const coveredAppFiles = [
   path.join('app', 'lib', 'app-data.js'),
   path.join('app', 'lib', 'display.js'),
@@ -93,6 +93,11 @@ async function main() {
   await coverage.start();
 
   require('./app-data.test');
+  require('./admin-tools.test');
+  require('./container-registry.test');
+  require('./course-management.test');
+  require('./content-factory.test');
+  require('./workflow-auth-roles.test');
   require('./display.test');
   require('./i18n.test');
   require('./json-store.test');

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ueTool_asSaaS ContentFactory</title>
+  <link rel="stylesheet" href="workspace.css">
+</head>
+<body>
+  <div class="tool-center-shell factory-shell">
+    <header class="workspace-header">
+      <div class="workspace-title">
+        <img class="workspace-company-logo" src="assets/ploglan-logo.png" alt="Ploglan">
+        <div>
+          <p class="eyebrow">Systemmodul</p>
+          <h1>ueTool_asSaaS ContentFactory</h1>
+        </div>
+      </div>
+      <div class="workspace-actions">
+        <button class="secondary-button" type="button" data-open-landing>Tool-Zentrale</button>
+        <button class="primary-button" type="button" data-refresh>Aktualisieren</button>
+      </div>
+    </header>
+
+    <main class="factory-layout">
+      <nav class="workspace-track-tabs" aria-label="Factory Bereiche">
+        <button class="workspace-track-tab is-active" type="button" data-factory-tab="home">Start</button>
+        <button class="workspace-track-tab" type="button" data-factory-tab="overview">Uebersicht</button>
+        <button class="workspace-track-tab" type="button" data-factory-tab="duplicate">Duplizieren</button>
+        <button class="workspace-track-tab" type="button" data-factory-tab="import">Rohdaten</button>
+        <button class="workspace-track-tab" type="button" data-factory-tab="batches">Import-Batches</button>
+      </nav>
+
+      <section class="factory-panel is-active" data-factory-panel="home">
+        <div class="tool-grid">
+          <button class="tool-tile" type="button" data-open-factory-section="duplicate">
+            <span class="tool-visual">CD</span>
+            <span class="tool-copy">
+              <strong>Container Duplizierung</strong>
+              <small>Bestehende Unterrichtscontainer als Draft kopieren</small>
+            </span>
+          </button>
+          <button class="tool-tile" type="button" data-open-factory-section="import">
+            <span class="tool-visual">CE</span>
+            <span class="tool-copy">
+              <strong>Container Erstellung</strong>
+              <small>Rohdaten importieren, mappen und als Draft erzeugen</small>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <section class="factory-panel" data-factory-panel="overview">
+        <div class="factory-grid" data-container-list></div>
+      </section>
+
+      <section class="factory-panel" data-factory-panel="duplicate">
+        <article class="tool-card">
+          <h2>Container duplizieren</h2>
+          <div class="factory-form-grid">
+            <label>Quellcontainer<select data-duplicate-source></select></label>
+            <label>Neuer Name<input data-duplicate-name placeholder="HTML/CSS Kopie"></label>
+            <label>Neue Beschreibung<input data-duplicate-description placeholder="Beschreibung fuer den neuen Container"></label>
+            <label>Neue ID optional<input data-duplicate-id placeholder="automatisch"></label>
+            <label>CopyMode<select data-duplicate-copy-mode><option value="reference">Referenzieren</option><option value="copy">Kopieren vorbereitet</option></select></label>
+            <label>Tags<input data-duplicate-tags placeholder="HTML, CSS, Demo"></label>
+          </div>
+          <div class="option-grid">
+            <label><input type="checkbox" data-include-routes checked> Routen</label>
+            <label><input type="checkbox" data-include-materials checked> Materialien</label>
+            <label><input type="checkbox" data-include-assets checked> Assets</label>
+            <label><input type="checkbox" data-include-tasks checked> Aufgaben</label>
+            <label><input type="checkbox" data-include-solutions checked> Loesungen</label>
+            <label><input type="checkbox" data-include-quizzes checked> Quiz</label>
+            <label><input type="checkbox" data-duplicate-visible> Nach Veroeffentlichung auf Landingpage</label>
+          </div>
+          <button class="primary-button" type="button" data-run-duplicate>Entwurf erzeugen</button>
+          <p class="status-line" data-duplicate-status></p>
+        </article>
+      </section>
+
+      <section class="factory-panel" data-factory-panel="import">
+        <article class="tool-card">
+          <h2>Rohdaten importieren</h2>
+          <div class="factory-form-grid">
+            <label>Batch-Name<input data-import-name placeholder="Import Webkurs Tag 1"></label>
+            <label>Dateien<input data-import-files type="file" multiple></label>
+          </div>
+          <button class="primary-button" type="button" data-run-import>In Staging importieren</button>
+          <p class="status-line" data-import-status></p>
+        </article>
+      </section>
+
+      <section class="factory-panel" data-factory-panel="batches">
+        <div class="factory-grid" data-batch-list></div>
+        <article class="tool-card" data-batch-detail hidden>
+          <h2 data-batch-title></h2>
+          <div class="factory-form-grid">
+            <label>Containername<input data-batch-container-name></label>
+            <label>Container-ID<input data-batch-container-id placeholder="automatisch"></label>
+            <label>Beschreibung<input data-batch-container-description></label>
+            <label>Tags<input data-batch-container-tags></label>
+          </div>
+          <div class="mapping-list" data-mapping-list></div>
+          <div class="button-row">
+            <button class="secondary-button" type="button" data-validate-batch>Validieren</button>
+            <button class="primary-button" type="button" data-create-from-batch>Container-Entwurf erzeugen</button>
+          </div>
+          <div class="validation-box" data-batch-validation></div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="factory.js"></script>
+</body>
+</html>

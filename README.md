@@ -1,6 +1,60 @@
-# LFZQ8a HTML & CSS Workshop-App
+# ueTool_asSaaS
 
-Dieses Repository enthaelt die Kursmaterialien und die Electron-Desktop-App fuer den LFZQ8a HTML-&-CSS-Workshop.
+Dieses Repository enthaelt die Plattform `ueTool_asSaaS` und den Kurscontainer `HTML/CSS`.
+
+`ueTool_asSaaS` ist die lokale Desktop-Plattform. `HTML/CSS` ist der fachliche Kurscontainer. Die `ContentFactory` ist das Admin-Werkzeug zur Container-Erstellung und Duplizierung.
+
+## Adminbereich und Registrierung
+
+Der Adminbereich enthaelt vier nicht freigebbare Systemkacheln:
+
+- `ContentFactory`
+- `Freigabezentrum`
+- `Dozent anlegen`
+- `Teilnehmer anlegen`
+
+Dozenten und Teilnehmer koennen sich nur registrieren, wenn der Admin sie vorher lokal vorgemerkt hat. Diese Vorabfreigaben werden ohne Passwort in den lokalen App-Daten gespeichert und nach erfolgreicher Registrierung auf `accepted` gesetzt. Widerrufene Freigaben erhalten den Status `revoked` und koennen nicht mehr fuer eine Registrierung genutzt werden.
+
+Im Freigabezentrum sieht der Admin registrierte Benutzer, deren Kurs-/Tool-Freigaben sowie offene, angenommene oder widerrufene Registrierungsfreigaben.
+
+### Architekturstand Container
+
+Die Kacheln folgen einem einheitlichen Manifest-Prinzip mit `courseName`, `courseId`, `department`, `category`, `containerType`, `assignable`, `allowedRoles`, `storageMode` und `exportable`.
+
+Neue Admin-Werkzeugkacheln sind als nicht freigebbare Systemcontainer registriert:
+
+- Container-Adapter / Legacy-Migration
+- Import- & Dateianalyse
+- Kurscontainer-Generator
+- Quiz-Builder
+- Container-Export
+- KI-/Provider-Konfiguration
+- Test-Center / Qualitaetssicherung
+- Systemdiagnose / Pruefberichte
+
+Die Werkzeuglogik liegt in `desktop-app/app/lib/admin-tools/`, die lokale Container-Registry in `desktop-app/app/lib/container-registry/`. Die generische Admin-Werkzeugseite ist `desktop-app/app/renderer/tool-center/admin-tool.html`.
+
+### Kursverwaltung und CourseInstances
+
+Neben Teilnehmer, Dozent und Admin gibt es die Rolle `course_manager`. Sie sieht die Kachel `Kursverwaltung`, aber keine Admin-Systemwerkzeuge wie ContentFactory oder Test-Center.
+
+Die Kursverwaltung trennt:
+
+- `ContentContainer`: Inhalt/Vorlage, z. B. `HTML/CSS`
+- `CourseInstance`: laufender Kurs, z. B. `HTML/CSS Kurs Gruppe B`
+
+CourseInstances, Mitglieder, Containerzuordnungen, ReleaseStates, SyncEvents und AuditLog werden ueber Services unter `desktop-app/app/lib/course-management/` verwaltet. In der Entwicklungsvariante wird lokal JSON gespeichert; die Schicht ist fuer zentrale API/DB vorbereitet.
+
+## Start Und Workflow-Check
+
+- `DemoExe.cmd` startet die Anwendung mit Login-Screen.
+- `WorkflowCheck.cmd` prueft den Auth-/Rollen-/Kachel-/Kurssettings-/ContentFactory-Workflow ohne Installation, ohne .exe und ohne Electron-Fenster.
+
+Standardkonten:
+
+- Admin: `admin@admin.de` / `$$Klaus2908$$`
+- Dozent: `dozent@dozent.de` / `$$Klaus2908$$`
+- Teilnehmer: `tn@tn.de` / `$$Klaus2908$$`
 
 Der aktuelle Neustruktur-Arbeitsstand liegt auf dem Branch `codex/startview-neustruktur`.
 

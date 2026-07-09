@@ -110,10 +110,20 @@
     });
   }
 
-  fetch('/api/task-packages')
-    .then((response) => response.json())
-    .then((data) => renderTasks(data.tasks || [], data.daysOpen || {}))
-    .catch(() => {
+  async function refreshTasks() {
+    try {
+      const response = await fetch('/api/task-packages', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      renderTasks(data.tasks || [], data.daysOpen || {});
+    } catch (error) {
       root.innerHTML = '<p class="task-empty">Aufgaben konnten nicht geladen werden.</p>';
-    });
+    }
+  }
+
+  refreshTasks();
+  window.addEventListener('focus', refreshTasks);
+  window.setInterval(refreshTasks, 2000);
 })();

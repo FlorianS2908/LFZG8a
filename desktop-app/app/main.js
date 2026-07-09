@@ -7,6 +7,21 @@ const { fileURLToPath, pathToFileURL } = require('url');
 const { createAppData } = require('./lib/app-data');
 const { createClassroomServer } = require('./lib/classroom-server');
 const { courseCatalog } = require('./lib/course-catalog');
+const { createDokuToolService } = require('./lib/dokutool-service');
+const { moduleRegistry } = require('./lib/modules/module-registry');
+const { createContentFactoryService } = require('./lib/content-factory/content-factory-service');
+const { createCourseManagementService } = require('./lib/course-management/course-management-service');
+const { getAdminTool, listAdminTools } = require('./lib/admin-tools/admin-tool-registry');
+const { getGuide } = require('./lib/admin-tools/admin-tool-guide-service');
+const { createAdminToolConfigStore } = require('./lib/admin-tools/admin-tool-config-store');
+const { runAdminTool } = require('./lib/admin-tools/admin-tool-runner');
+const {
+  getVisibleModuleManifestsForSession,
+  decideHtmlCssOpenMode,
+  canOpenContentFactory,
+  isAssignableModule,
+  moduleAllowedForSession
+} = require('./lib/workflow/role-access');
 const taskPackageRegistry = require('./lib/task-packages.json');
 const { getTranslations, supportedLanguages } = require('./lib/i18n');
 const {
@@ -18,23 +33,59 @@ const {
 
 const projectRoot = path.resolve(__dirname, '..', '..');
 const contentFile = path.join(__dirname, 'renderer', 'course.html');
+const workspaceFile = path.join(__dirname, 'renderer', 'tool-center', 'workspace.html');
+const loginFile = path.join(__dirname, 'renderer', 'tool-center', 'login.html');
+const factoryFile = path.join(__dirname, 'renderer', 'tool-center', 'factory.html');
+const releaseCenterFile = path.join(__dirname, 'renderer', 'tool-center', 'release-center.html');
+const userCreateFile = path.join(__dirname, 'renderer', 'tool-center', 'user-create.html');
+const adminToolFile = path.join(__dirname, 'renderer', 'tool-center', 'admin-tool.html');
+const courseManagementFile = path.join(__dirname, 'renderer', 'tool-center', 'course-management.html');
 const teacherOverviewFile = path.join(projectRoot, 'dozent', 'index_dozent.html');
 const participantReleaseScriptFile = path.join(projectRoot, 'teilnehmer', 'assets', 'js', 'freigaben.js');
 const participantRoot = path.join(projectRoot, 'teilnehmer');
+const participantIndexFile = path.join(participantRoot, 'index_teilnehmer.html');
 const preloadFile = path.join(__dirname, 'preload.js');
 const wizardFile = path.join(__dirname, 'renderer', 'wizard.html');
+const appIconFile = path.join(__dirname, 'assets', 'icons', process.platform === 'win32' ? 'app-icon.ico' : 'app-icon.png');
 const forceWizard = process.argv.includes('--wizard') || process.argv.includes('--wizard-test');
 const forceTeacherStartview = process.argv.includes('--teacher-startview');
+const forceAllViewsTest = process.argv.includes('--test-all-views');
 const disableHistory = process.argv.includes('--no-history') || process.argv.includes('--wizard-test');
 
 let mainWindow = null;
 let teacherWindow = null;
 let releaseWindow = null;
+let courseViewWindow = null;
 let appData = null;
 let classroomServer = null;
+let dokuToolService = null;
+let contentFactoryService = null;
+let adminToolConfigStore = null;
+let courseManagementService = null;
 let isClosingAllWindows = false;
 let isReplacingMainWindow = false;
 let startupTestReportCreated = false;
+
+function requireAuthenticatedSession() {
+  return getAppData().assertAuthenticated();
+}
+
+function requireAdminSession() {
+  const session = requireAuthenticatedSession();
+  if (!canOpenContentFactory(session)) {
+    throw new Error('Kein Zugriff: Admin-Rechte erforderlich.');
+  }
+  return session;
+}
+
+function requireCourseManagerSession() {
+  const session = requireAuthenticatedSession();
+  const roles = session.user?.roles || [];
+  if (!roles.includes('course_manager') && !roles.includes('Admin') && !roles.includes('SuperAdmin')) {
+    throw new Error('Kein Zugriff: Kursverwaltung erforderlich.');
+  }
+  return session;
+}
 
 function getAppData() {
   if (!appData) {
@@ -53,6 +104,55 @@ function getClassroomServer() {
     });
   }
   return classroomServer;
+}
+
+function getDokuToolService() {
+  if (!dokuToolService) {
+    dokuToolService = createDokuToolService({
+      appData: getAppData()
+    });
+  }
+  return dokuToolService;
+}
+
+function getContentFactoryService() {
+  if (!contentFactoryService) {
+    contentFactoryService = createContentFactoryService({
+      appData: getAppData()
+    });
+  }
+  return contentFactoryService;
+}
+
+function getAdminToolConfigStore() {
+  if (!adminToolConfigStore) {
+    adminToolConfigStore = createAdminToolConfigStore(getAppData().dataDir);
+  }
+  return adminToolConfigStore;
+}
+
+function getCourseManagementService() {
+  if (!courseManagementService) {
+    courseManagementService = createCourseManagementService({
+      dataDir: getAppData().dataDir,
+      moduleRegistry
+    });
+  }
+  return courseManagementService;
+}
+
+function getVisibleModulesForSession(session) {
+  const hydratedSession = {
+    ...session,
+    courseContainerIds: session.user?.id
+      ? getCourseManagementService().getVisibleContainerIdsForUser(session.user.id)
+      : []
+  };
+  return getVisibleModuleManifestsForSession(
+    hydratedSession,
+    moduleRegistry.getAllModules(),
+    getContentFactoryService().storage.listGeneratedContainers()
+  );
 }
 
 function getDisplaySummaries() {
@@ -239,6 +339,7 @@ function notifyParticipantReleasesChanged(releases) {
       window.webContents.send('participant-releases:changed', releases);
     }
   });
+  reloadParticipantShareWindow();
 }
 
 function notifyTaskReleasesChanged(releases) {
@@ -247,6 +348,7 @@ function notifyTaskReleasesChanged(releases) {
       window.webContents.send('task-releases:changed', releases);
     }
   });
+  reloadParticipantShareWindow();
 }
 
 function getHydratedTaskPackages() {
@@ -302,6 +404,35 @@ function spawnDetached(command, args, options = {}) {
   });
 }
 
+function sanitizeWindowTitle(title, fallbackTitle = 'HTML/CSS') {
+  const cleanedTitle = String(title || fallbackTitle || 'HTML/CSS')
+    .replace(/LFZQ8a HTML & CSS/g, 'HTML/CSS')
+    .replace(/LFZQ8a/g, 'HTML/CSS')
+    .replace(/\s*(?:Â·|·)\s*/g, ' - ')
+    .replace(/Ãœ/g, 'Ue')
+    .replace(/Ã¼/g, 'ue')
+    .replace(/Ã–/g, 'Oe')
+    .replace(/Ã¶/g, 'oe')
+    .replace(/Ã„/g, 'Ae')
+    .replace(/Ã¤/g, 'ae')
+    .replace(/ÃŸ/g, 'ss')
+    .replace(/\s+-\s+/g, ' - ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  return cleanedTitle || fallbackTitle || 'HTML/CSS';
+}
+
+function bindWindowTitle(window, fallbackTitle, options = {}) {
+  const usePageTitle = options.usePageTitle !== false;
+  const fallback = sanitizeWindowTitle(fallbackTitle || window.getTitle());
+  window.setTitle(fallback);
+  window.webContents.on('page-title-updated', (event, title) => {
+    event.preventDefault();
+    window.setTitle(usePageTitle ? sanitizeWindowTitle(title, fallback) : fallback);
+  });
+}
+
 function getVsCodeFileUrl(filePath) {
   return encodeURI(`vscode://file/${filePath.replace(/\\/g, '/')}`);
 }
@@ -336,7 +467,10 @@ async function openFileInVsCode(target) {
 }
 
 function getWindowOptions(display, extra = {}) {
-  return createWindowOptions(display, preloadFile, extra);
+  return createWindowOptions(display, preloadFile, {
+    icon: fs.existsSync(appIconFile) ? appIconFile : undefined,
+    ...extra
+  });
 }
 
 function closeAllApplicationWindows(exceptWindow = null) {
@@ -355,6 +489,7 @@ function closeAllApplicationWindows(exceptWindow = null) {
 
 function registerMainWindow(window) {
   mainWindow = window;
+  bindWindowTitle(mainWindow, mainWindow.getTitle());
   mainWindow.on('closed', () => {
     if (mainWindow === window) {
       mainWindow = null;
@@ -366,14 +501,20 @@ function registerMainWindow(window) {
   });
 }
 
-function getReleaseViewUrl() {
-  return `${pathToFileURL(contentFile).href}?view=releases`;
+function getParticipantShareViewUrl(serverInfo = getClassroomServer().getInfo()) {
+  return serverInfo.urls?.[0] || pathToFileURL(participantIndexFile).href;
+}
+
+function reloadParticipantShareWindow() {
+  if (releaseWindow && !releaseWindow.isDestroyed()) {
+    releaseWindow.webContents.reloadIgnoringCache();
+  }
 }
 
 function createWizardWindow() {
   const display = getMainDisplay();
   registerMainWindow(new BrowserWindow(getWindowOptions(display, {
-    title: 'LFZQ8a Einrichtung',
+    title: 'HTML/CSS Einrichtung',
     width: 1040,
     height: 760
   })));
@@ -382,10 +523,58 @@ function createWizardWindow() {
   mainWindow.once('ready-to-show', () => mainWindow.show());
 }
 
-function createWorkshopWindow() {
+function createLandingWindow() {
   const display = getMainDisplay();
   registerMainWindow(new BrowserWindow(getWindowOptions(display, {
-    title: 'LFZQ8a Dozentenview'
+    title: 'ueTool_asSaaS'
+  })));
+
+  mainWindow.loadFile(workspaceFile);
+  mainWindow.once('ready-to-show', () => mainWindow.show());
+}
+
+function createLoginWindow() {
+  const display = getMainDisplay();
+  registerMainWindow(new BrowserWindow(getWindowOptions(display, {
+    title: 'ueTool_asSaaS Login',
+    width: 980,
+    height: 720,
+    minWidth: 820,
+    minHeight: 620
+  })));
+
+  mainWindow.loadFile(loginFile);
+  mainWindow.once('ready-to-show', () => mainWindow.show());
+}
+
+function loadLoginInMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createLoginWindow();
+    return true;
+  }
+  mainWindow.setTitle('ueTool_asSaaS Login');
+  mainWindow.loadFile(loginFile);
+  mainWindow.focus();
+  return true;
+}
+
+function loadLandingInMainWindow() {
+  requireAuthenticatedSession();
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createLandingWindow();
+    return true;
+  }
+  mainWindow.setTitle('ueTool_asSaaS');
+  mainWindow.loadFile(workspaceFile);
+  mainWindow.focus();
+  return true;
+}
+
+function createWorkshopWindow() {
+  requireAuthenticatedSession();
+  const display = getMainDisplay();
+  registerMainWindow(new BrowserWindow(getWindowOptions(display, {
+    title: 'HTML/CSS Dozentenview'
   })));
 
   mainWindow.loadFile(contentFile);
@@ -396,16 +585,208 @@ function createWorkshopWindow() {
   });
 }
 
-function openParticipantReleaseWindow() {
+function createCourseViewWindowOptions(display) {
+  return getWindowOptions(display, {
+    title: 'HTML/CSS Kursview',
+    width: 1280,
+    height: 820,
+    minWidth: 920,
+    minHeight: 640
+  });
+}
+
+async function openCourseShareWindow() {
+  const displays = screen.getAllDisplays();
+  const display = displays[1] || getMainDisplay();
+  const area = createFullDisplayBounds(display);
+
+  if (!courseViewWindow || courseViewWindow.isDestroyed()) {
+    courseViewWindow = new BrowserWindow(createCourseViewWindowOptions(display));
+    bindWindowTitle(courseViewWindow, 'HTML/CSS Kursview');
+    courseViewWindow.once('ready-to-show', () => courseViewWindow.show());
+    courseViewWindow.on('closed', () => {
+      courseViewWindow = null;
+    });
+  } else {
+    courseViewWindow.setBounds({
+      x: area.x,
+      y: area.y,
+      width: Math.max(area.width, 920),
+      height: Math.max(area.height, 640)
+    });
+  }
+
+  courseViewWindow.loadFile(teacherOverviewFile);
+  courseViewWindow.webContents.setWindowOpenHandler(({ url }) => {
+    openTeacherInfo(url);
+    return { action: 'deny' };
+  });
+  courseViewWindow.focus();
+  return courseViewWindow;
+}
+
+function createAllViewsTestWindows() {
+  if (!getAppData().getCurrentSession().authenticated) {
+    getAppData().login('admin@admin.de', '$$Klaus2908$$');
+  }
+  createWorkshopWindow();
+  openCourseShareWindow().catch((error) => {
+    console.error(`Kursview konnte nicht geoeffnet werden: ${error.message}`);
+  });
+  openParticipantReleaseWindow({ force: true }).catch((error) => {
+    console.error(`Teilnehmeransicht konnte nicht geoeffnet werden: ${error.message}`);
+  });
+}
+
+function loadWorkshopInMainWindow() {
+  requireAuthenticatedSession();
+  createStartupTestReport();
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWorkshopWindow();
+  } else {
+    mainWindow.setTitle('HTML/CSS Dozentenview');
+    mainWindow.loadFile(contentFile);
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+      openTeacherInfo(url);
+      return { action: 'deny' };
+    });
+    mainWindow.focus();
+  }
+  openCourseShareWindow().catch((error) => {
+    console.error(`Kursview konnte nicht geoeffnet werden: ${error.message}`);
+  });
+  return true;
+}
+
+function loadWizardInMainWindow() {
+  requireAuthenticatedSession();
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWizardWindow();
+  } else {
+    mainWindow.setTitle('HTML/CSS Einrichtung');
+    mainWindow.loadFile(wizardFile);
+    mainWindow.focus();
+  }
+  return true;
+}
+
+function loadContentFactoryInMainWindow() {
+  requireAdminSession();
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    const display = getMainDisplay();
+    registerMainWindow(new BrowserWindow(getWindowOptions(display, {
+      title: 'ueTool_asSaaS ContentFactory'
+    })));
+    mainWindow.loadFile(factoryFile);
+    mainWindow.once('ready-to-show', () => mainWindow.show());
+  } else {
+    mainWindow.setTitle('ueTool_asSaaS ContentFactory');
+    mainWindow.loadFile(factoryFile);
+    mainWindow.focus();
+  }
+  return true;
+}
+
+function loadReleaseCenterInMainWindow() {
+  requireAdminSession();
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    const display = getMainDisplay();
+    registerMainWindow(new BrowserWindow(getWindowOptions(display, {
+      title: 'ueTool_asSaaS Freigabezentrum'
+    })));
+    mainWindow.loadFile(releaseCenterFile);
+    mainWindow.once('ready-to-show', () => mainWindow.show());
+  } else {
+    mainWindow.setTitle('ueTool_asSaaS Freigabezentrum');
+    mainWindow.loadFile(releaseCenterFile);
+    mainWindow.focus();
+  }
+  return true;
+}
+
+function loadUserCreateInMainWindow(role) {
+  requireAdminSession();
+  const normalizedRole = role === 'teacher-create' ? 'dozent' : 'teilnehmer';
+  const title = normalizedRole === 'dozent' ? 'ueTool_asSaaS Dozent anlegen' : 'ueTool_asSaaS Teilnehmer anlegen';
+  const query = { role: normalizedRole };
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    const display = getMainDisplay();
+    registerMainWindow(new BrowserWindow(getWindowOptions(display, { title })));
+    mainWindow.loadFile(userCreateFile, { query });
+    mainWindow.once('ready-to-show', () => mainWindow.show());
+  } else {
+    mainWindow.setTitle(title);
+    mainWindow.loadFile(userCreateFile, { query });
+    mainWindow.focus();
+  }
+  return true;
+}
+
+function loadAdminToolInMainWindow(toolId) {
+  requireAdminSession();
+  const tool = getAdminTool(toolId);
+  if (!tool) {
+    throw new Error('Admin-Werkzeug wurde nicht gefunden.');
+  }
+  const title = `ueTool_asSaaS ${tool.title}`;
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    const display = getMainDisplay();
+    registerMainWindow(new BrowserWindow(getWindowOptions(display, { title })));
+    mainWindow.loadFile(adminToolFile, { query: { toolId } });
+    mainWindow.once('ready-to-show', () => mainWindow.show());
+  } else {
+    mainWindow.setTitle(title);
+    mainWindow.loadFile(adminToolFile, { query: { toolId } });
+    mainWindow.focus();
+  }
+  return true;
+}
+
+function loadCourseManagementInMainWindow() {
+  requireCourseManagerSession();
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    const display = getMainDisplay();
+    registerMainWindow(new BrowserWindow(getWindowOptions(display, {
+      title: 'ueTool_asSaaS Kursverwaltung'
+    })));
+    mainWindow.loadFile(courseManagementFile);
+    mainWindow.once('ready-to-show', () => mainWindow.show());
+  } else {
+    mainWindow.setTitle('ueTool_asSaaS Kursverwaltung');
+    mainWindow.loadFile(courseManagementFile);
+    mainWindow.focus();
+  }
+  return true;
+}
+
+function openCourseFromWorkspace() {
+  const session = requireAuthenticatedSession();
+  const mode = decideHtmlCssOpenMode(session);
+  if (mode === 'course-only') {
+    return openParticipantReleaseWindow({ force: true });
+  }
+  if (mode !== 'teacher-and-course') {
+    throw new Error('Kein Zugriff auf HTML/CSS.');
+  }
+  const setupState = getAppData().markCourseSetupStarted();
+  if (setupState.startedNow || !setupState.settings.configured) {
+    return loadWizardInMainWindow();
+  }
+  return loadWorkshopInMainWindow();
+}
+
+async function openParticipantReleaseWindow(openOptions = {}) {
+  requireAuthenticatedSession();
   const settings = getAppData().getSettings();
-  if (settings.openTeacherOnSecondMonitor === false) {
+  if (settings.openTeacherOnSecondMonitor === false && openOptions.force !== true) {
     return null;
   }
 
+  const serverInfo = await ensureClassroomServer();
   const display = getTargetDisplay();
   const area = createFullDisplayBounds(display);
   const options = getWindowOptions(display, {
-    title: 'LFZQ8a Teilnehmer-Freigaben',
+    title: 'HTML/CSS Teilnehmeransicht',
     width: area.width,
     height: area.height,
     minWidth: 860,
@@ -414,6 +795,7 @@ function openParticipantReleaseWindow() {
 
   if (!releaseWindow || releaseWindow.isDestroyed()) {
     releaseWindow = new BrowserWindow(options);
+    bindWindowTitle(releaseWindow, 'HTML/CSS Teilnehmeransicht', { usePageTitle: false });
     releaseWindow.once('ready-to-show', () => releaseWindow.show());
     releaseWindow.on('closed', () => {
       releaseWindow = null;
@@ -427,15 +809,16 @@ function openParticipantReleaseWindow() {
     });
   }
 
-  releaseWindow.loadURL(getReleaseViewUrl());
+  releaseWindow.loadURL(getParticipantShareViewUrl(serverInfo));
   releaseWindow.focus();
   return releaseWindow;
 }
 
 function createTeacherStartviewWindow() {
+  requireAuthenticatedSession();
   const display = getMainDisplay();
   registerMainWindow(new BrowserWindow(getWindowOptions(display, {
-    title: 'LFZQ8a Kursuebersicht'
+    title: 'HTML/CSS Kursuebersicht'
   })));
 
   mainWindow.loadFile(teacherOverviewFile);
@@ -447,10 +830,11 @@ function createTeacherStartviewWindow() {
 }
 
 function openTeacherInfo(url) {
+  requireAuthenticatedSession();
   const display = getTargetDisplay();
   const area = createFullDisplayBounds(display);
   const options = getWindowOptions(display, {
-    title: 'LFZQ8a Dozenteninfo',
+    title: 'HTML/CSS Dozenteninfo',
     width: area.width,
     height: area.height,
     minWidth: 760,
@@ -459,6 +843,7 @@ function openTeacherInfo(url) {
 
   if (!teacherWindow || teacherWindow.isDestroyed()) {
     teacherWindow = new BrowserWindow(options);
+    bindWindowTitle(teacherWindow, 'HTML/CSS Dozenteninfo');
     teacherWindow.once('ready-to-show', () => teacherWindow.show());
   } else {
     teacherWindow.setBounds({
@@ -481,6 +866,7 @@ function openTeacherInfo(url) {
 }
 
 ipcMain.handle('setup:get-state', () => {
+  requireAuthenticatedSession();
   getAppData().ensureDataFiles();
   syncParticipantReleaseScript();
   return {
@@ -490,10 +876,289 @@ ipcMain.handle('setup:get-state', () => {
     displays: getDisplaySummaries(),
     history: getAppData().listHistory(),
     testReports: getAppData().listTestReports(),
+    courseSetup: getAppData().getCourseSetupState(),
     contentFile,
     teacherOverviewFile
   };
 });
+
+ipcMain.handle('workspace:get-state', () => {
+  const session = requireAuthenticatedSession();
+  getAppData().ensureDataFiles();
+  return {
+    auth: session,
+    settings: getAppData().getSettings(),
+    supportedLanguages,
+    modules: getVisibleModulesForSession(session),
+    dokuTool: {
+      dataDir: getDokuToolService().dataDir,
+      user: getDokuToolService().getDesktopUser()
+    }
+  };
+});
+
+ipcMain.handle('workspace:save-profile', (event, profile) => {
+  const session = requireAuthenticatedSession();
+  const profileSession = getAppData().saveUserProfile(session.user.id, {
+    displayName: String(profile?.displayName || session.user.displayName || 'Dozent').trim() || 'Dozent',
+    organizationName: String(profile?.organizationName || '').trim(),
+    avatar: profile?.avatar
+  });
+  const currentProfile = getAppData().getSettings().teacherProfile;
+  const saved = getAppData().saveSettings({
+    teacherProfile: {
+      ...currentProfile,
+      displayName: String(profile?.displayName || 'Dozent').trim() || 'Dozent',
+      email: String(profile?.email || '').trim()
+    }
+  });
+  return {
+    settings: saved,
+    auth: profileSession
+  };
+});
+
+ipcMain.handle('workspace:open-landing', () => loadLandingInMainWindow());
+
+ipcMain.handle('workspace:open-lfzq8a', () => openCourseFromWorkspace());
+
+ipcMain.handle('workspace:open-module', (event, moduleId) => {
+  const session = requireAuthenticatedSession();
+  const module = moduleRegistry.getModuleById(moduleId);
+  const generated = getContentFactoryService().storage.loadContainer(moduleId);
+  const resolvedModule = module || generated;
+  if (!resolvedModule || resolvedModule.manifest.status !== 'active') {
+    throw new Error('Dieses Modul ist nicht aktiv.');
+  }
+  const requiredRoles = resolvedModule.manifest.requiredRoles || [];
+  if (requiredRoles.length && !requiredRoles.some((role) => (session.user.roles || []).includes(role))) {
+    throw new Error('Kein Zugriff auf dieses Modul.');
+  }
+  if (resolvedModule.manifest.id === 'lfzq8a') {
+    return openCourseFromWorkspace();
+  }
+  if (resolvedModule.manifest.id === 'content-factory') {
+    return loadContentFactoryInMainWindow();
+  }
+  if (resolvedModule.manifest.id === 'release-center') {
+    return loadReleaseCenterInMainWindow();
+  }
+  if (resolvedModule.manifest.id === 'teacher-create' || resolvedModule.manifest.id === 'participant-create') {
+    return loadUserCreateInMainWindow(resolvedModule.manifest.id);
+  }
+  if (resolvedModule.manifest.id === 'course-management') {
+    return loadCourseManagementInMainWindow();
+  }
+  if (resolvedModule.manifest.category === 'admin' && resolvedModule.manifest.componentRef !== 'electron:openContentFactory') {
+    return loadAdminToolInMainWindow(resolvedModule.manifest.id);
+  }
+  if (!canOpenContentFactory(session) && !isAssignableModule(resolvedModule)) {
+    throw new Error('Kein Zugriff auf dieses Systemmodul.');
+  }
+  if (!canOpenContentFactory(session) && !moduleAllowedForSession(resolvedModule, session)) {
+    throw new Error('Kein Zugriff auf dieses Modul.');
+  }
+  if (resolvedModule.manifest.sourceContainerId === 'lfzq8a') {
+    return openCourseFromWorkspace();
+  }
+  return false;
+});
+
+ipcMain.handle('workspace:open-wizard', () => {
+  const session = requireAuthenticatedSession();
+  const roles = session.user?.roles || [];
+  const assigned = session.profile?.assignedModuleIds || [];
+  if (!roles.includes('Dozent') || !assigned.includes('lfzq8a')) {
+    throw new Error('Der Wizard ist nur fuer freigegebene Dozentenkurse verfuegbar.');
+  }
+  return loadWizardInMainWindow();
+});
+
+ipcMain.handle('release-center:get-state', () => {
+  requireAdminSession();
+  const users = getAppData().listUsers().filter((user) => !user.roles?.includes('Admin') && !user.roles?.includes('SuperAdmin'));
+  const profiles = getAppData().listProfiles();
+  const modules = [
+    ...moduleRegistry.getAllModules(),
+    ...getContentFactoryService().storage.listGeneratedContainers()
+  ]
+    .filter((module) => isAssignableModule(module))
+    .map((module) => module.manifest);
+  return {
+    users: users.map((user) => ({
+      ...user,
+      passwordHash: undefined,
+      profile: profiles.find((profile) => profile.userId === user.id) || null
+    })),
+    assignableModules: modules,
+    pendingRegistrations: getAppData().listPendingRegistrations(requireAdminSession())
+  };
+});
+
+ipcMain.handle('release-center:save-assignments', (event, userId, moduleIds) => {
+  requireAdminSession();
+  const assignableIds = new Set([
+    ...moduleRegistry.getAllModules(),
+    ...getContentFactoryService().storage.listGeneratedContainers()
+  ].filter((module) => isAssignableModule(module)).map((module) => module.manifest.id));
+  const filteredModuleIds = (moduleIds || []).filter((moduleId) => assignableIds.has(moduleId));
+  return getAppData().setAssignedModules(userId, filteredModuleIds);
+});
+
+ipcMain.handle('release-center:revoke-pending-registration', (event, id) => (
+  getAppData().revokePendingRegistration(requireAdminSession(), id)
+));
+
+ipcMain.handle('user-create:create-pending-registration', (event, input) => (
+  getAppData().createPendingRegistration(requireAdminSession(), input)
+));
+
+ipcMain.handle('admin-tools:list', () => {
+  requireAdminSession();
+  return listAdminTools();
+});
+
+ipcMain.handle('admin-tools:get-state', (event, toolId) => {
+  requireAdminSession();
+  const tool = getAdminTool(toolId);
+  if (!tool) {
+    throw new Error('Admin-Werkzeug wurde nicht gefunden.');
+  }
+  return {
+    tool,
+    guide: getGuide(toolId),
+    config: getAdminToolConfigStore().getConfig(toolId)
+  };
+});
+
+ipcMain.handle('admin-tools:save-config', (event, toolId, config) => {
+  requireAdminSession();
+  return getAdminToolConfigStore().saveConfig(toolId, config);
+});
+
+ipcMain.handle('admin-tools:run-preview', (event, toolId) => {
+  requireAdminSession();
+  return runAdminTool(toolId, { projectRoot });
+});
+
+ipcMain.handle('course-management:get-state', () => {
+  const session = requireCourseManagerSession();
+  const users = getAppData().listUsers()
+    .filter((user) => user.isActive !== false)
+    .map(({ passwordHash, ...user }) => user);
+  return {
+    ...getCourseManagementService().getState(session),
+    users
+  };
+});
+
+ipcMain.handle('course-management:create-course', (event, input) => (
+  getCourseManagementService().createCourseInstance(requireCourseManagerSession(), input)
+));
+
+ipcMain.handle('course-management:assign-member', (event, courseInstanceId, userId, roleInCourse) => (
+  getCourseManagementService().assignMember(requireCourseManagerSession(), courseInstanceId, userId, roleInCourse)
+));
+
+ipcMain.handle('course-management:assign-container', (event, courseInstanceId, contentContainerId) => (
+  getCourseManagementService().assignContainer(requireCourseManagerSession(), courseInstanceId, contentContainerId)
+));
+
+ipcMain.handle('course-management:update-status', (event, courseInstanceId, status, expectedRevision) => (
+  getCourseManagementService().updateCourseStatus(requireCourseManagerSession(), courseInstanceId, status, expectedRevision)
+));
+
+ipcMain.handle('factory:get-state', () => getContentFactoryService().getState(requireAdminSession()));
+
+ipcMain.handle('factory:duplicate-container', (event, options) => (
+  getContentFactoryService().duplicateContainer(options, requireAdminSession())
+));
+
+ipcMain.handle('factory:import-files', (event, input) => (
+  getContentFactoryService().createImportBatch(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:update-mapping', (event, batchId, fileId, mapping) => (
+  getContentFactoryService().updateMapping(batchId, fileId, mapping, requireAdminSession())
+));
+
+ipcMain.handle('factory:validate-batch', (event, batchId) => (
+  getContentFactoryService().validateImportBatch(batchId, requireAdminSession())
+));
+
+ipcMain.handle('factory:create-container-from-batch', (event, batchId, options) => (
+  getContentFactoryService().createContainerFromImportBatch(batchId, options, requireAdminSession())
+));
+
+ipcMain.handle('factory:publish-container', (event, containerId, options) => (
+  getContentFactoryService().publishContainer(containerId, requireAdminSession(), options)
+));
+
+ipcMain.handle('factory:disable-container', (event, containerId) => (
+  getContentFactoryService().disableContainer(containerId, requireAdminSession())
+));
+
+ipcMain.handle('factory:archive-container', (event, containerId) => (
+  getContentFactoryService().archiveContainer(containerId, requireAdminSession())
+));
+
+ipcMain.handle('auth:get-state', () => {
+  getAppData().ensureDataFiles();
+  return getAppData().getCurrentSession();
+});
+
+ipcMain.handle('auth:login', (event, credentials) => {
+  const result = getAppData().login(credentials?.email, credentials?.password);
+  if (result.authenticated) {
+    loadLandingInMainWindow();
+  }
+  return result;
+});
+
+ipcMain.handle('auth:register', (event, input) => {
+  const result = getAppData().registerUser(input);
+  if (result.authenticated) {
+    loadLandingInMainWindow();
+  }
+  return result;
+});
+
+ipcMain.handle('auth:logout', () => {
+  const result = getAppData().logout();
+  loadLoginInMainWindow();
+  return result;
+});
+
+ipcMain.handle('auth:change-password', (event, input) => {
+  const session = requireAuthenticatedSession();
+  return getAppData().changePassword(session.user.id, input?.oldPassword, input?.newPassword, input?.confirmation);
+});
+
+ipcMain.handle('course-settings:get', (event, courseId) => {
+  requireAuthenticatedSession();
+  return getAppData().getCourseSettings(courseId || 'html-css');
+});
+
+ipcMain.handle('course-settings:save', (event, courseId, settings) => {
+  const session = requireAuthenticatedSession();
+  const roles = session.user?.roles || [];
+  if (!roles.includes('Dozent') && !roles.includes('Admin') && !roles.includes('SuperAdmin')) {
+    throw new Error('Kurssettings sind nur fuer Dozenten verfuegbar.');
+  }
+  return getAppData().saveCourseSettings(courseId || 'html-css', settings);
+});
+
+ipcMain.handle('dokutool:quiz-config', () => getDokuToolService().getQuizConfig());
+
+ipcMain.handle('dokutool:quiz-questions', (event, query) => getDokuToolService().getQuizQuestions(query));
+
+ipcMain.handle('dokutool:quiz-profile-save', (event, profile) => getDokuToolService().saveQuizProfile(profile));
+
+ipcMain.handle('dokutool:analyze', (event, input) => getDokuToolService().analyzeDocument(input));
+
+ipcMain.handle('dokutool:reports-list', () => getDokuToolService().listReports());
+
+ipcMain.handle('dokutool:report-get', (event, reportId) => getDokuToolService().getReport(reportId));
 
 ipcMain.handle('course:get-state', () => {
   syncParticipantReleaseScript();
@@ -525,7 +1190,9 @@ ipcMain.handle('setup:start-workshop', () => {
   const setupWindow = mainWindow;
   isReplacingMainWindow = true;
   createWorkshopWindow();
-  openParticipantReleaseWindow();
+  openParticipantReleaseWindow().catch((error) => {
+    console.error(`Teilnehmer-Share-View konnte nicht geoeffnet werden: ${error.message}`);
+  });
   if (setupWindow && !setupWindow.isDestroyed()) {
     setupWindow.once('closed', () => {
       isReplacingMainWindow = false;
@@ -552,7 +1219,9 @@ ipcMain.handle('teacher:open', (event, url) => {
 });
 
 ipcMain.handle('teacher:open-releases', () => {
-  openParticipantReleaseWindow();
+  openParticipantReleaseWindow().catch((error) => {
+    console.error(`Teilnehmer-Share-View konnte nicht geoeffnet werden: ${error.message}`);
+  });
   return true;
 });
 
@@ -650,36 +1319,38 @@ ipcMain.handle('test-report:open-dir', () => {
 });
 
 app.whenReady().then(() => {
+  app.setName('ueTool_asSaaS');
   getAppData().ensureDataFiles();
   syncParticipantReleaseScript();
   ensureClassroomServer().catch((error) => {
     console.error(`Kursserver konnte nicht gestartet werden: ${error.message}`);
   });
-  if (forceTeacherStartview) {
+  if (forceAllViewsTest) {
+    createAllViewsTestWindows();
+  } else if (forceTeacherStartview) {
     createTeacherStartviewWindow();
-    openParticipantReleaseWindow();
+    openParticipantReleaseWindow().catch((error) => {
+      console.error(`Teilnehmer-Share-View konnte nicht geoeffnet werden: ${error.message}`);
+    });
   } else if (forceWizard) {
     createWizardWindow();
-  } else if (getAppData().getSettings().configured) {
-    createStartupTestReport();
-    createWorkshopWindow();
-    openParticipantReleaseWindow();
   } else {
-    createWizardWindow();
+    createLoginWindow();
   }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      if (forceTeacherStartview) {
+      if (forceAllViewsTest) {
+        createAllViewsTestWindows();
+      } else if (forceTeacherStartview) {
         createTeacherStartviewWindow();
-        openParticipantReleaseWindow();
+        openParticipantReleaseWindow().catch((error) => {
+          console.error(`Teilnehmer-Share-View konnte nicht geoeffnet werden: ${error.message}`);
+        });
       } else if (forceWizard) {
         createWizardWindow();
-      } else if (getAppData().getSettings().configured) {
-        createWorkshopWindow();
-        openParticipantReleaseWindow();
       } else {
-        createWizardWindow();
+        createLoginWindow();
       }
     }
   });

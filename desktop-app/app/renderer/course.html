@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LFZQ8a Dozentenview</title>
+  <title>HTML/CSS Dozentenview</title>
   <link rel="stylesheet" href="course.css">
 </head>
 <body>
@@ -19,7 +19,7 @@
       <div class="brand">
         <div class="brand-mark">LF</div>
         <div>
-          <span>LFZQ8a Desktop</span>
+          <span>HTML/CSS Desktop</span>
           <strong data-i18n="coursePlatform">Dozentenview</strong>
         </div>
       </div>
@@ -39,12 +39,14 @@
           <h1 data-view-title>Kursuebersicht</h1>
         </div>
         <div class="topbar-actions">
+          <button class="small-button" type="button" data-open-landing>Tool-Auswahl</button>
           <button class="icon-button" type="button" title="Aktuellen Inhalt im Zusatzfenster oeffnen" data-i18n-title="openCurrentWindow" data-open-current-window>↗</button>
           <button class="icon-button" type="button" title="Kursdatenordner oeffnen" data-i18n-title="openDataDir" data-open-data-dir>▣</button>
         </div>
       </header>
 
       <section class="content-grid" data-panel="dashboard"></section>
+      <section class="content-grid" data-panel="releases" hidden></section>
 
       <section class="viewer-shell" aria-label="Integrierter Inhaltsbereich" data-viewer-shell hidden>
         <div class="viewer-header">
@@ -57,7 +59,7 @@
             <button class="small-button" type="button" data-clear-viewer data-i18n="clear">Leeren</button>
           </div>
         </div>
-        <iframe class="viewer" title="LFZQ8a Inhalt" data-viewer></iframe>
+        <iframe class="viewer" title="HTML/CSS Inhalt" data-viewer></iframe>
       </section>
     </main>
   </div>

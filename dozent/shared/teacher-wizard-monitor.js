@@ -481,7 +481,7 @@
   }
 
   function setReleaseLinkState(link, isReleased) {
-    const releaseLabel = getReleaseButtonLabel(link.dataset.releaseKey);
+    const releaseLabel = link.dataset.releaseLabel || getReleaseButtonLabel(link.dataset.releaseKey);
     if (releaseLabel) {
       link.textContent = releaseLabel;
     }
@@ -794,6 +794,14 @@
   }, true);
 
   document.addEventListener('click', async (event) => {
+    const editorLink = event.target.closest('[data-open-editor]');
+    if (editorLink) {
+      if (window.lfzq8aDesktop?.openInEditor) {
+        event.preventDefault();
+        await window.lfzq8aDesktop.openInEditor(editorLink.dataset.openEditor);
+      }
+      return;
+    }
     if (event.target.closest('[data-open-teacher-wizard]')) {
       event.preventDefault();
       openTeacherWizard();

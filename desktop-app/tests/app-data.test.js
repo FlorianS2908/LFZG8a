@@ -2,7 +2,21 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const assert = require('node:assert/strict');
-const { createAppData, defaultSettings, defaultParticipantReleases, defaultTaskReleases, normalizeBreaks } = require('../app/lib/app-data');
+const {
+  createAppData,
+  defaultSettings,
+  defaultParticipantReleases,
+  defaultTaskReleases,
+  INITIAL_ADMIN_EMAIL,
+  INITIAL_ADMIN_PASSWORD,
+  STANDARD_PASSWORD,
+  STANDARD_USERS,
+  PASSWORD_HASH_ALGORITHM,
+  createPasswordHash,
+  verifyPassword,
+  normalizeBreaks,
+  COURSE_BREAK_EDIT_WINDOW_MS
+} = require('../app/lib/app-data');
 const taskPackageRegistry = require('../app/lib/task-packages.json');
 
 function createTempAppData() {
@@ -21,6 +35,400 @@ test('app data creates default settings and empty history', () => {
 
     assert.deepEqual(appData.getSettings(), defaultSettings);
     assert.deepEqual(appData.listHistory(), []);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data creates protected local admin with hashed password', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    appData.ensureDataFiles();
+
+    const admin = appData.listUsers().find((user) => user.email === INITIAL_ADMIN_EMAIL);
+    const adminProfile = appData.listProfiles().find((profile) => profile.userId === admin.id);
+
+    assert.equal(admin.isProtected, true);
+    assert.equal(admin.isActive, true);
+    assert.equal(admin.roles.includes('Admin'), true);
+    assert.match(admin.passwordHash, new RegExp(`^${PASSWORD_HASH_ALGORITHM}\\$`));
+    assert.notEqual(admin.passwordHash, INITIAL_ADMIN_PASSWORD);
+    assert.equal(adminProfile.userId, admin.id);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data creates standard admin teacher and participant accounts', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    appData.ensureDataFiles();
+    const users = appData.listUsers();
+    const profiles = appData.listProfiles();
+
+    STANDARD_USERS.forEach((definition) => {
+      const user = users.find((entry) => entry.email === definition.email);
+      assert.equal(Boolean(user), true);
+      assert.equal(user.roles[0] === definition.roles[0] || user.roles.includes(definition.roles[0]), true);
+      assert.equal(user.passwordHash.includes(STANDARD_PASSWORD), false);
+      assert.equal(profiles.some((profile) => profile.userId === user.id), true);
+      assert.equal(appData.login(definition.email, STANDARD_PASSWORD).authenticated, true);
+    });
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data registers local users only after admin prerelease and blocks duplicate email and admin signup', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const admin = appData.login(INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD);
+    const pending = appData.createPendingRegistration(admin, {
+      name: 'Neue Teilnehmerin',
+      email: 'neu@example.test',
+      role: 'teilnehmer',
+      note: 'Demo'
+    });
+    const result = appData.registerUser({
+      displayName: 'Neue Teilnehmerin',
+      email: 'neu@example.test',
+      password: 'passwort123',
+      confirmation: 'passwort123',
+      role: 'Teilnehmer'
+    });
+
+    assert.equal(result.authenticated, true);
+    assert.equal(result.user.roles.includes('Teilnehmer'), true);
+    assert.equal(appData.listProfiles().some((profile) => profile.userId === result.user.id), true);
+    const accepted = appData.listPendingRegistrations(admin).find((entry) => entry.id === pending.id);
+    assert.equal(accepted.status, 'accepted');
+    assert.equal(Boolean(accepted.acceptedAt), true);
+    assert.equal(accepted.registeredUserId, result.user.id);
+    assert.throws(() => appData.registerUser({
+      displayName: 'Nochmal',
+      email: 'neu@example.test',
+      password: 'passwort123',
+      confirmation: 'passwort123'
+    }), /existiert bereits ein Benutzerkonto/);
+    assert.throws(() => appData.registerUser({
+      displayName: 'Admin Self',
+      email: 'self-admin@example.test',
+      password: 'passwort123',
+      confirmation: 'passwort123',
+      role: 'Admin'
+    }), /nicht erlaubt/);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data manages pending registrations for teachers and participants', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const admin = appData.login(INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD);
+    const teacher = appData.login('dozent@dozent.de', STANDARD_PASSWORD);
+    assert.throws(() => appData.createPendingRegistration(teacher, {
+      name: 'Ohne Admin',
+      email: 'noadmin@example.test',
+      role: 'dozent'
+    }), /Admin-Rechte/);
+    assert.throws(() => appData.createPendingRegistration(admin, {
+      name: '',
+      email: 'leer@example.test',
+      role: 'dozent'
+    }), /Name/);
+    assert.throws(() => appData.createPendingRegistration(admin, {
+      name: 'Falsch',
+      email: 'ungueltig',
+      role: 'dozent'
+    }), /E-Mail/);
+    assert.throws(() => appData.createPendingRegistration(admin, {
+      name: 'Schon da',
+      email: 'dozent@dozent.de',
+      role: 'dozent'
+    }), /Benutzerkonto/);
+
+    const pendingTeacher = appData.createPendingRegistration(admin, {
+      name: 'Neue Dozentin',
+      email: 'teacher-new@example.test',
+      role: 'dozent'
+    });
+    const pendingParticipant = appData.createPendingRegistration(admin, {
+      name: 'Neuer Teilnehmer',
+      email: 'tn-new@example.test',
+      role: 'teilnehmer'
+    });
+
+    assert.equal(pendingTeacher.role, 'dozent');
+    assert.equal(pendingTeacher.status, 'pending');
+    assert.equal(pendingParticipant.role, 'teilnehmer');
+    assert.throws(() => appData.createPendingRegistration(admin, {
+      name: 'Doppelt',
+      email: 'teacher-new@example.test',
+      role: 'teilnehmer'
+    }), /offene Registrierungsfreigabe/);
+    assert.throws(() => appData.listPendingRegistrations(teacher), /Admin-Rechte/);
+
+    const revoked = appData.revokePendingRegistration(admin, pendingParticipant.id);
+    assert.equal(revoked.status, 'revoked');
+    assert.throws(() => appData.registerUser({
+      displayName: 'Neuer Teilnehmer',
+      email: 'tn-new@example.test',
+      password: 'passwort123',
+      confirmation: 'passwort123',
+      role: 'Teilnehmer'
+    }), /widerrufen/);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data blocks registration without matching prerelease', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const admin = appData.login(INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD);
+    appData.createPendingRegistration(admin, {
+      name: 'Rollen Test',
+      email: 'rolle@example.test',
+      role: 'dozent'
+    });
+    assert.throws(() => appData.registerUser({
+      displayName: 'Keine Freigabe',
+      email: 'frei@example.test',
+      password: 'passwort123',
+      confirmation: 'passwort123',
+      role: 'Teilnehmer'
+    }), /keine Registrierungsfreigabe/);
+    assert.throws(() => appData.registerUser({
+      displayName: 'Rollen Test',
+      email: 'rolle@example.test',
+      password: 'passwort123',
+      confirmation: 'passwort123',
+      role: 'Teilnehmer'
+    }), /nicht fuer diese Rolle/);
+    const result = appData.registerUser({
+      displayName: 'Rollen Test',
+      email: 'rolle@example.test',
+      password: 'passwort123',
+      confirmation: 'passwort123',
+      role: 'Dozent'
+    });
+    assert.equal(result.authenticated, true);
+    assert.equal(result.user.roles.includes('Dozent'), true);
+    assert.throws(() => appData.registerUser({
+      displayName: 'Rollen Test',
+      email: 'rolle@example.test',
+      password: 'passwort123',
+      confirmation: 'passwort123',
+      role: 'Dozent'
+    }), /Benutzerkonto/);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data stores course settings for html css with default breaks', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const defaults = appData.getCourseSettings('html-css');
+    assert.equal(defaults.courseName, 'HTML/CSS');
+    assert.deepEqual(defaults.breaks.map((breakData) => `${breakData.start}-${breakData.end}`), [
+      '10:00-10:15',
+      '11:45-12:15',
+      '13:45-14:00',
+      '15:30-15:45'
+    ]);
+
+    const saved = appData.saveCourseSettings('html-css', { courseViewMonitorIndex: 2 });
+    assert.equal(saved.courseViewMonitorIndex, 2);
+    assert.equal(createAppData(path.dirname(appData.dataDir)).getCourseSettings('html-css').courseViewMonitorIndex, 2);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data stores assigned module ids per profile and persists them', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    appData.ensureDataFiles();
+    const teacher = appData.listUsers().find((user) => user.email === 'dozent@dozent.de');
+    const savedProfile = appData.setAssignedModules(teacher.id, ['lfzq8a', 'lfzq8a']);
+
+    assert.deepEqual(savedProfile.assignedModuleIds, ['lfzq8a']);
+    const reloaded = createAppData(path.dirname(appData.dataDir));
+    const profile = reloaded.listProfiles().find((entry) => entry.userId === teacher.id);
+    assert.deepEqual(profile.assignedModuleIds, ['lfzq8a']);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data authenticates admin and rejects wrong passwords', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const rejected = appData.login(INITIAL_ADMIN_EMAIL, 'falsch');
+    assert.equal(rejected.authenticated, false);
+
+    const accepted = appData.login(INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD);
+    assert.equal(accepted.authenticated, true);
+    assert.equal(accepted.user.email, INITIAL_ADMIN_EMAIL);
+    assert.equal(accepted.user.passwordHash, undefined);
+    assert.equal(appData.getCurrentSession().authenticated, true);
+
+    appData.logout();
+    assert.equal(appData.getCurrentSession().authenticated, false);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data protects the initial admin from deletion and deactivation', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    appData.ensureDataFiles();
+    const admin = appData.listUsers().find((user) => user.email === INITIAL_ADMIN_EMAIL);
+
+    assert.throws(() => appData.deleteUser(admin.id), /geschuetzte lokale Benutzer/i);
+    assert.throws(() => appData.setUserActive(admin.id, false), /geschuetzte lokale Benutzer/i);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data verifies password hashes and rejects malformed hashes', () => {
+  const hash = createPasswordHash('lokal-test-passwort');
+  const saltedHash = createPasswordHash('lokal-test-passwort', 'test-salt');
+
+  assert.equal(verifyPassword('lokal-test-passwort', hash), true);
+  assert.equal(verifyPassword('lokal-test-passwort', saltedHash), true);
+  assert.equal(verifyPassword('anderes-passwort', hash), false);
+  assert.equal(verifyPassword('lokal-test-passwort', 'klartext'), false);
+  assert.equal(verifyPassword('lokal-test-passwort', 'pbkdf2-sha256$10$salt$hash'), false);
+  assert.equal(verifyPassword('lokal-test-passwort', 'anderer$120000$salt$hash'), false);
+  assert.equal(verifyPassword('lokal-test-passwort', 'pbkdf2-sha256$abc$salt$hash'), false);
+});
+
+test('app data updates the current local profile without exposing password hashes', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    appData.login(INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD);
+    const session = appData.getCurrentSession();
+    const updated = appData.saveUserProfile(session.user.id, {
+      displayName: 'Admin Demo',
+      organizationName: 'Ploglan Test'
+    });
+
+    assert.equal(updated.user.displayName, 'Admin Demo');
+    assert.equal(updated.user.passwordHash, undefined);
+    assert.equal(updated.profile.organizationName, 'Ploglan Test');
+    assert.equal(appData.listUsers().find((user) => user.id === session.user.id).displayName, 'Admin Demo');
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data can change a local password only with old password and confirmation', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    appData.login(INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD);
+    const session = appData.getCurrentSession();
+
+    assert.throws(() => appData.changePassword(session.user.id, 'falsch', 'neuesPasswort1', 'neuesPasswort1'), /alte Passwort/i);
+    assert.throws(() => appData.changePassword(session.user.id, INITIAL_ADMIN_PASSWORD, 'kurz', 'kurz'), /mindestens 8/);
+    assert.throws(() => appData.changePassword(session.user.id, INITIAL_ADMIN_PASSWORD, 'neuesPasswort1', 'anders'), /Passwortbestaetigung/);
+    assert.equal(appData.changePassword(session.user.id, INITIAL_ADMIN_PASSWORD, 'neuesPasswort1', 'neuesPasswort1'), true);
+    appData.logout();
+
+    assert.equal(appData.login(INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD).authenticated, false);
+    assert.equal(appData.login(INITIAL_ADMIN_EMAIL, 'neuesPasswort1').authenticated, true);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data protects the last admin but can deactivate and delete normal users', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    appData.ensureDataFiles();
+    const now = new Date().toISOString();
+    const users = appData.listUsers();
+    const normalUser = {
+      id: 'local-user',
+      email: 'user@example.test',
+      displayName: 'User',
+      passwordHash: createPasswordHash('user-password'),
+      roles: ['Dozent'],
+      isProtected: false,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now
+    };
+    fs.writeFileSync(appData.usersPath, JSON.stringify([...users, normalUser], null, 2));
+    fs.writeFileSync(appData.profilesPath, JSON.stringify([
+      ...appData.listProfiles(),
+      {
+        id: 'local-user-profile',
+        userId: 'local-user',
+        firstName: 'Demo',
+        lastName: 'User',
+        organizationName: 'Test',
+        avatar: '',
+        settings: {},
+        createdAt: now,
+        updatedAt: now
+      }
+    ], null, 2));
+
+    assert.equal(appData.setUserActive('local-user', false), true);
+    assert.equal(appData.listUsers().find((user) => user.id === 'local-user').isActive, false);
+    assert.equal(appData.deleteUser('local-user'), true);
+    assert.equal(appData.listUsers().some((user) => user.id === 'local-user'), false);
+    assert.throws(() => appData.assertAuthenticated(), /Login erforderlich/);
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data covers local auth error branches and admin repair paths', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    appData.ensureDataFiles();
+    const admin = appData.listUsers().find((user) => user.email === INITIAL_ADMIN_EMAIL);
+    fs.writeFileSync(appData.usersPath, JSON.stringify([{
+      ...admin,
+      roles: [],
+      isProtected: false,
+      isActive: false,
+      updatedAt: ''
+    }], null, 2));
+    fs.writeFileSync(appData.profilesPath, JSON.stringify([], null, 2));
+
+    const repaired = appData.ensureProtectedAdmin();
+    const repairedAdmin = appData.listUsers().find((user) => user.email === INITIAL_ADMIN_EMAIL);
+    assert.equal(repaired.email, INITIAL_ADMIN_EMAIL);
+    assert.equal(repairedAdmin.roles.includes('Admin'), true);
+    assert.equal(repairedAdmin.isProtected, true);
+    assert.equal(repairedAdmin.isActive, true);
+    assert.equal(appData.listProfiles().some((profile) => profile.userId === repaired.id), true);
+
+    assert.equal(appData.login(INITIAL_ADMIN_EMAIL, 'falsch').authenticated, false);
+    assert.equal(appData.deleteUser('fehlt'), false);
+    assert.equal(appData.setUserActive('fehlt', false), false);
+    assert.throws(() => appData.saveUserProfile('fehlt', {}), /nicht gefunden/);
+    assert.throws(() => appData.changePassword('fehlt', 'alt', 'neuesPasswort1', 'neuesPasswort1'), /alte Passwort|nicht korrekt/);
   } finally {
     cleanup();
   }
@@ -53,6 +461,9 @@ test('app data saves setup without losing existing settings', () => {
 
     assert.deepEqual(settings, {
       configured: true,
+      courseSetupStartedAt: '',
+      courseSetupCompletedAt: settings.courseSetupCompletedAt,
+      courseBreaksEditableUntil: '',
       monitorIndex: 2,
       openTeacherOnSecondMonitor: false,
       saveLocalTestReports: true,
@@ -64,8 +475,10 @@ test('app data saves setup without losing existing settings', () => {
         displayName: 'Dozent',
         email: '',
         avatarDataUrl: ''
-      }
+      },
+      courseSettingsByCourseId: defaultSettings.courseSettingsByCourseId
     });
+    assert.match(settings.courseSetupCompletedAt, /^\d{4}-\d{2}-\d{2}T/);
   } finally {
     cleanup();
   }
@@ -102,6 +515,9 @@ test('app data resets only history and keeps settings untouched', () => {
     assert.deepEqual(appData.listHistory(), []);
     assert.deepEqual(appData.getSettings(), {
       configured: true,
+      courseSetupStartedAt: '',
+      courseSetupCompletedAt: appData.getSettings().courseSetupCompletedAt,
+      courseBreaksEditableUntil: '',
       monitorIndex: 1,
       openTeacherOnSecondMonitor: true,
       saveLocalTestReports: true,
@@ -113,8 +529,58 @@ test('app data resets only history and keeps settings untouched', () => {
         displayName: 'Dozent',
         email: '',
         avatarDataUrl: ''
-      }
+      },
+      courseSettingsByCourseId: defaultSettings.courseSettingsByCourseId
     });
+  } finally {
+    cleanup();
+  }
+});
+
+test('course setup starts on first course open and keeps breaks editable for 24 hours', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const start = new Date('2026-07-07T08:00:00.000Z');
+    const setup = appData.markCourseSetupStarted(start);
+    const settings = appData.getSettings();
+
+    assert.equal(setup.startedNow, true);
+    assert.equal(settings.configured, false);
+    assert.equal(settings.courseSetupStartedAt, start.toISOString());
+    assert.equal(settings.courseBreaksEditableUntil, new Date(start.getTime() + COURSE_BREAK_EDIT_WINDOW_MS).toISOString());
+    assert.equal(appData.getCourseSetupState(new Date('2026-07-08T07:59:00.000Z')).breakEditingAllowed, true);
+    assert.equal(appData.getCourseSetupState(new Date('2026-07-08T08:01:00.000Z')).breakEditingAllowed, false);
+
+    const secondOpen = appData.markCourseSetupStarted(new Date('2026-07-07T09:00:00.000Z'));
+    assert.equal(secondOpen.startedNow, false);
+    assert.equal(secondOpen.settings.courseSetupStartedAt, start.toISOString());
+  } finally {
+    cleanup();
+  }
+});
+
+test('app data preserves stored breaks after the 24 hour course edit window', () => {
+  const { appData, cleanup } = createTempAppData();
+
+  try {
+    const start = new Date('2026-07-07T08:00:00.000Z');
+    appData.markCourseSetupStarted(start);
+    const saved = appData.saveSettings({
+      breaks: [
+        { label: 'Vormittag', start: '10:00', end: '10:15' }
+      ]
+    }, { now: new Date('2026-07-07T09:00:00.000Z') });
+    const afterLock = appData.saveSettings({
+      breaks: [
+        { label: 'Zu spaet', start: '10:00', end: '10:30' }
+      ]
+    }, { now: new Date('2026-07-08T09:00:00.000Z') });
+
+    assert.deepEqual(saved.breaks, [
+      { id: 'custom-break-1', label: 'Vormittag', start: '10:00', end: '10:15' }
+    ]);
+    assert.deepEqual(afterLock.breaks, saved.breaks);
   } finally {
     cleanup();
   }

@@ -378,6 +378,17 @@ h1 {
   color: var(--red);
 }
 
+.break-list.is-locked {
+  opacity: .68;
+}
+
+.break-list.is-locked input,
+.break-list.is-locked button,
+#addBreak:disabled,
+#resetBreaks:disabled {
+  cursor: not-allowed;
+}
+
 .display-option,
 .check-option,
 .history-item {

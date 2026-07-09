@@ -588,7 +588,7 @@ function setStatus(text) {
 }
 
 function showView(view) {
-  state.activeView = 'dashboard';
+  state.activeView = viewTitles[view] ? view : 'dashboard';
   courseNavigation.showView({
     view: state.activeView,
     panels: document.querySelectorAll('[data-panel]'),
@@ -1631,15 +1631,22 @@ async function saveReleases() {
   });
   state.releases = await window.lfzq8aDesktop.saveParticipantReleases(nextReleases);
   setStatus(t('releasesSaved'));
-  await renderDashboard();
+  await renderAll();
 }
 
 async function handleParticipantReleasesChanged(releases) {
   state.releases = releases || {};
-  await renderDashboard();
+  await renderAll();
 }
 
 async function renderAll() {
+  if (state.activeView === 'releases') {
+    const panel = byData('[data-panel="releases"]');
+    clearElement(panel);
+    renderReleases(panel);
+    return;
+  }
+
   await renderDashboard();
 }
 
@@ -1666,7 +1673,7 @@ async function loadInitialState() {
   window.lfzq8aDesktop.onTaskReleasesChanged?.(async (releases) => {
     state.taskReleases = releases || {};
     await refreshTaskPackages();
-    await renderDashboard();
+    await renderAll();
   });
 }
 
@@ -1689,6 +1696,10 @@ document.addEventListener('click', (event) => {
 
   if (event.target.closest('[data-open-data-dir]')) {
     window.lfzq8aDesktop.openDataDir();
+  }
+
+  if (event.target.closest('[data-open-landing]')) {
+    window.lfzq8aDesktop.openLanding();
   }
 
   if (event.target.closest('[data-open-settings]')) {

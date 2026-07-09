@@ -96,18 +96,12 @@ async function main() {
 
   const result = await window.webContents.executeJavaScript(`
     (async () => {
-      const daysButton = document.querySelector('[data-view="days"]');
-      daysButton.click();
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      const daysVisible = document.querySelector('[data-panel="days"]').hidden === false;
-      const activeDays = daysButton.classList.contains('is-active');
-      const webButton = [...document.querySelectorAll('[data-panel="days"] .card-button')]
-        .find((button) => button.textContent.includes('Webvariante'));
+      const dashboardVisible = document.querySelector('[data-panel="dashboard"]').hidden === false;
+      const webButton = document.querySelector('[data-panel="dashboard"] .material-release-card .small-button');
       webButton.click();
       await new Promise((resolve) => setTimeout(resolve, 50));
       return {
-        daysVisible,
-        activeDays,
+        dashboardVisible,
         currentTitle: document.querySelector('[data-current-title]').textContent,
         viewerSrc: document.querySelector('[data-viewer]').getAttribute('src'),
         hasViewerShell: Boolean(document.querySelector('[data-viewer-shell]'))
@@ -118,8 +112,8 @@ async function main() {
   if (errors.length) {
     throw new Error(errors.join('\\n'));
   }
-  if (!result.daysVisible || !result.activeDays) {
-    throw new Error(`Navigation reagiert nicht: ${JSON.stringify(result)}`);
+  if (!result.dashboardVisible) {
+    throw new Error(`Dashboard ist nicht sichtbar: ${JSON.stringify(result)}`);
   }
   if (!/Tag 1.+Webvariante/.test(result.currentTitle) || !/tag_01/i.test(result.viewerSrc || '')) {
     throw new Error(`Webvariante wurde nicht in den Viewer geladen: ${JSON.stringify(result)}`);

@@ -1,4 +1,5 @@
 _tmp_*
+_analysis_*
 dist/
 node_modules/
 desktop-app/node_modules/

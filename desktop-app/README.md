@@ -17,6 +17,11 @@ Diese App ist die Electron-Dozentenview fuer die LFZQ8a-Unterrichtsmaterialien.
 - `app/renderer/course.html`: integrierte Dozentenview.
 - `app/renderer/course.js`: Navigation, Viewer, Freigaben, Teilnehmerstatus und VS-Code-Start.
 - `app/lib/course-catalog.js`: zentrale Registrierung der Tage, Tools, Projekte und Leitfaeden.
+- `app/lib/modules/`: statische Container-Manifeste fuer Kurs-, Admin- und Systemkacheln.
+- `app/lib/admin-tools/`: Guides, Konfiguration und Runner fuer Admin-Werkzeugkacheln.
+- `app/lib/container-registry/`: lokale Registry fuer erzeugte/importierte Container.
+- `app/lib/course-management/`: CourseInstances, Kursmitglieder, Containerzuordnung, ReleaseStates, SyncEvents und AuditLog.
+- `app/renderer/tool-center/course-management.html`: Kursverwaltungsclient fuer `course_manager`, Admin und SuperAdmin.
 - `app/renderer/wizard.html`: Erststart-Wizard.
 - `app/lib/classroom-server.js`: lokaler Kursserver fuer Teilnehmerprofile, Freigaben und Fortschritt.
 

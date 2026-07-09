@@ -6,6 +6,12 @@ const state = {
   teacherLanguage: 'de',
   participantLanguage: 'de',
   breaks: [],
+  openTeacherOnSecondMonitor: true,
+  courseSetup: {
+    breakEditingAllowed: true,
+    breakEditingRemainingMs: null,
+    breakEditingEditableUntil: ''
+  },
   supportedLanguages: [],
   translations: {}
 };
@@ -122,6 +128,30 @@ function updateBreakSummary() {
   summary.classList.toggle('is-invalid', !validation.valid);
 }
 
+function formatRemainingHours(milliseconds) {
+  if (!Number.isFinite(Number(milliseconds))) {
+    return '';
+  }
+  const totalMinutes = Math.max(0, Math.ceil(Number(milliseconds) / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours} Std. ${String(minutes).padStart(2, '0')} Min.`;
+}
+
+function updateBreakEditWindow() {
+  const status = document.querySelector('#breakEditWindow');
+  const addButton = document.querySelector('#addBreak');
+  const resetButton = document.querySelector('#resetBreaks');
+  const locked = state.courseSetup.breakEditingAllowed === false;
+  const remaining = formatRemainingHours(state.courseSetup.breakEditingRemainingMs);
+  status.textContent = locked
+    ? 'Die Pausenzeiten sind gesperrt, weil das 24-Stunden-Fenster nach Kursstart abgelaufen ist.'
+    : `Pausenzeiten koennen innerhalb der ersten 24 Stunden nach Kursstart angepasst werden.${remaining ? ` Verbleibend: ${remaining}.` : ''}`;
+  addButton.disabled = locked;
+  resetButton.disabled = locked;
+  document.querySelector('#breakList').classList.toggle('is-locked', locked);
+}
+
 function renderBreaks() {
   const breakList = document.querySelector('#breakList');
   breakList.innerHTML = '';
@@ -146,6 +176,7 @@ function renderBreaks() {
       input.value = breakData[field] || '';
       input.dataset.breakField = field;
       input.dataset.breakIndex = String(index);
+      input.disabled = state.courseSetup.breakEditingAllowed === false;
       label.append(span, input);
       row.appendChild(label);
     });
@@ -153,12 +184,14 @@ function renderBreaks() {
     removeButton.type = 'button';
     removeButton.textContent = 'x';
     removeButton.dataset.removeBreak = String(index);
+    removeButton.disabled = state.courseSetup.breakEditingAllowed === false;
     removeButton.setAttribute('aria-label', t('removeBreak'));
     row.appendChild(removeButton);
     breakList.append(row);
   });
 
   updateBreakSummary();
+  updateBreakEditWindow();
 }
 
 function renderHistory(history) {
@@ -205,6 +238,8 @@ async function loadState() {
   state.teacherLanguage = setupState.settings.teacherLanguage || 'de';
   state.participantLanguage = setupState.settings.participantLanguage || 'de';
   state.breaks = Array.isArray(setupState.settings.breaks) ? setupState.settings.breaks : [];
+  state.courseSetup = setupState.courseSetup || state.courseSetup;
+  state.openTeacherOnSecondMonitor = setupState.settings.openTeacherOnSecondMonitor !== false;
   state.selectedMonitorIndex = setupState.settings.monitorIndex ?? (setupState.displays[1] ? 1 : 0);
   state.saveLocalTestReports = setupState.settings.saveLocalTestReports !== false;
   state.includeDeviceNetworkData = setupState.settings.includeDeviceNetworkData === true;
@@ -214,26 +249,31 @@ async function loadState() {
   document.querySelector('#contentFile').textContent = setupState.contentFile;
   document.querySelector('#saveLocalTestReports').checked = state.saveLocalTestReports;
   document.querySelector('#includeDeviceNetworkData').checked = state.includeDeviceNetworkData;
+  document.querySelector('#openTeacherOnSecondMonitor').checked = state.openTeacherOnSecondMonitor;
   renderDisplays();
   renderHistory(setupState.history);
   renderTestReports(setupState.testReports);
 }
 
 async function saveSetup() {
+  const canEditBreaks = state.courseSetup.breakEditingAllowed !== false;
   const breakValidation = getBreakValidation();
-  if (!breakValidation.valid) {
+  if (canEditBreaks && !breakValidation.valid) {
     window.alert(t('breakLimitError'));
     return false;
   }
-  await window.lfzq8aDesktop.saveSetup({
+  const settings = {
     monitorIndex: state.selectedMonitorIndex,
-    openTeacherOnSecondMonitor: true,
+    openTeacherOnSecondMonitor: document.querySelector('#openTeacherOnSecondMonitor').checked,
     teacherLanguage: document.querySelector('#teacherLanguage').value,
     participantLanguage: document.querySelector('#participantLanguage').value,
-    breaks: state.breaks,
     saveLocalTestReports: document.querySelector('#saveLocalTestReports').checked,
     includeDeviceNetworkData: document.querySelector('#includeDeviceNetworkData').checked
-  });
+  };
+  if (canEditBreaks) {
+    settings.breaks = state.breaks;
+  }
+  await window.lfzq8aDesktop.saveSetup(settings);
   return true;
 }
 
@@ -250,11 +290,17 @@ document.querySelector('#participantLanguage').addEventListener('change', (event
 });
 
 document.querySelector('#addBreak').addEventListener('click', () => {
+  if (state.courseSetup.breakEditingAllowed === false) {
+    return;
+  }
   state.breaks = [...state.breaks, createDefaultBreak()];
   renderBreaks();
 });
 
 document.querySelector('#resetBreaks').addEventListener('click', () => {
+  if (state.courseSetup.breakEditingAllowed === false) {
+    return;
+  }
   state.breaks = [];
   renderBreaks();
 });
@@ -262,6 +308,9 @@ document.querySelector('#resetBreaks').addEventListener('click', () => {
 document.querySelector('#breakList').addEventListener('input', (event) => {
   const input = event.target.closest('[data-break-field]');
   if (!input) {
+    return;
+  }
+  if (state.courseSetup.breakEditingAllowed === false) {
     return;
   }
   const index = Number(input.dataset.breakIndex);
@@ -275,6 +324,9 @@ document.querySelector('#breakList').addEventListener('input', (event) => {
 document.querySelector('#breakList').addEventListener('click', (event) => {
   const removeButton = event.target.closest('[data-remove-break]');
   if (!removeButton) {
+    return;
+  }
+  if (state.courseSetup.breakEditingAllowed === false) {
     return;
   }
   const index = Number(removeButton.dataset.removeBreak);
@@ -317,6 +369,10 @@ document.querySelector('#openTestReportDir').addEventListener('click', () => {
 
 document.querySelector('#openDataDir').addEventListener('click', () => {
   window.lfzq8aDesktop.openDataDir();
+});
+
+document.querySelector('#backToMainView').addEventListener('click', () => {
+  window.lfzq8aDesktop.openLanding();
 });
 
 loadState();

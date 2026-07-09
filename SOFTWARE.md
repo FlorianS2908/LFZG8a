@@ -1,4 +1,12 @@
-# Benoetigte Softwarepakete
+# ueTool_asSaaS Softwarepakete
+
+`ueTool_asSaaS` ist die Plattform. `HTML/CSS` ist der Kurscontainer. Die `ContentFactory` ist das Admin-Werkzeug fuer Container-Duplizierung und Container-Erstellung.
+
+`DemoExe.cmd` startet die Anwendung. `WorkflowCheck.cmd` prueft den Workflow headless ohne Installation und ohne .exe-Start.
+
+Die Registrierung ist lokal abgesichert: Neue Dozenten und Teilnehmer koennen sich erst registrieren, wenn ein Admin sie ueber `Dozent anlegen` oder `Teilnehmer anlegen` vorgemerkt hat. Das `Freigabezentrum` zeigt registrierte Benutzer und Registrierungsfreigaben und kann pending-Freigaben widerrufen.
+
+Die neue Container-Architektur benoetigt weiterhin keine zusaetzliche Datenbank. Admin-Werkzeugkonfigurationen und Container-Metadaten werden lokal als JSON im App-Datenordner gespeichert. Ein spaeterer Wechsel auf eine Datenbank ist ueber Repository-Services vorbereitet.
 
 ## Pflicht
 
