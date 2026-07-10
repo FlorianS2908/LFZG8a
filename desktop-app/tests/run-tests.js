@@ -96,6 +96,7 @@ async function main() {
   require('./admin-tools.test');
   require('./container-registry.test');
   require('./course-management.test');
+  require('./saas-domain.test');
   require('./content-factory.test');
   require('./workflow-auth-roles.test');
   require('./display.test');
