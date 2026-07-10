@@ -188,6 +188,8 @@ export type DraftContainer = {
     selectedSheet?: string;
     coursePlanFile?: string;
     ueBlockCount?: number;
+    aiMode?: string;
+    generatedDayCount?: number;
     generatedFiles?: string[];
     warnings: string[];
     conflicts: string[];

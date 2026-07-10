@@ -4,6 +4,8 @@ Der Core baut Draft-Container fuer das ContentFactory/ContainerFactory Lab. Er k
 
 Der Plan-to-Container-MVP erzeugt Container auch ohne Zusatzmaterialien direkt aus einem Unterrichtsplan. `createDayDraftFromPlan` baut pro Tag lokale Template-Inhalte, markiert sie als automatisch aus dem Unterrichtsplan erzeugt und trennt Loesungshinweise strikt in den Dozentenbereich.
 
+`generateDayDraftFromPlan` nutzt den `AiOrchestrator`, unterstuetzt `local`, `ai-generate`, `ai-generate-review` und `ai-generate-review-repair` und faellt ohne OpenAI-Key sauber auf `LocalHeuristicProvider` zurueck.
+
 Dual-Mode bedeutet:
 
 - lokale Standalone-Vorschau ueber `standalone/index.html`

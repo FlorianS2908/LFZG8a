@@ -14,6 +14,8 @@ Das Lab erzeugt Dual-Mode-Draft-Container:
 
 Der Minimal-MVP kann aus Kursdaten und einem Unterrichtsplan einen Basis-Draft erzeugen. Materialien sind optional. Pro erkanntem Tag entstehen Dozenten-Webvariante, Teilnehmer-Webvariante, Aufgabenplatzhalter, Dozenten-Loesungshinweise, Quizplatzhalter und Review-Datei.
 
+Der Tagesvorschau-Schritt bietet jetzt AI-Modi. Ohne OpenAI-Konfiguration wird automatisch der lokale Fallback genutzt.
+
 Dieses Lab testet die ContentFactory-Logik isoliert. Es veroeffentlicht nichts in der Haupt-App und veraendert keine bestehenden Kacheln.
 
 ## Start

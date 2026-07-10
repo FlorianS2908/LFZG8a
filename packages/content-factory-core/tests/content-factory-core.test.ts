@@ -10,12 +10,14 @@ import {
   createFallbackCoursePlan,
   createPlanOnlyMappings,
   createDayDraftFromPlan,
+  generateDayDraftFromPlan,
   getAllStepGates,
   getStepGate,
   getUploadCategory,
   listCoursePlanSheets,
   LocalHeuristicProvider,
   mapFilesToDays,
+  normalizeDayGenerationResult,
   normalizeArchivePath,
   OpenAIProvider,
   parseCoursePlanFromCsvText,
@@ -151,12 +153,50 @@ test('local heuristic provider works without API key and orchestrator falls back
   const local = new LocalHeuristicProvider();
   assert.equal(await local.isConfigured(), true);
   const orchestrator = new AiOrchestrator([new OpenAIProvider('', '')]);
-  const selected = await orchestrator.selectProvider();
-  const draft = await orchestrator.generateDayDraft({ dayNumber: 1, title: 'Tag 1', courseName: 'LF05 FIAE', sourceTexts: [] });
+  const selected = await orchestrator.selectProvider('openai');
+  const draft = await orchestrator.generateDayDraft({ dayNumber: 1, title: 'Tag 1', courseName: 'LF05 FIAE', sourceTexts: [] }, 'ai-generate');
 
-  assert.equal(selected.name, 'local');
+  assert.equal(selected.provider.name, 'local');
+  assert.equal(selected.usedFallback, true);
   assert.equal(draft.dayNumber, 1);
   assert.equal(draft.solutions.length, 1);
+});
+
+test('generateDayDraftFromPlan returns structured fallback result with status messages', async () => {
+  const plan = parseCoursePlanFromCsvText('Tag;Titel;Thema;Lernziel;UE;Lehraufgabe;Lernaufgabe;Ressourcen\n1;Tag 1;CSS Grundlagen;Selektoren verstehen;4;Boxmodell erklaeren;Selektoren ueben;Handout', 'LF05_FIAE.xlsx', { courseTitle: 'LF05 FIAE', courseId: 'lf05-fiae', department: 'FIAE' });
+  const pipeline = await generateDayDraftFromPlan({
+    course: { courseName: 'LF05 FIAE', courseId: 'lf05-fiae', department: 'FIAE' },
+    plan,
+    day: plan.days[0],
+    aiMode: 'ai-generate-review-repair',
+    orchestrator: new AiOrchestrator([new OpenAIProvider('', '')])
+  });
+
+  assert.equal(pipeline.usedFallback, true);
+  assert.equal(pipeline.effectiveMode, 'local');
+  assert.match(pipeline.statusMessages.join(' '), /OpenAI ist nicht konfiguriert/);
+  assert.equal(pipeline.result.dayNumber, 1);
+  assert.ok(pipeline.result.sourceRefs.length);
+  assert.ok(pipeline.result.tasks.length);
+});
+
+test('normalizer fills missing sourceRefs throughout DayGenerationResult', () => {
+  const normalized = normalizeDayGenerationResult({
+    dayNumber: 1,
+    title: 'Tag 1',
+    status: 'draft',
+    webvariant: { teacherHtmlSections: [{ title: 'A', content: 'B', sourceRefs: [], aiGenerated: false }], participantHtmlSections: [{ title: 'C', content: 'D', sourceRefs: [], aiGenerated: false }] },
+    tasks: [{ id: 't1', title: 'T', difficulty: 'mittel', text: 'Aufgabe', sourceRefs: [], aiGenerated: false }],
+    solutions: [{ taskId: 't1', title: 'S', text: 'Hinweis', sourceRefs: [], aiGenerated: false }],
+    quiz: [{ id: 'q1', type: 'single-choice', topic: 'X', difficulty: 'leicht', text: 'Q', options: ['A'], correct: [0], sourceRefs: [], aiGenerated: false }],
+    sourceRefs: [],
+    warnings: [],
+    aiAdditions: []
+  });
+
+  assert.deepEqual(normalized.sourceRefs, ['course-plan-day-1']);
+  assert.deepEqual(normalized.tasks[0].sourceRefs, ['course-plan-day-1']);
+  assert.deepEqual(normalized.quiz[0].sourceRefs, ['course-plan-day-1']);
 });
 
 test('wizard locks step 2 when course data is missing', () => {

@@ -3,7 +3,15 @@ export type DayGenerationInput = {
   title: string;
   courseName: string;
   sourceTexts: string[];
+  planTopic?: string;
+  learningGoals?: string[];
+  learnerTasks?: string[];
+  teacherTasks?: string[];
+  resources?: string[];
+  correctionPrompt?: string;
 };
+
+export type AiMode = 'local' | 'ai-generate' | 'ai-generate-review' | 'ai-generate-review-repair';
 
 export type DayRevisionInput = DayGenerationInput & {
   revisionRequest: string;
@@ -18,6 +26,16 @@ export type DayReviewResult = {
   ok: boolean;
   warnings: string[];
   repairHints: string[];
+};
+
+export type DayDraftPipelineResult = {
+  providerName: string;
+  requestedMode: AiMode;
+  effectiveMode: AiMode;
+  usedFallback: boolean;
+  statusMessages: string[];
+  result: DayGenerationResult;
+  review?: DayReviewResult;
 };
 
 export type DayGenerationResult = {

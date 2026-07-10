@@ -13,7 +13,7 @@ export function validateCatalogPaths(draft: DraftContainer): string[] {
     tasksTeacher?: string;
     tasksParticipant?: string;
     solutions?: string;
-    quizzes?: string[];
+    quizzes?: Array<string | { path: string }>;
   }>>(draft, 'catalog/days.json', []);
   days.forEach((day) => {
     [
@@ -26,7 +26,7 @@ export function validateCatalogPaths(draft: DraftContainer): string[] {
       day.tasksTeacher,
       day.tasksParticipant,
       day.solutions,
-      ...(day.quizzes || [])
+      ...(day.quizzes || []).map((quiz) => typeof quiz === 'string' ? quiz : quiz.path)
     ].filter(Boolean).forEach((path) => {
       if (!paths.has(path as string)) errors.push(`catalog/days.json verweist auf fehlenden Pfad: ${path}`);
     });

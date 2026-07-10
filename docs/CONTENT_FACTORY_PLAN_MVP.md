@@ -4,6 +4,8 @@
 
 Dieser MVP erzeugt einen Kurscontainer-Draft aus Kursdaten und Unterrichtsplan. Materialien, KI und SaaS-Import sind nicht Pflicht. Der Ablauf ist bewusst klein: Plan hochladen, Tage pruefen, Draft erzeugen.
 
+Die naechste Ausbaustufe ist in `docs/CONTENT_FACTORY_AI_MVP.md` dokumentiert: Plan -> KI/Fallback -> DayGenerationResult -> Dual-Mode-Container.
+
 ## Ablauf
 
 1. Kursname, Kurs-ID und Fachbereich eintragen.

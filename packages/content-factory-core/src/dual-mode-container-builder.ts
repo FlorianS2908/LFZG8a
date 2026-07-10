@@ -5,12 +5,14 @@ import { normalizeCourseId } from './naming/course-name-normalizer.ts';
 import { normalizeVisibleOutput, runNamingConsistency } from './naming/naming-consistency-service.ts';
 import { createNamingReport } from './naming/naming-report-service.ts';
 import { createDayDraftFromPlan } from './plan-day-draft-generator.ts';
+import type { DayGenerationResult } from './ai/schemas.ts';
 
 export function buildDualModeContainer(input: {
   coursePlan?: CoursePlan;
   mappings: DayMapping[];
   gapAnalysis: GapAnalysis;
   containerId?: string;
+  dayDrafts?: DayGenerationResult[];
 }): DraftContainer {
   if (!input.coursePlan) {
     throw new Error('Unterrichtsplan ist Pflicht fuer Containerexport.');
@@ -31,7 +33,7 @@ export function buildDualModeContainer(input: {
     tasksTeacher: string;
     tasksParticipant: string;
     solutions: string;
-    quizzes: string[];
+    quizzes: Array<{ id: string; title: string; path: string; releaseKey: string }>;
     sourceRefs: string[];
     teacherPath: string;
     participantPath: string;
@@ -63,7 +65,8 @@ export function buildDualModeContainer(input: {
   input.mappings.forEach((mapping) => {
     const tag = `tag_${String(mapping.dayNumber).padStart(2, '0')}`;
     const preview = createDayPreview(mapping);
-    const planDraft = createDayDraftFromPlan(mapping.planDay, courseName);
+    const generatedDraft = input.dayDrafts?.find((draft) => draft.dayNumber === mapping.dayNumber);
+    const planDraft = generatedDraft ? createDayDraftFilesFromGeneration(generatedDraft, courseName) : createDayDraftFromPlan(mapping.planDay, courseName);
     const teacherBase = `dozent/${tag}`;
     const participantBase = `teilnehmer/${tag}`;
     const releaseKey = tag;
@@ -96,14 +99,14 @@ export function buildDualModeContainer(input: {
       tasksTeacher: teacherTasks,
       tasksParticipant: participantTasks,
       solutions: teacherSolutions,
-      quizzes: [quizPath],
+      quizzes: [{ id: `quiz-${tag}`, title: `Tag ${mapping.dayNumber} Quiz`, path: quizPath, releaseKey: quizKey }],
       sourceRefs: [],
       teacherPath: teacherWeb,
       participantPath: participantWeb,
       tasksPath: teacherTasks,
       solutionsPath: teacherSolutions
     });
-    participantCatalog.push({ dayNumber: mapping.dayNumber, title: mapping.planDay.title, releaseKey, path: participantWeb, tasksPath: participantTasks });
+    participantCatalog.push({ dayNumber: mapping.dayNumber, title: mapping.planDay.title, releaseKey, path: participantWeb, tasksPath: participantTasks, quizzes: [{ id: `quiz-${tag}`, title: `Tag ${mapping.dayNumber} Quiz`, path: quizPath, releaseKey: quizKey }] });
     releaseKeys.push(releaseKey, webKey, tasksKey, solutionsKey, quizKey);
   });
 
@@ -169,6 +172,8 @@ export function buildDualModeContainer(input: {
     selectedSheet: input.coursePlan.selectedSheet,
     coursePlanFile: input.coursePlan.sourceFile,
     ueBlockCount: input.coursePlan.days.reduce((sum, day) => sum + (day.ueBlocks?.length || 0), 0),
+    aiMode: input.dayDrafts?.length ? 'configured' : 'local-plan-template',
+    generatedDayCount: input.dayDrafts?.length || input.mappings.length,
     generatedFiles: files.map((file) => file.path),
     warnings: input.gapAnalysis.warnings,
     conflicts: input.gapAnalysis.conflicts,
@@ -184,6 +189,24 @@ export function buildDualModeContainer(input: {
   normalizedFiles.push({ path: 'README.md', content: createContainerReadme(courseName, courseId) });
 
   return { containerId: courseId, files: normalizedFiles, analysisReport: report };
+}
+
+function createDayDraftFilesFromGeneration(result: DayGenerationResult, courseName: string) {
+  const teacherSections = result.webvariant.teacherHtmlSections.map((section) => `<section><h2>${escapeHtml(section.title)}</h2><p>${escapeHtml(section.content)}</p><small>${section.aiGenerated ? 'AI-generiert' : 'Automatisch aus Unterrichtsplan erzeugt'}</small></section>`).join('');
+  const participantSections = result.webvariant.participantHtmlSections.map((section) => `<section><h2>${escapeHtml(section.title)}</h2><p>${escapeHtml(section.content)}</p><small>${section.aiGenerated ? 'AI-generiert' : 'Automatisch aus Unterrichtsplan erzeugt'}</small></section>`).join('');
+  return {
+    teacherWebHtml: `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>${escapeHtml(courseName)} - ${escapeHtml(result.title)}</title></head><body><p><strong>Automatisch aus Unterrichtsplan erzeugt.</strong></p><h1>${escapeHtml(result.title)}</h1>${teacherSections}</body></html>`,
+    participantWebHtml: `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>${escapeHtml(courseName)} - ${escapeHtml(result.title)}</title></head><body><p><strong>Automatisch aus Unterrichtsplan erzeugt.</strong></p><h1>${escapeHtml(result.title)}</h1>${participantSections}</body></html>`,
+    teacherTasksHtml: createGeneratedListHtml(`${courseName} - Aufgaben`, result.tasks.map((task) => task.text)),
+    participantTasksHtml: createGeneratedListHtml(`${courseName} - Aufgaben`, result.tasks.map((task) => task.text)),
+    solutionsHtml: createGeneratedListHtml(`${courseName} - Loesungen`, result.solutions.map((solution) => solution.text)),
+    quizJson: JSON.stringify({ dayNumber: result.dayNumber, status: result.status, generatedFrom: 'day-generation-result', questions: result.quiz, warnings: result.warnings }, null, 2),
+    reviewJson: JSON.stringify({ dayNumber: result.dayNumber, status: 'draft_ready', planTopics: [result.title], assignedFiles: result.sourceRefs, generated: { webvariantTeacher: 'dozent', webvariantParticipant: 'teilnehmer', tasks: 'aufgaben', solutions: 'loesungen', quiz: 'quiz' }, warnings: result.warnings, gaps: result.aiAdditions, corrections: [], revisions: [] }, null, 2)
+  };
+}
+
+function createGeneratedListHtml(title: string, items: string[]): string {
+  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head><body><p><strong>Automatisch aus Unterrichtsplan erzeugt.</strong></p><h1>${escapeHtml(title)}</h1><ul>${(items.length ? items : ['Noch zu ergaenzen']).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></body></html>`;
 }
 
 function json(value: unknown): string {

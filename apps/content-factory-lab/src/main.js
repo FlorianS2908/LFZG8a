@@ -115,6 +115,8 @@ function defaultState() {
     course: { courseName: '', courseId: '', department: '', mode: 'daily', description: '' },
     coursePlan: null,
     coursePlanConfirmed: false,
+    aiMode: 'local',
+    aiStatusMessages: [],
     aiMaterialsEnabled: false,
     files: [],
     analysisCompleted: false,
@@ -122,6 +124,7 @@ function defaultState() {
     mappings: [],
     gaps: [],
     gapStates: {},
+    dayDrafts: [],
     previews: [],
     dayApproval: {},
     allowDraftWithOpenWarnings: false,
@@ -147,8 +150,8 @@ function render() {
       <header class="lab-header">
         <div>
           <p class="eyebrow">ContentFactory Standalone Lab</p>
-          <h1>Plan &rarr; Container</h1>
-          <p>Dieser Assistent erstellt bereits nur aus Kursdaten und Unterrichtsplan einen Dual-Mode-Kurscontainer-Draft. Materialien sind fuer diesen MVP optional.</p>
+          <h1>Plan &rarr; KI/Fallback &rarr; Container</h1>
+          <p>Dieser Assistent erstellt aus Kursdaten, Unterrichtsplan und optionalen Rohmaterialien einen KI-/Fallback-gestuetzten Dual-Mode-Kurscontainer-Draft.</p>
         </div>
         <div class="header-actions">
           <button data-action="reset" class="secondary-button">Lab zuruecksetzen</button>
@@ -518,9 +521,17 @@ function renderDayPreviewStep() {
   return stepShell(
     'day-preview',
     'Tagesvorschau',
-    'Pro Tag sehen Sie eine uebersichtliche Vorschau mit Tabs fuer Uebersicht, Webvariante, Aufgaben, Loesungen, Quiz, Projektkontext, Quellen und Warnungen.',
+    'Sie waehlen den AI-Modus und erzeugen pro Tag einen strukturierten Tagesentwurf mit Webvarianten, Aufgaben, Loesungshinweisen und Quizplatzhalter.',
     'So pruefen Sie den Draft, bevor er exportiert wird. Der naechste Tag wird erst nach Bestaetigung oder bewusstem Ueberspringen freigegeben.',
     `
+      <label>AI-Modus<select data-field="aiMode">
+        <option value="local" ${state.aiMode === 'local' ? 'selected' : ''}>Lokal / ohne KI</option>
+        <option value="ai-generate" ${state.aiMode === 'ai-generate' ? 'selected' : ''}>OpenAI, falls konfiguriert</option>
+        <option value="ai-generate-review" ${state.aiMode === 'ai-generate-review' ? 'selected' : ''}>OpenAI + Review, falls konfiguriert</option>
+        <option value="ai-generate-review-repair" ${state.aiMode === 'ai-generate-review-repair' ? 'selected' : ''}>OpenAI + Review + Repair, falls konfiguriert</option>
+      </select></label>
+      <p class="status">${state.aiMode === 'local' ? 'AI_PROVIDER=local: Der lokale Fallback wird verwendet.' : 'OpenAI ist nicht konfiguriert. Der lokale Fallback wird verwendet.'}</p>
+      ${renderMessages(state.aiStatusMessages || [], 'warning')}
       <button class="primary-button" data-action="generate-previews">Tagesentwuerfe erzeugen</button>
       <div class="preview-grid">${state.previews.map(renderPreviewCard).join('')}</div>
     `,
@@ -644,6 +655,8 @@ function handleField(event) {
     state.allowDraftWithOpenWarnings = event.target.checked;
     saveRender();
     return;
+  } else if (field === 'aiMode') {
+    state.aiMode = event.target.value;
   } else {
     state.course[field] = event.target.value;
   }
@@ -793,7 +806,11 @@ function updateGap(gapId, value) {
 }
 
 function generatePreviews() {
-  state.previews = state.mappings.map((mapping) => createPreview(mapping));
+  state.dayDrafts = state.mappings.map((mapping) => createLocalDayGenerationResult(mapping));
+  state.previews = state.mappings.map((mapping) => createPreviewFromDayDraft(mapping, state.dayDrafts.find((draft) => draft.dayNumber === mapping.dayNumber)));
+  state.aiStatusMessages = state.aiMode === 'local'
+    ? ['Lokaler Fallback hat strukturierte Tagesentwuerfe erzeugt.']
+    : ['OpenAI ist nicht konfiguriert. Der lokale Fallback wurde verwendet.'];
   saveRender();
 }
 
@@ -830,6 +847,8 @@ function buildDraft() {
       selectedSheet: state.coursePlan.selectedSheet,
       coursePlanFile: state.coursePlan.sourceFile,
       ueBlockCount: state.coursePlan.days.reduce((sum, day) => sum + ((day.ueBlocks || []).length), 0),
+      aiMode: state.aiMode === 'local' ? 'local' : `${state.aiMode} -> local fallback`,
+      generatedDayCount: state.dayDrafts?.length || state.mappings.length,
       generatedFiles: draftFiles.map((file) => file.path),
       warnings: state.gaps.filter((gap) => gap.severity !== 'critical').map((gap) => gap.message),
       conflicts: state.gaps.filter((gap) => gap.severity === 'critical').map((gap) => gap.message),
@@ -850,7 +869,8 @@ function createDraftFiles() {
   ];
   state.mappings.forEach((mapping) => {
     const tag = `tag_${String(mapping.dayNumber).padStart(2, '0')}`;
-    const draft = createPlanDayDraft(mapping.planDay);
+    const generation = (state.dayDrafts || []).find((draft) => draft.dayNumber === mapping.dayNumber);
+    const draft = generation ? createPlanDayDraftFromGeneration(generation) : createPlanDayDraft(mapping.planDay);
     const webTeacher = `dozent/${tag}/webvariante.html`;
     const webParticipant = `teilnehmer/${tag}/webvariante.html`;
     const tasksTeacher = `dozent/${tag}/aufgaben.html`;
@@ -864,8 +884,8 @@ function createDraftFiles() {
     files.push({ path: tasksParticipant, content: draft.tasks });
     files.push({ path: quizPath, content: draft.quiz });
     files.push({ path: `reviews/${tag}.json`, content: draft.review });
-    days.push({ id: `day-${mapping.dayNumber}`, dayNumber: mapping.dayNumber, title: mapping.planDay.title, releaseKey: tag, theme: mapping.planDay.mainTopic, webTeacher, webParticipant, tasksTeacher, tasksParticipant, solutions, quizzes: [quizPath], sourceRefs: [] });
-    participantDays.push({ dayNumber: mapping.dayNumber, title: mapping.planDay.title, releaseKey: tag, path: webParticipant, tasksPath: tasksParticipant });
+    days.push({ id: `day-${mapping.dayNumber}`, dayNumber: mapping.dayNumber, title: mapping.planDay.title, releaseKey: tag, theme: mapping.planDay.mainTopic, webTeacher, webParticipant, tasksTeacher, tasksParticipant, solutions, quizzes: [{ id: `quiz-${tag}`, title: `Tag ${mapping.dayNumber} Quiz`, path: quizPath, releaseKey: `${tag}_quiz` }], sourceRefs: generation?.sourceRefs || [] });
+    participantDays.push({ dayNumber: mapping.dayNumber, title: mapping.planDay.title, releaseKey: tag, path: webParticipant, tasksPath: tasksParticipant, quizzes: [{ id: `quiz-${tag}`, title: `Tag ${mapping.dayNumber} Quiz`, path: quizPath, releaseKey: `${tag}_quiz` }] });
     releaseKeys.push(tag, `${tag}_web`, `${tag}_tasks`, `${tag}_solutions`, `${tag}_quiz`);
   });
   files.push({ path: 'dozent/index.html', content: indexHtml('Dozentenbereich', days.map((day) => day.webTeacher), true) });
@@ -878,7 +898,7 @@ function createDraftFiles() {
   files.push({ path: 'shared/assets/.gitkeep', content: '' });
   files.push({ path: 'shared/metadata/container.json', content: JSON.stringify({ courseName: state.course.courseName, courseId: state.course.courseId, department: state.course.department }, null, 2) });
   files.push({ path: 'standalone/index.html', content: standaloneHtml(days) });
-  files.push({ path: 'standalone/standalone.js', content: "document.querySelector('#app').innerHTML='<h1>Standalone-Draft</h1><p>Keine echte Plattform-Freigabe.</p>';" });
+  files.push({ path: 'standalone/standalone.js', content: standaloneJs() });
   files.push({ path: 'standalone/standalone.css', content: 'body{font-family:Arial,sans-serif;margin:24px;color:#0b1b33}button{padding:8px 12px}' });
   files.push({ path: 'platform/adapter.json', content: JSON.stringify({ contentContainerId: state.course.courseId, courseName: state.course.courseName, courseId: state.course.courseId, department: state.course.department, supportedReleaseKeys: [...new Set(releaseKeys)], roles: { teacher: { catalog: 'catalog/days.json', canSeeSolutions: true }, participant: { catalog: 'catalog/participant-content.json', canSeeSolutions: false } }, integration: { requiresCourseInstance: true, usesReleaseStates: true, usesCourseMembers: true, usesAuditLog: true } }, null, 2) });
   files.push({ path: 'platform/route-map.json', content: JSON.stringify({ standalone: 'standalone/index.html', teacherEntry: 'dozent/index.html', participantEntry: 'teilnehmer/index.html', catalog: 'catalog/days.json' }, null, 2) });
@@ -886,6 +906,62 @@ function createDraftFiles() {
   files.push({ path: 'source-map.json', content: JSON.stringify({ generatedFrom: 'course-plan', coursePlan: { originalFileName: state.coursePlan.sourceFile, selectedSheet: state.coursePlan.selectedSheet, warnings: state.coursePlan.warnings }, generatedFiles: files.map((file) => file.path) }, null, 2) });
   files.push({ path: 'README.md', content: `# ${state.course.courseName}\n\nDraft aus Unterrichtsplan. Standalone-Draft, keine echte Plattform-Freigabe.\n` });
   return files;
+}
+
+function createLocalDayGenerationResult(mapping) {
+  const blocks = mapping.planDay.ueBlocks || [];
+  const sourceRefs = [`course-plan-day-${mapping.dayNumber}`].concat(mapping.files.map((file) => file.fileName));
+  const learnerTasks = blocks.map((block) => block.learnerTask).filter(Boolean);
+  const teacherTasks = blocks.map((block) => block.teacherTask || block.evaluation).filter(Boolean);
+  const resources = blocks.map((block) => block.resources).filter(Boolean);
+  return {
+    dayNumber: mapping.dayNumber,
+    title: mapping.planDay.title,
+    status: 'draft',
+    webvariant: {
+      teacherHtmlSections: [
+        { title: 'Tagesziel', content: (mapping.planDay.learningGoals || ['Lernziel noch ergaenzen']).join('\n'), sourceRefs, aiGenerated: false },
+        { title: 'Dozentenhinweise', content: (teacherTasks.length ? teacherTasks : ['Loesungshinweis noch ergaenzen']).join('\n'), sourceRefs, aiGenerated: false }
+      ],
+      participantHtmlSections: [
+        { title: 'Tagesziel', content: (mapping.planDay.learningGoals || ['Lernziel noch ergaenzen']).join('\n'), sourceRefs, aiGenerated: false },
+        { title: 'Lernaufgaben', content: (learnerTasks.length ? learnerTasks : ['Aufgabe noch ergaenzen']).join('\n'), sourceRefs, aiGenerated: false },
+        { title: 'Materialien', content: (resources.length ? resources : ['Material noch ergaenzen']).join('\n'), sourceRefs, aiGenerated: false }
+      ]
+    },
+    tasks: (learnerTasks.length ? learnerTasks : ['Aufgabe noch ergaenzen']).map((task, index) => ({ id: `day-${mapping.dayNumber}-task-${index + 1}`, title: `Arbeitsauftrag ${index + 1}`, difficulty: 'mittel', text: task, sourceRefs, aiGenerated: false })),
+    solutions: (teacherTasks.length ? teacherTasks : ['Loesung noch ergaenzen']).map((hint, index) => ({ taskId: `day-${mapping.dayNumber}-task-${index + 1}`, title: `Dozentenhinweis ${index + 1}`, text: hint, sourceRefs, aiGenerated: false })),
+    quiz: [{ id: `day-${mapping.dayNumber}-quiz-1`, type: 'single-choice', topic: mapping.planDay.mainTopic, difficulty: 'leicht', text: 'Quiz noch zu ergaenzen.', options: ['Noch zu ergaenzen'], correct: [0], sourceRefs, aiGenerated: false }],
+    sourceRefs,
+    warnings: mapping.files.length ? [] : ['Keine Zusatzmaterialien vorhanden. Lokaler Entwurf nutzt nur den Unterrichtsplan.'],
+    aiAdditions: ['Automatisch aus Unterrichtsplan erzeugt.']
+  };
+}
+
+function createPreviewFromDayDraft(mapping, draft) {
+  if (!draft) return createPreview(mapping);
+  const sections = draft.webvariant.teacherHtmlSections.concat(draft.webvariant.participantHtmlSections)
+    .map((section) => `<h2>${escapeHtml(section.title)}</h2><p>${escapeHtml(section.content)}</p>`)
+    .join('');
+  return {
+    dayNumber: draft.dayNumber,
+    title: draft.title,
+    warnings: draft.warnings,
+    html: pageHtml(`${state.course.courseName} - ${draft.title}`, `<p><strong>Automatisch aus Unterrichtsplan erzeugt.</strong></p>${sections}`)
+  };
+}
+
+function createPlanDayDraftFromGeneration(result) {
+  const teacherSections = result.webvariant.teacherHtmlSections.map((section) => `<section><h2>${escapeHtml(section.title)}</h2><p>${escapeHtml(section.content)}</p></section>`).join('');
+  const participantSections = result.webvariant.participantHtmlSections.map((section) => `<section><h2>${escapeHtml(section.title)}</h2><p>${escapeHtml(section.content)}</p></section>`).join('');
+  return {
+    teacherWeb: pageHtml(`${state.course.courseName} - ${result.title}`, `<p><strong>Automatisch aus Unterrichtsplan erzeugt.</strong></p><h1>${escapeHtml(result.title)}</h1>${teacherSections}`),
+    participantWeb: pageHtml(`${state.course.courseName} - ${result.title}`, `<p><strong>Automatisch aus Unterrichtsplan erzeugt.</strong></p><h1>${escapeHtml(result.title)}</h1>${participantSections}`),
+    tasks: pageHtml(`${state.course.courseName} - Aufgaben ${result.title}`, `<p><strong>Automatisch aus Unterrichtsplan erzeugt.</strong></p><h1>Aufgaben</h1>${htmlList(result.tasks.map((task) => task.text))}`),
+    solutions: pageHtml(`${state.course.courseName} - Loesungen ${result.title}`, `<p><strong>Automatisch aus Unterrichtsplan erzeugt.</strong></p><h1>Loesungshinweise</h1>${htmlList(result.solutions.map((solution) => solution.text))}`),
+    quiz: JSON.stringify({ dayNumber: result.dayNumber, status: result.status, generatedFrom: 'day-generation-result', questions: result.quiz, warnings: result.warnings }, null, 2),
+    review: JSON.stringify({ dayNumber: result.dayNumber, status: 'draft_ready', planTopics: [result.title], assignedFiles: result.sourceRefs, generated: { webvariantTeacher: 'dozent', webvariantParticipant: 'teilnehmer', tasks: 'aufgaben', solutions: 'loesungen', quiz: 'quiz' }, warnings: result.warnings, gaps: result.aiAdditions, corrections: [], revisions: [] }, null, 2)
+  };
 }
 
 function createPlanDayDraft(day) {
@@ -926,7 +1002,11 @@ function indexHtml(title, paths, teacher) {
 
 function standaloneHtml(days) {
   const embedded = escapeHtml(JSON.stringify({ courseName: state.course.courseName, courseId: state.course.courseId, days }, null, 2));
-  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>${escapeHtml(state.course.courseName)} Standalone</title><link rel="stylesheet" href="standalone.css"></head><body><header><strong>${escapeHtml(state.course.courseName)}</strong><span>Standalone-Draft: keine echte Plattform-Freigabe</span></header><main id="app"><h1>Tagesnavigation</h1><pre>${embedded}</pre><p>Dozentenansicht zeigt Hinweise, Teilnehmer-Vorschau zeigt keine Loesungen.</p></main><script src="standalone.js"></script></body></html>`;
+  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>${escapeHtml(state.course.courseName)} Standalone</title><link rel="stylesheet" href="standalone.css"></head><body><header><strong>${escapeHtml(state.course.courseName)}</strong><span>Standalone-Draft: keine echte Plattform-Freigabe</span></header><main id="app"><h1>Tagesnavigation</h1><p>Dozentenansicht zeigt Hinweise, Teilnehmer-Vorschau zeigt keine Loesungen.</p><pre id="embedded-data">${embedded}</pre></main><script src="standalone.js"></script></body></html>`;
+}
+
+function standaloneJs() {
+  return `const data=JSON.parse(document.querySelector('#embedded-data').textContent);document.querySelector('#app').insertAdjacentHTML('beforeend','<div><button data-role="teacher">Dozent</button><button data-role="participant">Teilnehmer</button><section id="view"></section></div>');document.querySelectorAll('[data-role]').forEach((button)=>button.addEventListener('click',()=>{const teacher=button.dataset.role==='teacher';document.querySelector('#view').innerHTML='<h2>'+data.courseName+'</h2><ul>'+data.days.map((day)=>'<li>'+day.title+' - '+(teacher?day.webTeacher:day.webParticipant)+'</li>').join('')+'</ul>'+(teacher?'<p>Loesungen sind nur hier sichtbar.</p>':'<p>Teilnehmer-Vorschau ohne Loesungen.</p>');}));`;
 }
 
 function getGate(step) {

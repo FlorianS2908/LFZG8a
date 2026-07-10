@@ -28,20 +28,32 @@ export class LocalHeuristicProvider implements AiProvider {
 }
 
 function createLocalDraft(input: DayGenerationInput): DayGenerationResult {
-  const sourceRefs = input.sourceTexts.map((_, index) => `source-${index + 1}`);
+  const sourceRefs = input.sourceTexts.length ? input.sourceTexts.map((_, index) => `source-${index + 1}`) : [`course-plan-day-${input.dayNumber}`];
+  const learnerTasks = input.learnerTasks?.length ? input.learnerTasks : ['Aufgabe noch ergaenzen'];
+  const teacherTasks = input.teacherTasks?.length ? input.teacherTasks : ['Loesungshinweis noch ergaenzen'];
+  const resources = input.resources?.length ? input.resources : ['Material noch ergaenzen'];
+  const learningGoals = input.learningGoals?.length ? input.learningGoals : ['Lernziel noch ergaenzen'];
   return {
     dayNumber: input.dayNumber,
     title: input.title,
     status: 'draft',
     webvariant: {
-      teacherHtmlSections: [{ title: input.title, content: `${input.courseName}: lokal erzeugter Tagesentwurf.`, sourceRefs, aiGenerated: false }],
-      participantHtmlSections: [{ title: input.title, content: `${input.courseName}: Teilnehmer-Vorschau mit freigegebenen Arbeitsmaterialien.`, sourceRefs, aiGenerated: false }]
+      teacherHtmlSections: [
+        { title: input.title, content: `${input.courseName}: lokal erzeugter Tagesentwurf.`, sourceRefs, aiGenerated: false },
+        { title: 'Tagesziel', content: learningGoals.join('\n'), sourceRefs, aiGenerated: false },
+        { title: 'Ressourcen', content: resources.join('\n'), sourceRefs, aiGenerated: false }
+      ],
+      participantHtmlSections: [
+        { title: input.title, content: `${input.courseName}: Teilnehmer-Vorschau mit freigegebenen Arbeitsmaterialien.`, sourceRefs, aiGenerated: false },
+        { title: 'Lernaufgaben', content: learnerTasks.join('\n'), sourceRefs, aiGenerated: false },
+        { title: 'Materialien', content: resources.join('\n'), sourceRefs, aiGenerated: false }
+      ]
     },
-    tasks: [{ id: `day-${input.dayNumber}-task-1`, title: 'Arbeitsauftrag', difficulty: 'mittel', text: 'Bearbeite die Tagesaufgabe anhand der Quellen.', sourceRefs, aiGenerated: false }],
-    solutions: [{ taskId: `day-${input.dayNumber}-task-1`, title: 'Musterloesung', text: 'Nur fuer Dozenten sichtbar.', sourceRefs, aiGenerated: false }],
-    quiz: [{ id: `day-${input.dayNumber}-quiz-1`, type: 'single-choice', topic: input.title, difficulty: 'leicht', text: 'Welche Aussage passt zum Thema?', options: ['Passende Aussage', 'Ablenkung'], correct: [0], sourceRefs, aiGenerated: false }],
+    tasks: learnerTasks.map((task, index) => ({ id: `day-${input.dayNumber}-task-${index + 1}`, title: `Arbeitsauftrag ${index + 1}`, difficulty: 'mittel', text: task, sourceRefs, aiGenerated: false })),
+    solutions: teacherTasks.map((hint, index) => ({ taskId: `day-${input.dayNumber}-task-${index + 1}`, title: `Dozentenhinweis ${index + 1}`, text: hint, sourceRefs, aiGenerated: false })),
+    quiz: [{ id: `day-${input.dayNumber}-quiz-1`, type: 'single-choice', topic: input.planTopic || input.title, difficulty: 'leicht', text: 'Quiz noch zu ergaenzen.', options: ['Noch zu ergaenzen'], correct: [0], sourceRefs, aiGenerated: false }],
     sourceRefs,
-    warnings: input.sourceTexts.length ? [] : ['Keine Quellen fuer den Tagesentwurf vorhanden.'],
-    aiAdditions: []
+    warnings: input.sourceTexts.length ? [] : ['Keine Zusatzmaterialien vorhanden. Lokaler Entwurf nutzt nur den Unterrichtsplan.'],
+    aiAdditions: learnerTasks.includes('Aufgabe noch ergaenzen') ? ['Aufgabenplatzhalter aus Unterrichtsplan erzeugt.'] : []
   };
 }
