@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ploglan-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ploglan_dev
+      POSTGRES_USER: ploglan
+      POSTGRES_PASSWORD: ploglan_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ploglan_postgres_data:/var/lib/postgresql/data
+      - ./database/postgres:/schema:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ploglan -d ploglan_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  ploglan_postgres_data:
