@@ -1,5 +1,17 @@
 # ContentFactory Core
 
+Der Core baut Draft-Container fuer das ContentFactory/ContainerFactory Lab. Er klassifiziert Uploads, mappt Dateien auf Unterrichtstage, erkennt Luecken und erzeugt Dual-Mode-Container.
+
+Dual-Mode bedeutet:
+
+- lokale Standalone-Vorschau ueber `standalone/index.html`
+- spaetere Plattformintegration ueber `platform/adapter.json`
+- `manifest.json` mit `runtimeModes.standalone` und `runtimeModes.platform`
+- Dozentenbereich mit Loesungen
+- Teilnehmerbereich ohne Loesungen
+
+Kursname, Kurs-ID und Fachbereich aus der Eingabemaske sind fuehrend. Sichtbare Legacy-Namen werden durch den NamingConsistencyService verhindert; Originalnamen bleiben nur in Source-Map und Reports erhalten.
+
 Wiederverwendbare Kernlogik fuer das isolierte ContentFactory Standalone Lab.
 
 ## Zweck

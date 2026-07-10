@@ -1,5 +1,15 @@
 # ContentFactory Standalone Lab
 
+ContentFactory und ContainerFactory meinen in diesem Projekt dasselbe Lab. `apps/container-factory-lab` ist ein Alias, die aktive standalone startbare Version bleibt hier.
+
+Das Lab erzeugt Dual-Mode-Draft-Container:
+
+- lokal testbar ueber `standalone/index.html`
+- fuer spaetere SaaS-Integration vorbereitet ueber `platform/adapter.json`
+- mit Manifest-`runtimeModes`
+- mit getrenntem Dozenten- und Teilnehmerbereich
+- ohne Loesungen im Teilnehmerbereich
+
 Dieses Lab testet die ContentFactory-Logik isoliert. Es veroeffentlicht nichts in der Haupt-App und veraendert keine bestehenden Kacheln.
 
 ## Start

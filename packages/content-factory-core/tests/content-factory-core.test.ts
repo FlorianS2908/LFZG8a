@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   analyzeGaps,
+  AiOrchestrator,
   buildDraftContainer,
   classifyUploadedFile,
   classifyUploads,
@@ -10,10 +11,14 @@ import {
   getAllStepGates,
   getStepGate,
   getUploadCategory,
+  LocalHeuristicProvider,
   mapFilesToDays,
   normalizeArchivePath,
+  OpenAIProvider,
+  runNamingConsistency,
   uploadCategoryDefinitions,
-  validateDraftExport
+  validateDraftExport,
+  validateQuizQuestions
 } from '../src/index.ts';
 
 test('classification detects common web and code file types by context', () => {
@@ -77,6 +82,77 @@ test('draft export creates safe catalog, source map and analysis report without 
   assert.ok(paths.includes('reports/html-css-fiae-analysis-report.json'));
   assert.equal(paths.some((path) => /^teilnehmer\/.*loes/i.test(path)), false);
   assert.deepEqual(validateDraftExport(draft), []);
+});
+
+test('dual-mode manifest, platform adapter and standalone runner are generated', () => {
+  const plan = createFallbackCoursePlan({ fileName: 'LF05_FIAE.xlsx' });
+  plan.courseTitle = 'Kursname bei Kurs-ID';
+  plan.courseId = 'kurs-id';
+  const files = classifyUploads([{ fileName: 'tag_01_aufgabe.html', uploadArea: 'tasks' }]);
+  const mappings = mapFilesToDays(plan, files);
+  const draft = buildDraftContainer({ coursePlan: plan, mappings, gapAnalysis: analyzeGaps(mappings, files) });
+  const byPath = new Map(draft.files.map((file) => [file.path, file.content]));
+  const manifest = JSON.parse(byPath.get('manifest.json') || '{}');
+  const adapter = JSON.parse(byPath.get('platform/adapter.json') || '{}');
+
+  assert.equal(manifest.runtimeModes.standalone.entry, 'standalone/index.html');
+  assert.equal(manifest.runtimeModes.platform.adapter, 'platform/adapter.json');
+  assert.equal(adapter.courseName, 'Kursname bei Kurs-ID');
+  assert.equal(adapter.roles.participant.canSeeSolutions, false);
+  assert.ok(byPath.has('standalone/index.html'));
+  assert.match(byPath.get('standalone/index.html') || '', /Standalone-Vorschau/);
+});
+
+test('course name from input replaces visible legacy names while source map may keep originals', () => {
+  const plan = createFallbackCoursePlan({ fileName: 'LFZQ8a_Altbestand.xlsx' });
+  plan.courseTitle = 'LF05 FIAE';
+  plan.courseId = 'lf05-fiae';
+  const files = classifyUploads([{ fileName: 'LFZQ8a_tag_01_aufgabe.html', uploadArea: 'tasks' }]);
+  const mappings = mapFilesToDays(plan, files);
+  const draft = buildDraftContainer({ coursePlan: plan, mappings, gapAnalysis: analyzeGaps(mappings, files) });
+  const visibleFiles = draft.files.filter((file) => file.path !== 'source-map.json' && !file.path.startsWith('reports/'));
+  const visibleText = visibleFiles.map((file) => file.content).join('\n');
+
+  assert.equal(runNamingConsistency(visibleFiles, 'LF05 FIAE').ok, true);
+  assert.doesNotMatch(visibleText, /LFZQ8a/);
+  assert.match(draft.files.find((file) => file.path === 'source-map.json')?.content || '', /LFZQ8a/);
+});
+
+test('release keys are unique and catalog paths exist', () => {
+  const plan = createFallbackCoursePlan({ fileName: 'LF05_FIAE.xlsx' });
+  const files = classifyUploads([{ fileName: 'tag_01_aufgabe.html', uploadArea: 'tasks' }]);
+  const mappings = mapFilesToDays(plan, files);
+  const draft = buildDraftContainer({ coursePlan: plan, mappings, gapAnalysis: analyzeGaps(mappings, files) });
+  const releaseKeys = JSON.parse(draft.files.find((file) => file.path === 'catalog/release-keys.json')?.content || '[]');
+
+  assert.equal(new Set(releaseKeys).size, releaseKeys.length);
+  assert.deepEqual(validateDraftExport(draft), []);
+});
+
+test('output validator blocks env files and executable files', () => {
+  const plan = createFallbackCoursePlan({ fileName: 'LF05_FIAE.xlsx' });
+  const draft = buildDraftContainer({ coursePlan: plan, mappings: mapFilesToDays(plan, []), gapAnalysis: { warnings: [], conflicts: [], gaps: [], riskFiles: [] } });
+  draft.files.push({ path: '.env', content: 'SECRET=1' });
+  draft.files.push({ path: 'tools/setup.exe', content: '' });
+
+  assert.match(validateDraftExport(draft).join(' '), /\.env/);
+  assert.match(validateDraftExport(draft).join(' '), /Ausfuehrbare Datei/);
+});
+
+test('quiz validation detects invalid correct indexes', () => {
+  assert.deepEqual(validateQuizQuestions([{ id: 'q1', options: ['A'], correct: [2] }]), ['q1: correct-Index 2 ist ungueltig.']);
+});
+
+test('local heuristic provider works without API key and orchestrator falls back locally', async () => {
+  const local = new LocalHeuristicProvider();
+  assert.equal(await local.isConfigured(), true);
+  const orchestrator = new AiOrchestrator([new OpenAIProvider('', '')]);
+  const selected = await orchestrator.selectProvider();
+  const draft = await orchestrator.generateDayDraft({ dayNumber: 1, title: 'Tag 1', courseName: 'LF05 FIAE', sourceTexts: [] });
+
+  assert.equal(selected.name, 'local');
+  assert.equal(draft.dayNumber, 1);
+  assert.equal(draft.solutions.length, 1);
 });
 
 test('wizard locks step 2 when course data is missing', () => {
