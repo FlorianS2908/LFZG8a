@@ -83,6 +83,22 @@ export type CoursePlanDay = {
   subTopics: string[];
   learningGoals: string[];
   ue?: number;
+  ueBlocks?: Array<{
+    ue?: number;
+    time?: string;
+    learningFormat?: string;
+    topic?: string;
+    teacherTask?: string;
+    learnerTask?: string;
+    evaluation?: string;
+    resources?: string;
+    notes?: string;
+    isBreak?: boolean;
+  }>;
+  pauses?: Array<{
+    time: string;
+    label?: string;
+  }>;
   projectContext?: string;
   requiredOutputs?: string[];
   notes?: string;
@@ -92,6 +108,12 @@ export type CoursePlan = {
   courseTitle: string;
   courseId?: string;
   department?: DepartmentKey;
+  selectedSheet?: string;
+  availableSheets?: string[];
+  planVariant?: string;
+  totalUE?: number;
+  totalDays?: number;
+  sourceFile?: string;
   days: CoursePlanDay[];
   warnings: string[];
   unclearRows: string[];
@@ -163,6 +185,10 @@ export type DraftContainer = {
     solutionCount: number;
     quizCount: number;
     projectFileCount: number;
+    selectedSheet?: string;
+    coursePlanFile?: string;
+    ueBlockCount?: number;
+    generatedFiles?: string[];
     warnings: string[];
     conflicts: string[];
     gaps: string[];

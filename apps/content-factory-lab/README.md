@@ -10,6 +10,10 @@ Das Lab erzeugt Dual-Mode-Draft-Container:
 - mit getrenntem Dozenten- und Teilnehmerbereich
 - ohne Loesungen im Teilnehmerbereich
 
+## Plan -> Container MVP
+
+Der Minimal-MVP kann aus Kursdaten und einem Unterrichtsplan einen Basis-Draft erzeugen. Materialien sind optional. Pro erkanntem Tag entstehen Dozenten-Webvariante, Teilnehmer-Webvariante, Aufgabenplatzhalter, Dozenten-Loesungshinweise, Quizplatzhalter und Review-Datei.
+
 Dieses Lab testet die ContentFactory-Logik isoliert. Es veroeffentlicht nichts in der Haupt-App und veraendert keine bestehenden Kacheln.
 
 ## Start

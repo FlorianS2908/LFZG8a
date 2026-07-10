@@ -3,6 +3,7 @@ export * from './file-type-rules.ts';
 export * from './upload-classifier.ts';
 export * from './course-plan-parser.ts';
 export * from './content-extractor.ts';
+export * from './plan-day-draft-generator.ts';
 export * from './day-mapping-service.ts';
 export * from './gap-analysis-service.ts';
 export * from './local-heuristic-provider.ts';

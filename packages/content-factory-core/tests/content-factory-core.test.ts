@@ -8,13 +8,17 @@ import {
   classifyUploads,
   createEmptyWizardState,
   createFallbackCoursePlan,
+  createPlanOnlyMappings,
+  createDayDraftFromPlan,
   getAllStepGates,
   getStepGate,
   getUploadCategory,
+  listCoursePlanSheets,
   LocalHeuristicProvider,
   mapFilesToDays,
   normalizeArchivePath,
   OpenAIProvider,
+  parseCoursePlanFromCsvText,
   runNamingConsistency,
   uploadCategoryDefinitions,
   validateDraftExport,
@@ -178,7 +182,7 @@ test('wizard locks upload step when course plan is missing or unconfirmed', () =
   assert.match(getStepGate(state, 'uploads').missing.join(' '), /bestaetigen/);
 });
 
-test('wizard locks review when no uploads exist', () => {
+test('wizard allows plan-only review after confirmed course plan', () => {
   const state = createEmptyWizardState({
     courseName: 'LF05 FIAE Grundlagen',
     courseId: 'lf05-fiae-grundlagen',
@@ -187,8 +191,46 @@ test('wizard locks review when no uploads exist', () => {
   state.coursePlan = createFallbackCoursePlan({ fileName: 'LF05_FIAE.xlsx' });
   state.coursePlanConfirmed = true;
 
-  assert.equal(getStepGate(state, 'review').accessible, false);
-  assert.match(getStepGate(state, 'review').missing.join(' '), /Material|ZIP/);
+  assert.equal(getStepGate(state, 'uploads').accessible, true);
+  assert.equal(getStepGate(state, 'review').accessible, true);
+});
+
+test('course plan parser creates sheet list and recognizes days from plan text', () => {
+  const text = '--- sheet: Variante A ---\nTag;Titel;Thema;Lernziel;UE;Zeit;Lehraufgabe;Lernaufgabe;Evaluation;Ressourcen;Hinweis\n1;Tag 1;CSS Grundlagen;Selektoren verstehen;4;09:00;Boxmodell erklaeren;Selektoren ueben;Kurzcheck;Handout;Start\n2;Tag 2;Flexbox;Layouts bauen;4;09:00;Demo;Navigation bauen;Review;Slides;\n--- sheet: Variante B ---\nTag;Titel;Thema\n1;Alternativ;Projekt';
+  const sheets = listCoursePlanSheets({ fileName: 'Plan.xlsx', text });
+  const plan = parseCoursePlanFromCsvText('Tag;Titel;Thema;Lernziel;UE;Zeit;Lehraufgabe;Lernaufgabe;Evaluation;Ressourcen;Hinweis\n1;Tag 1;CSS Grundlagen;Selektoren verstehen;4;09:00;Boxmodell erklaeren;Selektoren ueben;Kurzcheck;Handout;Start', 'LF05_FIAE.xlsx', { courseTitle: 'LF05 FIAE', selectedSheet: 'Variante A' });
+
+  assert.deepEqual(sheets.map((sheet) => sheet.name), ['Variante A', 'Variante B']);
+  assert.equal(plan.selectedSheet, 'Variante A');
+  assert.equal(plan.days.length, 1);
+  assert.equal(plan.days[0].ueBlocks?.[0].learnerTask, 'Selektoren ueben');
+});
+
+test('plan-only draft creates dual-mode container files for every day', () => {
+  const plan = parseCoursePlanFromCsvText('Tag;Titel;Thema;Lernziel;UE;Zeit;Lehraufgabe;Lernaufgabe;Evaluation;Ressourcen\n1;Tag 1;CSS Grundlagen;Selektoren verstehen;4;09:00;Boxmodell erklaeren;Selektoren ueben;Kurzcheck;Handout', 'LF05_FIAE.xlsx', { courseTitle: 'LF05 FIAE', courseId: 'lf05-fiae', department: 'FIAE', selectedSheet: 'Tabelle1' });
+  const mappings = createPlanOnlyMappings(plan);
+  const draft = buildDraftContainer({ coursePlan: plan, mappings, gapAnalysis: { warnings: [], conflicts: [], gaps: [], riskFiles: [] } });
+  const byPath = new Map(draft.files.map((file) => [file.path, file.content]));
+  const days = JSON.parse(byPath.get('catalog/days.json') || '[]');
+
+  assert.equal(days[0].webTeacher, 'dozent/tag_01/webvariante.html');
+  assert.equal(days[0].webParticipant, 'teilnehmer/tag_01/webvariante.html');
+  assert.ok(byPath.has('dozent/tag_01/loesungen.html'));
+  assert.ok(byPath.has('teilnehmer/tag_01/aufgaben.html'));
+  assert.ok(byPath.has('shared/quiz/tag_01.json'));
+  assert.match(byPath.get('dozent/tag_01/webvariante.html') || '', /Automatisch aus Unterrichtsplan erzeugt/);
+  assert.match(byPath.get('teilnehmer/tag_01/webvariante.html') || '', /Selektoren ueben/);
+  assert.doesNotMatch(byPath.get('teilnehmer/tag_01/webvariante.html') || '', /Loesung|Loesungen|solution/i);
+  assert.deepEqual(validateDraftExport(draft), []);
+});
+
+test('local plan day draft marks generated content and keeps solutions teacher-only', () => {
+  const plan = createFallbackCoursePlan({ fileName: 'LF05_FIAE.xlsx' });
+  const draft = createDayDraftFromPlan(plan.days[0], 'LF05 FIAE');
+
+  assert.match(draft.teacherWebHtml, /Automatisch aus Unterrichtsplan erzeugt/);
+  assert.match(draft.solutionsHtml, /Loesung/);
+  assert.doesNotMatch(draft.participantWebHtml, /Loesung|solution/i);
 });
 
 test('wizard locks day mapping until analysis is complete', () => {

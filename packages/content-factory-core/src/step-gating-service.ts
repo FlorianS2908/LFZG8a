@@ -6,7 +6,6 @@ import {
   getCriticalOpenGaps,
   getOpenReviewFiles,
   hasCoursePlan,
-  hasMaterialUploads,
   reviewIsComplete,
   validateCourseData
 } from './validation-service.ts';
@@ -35,7 +34,6 @@ export function getMissingRequirements(state: WizardState, step: WizardStepId): 
   if (!hasCoursePlan(state)) missing.push('Bitte laden Sie zuerst einen gueltigen Unterrichtsplan hoch.');
   if (!state.coursePlanConfirmed) missing.push('Bitte bestaetigen Sie den Unterrichtsplan.');
   if (step === 'uploads') return missing;
-  if (!hasMaterialUploads(state)) missing.push('Bitte laden Sie mindestens ein Material oder ZIP-Paket hoch.');
   if (step === 'review') return missing;
   if (!state.analysisCompleted) missing.push('Bitte fuehren Sie zuerst die Dateianalyse aus.');
   if (step === 'day-mapping') return missing;
@@ -66,7 +64,7 @@ function getStepStatus(state: WizardState, step: WizardStepId, accessible: boole
 function isDone(state: WizardState, step: WizardStepId): boolean {
   if (step === 'course-data') return validateCourseData(state).length === 0;
   if (step === 'course-plan') return hasCoursePlan(state) && state.coursePlanConfirmed;
-  if (step === 'uploads') return hasMaterialUploads(state);
+  if (step === 'uploads') return hasCoursePlan(state) && state.coursePlanConfirmed;
   if (step === 'review') return state.analysisCompleted && reviewIsComplete(state);
   if (step === 'day-mapping') return allMappingDaysHandled(state);
   if (step === 'gap-analysis') return state.gaps.every((gap) => gap.state !== 'open' || gap.severity !== 'critical');

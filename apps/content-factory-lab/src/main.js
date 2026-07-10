@@ -147,8 +147,8 @@ function render() {
       <header class="lab-header">
         <div>
           <p class="eyebrow">ContentFactory Standalone Lab</p>
-          <h1>Neuen Kurs aus Rohdaten erstellen</h1>
-          <p>Dieser Assistent erstellt aus einem Unterrichtsplan und vorhandenen Materialien einen Kurscontainer-Draft. Es wird nichts automatisch veroeffentlicht.</p>
+          <h1>Plan &rarr; Container</h1>
+          <p>Dieser Assistent erstellt bereits nur aus Kursdaten und Unterrichtsplan einen Dual-Mode-Kurscontainer-Draft. Materialien sind fuer diesen MVP optional.</p>
         </div>
         <div class="header-actions">
           <button data-action="reset" class="secondary-button">Lab zuruecksetzen</button>
@@ -279,12 +279,15 @@ function renderPlanSummary() {
   return `
     <div class="summary-grid">
       <span>Datei erkannt: ${escapeHtml(state.coursePlan.sourceFile || state.coursePlan.courseTitle)}</span>
-      <span>Anzahl Tabellenblaetter: ${state.coursePlan.sheetCount || 1}</span>
+      <span>Anzahl Tabellenblaetter: ${(state.coursePlan.availableSheets || ['Tabelle1']).length}</span>
       <span>Erkannte Kurstage: ${state.coursePlan.days.length}</span>
+      <span>Ausgewaehltes Sheet: ${escapeHtml(state.coursePlan.selectedSheet || 'Tabelle1')}</span>
       <span>Erkannte Themen: ${state.coursePlan.days.filter((day) => day.mainTopic).length}</span>
       <span>Erkannte Lernziele: ${state.coursePlan.days.reduce((sum, day) => sum + day.learningGoals.length, 0)}</span>
       <span>Status: ${state.coursePlanConfirmed ? 'bestaetigt' : 'noch nicht bestaetigt'}</span>
     </div>
+    <label>Planvariante / Sheet<select data-plan-sheet>${(state.coursePlan.availableSheets || ['Tabelle1']).map((sheet) => `<option value="${escapeAttribute(sheet)}" ${state.coursePlan.selectedSheet === sheet ? 'selected' : ''}>${escapeHtml(sheet)}</option>`).join('')}</select></label>
+    <div class="day-grid">${state.coursePlan.days.map((day) => `<article class="day-card"><div class="day-card-head"><h3>Tag ${day.dayNumber}: ${escapeHtml(day.title)}</h3><span>${(day.ueBlocks || []).length} UE</span></div><p>${escapeHtml(day.mainTopic)}</p>${bucket('Lernziele', (day.learningGoals || []).map((item) => ({ fileName: item })))}${bucket('Ressourcen', (day.requiredOutputs || []).map((item) => ({ fileName: item })))}</article>`).join('')}</div>
     ${renderMessages(state.coursePlan.warnings || [], 'warning')}
   `;
 }
@@ -293,8 +296,8 @@ function renderUploadStep() {
   return stepShell(
     'uploads',
     'Materialien hochladen',
-    'Sie laden Materialien in fachlich getrennten Bereichen hoch. Jede Karte erklaert, was dort hinein gehoert.',
-    'Die klare Trennung verhindert, dass Loesungen, Quellcode, SQL oder Assets spaeter falsch einsortiert werden.',
+    'Sie koennen Materialien optional ergaenzen. Fuer den Minimal-MVP reicht der bestaetigte Unterrichtsplan.',
+    'Die klare Trennung verhindert spaeter, dass Loesungen, Quellcode, SQL oder Assets falsch einsortiert werden.',
     `<div class="upload-grid">${uploadCategories.map(renderUploadCard).join('')}</div><p class="status">${state.files.length} Datei(en) im Lab-State.</p>`,
     'Uploads pruefen'
   );
@@ -327,7 +330,7 @@ function renderReviewStep() {
     'Die ContentFactory zeigt erkannte Kategorien, Tag-Vermutung, Confidence, Warnungen und notwendige Aktionen.',
     'Unklare oder blockierte Dateien muessen bewusst bestaetigt, korrigiert oder ignoriert werden, bevor es weitergeht.',
     `
-      <button class="primary-button" data-action="run-analysis" ${(state.files.length || state.aiMaterialsEnabled) ? '' : 'disabled'}>Dateianalyse starten</button>
+      <button class="primary-button" data-action="run-analysis" ${state.coursePlanConfirmed ? '' : 'disabled'}>Plan analysieren und Kurstage erzeugen</button>
       ${renderAnalysisSummary()}
       ${groups.map((group) => renderFileReviewTable(group, grouped[group] || [])).join('')}
     `,
@@ -592,6 +595,7 @@ function bindEvents() {
   });
   document.querySelectorAll('[data-upload-area]').forEach((input) => input.addEventListener('change', handleFiles));
   document.querySelector('[data-plan-upload]')?.addEventListener('change', handlePlanUpload);
+  document.querySelector('[data-plan-sheet]')?.addEventListener('change', handlePlanSheetChange);
   document.querySelector('[data-plan-drop]')?.addEventListener('dragover', allowDrop);
   document.querySelector('[data-plan-drop]')?.addEventListener('dragleave', clearDrop);
   document.querySelector('[data-plan-drop]')?.addEventListener('drop', handlePlanDrop);
@@ -697,6 +701,14 @@ function addPlanFile(file) {
   saveRender();
 }
 
+function handlePlanSheetChange(event) {
+  if (!state.coursePlan) return;
+  state.coursePlan.selectedSheet = event.target.value;
+  state.coursePlan.planVariant = event.target.value;
+  state.coursePlanConfirmed = false;
+  saveRender();
+}
+
 function handleFiles(event) {
   const area = event.target.dataset.uploadArea;
   addUploadFiles(area, event.target.files || []);
@@ -747,6 +759,7 @@ function runAnalysis() {
   state.analysisCompleted = true;
   state.mappings = mapFiles();
   state.gaps = createGaps();
+  if (!state.mappings.length && state.coursePlan) state.mappings = mapFiles();
   state.activeStep = 'review';
   saveRender();
 }
@@ -799,9 +812,10 @@ function buildDraft() {
     alert('Unterrichtsplan ist Pflicht fuer Containerexport.');
     return;
   }
+  const draftFiles = createDraftFiles();
   state.draft = {
     containerId: state.course.courseId,
-    files: createDraftFiles(),
+    files: draftFiles,
     analysisReport: {
       importTime: new Date().toISOString(),
       courseName: state.course.courseName,
@@ -813,6 +827,10 @@ function buildDraft() {
       solutionCount: state.files.filter((file) => file.contentCategory.includes('solution')).length,
       quizCount: state.files.filter((file) => file.contentCategory === 'quiz').length,
       projectFileCount: state.files.filter((file) => file.contentCategory.startsWith('project')).length,
+      selectedSheet: state.coursePlan.selectedSheet,
+      coursePlanFile: state.coursePlan.sourceFile,
+      ueBlockCount: state.coursePlan.days.reduce((sum, day) => sum + ((day.ueBlocks || []).length), 0),
+      generatedFiles: draftFiles.map((file) => file.path),
       warnings: state.gaps.filter((gap) => gap.severity !== 'critical').map((gap) => gap.message),
       conflicts: state.gaps.filter((gap) => gap.severity === 'critical').map((gap) => gap.message),
       gaps: state.gaps.map((gap) => gap.message),
@@ -823,21 +841,92 @@ function buildDraft() {
 }
 
 function createDraftFiles() {
+  const releaseKeys = [];
+  const days = [];
+  const participantDays = [];
   const files = [
-    { path: 'manifest.json', content: JSON.stringify({ id: state.course.courseId, courseName: state.course.courseName, department: state.course.department, status: 'draft', containerType: 'factory-generated' }, null, 2) },
-    { path: 'container.json', content: JSON.stringify({ id: state.course.courseId, generatedBy: 'content-factory-lab' }, null, 2) }
+    { path: 'manifest.json', content: JSON.stringify({ id: state.course.courseId, displayName: state.course.courseName, courseName: state.course.courseName, courseId: state.course.courseId, department: state.course.department, category: 'course', containerType: 'learning-content', version: '0.1.0', status: 'draft', assignable: true, exportable: true, runtimeModes: { standalone: { enabled: true, entry: 'standalone/index.html' }, platform: { enabled: true, adapter: 'platform/adapter.json', catalog: 'catalog/days.json' } } }, null, 2) },
+    { path: 'container.json', content: JSON.stringify({ id: state.course.courseId, courseName: state.course.courseName, courseId: state.course.courseId, department: state.course.department, generatedBy: 'content-factory-lab', generatedFrom: 'course-plan', status: 'draft' }, null, 2) }
   ];
   state.mappings.forEach((mapping) => {
     const tag = `tag_${String(mapping.dayNumber).padStart(2, '0')}`;
-    const preview = state.previews.find((item) => item.dayNumber === mapping.dayNumber) || createPreview(mapping);
-    files.push({ path: `dozent/${tag}/webvariante.html`, content: preview.html });
-    files.push({ path: `dozent/${tag}/aufgaben.html`, content: listHtml('Aufgaben', mapping.tasks) });
-    files.push({ path: `dozent/${tag}/loesungen.html`, content: listHtml('Loesungen', mapping.solutions) });
-    files.push({ path: `teilnehmer/${tag}/webvariante.html`, content: preview.html });
-    files.push({ path: `teilnehmer/${tag}/aufgaben.html`, content: listHtml('Aufgaben', mapping.tasks) });
+    const draft = createPlanDayDraft(mapping.planDay);
+    const webTeacher = `dozent/${tag}/webvariante.html`;
+    const webParticipant = `teilnehmer/${tag}/webvariante.html`;
+    const tasksTeacher = `dozent/${tag}/aufgaben.html`;
+    const tasksParticipant = `teilnehmer/${tag}/aufgaben.html`;
+    const solutions = `dozent/${tag}/loesungen.html`;
+    const quizPath = `shared/quiz/${tag}.json`;
+    files.push({ path: webTeacher, content: draft.teacherWeb });
+    files.push({ path: tasksTeacher, content: draft.tasks });
+    files.push({ path: solutions, content: draft.solutions });
+    files.push({ path: webParticipant, content: draft.participantWeb });
+    files.push({ path: tasksParticipant, content: draft.tasks });
+    files.push({ path: quizPath, content: draft.quiz });
+    files.push({ path: `reviews/${tag}.json`, content: draft.review });
+    days.push({ id: `day-${mapping.dayNumber}`, dayNumber: mapping.dayNumber, title: mapping.planDay.title, releaseKey: tag, theme: mapping.planDay.mainTopic, webTeacher, webParticipant, tasksTeacher, tasksParticipant, solutions, quizzes: [quizPath], sourceRefs: [] });
+    participantDays.push({ dayNumber: mapping.dayNumber, title: mapping.planDay.title, releaseKey: tag, path: webParticipant, tasksPath: tasksParticipant });
+    releaseKeys.push(tag, `${tag}_web`, `${tag}_tasks`, `${tag}_solutions`, `${tag}_quiz`);
   });
-  files.push({ path: 'source-map.json', content: JSON.stringify({ days: state.mappings }, null, 2) });
+  files.push({ path: 'dozent/index.html', content: indexHtml('Dozentenbereich', days.map((day) => day.webTeacher), true) });
+  files.push({ path: 'teilnehmer/index.html', content: indexHtml('Teilnehmerbereich', participantDays.map((day) => day.path), false) });
+  files.push({ path: 'catalog/days.json', content: JSON.stringify(days, null, 2) });
+  files.push({ path: 'catalog/projects.json', content: '[]' });
+  files.push({ path: 'catalog/tools.json', content: '[]' });
+  files.push({ path: 'catalog/participant-content.json', content: JSON.stringify(participantDays, null, 2) });
+  files.push({ path: 'catalog/release-keys.json', content: JSON.stringify([...new Set(releaseKeys)], null, 2) });
+  files.push({ path: 'shared/assets/.gitkeep', content: '' });
+  files.push({ path: 'shared/metadata/container.json', content: JSON.stringify({ courseName: state.course.courseName, courseId: state.course.courseId, department: state.course.department }, null, 2) });
+  files.push({ path: 'standalone/index.html', content: standaloneHtml(days) });
+  files.push({ path: 'standalone/standalone.js', content: "document.querySelector('#app').innerHTML='<h1>Standalone-Draft</h1><p>Keine echte Plattform-Freigabe.</p>';" });
+  files.push({ path: 'standalone/standalone.css', content: 'body{font-family:Arial,sans-serif;margin:24px;color:#0b1b33}button{padding:8px 12px}' });
+  files.push({ path: 'platform/adapter.json', content: JSON.stringify({ contentContainerId: state.course.courseId, courseName: state.course.courseName, courseId: state.course.courseId, department: state.course.department, supportedReleaseKeys: [...new Set(releaseKeys)], roles: { teacher: { catalog: 'catalog/days.json', canSeeSolutions: true }, participant: { catalog: 'catalog/participant-content.json', canSeeSolutions: false } }, integration: { requiresCourseInstance: true, usesReleaseStates: true, usesCourseMembers: true, usesAuditLog: true } }, null, 2) });
+  files.push({ path: 'platform/route-map.json', content: JSON.stringify({ standalone: 'standalone/index.html', teacherEntry: 'dozent/index.html', participantEntry: 'teilnehmer/index.html', catalog: 'catalog/days.json' }, null, 2) });
+  files.push({ path: 'platform/integration.json', content: JSON.stringify({ expectsFromPlatform: ['CourseInstance', 'CourseMembers', 'ReleaseStates'], containsRuntimeUsers: false, containsDatabaseLogic: false }, null, 2) });
+  files.push({ path: 'source-map.json', content: JSON.stringify({ generatedFrom: 'course-plan', coursePlan: { originalFileName: state.coursePlan.sourceFile, selectedSheet: state.coursePlan.selectedSheet, warnings: state.coursePlan.warnings }, generatedFiles: files.map((file) => file.path) }, null, 2) });
+  files.push({ path: 'README.md', content: `# ${state.course.courseName}\n\nDraft aus Unterrichtsplan. Standalone-Draft, keine echte Plattform-Freigabe.\n` });
   return files;
+}
+
+function createPlanDayDraft(day) {
+  const blocks = day.ueBlocks || [];
+  const learnerTasks = blocks.map((block) => block.learnerTask).filter(Boolean);
+  const teacherHints = blocks.map((block) => block.teacherTask || block.evaluation).filter(Boolean);
+  const resources = blocks.map((block) => block.resources).filter(Boolean);
+  const warnings = [];
+  if (!learnerTasks.length) warnings.push('Keine Lernaufgabe im Unterrichtsplan erkannt.');
+  if (!resources.length) warnings.push('Keine Ressourcen im Unterrichtsplan erkannt.');
+  return {
+    teacherWeb: pageHtml(`${state.course.courseName} - ${day.title}`, `<p><strong>Automatisch aus Unterrichtsplan erzeugt.</strong></p><h1>${escapeHtml(day.title)}</h1><h2>Tagesziel</h2>${htmlList(day.learningGoals)}<h2>Themen</h2><p>${escapeHtml(day.mainTopic)}</p>${htmlList(day.subTopics)}<h2>UE-Bloecke</h2>${ueTable(blocks, true)}<h2>Dozentenhinweise</h2>${htmlList(teacherHints)}<h2>Ressourcen</h2>${htmlList(resources)}${warnings.length ? `<h2>Offene Punkte</h2>${htmlList(warnings)}` : ''}`),
+    participantWeb: pageHtml(`${state.course.courseName} - ${day.title}`, `<p><strong>Automatisch aus Unterrichtsplan erzeugt.</strong></p><h1>${escapeHtml(day.title)}</h1><h2>Tagesziel</h2>${htmlList(day.learningGoals)}<h2>Themen</h2><p>${escapeHtml(day.mainTopic)}</p>${htmlList(day.subTopics)}<h2>Lernaufgaben</h2>${htmlList(learnerTasks.length ? learnerTasks : ['Aufgabe noch ergaenzen'])}<h2>Materialien/Ressourcen</h2>${htmlList(resources.length ? resources : ['Material noch ergaenzen'])}`),
+    tasks: pageHtml(`${state.course.courseName} - Aufgaben ${day.title}`, `<p><strong>Automatisch aus Unterrichtsplan erzeugt.</strong></p><h1>Aufgaben</h1>${htmlList(learnerTasks.length ? learnerTasks : ['Aufgabe noch ergaenzen'])}`),
+    solutions: pageHtml(`${state.course.courseName} - Loesungen ${day.title}`, `<p><strong>Automatisch aus Unterrichtsplan erzeugt.</strong></p><h1>Loesungshinweise</h1>${htmlList(teacherHints.length ? teacherHints : ['Loesung noch ergaenzen'])}`),
+    quiz: JSON.stringify({ dayNumber: day.dayNumber, status: 'draft', generatedFrom: 'course-plan', questions: [], note: 'Quiz noch zu ergaenzen. Es wurden keine fachlichen Fragen erfunden.' }, null, 2),
+    review: JSON.stringify({ dayNumber: day.dayNumber, status: 'draft', generatedFrom: 'course-plan', warnings, needsHumanReview: true }, null, 2)
+  };
+}
+
+function pageHtml(title, body) {
+  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head><body>${body}</body></html>`;
+}
+
+function htmlList(items) {
+  const clean = (items || []).map((item) => String(item || '').trim()).filter(Boolean);
+  return `<ul>${(clean.length ? clean : ['Noch zu ergaenzen']).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+}
+
+function ueTable(blocks, teacher) {
+  if (!blocks.length) return '<p>Keine UE-Bloecke erkannt.</p>';
+  return `<table><thead><tr><th>Zeit</th><th>Thema</th><th>${teacher ? 'Lehraufgabe' : 'Lernaufgabe'}</th><th>Ressourcen</th></tr></thead><tbody>${blocks.map((block) => `<tr><td>${escapeHtml(block.time || '')}</td><td>${escapeHtml(block.topic || '')}</td><td>${escapeHtml((teacher ? block.teacherTask : block.learnerTask) || '')}</td><td>${escapeHtml(block.resources || '')}</td></tr>`).join('')}</tbody></table>`;
+}
+
+function indexHtml(title, paths, teacher) {
+  return pageHtml(`${state.course.courseName} - ${title}`, `<h1>${escapeHtml(state.course.courseName)}</h1><h2>${escapeHtml(title)}</h2><p>${teacher ? 'Dozentenansicht mit Hinweisen.' : 'Teilnehmeransicht mit freigegebenen Aufgaben und Materialien.'}</p><ul>${paths.map((path) => `<li><a href="../${path}">${escapeHtml(path)}</a></li>`).join('')}</ul>`);
+}
+
+function standaloneHtml(days) {
+  const embedded = escapeHtml(JSON.stringify({ courseName: state.course.courseName, courseId: state.course.courseId, days }, null, 2));
+  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>${escapeHtml(state.course.courseName)} Standalone</title><link rel="stylesheet" href="standalone.css"></head><body><header><strong>${escapeHtml(state.course.courseName)}</strong><span>Standalone-Draft: keine echte Plattform-Freigabe</span></header><main id="app"><h1>Tagesnavigation</h1><pre>${embedded}</pre><p>Dozentenansicht zeigt Hinweise, Teilnehmer-Vorschau zeigt keine Loesungen.</p></main><script src="standalone.js"></script></body></html>`;
 }
 
 function getGate(step) {
@@ -854,7 +943,6 @@ function getMissing(step) {
   if (!state.coursePlan) missing.push('Bitte laden Sie zuerst einen gueltigen Unterrichtsplan hoch.');
   if (!state.coursePlanConfirmed) missing.push('Bitte bestaetigen Sie den Unterrichtsplan.');
   if (step === 'uploads') return missing;
-  if (!state.aiMaterialsEnabled && !state.files.some((file) => file.uploadArea !== 'course-plan' && !file.ignored)) missing.push('Bitte laden Sie mindestens ein Material/ZIP-Paket hoch oder aktivieren Sie KI-Materialien.');
   if (step === 'review') return missing;
   if (!state.analysisCompleted) missing.push('Bitte fuehren Sie zuerst die Dateianalyse aus.');
   if (step === 'day-mapping') return missing;
@@ -875,7 +963,7 @@ function statusFor(step) {
   if (state.activeStep === step) return 'active';
   if (step === 'course-data' && !validateCourseData().length) return 'done';
   if (step === 'course-plan' && state.coursePlanConfirmed) return 'done';
-  if (step === 'uploads' && state.files.length) return 'done';
+  if (step === 'uploads' && state.coursePlanConfirmed) return 'done';
   if (step === 'review' && state.analysisCompleted && !openReviewFiles().length) return 'done';
   if (step === 'day-mapping' && allMappingDaysHandled()) return 'done';
   if (step === 'gap-analysis' && state.gaps.some((gap) => gap.severity === 'critical' && gap.state === 'open')) return 'error';
@@ -932,7 +1020,7 @@ function classifyFile(fileName, uploadArea, size = 0) {
 
 function createPlan(fileName) {
   const title = state.course.courseName || fileName.replace(/\.(xlsx|xlsm|docx|pdf)$/i, '').replace(/[_-]+/g, ' ');
-  return { sourceFile: fileName, sheetCount: 1, courseTitle: title, courseId: state.course.courseId || createCourseIdSuggestion(title), department: state.course.department || 'ALLGEMEIN', warnings: ['Unterrichtsplan-Inhalte werden im MVP noch nicht vollstaendig gelesen. Bitte Vorschau pruefen.'], unclearRows: [], days: [1, 2, 3].map((day) => ({ dayNumber: day, title: `Tag ${day}`, mainTopic: day === 1 ? title : `Themenblock ${day}`, subTopics: [], learningGoals: ['Aus dem Unterrichtsplan abgeleitet'] })) };
+  return { sourceFile: fileName, selectedSheet: 'Tabelle1', availableSheets: ['Tabelle1', 'Planvariante A'], planVariant: 'Tabelle1', totalDays: 3, courseTitle: title, courseId: state.course.courseId || createCourseIdSuggestion(title), department: state.course.department || 'ALLGEMEIN', warnings: ['Excel-Inhalte werden im Browser-MVP per Fallback gelesen. Bitte Tage pruefen.'], unclearRows: [], days: [1, 2, 3].map((day) => ({ dayNumber: day, title: `Tag ${day} - ${day === 1 ? title : `Themenblock ${day}`}`, mainTopic: day === 1 ? title : `Themenblock ${day}`, subTopics: [], learningGoals: ['Aus dem Unterrichtsplan abgeleitet'], ueBlocks: [{ ue: day, time: '', topic: day === 1 ? title : `Themenblock ${day}`, learnerTask: 'Aufgabe noch ergaenzen', teacherTask: 'Dozentenhinweis noch ergaenzen', resources: 'Material noch ergaenzen', isBreak: false }], pauses: [], requiredOutputs: ['Material noch ergaenzen'] })) };
 }
 
 function mapFiles() {

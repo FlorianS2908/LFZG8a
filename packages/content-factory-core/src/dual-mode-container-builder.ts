@@ -4,6 +4,7 @@ import { createSourceMap } from './source-map-service.ts';
 import { normalizeCourseId } from './naming/course-name-normalizer.ts';
 import { normalizeVisibleOutput, runNamingConsistency } from './naming/naming-consistency-service.ts';
 import { createNamingReport } from './naming/naming-report-service.ts';
+import { createDayDraftFromPlan } from './plan-day-draft-generator.ts';
 
 export function buildDualModeContainer(input: {
   coursePlan?: CoursePlan;
@@ -20,9 +21,18 @@ export function buildDualModeContainer(input: {
   const department: DepartmentKey = input.coursePlan.department || 'ALLGEMEIN';
   const files: VirtualFile[] = [];
   const dayCatalog: Array<{
+    id: string;
     dayNumber: number;
     title: string;
     releaseKey: string;
+    theme: string;
+    webTeacher: string;
+    webParticipant: string;
+    tasksTeacher: string;
+    tasksParticipant: string;
+    solutions: string;
+    quizzes: string[];
+    sourceRefs: string[];
     teacherPath: string;
     participantPath: string;
     tasksPath: string;
@@ -53,34 +63,48 @@ export function buildDualModeContainer(input: {
   input.mappings.forEach((mapping) => {
     const tag = `tag_${String(mapping.dayNumber).padStart(2, '0')}`;
     const preview = createDayPreview(mapping);
+    const planDraft = createDayDraftFromPlan(mapping.planDay, courseName);
     const teacherBase = `dozent/${tag}`;
     const participantBase = `teilnehmer/${tag}`;
-    const releaseKey = `${tag}.webvariante`;
-    const tasksKey = `${tag}.aufgaben`;
-    const solutionsKey = `${tag}.loesungen`;
+    const releaseKey = tag;
+    const webKey = `${tag}_web`;
+    const tasksKey = `${tag}_tasks`;
+    const solutionsKey = `${tag}_solutions`;
+    const quizKey = `${tag}_quiz`;
     const teacherWeb = `${teacherBase}/webvariante.html`;
     const teacherTasks = `${teacherBase}/aufgaben.html`;
     const teacherSolutions = `${teacherBase}/loesungen.html`;
     const participantWeb = `${participantBase}/webvariante.html`;
     const participantTasks = `${participantBase}/aufgaben.html`;
+    const quizPath = `shared/quiz/${tag}.json`;
 
-    files.push({ path: teacherWeb, content: pageHtml(`${courseName} - ${mapping.planDay.title}`, preview.html, courseName) });
-    files.push({ path: teacherTasks, content: createListHtml(`${courseName} - Aufgaben`, mapping.tasks, courseName) });
-    files.push({ path: teacherSolutions, content: createListHtml(`${courseName} - Loesungen`, mapping.solutions, courseName) });
-    files.push({ path: participantWeb, content: createParticipantDayHtml(courseName, mapping.planDay.title, mapping.planDay.mainTopic) });
-    files.push({ path: participantTasks, content: createListHtml(`${courseName} - Aufgaben`, mapping.tasks, courseName) });
-    files.push({ path: `reviews/${tag}.json`, content: json({ status: 'draft', courseName, dayNumber: mapping.dayNumber, warnings: preview.warnings, gaps: input.gapAnalysis.gaps }) });
+    files.push({ path: teacherWeb, content: mapping.files.length ? pageHtml(`${courseName} - ${mapping.planDay.title}`, preview.html, courseName) : planDraft.teacherWebHtml });
+    files.push({ path: teacherTasks, content: mapping.tasks.length ? createListHtml(`${courseName} - Aufgaben`, mapping.tasks, courseName) : planDraft.teacherTasksHtml });
+    files.push({ path: teacherSolutions, content: mapping.solutions.length ? createListHtml(`${courseName} - Loesungen`, mapping.solutions, courseName) : planDraft.solutionsHtml });
+    files.push({ path: participantWeb, content: planDraft.participantWebHtml });
+    files.push({ path: participantTasks, content: mapping.tasks.length ? createListHtml(`${courseName} - Aufgaben`, mapping.tasks, courseName) : planDraft.participantTasksHtml });
+    files.push({ path: quizPath, content: planDraft.quizJson });
+    files.push({ path: `reviews/${tag}.json`, content: planDraft.reviewJson });
     dayCatalog.push({
+      id: `day-${mapping.dayNumber}`,
       dayNumber: mapping.dayNumber,
       title: mapping.planDay.title,
       releaseKey,
+      theme: mapping.planDay.mainTopic,
+      webTeacher: teacherWeb,
+      webParticipant: participantWeb,
+      tasksTeacher: teacherTasks,
+      tasksParticipant: participantTasks,
+      solutions: teacherSolutions,
+      quizzes: [quizPath],
+      sourceRefs: [],
       teacherPath: teacherWeb,
       participantPath: participantWeb,
       tasksPath: teacherTasks,
       solutionsPath: teacherSolutions
     });
     participantCatalog.push({ dayNumber: mapping.dayNumber, title: mapping.planDay.title, releaseKey, path: participantWeb, tasksPath: participantTasks });
-    releaseKeys.push(releaseKey, tasksKey, solutionsKey);
+    releaseKeys.push(releaseKey, webKey, tasksKey, solutionsKey, quizKey);
   });
 
   files.push({ path: 'dozent/index.html', content: createIndexHtml(courseName, 'Dozentenbereich', dayCatalog.map((day) => day.teacherPath), true) });
@@ -120,7 +144,16 @@ export function buildDualModeContainer(input: {
     containsRuntimeUsers: false,
     containsDatabaseLogic: false
   }) });
-  files.push({ path: 'source-map.json', content: json(createSourceMap(input.mappings)) });
+  files.push({ path: 'source-map.json', content: json({
+    generatedFrom: 'course-plan',
+    coursePlan: {
+      originalFileName: input.coursePlan.sourceFile || '',
+      selectedSheet: input.coursePlan.selectedSheet || 'Tabelle1',
+      warnings: input.coursePlan.warnings
+    },
+    sourceMap: createSourceMap(input.mappings),
+    generatedFiles: files.map((file) => file.path)
+  }) });
 
   const report = {
     importTime: new Date().toISOString(),
@@ -133,6 +166,10 @@ export function buildDualModeContainer(input: {
     solutionCount: input.mappings.reduce((sum, mapping) => sum + mapping.solutions.length, 0),
     quizCount: input.mappings.reduce((sum, mapping) => sum + mapping.quizzes.length, 0),
     projectFileCount: input.mappings.reduce((sum, mapping) => sum + mapping.projectFiles.length, 0),
+    selectedSheet: input.coursePlan.selectedSheet,
+    coursePlanFile: input.coursePlan.sourceFile,
+    ueBlockCount: input.coursePlan.days.reduce((sum, day) => sum + (day.ueBlocks?.length || 0), 0),
+    generatedFiles: files.map((file) => file.path),
     warnings: input.gapAnalysis.warnings,
     conflicts: input.gapAnalysis.conflicts,
     gaps: input.gapAnalysis.gaps,

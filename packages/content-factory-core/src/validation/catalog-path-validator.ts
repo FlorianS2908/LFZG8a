@@ -3,9 +3,31 @@ import type { DraftContainer } from '../types.ts';
 export function validateCatalogPaths(draft: DraftContainer): string[] {
   const errors: string[] = [];
   const paths = new Set(draft.files.map((file) => file.path));
-  const days = readJson<Array<{ teacherPath: string; participantPath: string; tasksPath?: string; solutionsPath?: string }>>(draft, 'catalog/days.json', []);
+  const days = readJson<Array<{
+    teacherPath?: string;
+    participantPath?: string;
+    tasksPath?: string;
+    solutionsPath?: string;
+    webTeacher?: string;
+    webParticipant?: string;
+    tasksTeacher?: string;
+    tasksParticipant?: string;
+    solutions?: string;
+    quizzes?: string[];
+  }>>(draft, 'catalog/days.json', []);
   days.forEach((day) => {
-    [day.teacherPath, day.participantPath, day.tasksPath, day.solutionsPath].filter(Boolean).forEach((path) => {
+    [
+      day.teacherPath,
+      day.participantPath,
+      day.tasksPath,
+      day.solutionsPath,
+      day.webTeacher,
+      day.webParticipant,
+      day.tasksTeacher,
+      day.tasksParticipant,
+      day.solutions,
+      ...(day.quizzes || [])
+    ].filter(Boolean).forEach((path) => {
       if (!paths.has(path as string)) errors.push(`catalog/days.json verweist auf fehlenden Pfad: ${path}`);
     });
   });

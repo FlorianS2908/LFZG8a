@@ -2,6 +2,8 @@
 
 Der Core baut Draft-Container fuer das ContentFactory/ContainerFactory Lab. Er klassifiziert Uploads, mappt Dateien auf Unterrichtstage, erkennt Luecken und erzeugt Dual-Mode-Container.
 
+Der Plan-to-Container-MVP erzeugt Container auch ohne Zusatzmaterialien direkt aus einem Unterrichtsplan. `createDayDraftFromPlan` baut pro Tag lokale Template-Inhalte, markiert sie als automatisch aus dem Unterrichtsplan erzeugt und trennt Loesungshinweise strikt in den Dozentenbereich.
+
 Dual-Mode bedeutet:
 
 - lokale Standalone-Vorschau ueber `standalone/index.html`
