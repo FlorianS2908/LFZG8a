@@ -221,6 +221,8 @@ test('content factory productive MVP creates draft with runtime modes and standa
     const sourceMap = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'source-map.json'), 'utf8'));
     const standalone = fs.readFileSync(path.join(draft.storagePath, 'standalone', 'index.html'), 'utf8');
     const reportHtml = fs.readFileSync(path.join(draft.storagePath, 'reports', `${draft.containerId}-analysis-report.html`), 'utf8');
+    const testProtocol = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'reports', 'testprotokoll.json'), 'utf8'));
+    const testProtocolHtml = fs.readFileSync(path.join(draft.storagePath, 'reports', 'testprotokoll.html'), 'utf8');
     const artifacts = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'artifacts.json'), 'utf8'));
 
     assert.equal(draftDay.warnings.some((warning) => /OpenAI ist nicht konfiguriert/.test(warning)), true);
@@ -246,8 +248,21 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.equal(typeof draft.analysisReport.curriculumQuality.score, 'number');
     assert.equal(draft.analysisReport.containerProfile.courseType, 'java-maven');
     assert.ok(draft.analysisReport.generatedArtifacts.length > 0);
+    assert.equal(draft.analysisReport.testProtocol.path, 'reports/testprotokoll.html');
+    assert.equal(fs.existsSync(draft.testProtocolPath), true);
+    assert.ok(['passed', 'warning', 'failed'].includes(testProtocol.overallStatus));
+    assert.equal(testProtocol.checks.some((check) => check.group === 'Preflight'), true);
+    assert.equal(testProtocol.checks.some((check) => check.group === 'Curriculum'), true);
+    assert.equal(testProtocol.checks.some((check) => check.group === 'Artefakte'), true);
+    assert.equal(testProtocol.checks.some((check) => check.group === 'Export'), true);
+    assert.equal(testProtocol.checks.some((check) => check.group === 'Sicherheit'), true);
+    assert.ok(testProtocol.manualChecks.length >= 8);
+    assert.doesNotMatch(JSON.stringify(testProtocol), /Originaltext|Reference chunk|Buchseite|rawText|textPreview|reference-library|chunks\.json|extracted\.json/i);
+    assert.doesNotMatch(testProtocolHtml, /Originaltext|Reference chunk|Buchseite|rawText|textPreview|reference-library|chunks\.json|extracted\.json/i);
+    assert.doesNotMatch(JSON.stringify(participantContent), /testprotokoll/i);
     assert.equal(draft.analysisReport.fallbackUsed, true);
     assert.match(reportHtml, /<h2>Quality<\/h2>/);
+    assert.match(reportHtml, /<h2>Testprotokoll<\/h2>/);
     assert.doesNotMatch(reportHtml, /Originaltext|Reference chunk|Buchseite/i);
     assert.equal(draft.validation.isValid, true);
   } finally {
@@ -424,6 +439,12 @@ test('content factory artifact suggestions respect audience and safe formats', (
     containerProfile: { courseType: 'uml-pap' },
     targetAudience: { priorKnowledge: 'basic' }
   }).artifactSuggestions;
+  const youngJavaMaven = decideArtifactSuggestions({
+    topic: { id: 't5', title: 'Klassen' },
+    day: { dayNumber: 5 },
+    containerProfile: { courseType: 'java-maven' },
+    targetAudience: { ageRange: '16-20', priorKnowledge: 'basic', learningLevel: 'basic' }
+  }).artifactSuggestions;
 
   assert.equal(beginnerJava.some((item) => item.format === 'java'), true);
   assert.equal(beginnerJava.some((item) => item.format === 'maven-project'), false);
@@ -432,6 +453,20 @@ test('content factory artifact suggestions respect audience and safe formats', (
   assert.equal(sql.some((item) => item.format === 'sql'), true);
   assert.equal(sql.some((item) => /phpMyAdmin/.test(item.title)), true);
   assert.equal(diagram.some((item) => item.format === 'drawio'), true);
+  assert.equal(youngJavaMaven.some((item) => item.format === 'maven-project'), false);
+  assert.equal(youngJavaMaven.some((item) => /16-20/.test(item.targetAudienceImpact)), true);
+});
+
+test('content factory local provider adapts content for adult work practice', async () => {
+  const provider = new LocalHeuristicProvider();
+  const result = await provider.generateDayDraft({
+    day: { dayNumber: 1, title: 'Datenbanken', ueBlocks: [{ topic: 'JOINs' }] },
+    targetAudience: { ageRange: '30+', priorKnowledge: 'intermediate', learningLevel: 'advanced', difficultyMode: 'normal-and-hard' },
+    containerProfile: { courseType: 'sql' }
+  });
+
+  assert.match(JSON.stringify(result.tasks), /Arbeitssituation|beruflich/i);
+  assert.match(JSON.stringify(result.webvariant.teacherHtmlSections), /berufspraktisch|Arbeitssituationen/i);
 });
 
 test('content factory artifact generators create safe files and validate blocked executables', () => {
@@ -507,12 +542,15 @@ test('content factory preflight blocks incomplete input and warns before cloud f
   const red = runPreflight({});
   const yellow = runPreflight(createApprovedTestInput({ aiMode: 'openai' }), { aiStatus: { providers: { openai: { configured: false } } } });
   const green = runPreflight(createApprovedTestInput({ aiMode: 'local' }));
+  const unknownAge = runPreflight(createApprovedTestInput({ targetAudience: { ...createApprovedTestInput().targetAudience, ageRange: 'unknown' } }));
 
   assert.equal(red.status, 'red');
   assert.ok(red.errors.some((error) => /Kursname|CurriculumPlanDraft/.test(error)));
   assert.equal(yellow.status, 'yellow');
   assert.ok(yellow.warnings.some((warning) => /OpenAI ist nicht konfiguriert/.test(warning)));
   assert.equal(green.status, 'green');
+  assert.equal(unknownAge.status, 'yellow');
+  assert.ok(unknownAge.warnings.some((warning) => /Zielgruppenalter/.test(warning)));
 });
 
 test('content factory presets use safe defaults for beginner code database and diagrams', () => {
@@ -555,6 +593,13 @@ test('content factory test draft respects preflight gates and cleanup removes ge
   }
 });
 
+test('content factory ui exposes test protocol open action', () => {
+  const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8');
+
+  assert.match(ui, /Testprotokoll oeffnen/);
+  assert.match(ui, /data-wizard-open="test-protocol"/);
+});
+
 test('content factory requires an admin session', () => {
   const { service, cleanup } = createTempFactory();
 
@@ -570,6 +615,7 @@ function createApprovedTestInput(patch = {}) {
   const course = { courseName: 'Java Grundlagen', courseId: 'java-grundlagen', department: 'FIAE' };
   const targetAudience = {
     department: 'FIAE',
+    ageRange: '20-30',
     educationContext: 'umschulung',
     priorKnowledge: 'basic',
     learningLevel: 'basic',

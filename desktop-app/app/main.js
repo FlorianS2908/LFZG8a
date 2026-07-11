@@ -1179,7 +1179,9 @@ ipcMain.handle('factory:open-generated-draft', (event, containerId, target = 'st
     ? draft.storagePath
     : target === 'report'
       ? path.join(draft.storagePath, 'reports', `${containerId}-analysis-report.html`)
-      : path.join(draft.storagePath, 'standalone', 'index.html');
+      : target === 'test-protocol'
+        ? path.join(draft.storagePath, 'reports', 'testprotokoll.html')
+        : path.join(draft.storagePath, 'standalone', 'index.html');
   if (target === 'folder') return shell.openPath(targetPath);
   return shell.openPath(targetPath);
 });

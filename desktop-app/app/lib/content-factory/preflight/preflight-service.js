@@ -28,6 +28,7 @@ function runPreflight(input = {}, options = {}) {
     checkOk('active-topics', 'Aktive Themen', (curriculum.days || []).flatMap((day) => day.topics || []).some((topic) => topic.active !== false), 'Mindestens ein aktives Thema fehlt.'),
     checkOk('quality-score', 'Quality Score', typeof curriculum.quality?.score === 'number', 'Curriculum Quality Score fehlt.', 'warning'),
     checkOk('prior-knowledge', 'Vorkenntnisse', Boolean(targetAudience.priorKnowledge), 'priorKnowledge fehlt.'),
+    checkOk('age-range', 'Zielgruppenalter', Boolean(targetAudience.ageRange && !['unknown', ''].includes(String(targetAudience.ageRange).toLowerCase())), 'Alter/Zielgruppenalter nicht gesetzt. Sichere Standardvorschlaege werden verwendet.', 'warning'),
     checkOk('learning-level', 'Lernniveau', Boolean(targetAudience.learningLevel), 'learningLevel fehlt.'),
     checkOk('difficulty-mode', 'Schwierigkeitsmodus', Boolean(targetAudience.difficultyMode), 'difficultyMode fehlt.'),
     checkOk('education-context', 'Bildungskontext', Boolean(targetAudience.educationContext || 'umschulung'), 'educationContext fehlt.', 'warning'),

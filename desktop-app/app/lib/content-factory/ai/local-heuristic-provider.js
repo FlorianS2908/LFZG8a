@@ -1,5 +1,5 @@
 const { normalizeDayGenerationResult } = require('./output-normalizer');
-const { decideArtifactSuggestions } = require('../container-profile/audience-artifact-decision-service');
+const { decideArtifactSuggestions, describeAgeRange } = require('../container-profile/audience-artifact-decision-service');
 
 class LocalHeuristicProvider {
   constructor() {
@@ -13,6 +13,7 @@ class LocalHeuristicProvider {
   async generateDayDraft(input = {}) {
     const day = input.day || {};
     const targetAudience = input.targetAudience || input.curriculumPlan?.targetAudience || {};
+    const ageProfile = describeAgeRange(targetAudience.ageRange);
     const dayNumber = Number(input.dayNumber || day.dayNumber || 1);
     const title = input.title || day.title || `Tag ${dayNumber}`;
     const goals = day.learningGoals?.length ? day.learningGoals : [`${mainTopic(day, title)} verstehen und anwenden.`];
@@ -25,8 +26,8 @@ class LocalHeuristicProvider {
     const solutions = createSolutions(tasks, blocks, dayNumber, sourceRefs, targetAudience);
     const quiz = createQuiz(blocks, dayNumber, sourceRefs, targetAudience);
     const artifacts = createArtifactPlan(day, dayNumber, input.containerProfile, targetAudience, input);
-    const teacherSections = createTeacherSections({ title, goals, blocks, tasks, solutions, quiz, sourceRefs, warnings, targetAudience });
-    const participantSections = createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRefs, targetAudience });
+    const teacherSections = createTeacherSections({ title, goals, blocks, tasks, solutions, quiz, sourceRefs, warnings, targetAudience, ageProfile });
+    const participantSections = createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRefs, targetAudience, ageProfile });
 
     return normalizeDayGenerationResult({
       dayNumber,
@@ -114,31 +115,36 @@ function normalizeBlocks(day, title) {
     }));
 }
 
-function createTeacherSections({ title, goals, blocks, tasks, solutions, quiz, sourceRefs, warnings, targetAudience }) {
+function createTeacherSections({ title, goals, blocks, tasks, solutions, quiz, sourceRefs, warnings, targetAudience, ageProfile }) {
   return [
-    section('Einstieg und Motivation', paragraph(`Starten Sie mit einer kurzen beruflichen Situation zu ${title}. Sammeln Sie Vorwissen und klaeren Sie, wozu das Thema im Arbeitsalltag gebraucht wird.`), sourceRefs),
+    section('Einstieg und Motivation', paragraph(`${teacherIntro(title, ageProfile)} Sammeln Sie Vorwissen und klaeren Sie, wozu das Thema gebraucht wird.`), sourceRefs),
     section('Lernziele', list(goals), sourceRefs),
     section('Vorwissen aktivieren', list(blocks.map((block) => `Begriff oder Erfahrung zu ${block.topic} abfragen und sichtbar sichern.`)), sourceRefs),
     section('Themenabschnitte', blocks.map((block) => `<p><strong>${escapeHtml(block.topic)}</strong><br>${escapeHtml(block.teacherTask)}</p>`).join(''), sourceRefs),
     section('Beispiel und Demo', list(blocks.map((block) => `Zeigen Sie ein kleines Beispiel zu ${block.topic} und markieren Sie typische Stolperstellen.`)), sourceRefs),
     section('Arbeitsphase', list(tasks.map((task) => `${task.title}: ${task.text}`)), sourceRefs),
-    section('Reflexion und Sicherung', paragraph(`Lassen Sie Ergebnisse vergleichen, Fachbegriffe korrigieren und offene Fragen notieren. ${targetAudience.examOrientation ? 'Schliessen Sie mit einer pruefungsnahen Kurzfrage ab.' : ''}`), sourceRefs),
+    section('Reflexion und Sicherung', paragraph(`Lassen Sie Ergebnisse vergleichen, Fachbegriffe korrigieren und offene Fragen notieren. ${ageProfile.group === 'adult' ? 'Verbinden Sie die Ergebnisse mit Arbeitssituationen der Teilnehmenden.' : ''} ${targetAudience.examOrientation ? 'Schliessen Sie mit einer pruefungsnahen Kurzfrage ab.' : ''}`), sourceRefs),
     section('Zusammenfassung und Ausblick', paragraph(`Sichern Sie die wichtigsten Erkenntnisse zu ${title} und leiten Sie zum naechsten Kurstag ueber.`), sourceRefs),
     section('Dozentenhinweise', list([...(warnings.length ? warnings : ['Fachliche Endpruefung empfohlen.']), `Quizfragen: ${quiz.length}`, `Erwartungshorizonte: ${solutions.length}`]), sourceRefs)
   ];
 }
 
-function createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRefs, targetAudience }) {
+function createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRefs, targetAudience, ageProfile }) {
   const stepHint = targetAudience.priorKnowledge === 'none' || targetAudience.needsStepByStep
     ? 'Arbeiten Sie Schritt fuer Schritt und notieren Sie Rueckfragen.'
     : 'Begruenden Sie Ihre Entscheidungen fachlich.';
+  const ageHint = ageProfile.group === 'young'
+    ? 'Nutzen Sie das Beispiel und pruefen Sie jeden Schritt einzeln.'
+    : ageProfile.group === 'adult'
+      ? 'Uebertragen Sie das Ergebnis auf eine berufliche Situation.'
+      : '';
   return [
     section('Einstieg', paragraph(`Heute geht es um ${title}. Ziel ist, die Begriffe einzuordnen und an einem Beispiel anzuwenden.`), sourceRefs),
     section('Lernziele', list(goals), sourceRefs),
     section('Vorwissen', list(blocks.map((block) => `Was wissen Sie bereits zu ${block.topic}? Notieren Sie ein Beispiel.`)), sourceRefs),
     section('Themenueberblick', list(blocks.map((block) => block.topic)), sourceRefs),
     section('Beispiel und Demo', paragraph(`Folgen Sie der Demo aufmerksam und markieren Sie die Schritte, die Sie spaeter selbst anwenden koennen.`), sourceRefs),
-    section('Arbeitsphase', list(tasks.map((task) => `${task.title}: ${task.text} ${stepHint}`)), sourceRefs),
+    section('Arbeitsphase', list(tasks.map((task) => `${task.title}: ${task.text} ${stepHint} ${ageHint}`)), sourceRefs),
     section('Reflexion', paragraph('Vergleichen Sie Ihr Vorgehen mit einer anderen Person und halten Sie zwei Erkenntnisse fest.'), sourceRefs),
     section('Zusammenfassung und Ausblick', paragraph(`Fassen Sie die wichtigsten Punkte zu ${title} in eigenen Worten zusammen.`), sourceRefs),
     section('Quiz-Vorbereitung', list(quiz.slice(0, 3).map((item) => item.text)), sourceRefs)
@@ -162,15 +168,29 @@ function createTasks(blocks, dayNumber, sourceRefs, targetAudience) {
 }
 
 function taskInstruction(topic, level, targetAudience) {
-  if (level === 'leicht') return `Erklaeren Sie den Begriff "${topic}" in drei Saetzen und nennen Sie ein einfaches Beispiel.`;
+  const ageProfile = describeAgeRange(targetAudience.ageRange);
+  if (level === 'leicht') {
+    return ageProfile.group === 'young'
+      ? `Erklaeren Sie "${topic}" in zwei kurzen Saetzen und ergaenzen Sie ein einfaches Beispiel.`
+      : `Erklaeren Sie den Begriff "${topic}" in drei Saetzen und nennen Sie ein einfaches Beispiel.`;
+  }
   if (level === 'schwer') {
+    if (ageProfile.group === 'adult') return `Uebertragen Sie "${topic}" auf eine berufliche Arbeitssituation, begruenden Sie Ihre Entscheidung und nennen Sie Risiken.`;
     return targetAudience.projectOrientation
       ? `Uebertragen Sie "${topic}" auf ein eigenes kleines Projektbeispiel, begruenden Sie Ihre Entscheidungen und dokumentieren Sie Risiken.`
       : `Analysieren Sie ein komplexeres Beispiel zu "${topic}", vergleichen Sie zwei Vorgehensweisen und begruenden Sie Ihre Empfehlung.`;
   }
+  if (ageProfile.group === 'young') return `Bearbeiten Sie ein gefuehrtes Beispiel zu "${topic}" Schritt fuer Schritt und markieren Sie offene Fragen.`;
+  if (ageProfile.group === 'adult') return `Erstellen Sie ein praxisnahes Beispiel zu "${topic}" aus einer Arbeitssituation und dokumentieren Sie Ihr Vorgehen.`;
   return targetAudience.examOrientation
     ? `Bearbeiten Sie eine pruefungsnahe Situation zu "${topic}" in 15 Minuten und dokumentieren Sie Vorgehen, Ergebnis und Begruendung.`
     : `Erstellen Sie ein nachvollziehbares Beispiel zu "${topic}" und dokumentieren Sie Ihr Vorgehen in Stichpunkten.`;
+}
+
+function teacherIntro(title, ageProfile) {
+  if (ageProfile.group === 'young') return `Starten Sie mit einem kurzen anschaulichen Beispiel zu ${title}.`;
+  if (ageProfile.group === 'adult') return `Starten Sie mit einer berufspraktischen Situation zu ${title}.`;
+  return `Starten Sie mit einer kurzen Situation zu ${title}.`;
 }
 
 function createSolutions(tasks, blocks, dayNumber, sourceRefs, targetAudience) {

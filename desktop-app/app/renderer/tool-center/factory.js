@@ -235,6 +235,7 @@ function renderPlanWizard() {
         <label>UE/Tag<input data-wizard-duration="uePerDay" type="number" min="1" value="${escapeHtml(wizard.duration.uePerDay)}"></label>
         <label>Gesamtstunden<input data-wizard-duration="totalHours" type="number" min="1" value="${escapeHtml(wizard.duration.totalHours)}"></label>
         <label>Gesamt-UE<input data-wizard-duration="totalUE" type="number" min="1" value="${escapeHtml(wizard.duration.totalUE)}"></label>
+        <label>Zielgruppenalter<select data-wizard-audience="ageRange">${['mixed', '16-20', '20-30', '30+', 'unknown'].map((value) => `<option value="${value}" ${wizard.targetAudience.ageRange === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
         <label>Vorkenntnisse<select data-wizard-audience="priorKnowledge">${['none', 'basic', 'intermediate', 'advanced'].map((value) => `<option value="${value}" ${wizard.targetAudience.priorKnowledge === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
         <label>Niveau<select data-wizard-audience="learningLevel">${['intro', 'basic', 'exam-prep', 'professional', 'advanced'].map((value) => `<option value="${value}" ${wizard.targetAudience.learningLevel === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
         <label>Schwierigkeit<select data-wizard-audience="difficultyMode">${['normal', 'normal-and-hard', 'easy-normal-hard'].map((value) => `<option value="${value}" ${wizard.targetAudience.difficultyMode === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
@@ -395,6 +396,7 @@ function renderTestRunResult(result) {
       <strong class="${css}">Testlauf: ${escapeHtml(result.status)}</strong>
       ${result.requiresConfirmation ? '<p class="status-line status-warning">Warnungen muessen fuer den Testlauf bestaetigt werden.</p>' : ''}
       ${result.containerId ? `<p>Container: ${escapeHtml(result.containerId)}</p><p>Pfad: ${escapeHtml(result.storagePath)}</p>` : ''}
+      ${result.testProtocol ? renderTestProtocolSummary(result.testProtocol) : ''}
       ${(result.errors || []).map((item) => `<p class="status-line status-error">${escapeHtml(item)}</p>`).join('')}
       ${(result.warnings || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}
     </div>
@@ -486,14 +488,23 @@ function renderGeneratedDraft(draft) {
         <div><dt>Tage</dt><dd>${escapeHtml(draft.analysisReport?.recognizedDays || 0)}</dd></div>
         <div><dt>Warnungen</dt><dd>${escapeHtml((draft.analysisReport?.warnings || []).length)}</dd></div>
         <div><dt>Validierung</dt><dd>${draft.validation?.isValid ? 'ok' : 'pruefen'}</dd></div>
+        <div><dt>Testprotokoll</dt><dd>${escapeHtml(draft.testProtocol?.overallStatus || draft.analysisReport?.testProtocol?.overallStatus || 'offen')}</dd></div>
       </dl>
+      ${renderTestProtocolSummary(draft.testProtocol || draft.analysisReport?.testProtocol)}
       <div class="button-row">
         <button class="secondary-button" type="button" data-wizard-open="standalone">Standalone oeffnen</button>
         <button class="secondary-button" type="button" data-wizard-open="folder">Ordner oeffnen</button>
         <button class="secondary-button" type="button" data-wizard-open="report">Analysebericht oeffnen</button>
+        <button class="secondary-button" type="button" data-wizard-open="test-protocol">Testprotokoll oeffnen</button>
       </div>
     </div>
   `;
+}
+
+function renderTestProtocolSummary(protocol) {
+  const summary = protocol?.summary || {};
+  if (!protocol) return '<p class="status-line">Testprotokoll wird beim naechsten Draft/Testlauf erzeugt.</p>';
+  return `<p class="status-line">Testprotokoll: ${escapeHtml(protocol.overallStatus || 'offen')} | passed ${escapeHtml(summary.passed || 0)} | warning ${escapeHtml(summary.warnings || 0)} | failed ${escapeHtml(summary.failed || 0)} | manuell ${escapeHtml(summary.manualChecks || 0)}</p>`;
 }
 
 function getWizardGates() {

@@ -4,6 +4,7 @@ function decideArtifactSuggestions(input = {}) {
   const topic = input.topic || {};
   const day = input.day || {};
   const targetAudience = input.targetAudience || {};
+  const ageProfile = describeAgeRange(targetAudience.ageRange);
   const profile = createDefaultContainerProfile(input.containerProfile || {});
   const base = {
     dayNumber: Number(day.dayNumber || input.dayNumber || 1),
@@ -12,6 +13,7 @@ function decideArtifactSuggestions(input = {}) {
     difficulty: audienceDifficulty(targetAudience),
     recommended: true,
     canBeChangedByUser: true,
+    ageProfile,
     warnings: []
   };
   const suggestions = [];
@@ -43,7 +45,7 @@ function addSuggestion(list, base, patch) {
     role: patch.role || 'participant',
     recommended: patch.recommended !== false,
     reason: patch.reason,
-    targetAudienceImpact: patch.targetAudienceImpact || 'An Zielgruppe und Vorkenntnisse angepasst.',
+    targetAudienceImpact: patch.targetAudienceImpact || base.ageProfile.impact,
     canBeChangedByUser: true,
     warnings: patch.warnings || []
   });
@@ -51,17 +53,17 @@ function addSuggestion(list, base, patch) {
 
 function addReadme(list, base, profile) {
   if (!profile.generateReadme) return;
-  addSuggestion(list, base, { title: `README zu ${base.topicTitle}`, kind: 'readme', format: 'md', role: 'shared', reason: 'Jeder Kurscontainer braucht eine sichere manuelle Orientierung.' });
+  addSuggestion(list, base, { title: `README zu ${base.topicTitle}`, kind: 'readme', format: 'md', role: 'shared', reason: `Jeder Kurscontainer braucht eine sichere manuelle Orientierung. ${base.ageProfile.reason}` });
 }
 
 function addJavaSuggestions(list, base, audience, forceMaven) {
   const advanced = ['intermediate', 'advanced'].includes(audience.priorKnowledge) || audience.learningLevel === 'advanced';
-  const useMaven = forceMaven || advanced;
+  const useMaven = advanced || (forceMaven && base.ageProfile.group !== 'young');
   if (useMaven) {
-    addSuggestion(list, base, { title: `Maven-Starter zu ${base.topicTitle}`, kind: 'project', format: 'maven-project', reason: 'Fortgeschrittene Zielgruppe kann mit Projektstruktur und Import in IDE arbeiten.' });
+    addSuggestion(list, base, { title: `Maven-Starter zu ${base.topicTitle}`, kind: 'project', format: 'maven-project', reason: `Fortgeschrittene Zielgruppe kann mit Projektstruktur und Import in IDE arbeiten. ${base.ageProfile.reason}` });
     addSuggestion(list, base, { title: `Maven-Loesungsprojekt zu ${base.topicTitle}`, kind: 'solution', format: 'maven-project', role: 'teacher', reason: 'Loesungsprojekt bleibt ausschliesslich im Dozentenbereich.' });
   } else {
-    addSuggestion(list, base, { title: `Einfache Java-Aufgabe zu ${base.topicTitle}`, kind: 'starter', format: 'java', reason: 'Keine oder geringe Java-Vorkenntnisse: einfache Datei ohne Maven, Packages und JUnit.', warnings: ['Maven wurde nicht automatisch vorgeschlagen, weil die Zielgruppe geringe Java-Vorkenntnisse hat.'] });
+    addSuggestion(list, base, { title: `Einfache Java-Aufgabe zu ${base.topicTitle}`, kind: 'starter', format: 'java', reason: `Keine oder geringe Java-Vorkenntnisse: einfache Datei ohne Maven, Packages und JUnit. ${base.ageProfile.reason}`, warnings: ['Maven wurde nicht automatisch vorgeschlagen, weil die Zielgruppe geringe Java-Vorkenntnisse oder junges Zielgruppenalter hat.'] });
     addSuggestion(list, base, { title: `Java-Loesung zu ${base.topicTitle}`, kind: 'solution', format: 'java', role: 'teacher', reason: 'Dozentenloesung als separate Java-Datei.' });
   }
   if (audience.examOrientation) addSuggestion(list, base, { title: `Codeverstaendnis zu ${base.topicTitle}`, kind: 'task', format: 'md', reason: 'Pruefungsorientierung: Code lesen, Fehler erkennen und Ausgabe begruenden.' });
@@ -69,7 +71,7 @@ function addJavaSuggestions(list, base, audience, forceMaven) {
 
 function addPythonSuggestions(list, base, audience) {
   const advanced = ['intermediate', 'advanced'].includes(audience.priorKnowledge);
-  addSuggestion(list, base, { title: `Python-Aufgaben zu ${base.topicTitle}`, kind: advanced ? 'project' : 'starter', format: 'py', reason: advanced ? 'Fortgeschrittene erhalten eine kleine Projektstruktur.' : 'Einsteiger erhalten einfache .py-Dateien.' });
+  addSuggestion(list, base, { title: `Python-Aufgaben zu ${base.topicTitle}`, kind: advanced && base.ageProfile.group !== 'young' ? 'project' : 'starter', format: 'py', reason: `${advanced && base.ageProfile.group !== 'young' ? 'Fortgeschrittene erhalten eine kleine Projektstruktur.' : 'Einsteiger erhalten einfache .py-Dateien.'} ${base.ageProfile.reason}` });
   addSuggestion(list, base, { title: `Python-Loesung zu ${base.topicTitle}`, kind: 'solution', format: 'py', role: 'teacher', reason: 'Loesung bleibt im Dozentenbereich.' });
   if (audience.needsStepByStep) addJupyterSuggestions(list, base, audience);
 }
@@ -81,7 +83,7 @@ function addJupyterSuggestions(list, base) {
 
 function addSqlSuggestions(list, base, audience) {
   addSuggestion(list, base, { title: `SQL-Starter zu ${base.topicTitle}`, kind: 'database', format: 'sql', reason: 'SQL-Dateien werden nur erzeugt, niemals automatisch ausgefuehrt.' });
-  addSuggestion(list, base, { title: `phpMyAdmin Importanleitung zu ${base.topicTitle}`, kind: 'setup', format: 'md', role: 'shared', reason: 'Einsteiger brauchen manuelle Importhinweise ohne CLI-Zwang.' });
+  addSuggestion(list, base, { title: `phpMyAdmin Importanleitung zu ${base.topicTitle}`, kind: 'setup', format: 'md', role: 'shared', reason: `${base.ageProfile.group === 'young' ? 'Junge Zielgruppen profitieren besonders von phpMyAdmin-Schritten.' : 'Einsteiger brauchen manuelle Importhinweise ohne CLI-Zwang.'} ${base.ageProfile.reason}` });
   addSuggestion(list, base, { title: `SQL-Loesungen zu ${base.topicTitle}`, kind: 'solution', format: 'sql', role: 'teacher', reason: 'Loesungsskripte nur im Dozentenbereich.' });
   if (['intermediate', 'advanced'].includes(audience.priorKnowledge)) addSuggestion(list, base, { title: `SQL-Vertiefung zu ${base.topicTitle}`, kind: 'database', format: 'sql', reason: 'Fortgeschrittene koennen Views, Transaktionen oder Procedures pruefen.' });
 }
@@ -92,7 +94,7 @@ function addPhpSuggestions(list, base) {
 }
 
 function addDiagramSuggestions(list, base) {
-  addSuggestion(list, base, { title: `Draw.io Vorlage zu ${base.topicTitle}`, kind: 'diagram', format: 'drawio', reason: 'Draw.io ist das sichere Primaerformat fuer Diagrammaufgaben.' });
+  addSuggestion(list, base, { title: `Draw.io Vorlage zu ${base.topicTitle}`, kind: 'diagram', format: 'drawio', reason: `${base.ageProfile.group === 'young' ? 'Vorbereitete Draw.io-Vorlage mit klarer Startstruktur.' : 'Draw.io ist das sichere Primaerformat fuer Diagrammaufgaben.'} ${base.ageProfile.reason}` });
   addSuggestion(list, base, { title: `Draw.io Loesung zu ${base.topicTitle}`, kind: 'solution', format: 'drawio', role: 'teacher', reason: 'Vollstaendigere Diagrammloesung nur im Dozentenbereich.' });
 }
 
@@ -108,6 +110,37 @@ function audienceDifficulty(audience = {}) {
   return 'normal';
 }
 
+function describeAgeRange(ageRange) {
+  const value = String(ageRange || 'unknown').toLowerCase();
+  if (value === '16-20') {
+    return {
+      group: 'young',
+      impact: 'Zielgruppenalter 16-20: kuerzere Aufgaben, klare Schrittfolge, mehr Beispiele und einfache Projektstruktur.',
+      reason: 'Zielgruppenalter 16-20 fuehrt zu kuerzeren Aufgaben, mehr Beispielen und reduzierter Projektkomplexitaet.'
+    };
+  }
+  if (value === '20-30') {
+    return {
+      group: 'standard',
+      impact: 'Zielgruppenalter 20-30: normale Aufgaben, moderate Transferanteile und passende Projektstruktur.',
+      reason: 'Zielgruppenalter 20-30 erlaubt moderate Transferanteile und normale Aufgabenlaenge.'
+    };
+  }
+  if (value === '30+' || value === '30-plus') {
+    return {
+      group: 'adult',
+      impact: 'Zielgruppenalter 30+: berufspraktische Beispiele und Transfer auf Arbeitssituationen.',
+      reason: 'Zielgruppenalter 30+ bevorzugt berufspraktische Beispiele und Arbeitssituationen.'
+    };
+  }
+  return {
+    group: 'safe-default',
+    impact: 'Zielgruppenalter mixed/unknown: sichere Standardvorschlaege wie bisher.',
+    reason: 'Kein klares Zielgruppenalter gesetzt; sichere Standardvorschlaege werden verwendet.'
+  };
+}
+
 module.exports = {
-  decideArtifactSuggestions
+  decideArtifactSuggestions,
+  describeAgeRange
 };

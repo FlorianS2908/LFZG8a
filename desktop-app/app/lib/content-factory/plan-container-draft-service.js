@@ -8,6 +8,8 @@ const { buildContainerProfile } = require('./container-profile/container-profile
 const { validateGeneratedArtifacts } = require('./container-profile/generated-artifact-validator');
 const { generateArtifactFiles } = require('./artifact-generators/artifact-generator-service');
 const { renderPreflightSummary } = require('./preflight/preflight-report-renderer');
+const { createTestProtocol } = require('./test-protocol/test-protocol-service');
+const { renderTestProtocolHtml } = require('./test-protocol/test-protocol-renderer');
 
 function createPlanContainerDraft(input = {}, options = {}) {
   const courseName = normalizeCourseName(input.course?.courseName || input.coursePlan?.courseTitle || 'Neuer Kurs');
@@ -27,12 +29,17 @@ function createPlanContainerDraft(input = {}, options = {}) {
   const files = createVirtualFiles({ courseName, courseId, department, containerId, coursePlan: input.coursePlan, dayResults, aiMode: input.aiMode || 'local', references: input.references || [], profileContext });
   files.forEach((file) => writeFile(rootDir, file.path, file.content));
   const namingReport = createNamingReport(files, { courseName, courseId });
+  const protocolInput = createProtocolInput({ courseName, containerId, input, dayResults, files, rootDir, profileContext });
+  let testProtocol = createTestProtocol(protocolInput);
+  writeTestProtocol(rootDir, testProtocol);
   const validation = validateGeneratedContainer(rootDir, { courseName, courseId });
   const artifactValidation = validateGeneratedArtifacts(files, profileContext.artifactTargets);
   validation.errors.push(...artifactValidation.errors);
   validation.warnings.push(...artifactValidation.warnings);
   validation.isValid = validation.errors.length === 0;
-  const analysisReport = createAnalysisReport({ courseName, courseId, department, input, dayResults, files, namingReport, validation, rootDir, profileContext });
+  testProtocol = createTestProtocol({ ...protocolInput, validation });
+  writeTestProtocol(rootDir, testProtocol);
+  const analysisReport = createAnalysisReport({ courseName, courseId, department, input, dayResults, files, namingReport, validation, rootDir, profileContext, testProtocol });
   writeJson(path.join(rootDir, 'reports', `${containerId}-analysis-report.json`), analysisReport);
   writeFile(rootDir, `reports/${containerId}-analysis-report.html`, renderReportHtml(analysisReport));
   writeJson(path.join(rootDir, 'container.json'), {
@@ -49,7 +56,34 @@ function createPlanContainerDraft(input = {}, options = {}) {
     storagePath: rootDir,
     standalonePath: path.join(rootDir, 'standalone', 'index.html'),
     reportPath: path.join(rootDir, 'reports', `${containerId}-analysis-report.html`),
+    testProtocolPath: path.join(rootDir, 'reports', 'testprotokoll.html'),
+    testProtocol,
     analysisReport,
+    validation
+  };
+}
+
+function writeTestProtocol(rootDir, protocol) {
+  writeJson(path.join(rootDir, 'reports', 'testprotokoll.json'), protocol);
+  writeFile(rootDir, 'reports/testprotokoll.html', renderTestProtocolHtml(protocol));
+}
+
+function createProtocolInput({ courseName, containerId, input, dayResults, files, rootDir, profileContext, validation = null }) {
+  const curriculum = input.approvedCurriculumPlan || input.curriculumPlan || {};
+  return {
+    containerId,
+    courseName,
+    rootDir,
+    preflight: input.preflight || null,
+    confirmWarnings: input.confirmWarnings === true,
+    curriculum,
+    targetAudience: curriculum.targetAudience || input.targetAudience || {},
+    containerProfile: profileContext.containerProfile,
+    artifactSuggestions: profileContext.artifactSuggestions,
+    artifactTargets: profileContext.artifactTargets,
+    dayResults,
+    expectedDayCount: (curriculum.days || input.coursePlan?.days || []).length,
+    files,
     validation
   };
 }
@@ -205,7 +239,7 @@ function renderStandalone(courseName, days, dayResults) {
     warnings: result.warnings || []
   }));
   const data = JSON.stringify({ courseName, days, dayResults: safeResults }).replace(/</g, '\\u003c');
-  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(courseName)}</title><link rel="stylesheet" href="standalone.css"></head><body><header><p>Standalone-Draft: lokale Testvorschau ohne Plattform-Freigabe</p><h1>${escapeHtml(courseName)}</h1><nav><button type="button" data-role="participant" class="active">Teilnehmer-Vorschau</button><button type="button" data-role="teacher">Dozentenansicht</button></nav></header><main id="app"></main><script>window.CONTENT_FACTORY_DATA=${data};</script><script src="standalone.js"></script></body></html>`;
+  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(courseName)}</title><link rel="stylesheet" href="standalone.css"></head><body><header><p>Standalone-Draft: lokale Testvorschau ohne Plattform-Freigabe. Testprotokoll im Reports-Ordner verfuegbar.</p><h1>${escapeHtml(courseName)}</h1><nav><button type="button" data-role="participant" class="active">Teilnehmer-Vorschau</button><button type="button" data-role="teacher">Dozentenansicht</button></nav></header><main id="app"></main><script>window.CONTENT_FACTORY_DATA=${data};</script><script src="standalone.js"></script></body></html>`;
 }
 
 function renderSections(courseName, title, sections, teacher) {
@@ -260,7 +294,7 @@ function standaloneJs() {
 })();\n`;
 }
 
-function createAnalysisReport({ courseName, courseId, department, input, dayResults, files, namingReport, validation, rootDir, profileContext }) {
+function createAnalysisReport({ courseName, courseId, department, input, dayResults, files, namingReport, validation, rootDir, profileContext, testProtocol }) {
   const curriculum = input.approvedCurriculumPlan || input.curriculumPlan || {};
   const anchor = curriculum.anchor || input.anchor || {};
   const warnings = [
@@ -319,6 +353,12 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
     openAiUsed: (input.aiMode || 'local').startsWith('openai') && !warnings.some((warning) => /OpenAI ist nicht konfiguriert|OpenAI-.*Fallback/i.test(warning)),
     fallbackUsed: warnings.some((warning) => /Fallback|nicht konfiguriert/i.test(warning)),
     testRunStatus: input.testRun ? 'test-run' : 'manual-draft',
+    testProtocol: testProtocol ? {
+      path: 'reports/testprotokoll.html',
+      jsonPath: 'reports/testprotokoll.json',
+      overallStatus: testProtocol.overallStatus,
+      summary: testProtocol.summary
+    } : null,
     readyForReview: validation.isValid && input.preflight?.status !== 'red',
     preset: input.selectedPresetId || input.preset || '',
     preflight: preflightSummary,
@@ -376,6 +416,7 @@ function renderReportHtml(report) {
       <h1>Analysebericht</h1>
       <section class="card"><h2>Kursdaten</h2><p><strong>${escapeHtml(report.courseName)}</strong> (${escapeHtml(report.courseId)}) - ${escapeHtml(report.department)}</p><p>Anchor: ${escapeHtml(report.anchorType)} | AI: ${escapeHtml(report.aiMode)} | Fallback: ${report.fallbackUsed ? 'ja' : 'nein'}</p></section>
       <section class="card"><h2>Preflight & Testlauf</h2><p>Status: <strong>${escapeHtml(report.preflight?.status || 'nicht ausgefuehrt')}</strong> | Score: ${escapeHtml(report.preflight?.score ?? '-')} | Modus: ${escapeHtml(report.testRunStatus)}</p><p>Preset: ${escapeHtml(report.preset || 'kein Preset')}</p><p>Ready for Review: ${report.readyForReview ? 'ja' : 'nein'}</p>${listHtml([...(report.preflight?.errors || []), ...(report.preflight?.warnings || []), ...(report.cleanupHints || [])])}</section>
+      <section class="card"><h2>Testprotokoll</h2><p>Status: <strong>${escapeHtml(report.testProtocol?.overallStatus || 'fehlt')}</strong></p><p>Pfad: ${escapeHtml(report.testProtocol?.path || '-')}</p><p>Passed: ${escapeHtml(report.testProtocol?.summary?.passed || 0)} | Warnings: ${escapeHtml(report.testProtocol?.summary?.warnings || 0)} | Failed: ${escapeHtml(report.testProtocol?.summary?.failed || 0)} | Manuell: ${escapeHtml(report.testProtocol?.summary?.manualChecks || 0)}</p></section>
       <section class="card"><h2>Quality</h2><p><strong>${escapeHtml(report.curriculumQuality.score)}</strong>/100 (${escapeHtml(report.curriculumQuality.level)})</p>${listHtml(report.curriculumQuality.recommendations || [])}</section>
       <section class="card"><h2>Quellen & Extraktion</h2>${tableHtml(['Quelle','Titel','Qualitaet','Warnungen'], (report.extractionStatus || []).map((item) => [item.sourceRef, item.title, item.quality ? `${item.quality.level} (${Math.round(item.quality.score * 100)}%)` : '-', (item.warnings || []).join(' | ')]))}</section>
       <section class="card"><h2>Tage & Themen</h2>${tableHtml(['Tag','Titel','UE','Themen','Warnungen'], (report.days || []).map((day) => [day.dayNumber, day.title, day.estimatedUE, (day.topics || []).map((topic) => topic.title).join(', '), (day.warnings || []).join(' | ')]))}</section>

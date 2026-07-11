@@ -276,6 +276,8 @@ function createContentFactoryService({ appData }) {
       storagePath: draft.storagePath,
       standalonePath: draft.standalonePath,
       reportPath: draft.reportPath,
+      testProtocolPath: draft.testProtocolPath,
+      testProtocol: draft.testProtocol,
       analysisReport: draft.analysisReport,
       validation: draft.validation,
       warnings,
