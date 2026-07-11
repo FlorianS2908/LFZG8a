@@ -14,6 +14,9 @@ const { AiOrchestrator } = require('./ai/ai-orchestrator');
 const { createPlanContainerDraft } = require('./plan-container-draft-service');
 const { validateGeneratedContainer } = require('./generated-container-validator');
 const { createCurriculumPlannerService } = require('./curriculum-planner/curriculum-planner-service');
+const { runPreflight } = require('./preflight/preflight-service');
+const { listPresets, applyPreset } = require('./presets/preset-service');
+const { createCleanupService } = require('./cleanup/cleanup-service');
 
 function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
@@ -29,6 +32,7 @@ function createContentFactoryService({ appData }) {
   const referenceLibrary = createReferenceLibraryService({ appData });
   const aiOrchestrator = new AiOrchestrator();
   const curriculumPlanner = createCurriculumPlannerService({ factoryDir, aiOrchestrator });
+  const cleanup = createCleanupService({ factoryDir, storage });
 
   function ensureFactory() {
     appData.ensureDataFiles();
@@ -77,6 +81,8 @@ function createContentFactoryService({ appData }) {
       referenceLibraryRoot: referenceLibrary.rootDir,
       referenceSources: referenceLibrary.listReferenceSources(),
       curriculumDrafts: curriculumPlanner.listCurriculumDrafts(),
+      presets: listPresets(),
+      storageUsage: cleanup.listStorageUsage(),
       targetAreas,
       targetAreaLabels
     };
@@ -221,6 +227,60 @@ function createContentFactoryService({ appData }) {
     const draft = storage.listGeneratedContainers().find((entry) => entry.id === containerId || entry.manifest?.id === containerId);
     if (!draft?.storagePath) throw new Error('Draft-Container wurde nicht gefunden.');
     return validateGeneratedContainer(draft.storagePath, draft.manifest || {});
+  }
+
+  function runContentFactoryPreflight(input, session) {
+    assertAdmin(session);
+    ensureFactory();
+    return runPreflight(input, { aiStatus: aiOrchestrator.getStatus() });
+  }
+
+  async function runContentFactoryTestDraft(input, session) {
+    assertAdmin(session);
+    ensureFactory();
+    const preflight = runContentFactoryPreflight(input, session);
+    if (preflight.status === 'red') {
+      return {
+        status: 'failed',
+        preflight,
+        validation: { isValid: false, errors: preflight.errors, warnings: preflight.warnings, suggestions: preflight.recommendations },
+        warnings: preflight.warnings,
+        errors: preflight.errors
+      };
+    }
+    if (preflight.status === 'yellow' && input.confirmWarnings !== true) {
+      return {
+        status: 'warning',
+        requiresConfirmation: true,
+        preflight,
+        validation: { isValid: false, errors: [], warnings: preflight.warnings, suggestions: preflight.recommendations },
+        warnings: preflight.warnings
+      };
+    }
+    const curriculumPlan = input.approvedCurriculumPlan || input.curriculumPlan;
+    const dayResults = input.dayResults?.length
+      ? input.dayResults
+      : await generateAllDayDrafts({ ...input, approvedCurriculumPlan: curriculumPlan }, session);
+    const draft = createPlanDraft({
+      ...input,
+      approvedCurriculumPlan: curriculumPlan,
+      dayResults,
+      preflight,
+      testRun: true
+    }, session);
+    const warnings = Array.from(new Set([...(preflight.warnings || []), ...(draft.validation?.warnings || [])]));
+    return {
+      status: draft.validation?.isValid ? (preflight.status === 'yellow' ? 'warning' : 'success') : 'failed',
+      preflight,
+      containerId: draft.containerId,
+      storagePath: draft.storagePath,
+      standalonePath: draft.standalonePath,
+      reportPath: draft.reportPath,
+      analysisReport: draft.analysisReport,
+      validation: draft.validation,
+      warnings,
+      errors: draft.validation?.errors || []
+    };
   }
 
   function validateContainerDraft(container) {
@@ -542,6 +602,36 @@ function createContentFactoryService({ appData }) {
     },
     parseCoursePlan: parseCoursePlanUpload,
     getAiProviderStatus,
+    runPreflight: runContentFactoryPreflight,
+    runContentFactoryTestDraft,
+    listPresets: (session) => {
+      assertAdmin(session);
+      return listPresets();
+    },
+    applyPreset: (id, input, session) => {
+      assertAdmin(session);
+      return applyPreset(id, input);
+    },
+    deleteGeneratedDraft: (containerId, session) => {
+      assertAdmin(session);
+      ensureFactory();
+      return cleanup.deleteGeneratedDraft(containerId);
+    },
+    deleteLastTestDraft: (session) => {
+      assertAdmin(session);
+      ensureFactory();
+      return cleanup.deleteLastTestDraft();
+    },
+    clearStaging: (session) => {
+      assertAdmin(session);
+      ensureFactory();
+      return cleanup.clearStaging();
+    },
+    listStorageUsage: (session) => {
+      assertAdmin(session);
+      ensureFactory();
+      return cleanup.listStorageUsage();
+    },
     generateDayDraft,
     generateAllDayDrafts,
     reviseDayDraft,

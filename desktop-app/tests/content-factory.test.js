@@ -15,6 +15,8 @@ const { decideArtifactSuggestions } = require('../app/lib/content-factory/contai
 const { suggestionsToTargets } = require('../app/lib/content-factory/container-profile/artifact-target-service');
 const { generateArtifactFiles } = require('../app/lib/content-factory/artifact-generators/artifact-generator-service');
 const { validateGeneratedArtifacts } = require('../app/lib/content-factory/container-profile/generated-artifact-validator');
+const { runPreflight } = require('../app/lib/content-factory/preflight/preflight-service');
+const { listPresets, applyPreset } = require('../app/lib/content-factory/presets/preset-service');
 
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
@@ -501,6 +503,58 @@ test('content factory imports raw files validates mappings and creates a draft c
   }
 });
 
+test('content factory preflight blocks incomplete input and warns before cloud fallback', () => {
+  const red = runPreflight({});
+  const yellow = runPreflight(createApprovedTestInput({ aiMode: 'openai' }), { aiStatus: { providers: { openai: { configured: false } } } });
+  const green = runPreflight(createApprovedTestInput({ aiMode: 'local' }));
+
+  assert.equal(red.status, 'red');
+  assert.ok(red.errors.some((error) => /Kursname|CurriculumPlanDraft/.test(error)));
+  assert.equal(yellow.status, 'yellow');
+  assert.ok(yellow.warnings.some((warning) => /OpenAI ist nicht konfiguriert/.test(warning)));
+  assert.equal(green.status, 'green');
+});
+
+test('content factory presets use safe defaults for beginner code database and diagrams', () => {
+  const ids = listPresets().map((preset) => preset.id);
+  const javaBeginner = applyPreset('java-beginner', {});
+  const javaAdvanced = applyPreset('java-advanced', {});
+  const sql = applyPreset('sql-phpmyadmin-beginner', {});
+  const uml = applyPreset('uml-pap-erm', {});
+
+  assert.ok(ids.includes('java-beginner'));
+  assert.equal(javaBeginner.containerProfile.courseType, 'java');
+  assert.equal(javaAdvanced.containerProfile.courseType, 'java-maven');
+  assert.equal(sql.containerProfile.allowDatabaseActions, false);
+  assert.equal(uml.containerProfile.allowExecutableTools, false);
+});
+
+test('content factory test draft respects preflight gates and cleanup removes generated drafts only', async () => {
+  const { dir, service, session, cleanup } = createTempFactory();
+
+  try {
+    const failed = await service.runContentFactoryTestDraft({}, session);
+    const warning = await service.runContentFactoryTestDraft(createApprovedTestInput({ aiMode: 'openai' }), session);
+    const created = await service.runContentFactoryTestDraft(createApprovedTestInput({ aiMode: 'openai', confirmWarnings: true }), session);
+    const referenceDir = path.join(dir, 'data', 'content-factory', 'reference-library');
+    const referenceFile = path.join(referenceDir, 'keep.txt');
+    fs.mkdirSync(referenceDir, { recursive: true });
+    fs.writeFileSync(referenceFile, 'reference-only', 'utf8');
+
+    assert.equal(failed.status, 'failed');
+    assert.equal(warning.requiresConfirmation, true);
+    assert.equal(created.status, 'warning');
+    assert.equal(fs.existsSync(created.standalonePath), true);
+    assert.equal(fs.existsSync(created.reportPath), true);
+    const cleanupReport = service.deleteGeneratedDraft(created.containerId, session);
+    assert.equal(cleanupReport.status, 'success');
+    assert.equal(fs.existsSync(created.storagePath), false);
+    assert.equal(fs.existsSync(referenceFile), true);
+  } finally {
+    cleanup();
+  }
+});
+
 test('content factory requires an admin session', () => {
   const { service, cleanup } = createTempFactory();
 
@@ -511,6 +565,84 @@ test('content factory requires an admin session', () => {
     cleanup();
   }
 });
+
+function createApprovedTestInput(patch = {}) {
+  const course = { courseName: 'Java Grundlagen', courseId: 'java-grundlagen', department: 'FIAE' };
+  const targetAudience = {
+    department: 'FIAE',
+    educationContext: 'umschulung',
+    priorKnowledge: 'basic',
+    learningLevel: 'basic',
+    difficultyMode: 'normal',
+    needsStepByStep: true,
+    projectOrientation: true
+  };
+  const curriculumPlan = {
+    id: 'curriculum-test',
+    status: 'approved',
+    course,
+    targetAudience,
+    quality: { score: 82, level: 'good', recommendations: [] },
+    days: [{
+      dayNumber: 1,
+      title: 'Tag 1 - Java Einstieg',
+      mainTopic: 'Variablen',
+      estimatedUE: 8,
+      learningGoals: ['Variablen erklaeren'],
+      topics: [{
+        id: 'topic-1',
+        title: 'Variablen',
+        summary: 'Datentypen und Variablen einfuehren.',
+        sourceRefs: ['manual'],
+        estimatedUE: 4,
+        difficulty: 'normal',
+        depth: 'basic',
+        practiceType: 'guided-task',
+        active: true
+      }]
+    }]
+  };
+  const coursePlan = {
+    courseTitle: course.courseName,
+    courseId: course.courseId,
+    department: course.department,
+    selectedSheet: 'Test',
+    sourceFile: 'manual',
+    days: [{
+      dayNumber: 1,
+      title: 'Tag 1 - Java Einstieg',
+      mainTopic: 'Variablen',
+      learningGoals: ['Variablen erklaeren'],
+      ueBlocks: [{ topic: 'Variablen', learnerTask: 'Variable anlegen', teacherTask: 'Datentypen zeigen', evaluation: 'Code pruefen', resources: 'manual' }],
+      warnings: []
+    }],
+    warnings: []
+  };
+  return {
+    course,
+    targetAudience,
+    approvedCurriculumPlan: curriculumPlan,
+    curriculumPlan,
+    coursePlan,
+    aiMode: 'local',
+    useReferences: false,
+    referenceUsage: { exportReferences: false },
+    containerProfile: {
+      courseType: 'java',
+      artifactMode: 'web-and-files',
+      studentWorkspace: true,
+      teacherSolutions: true,
+      generateStarterFiles: true,
+      generateSolutionFiles: true,
+      generateReadme: true,
+      generateSetupGuide: true,
+      generateRunScripts: false,
+      allowExecutableTools: false,
+      allowDatabaseActions: false
+    },
+    ...patch
+  };
+}
 
 function createZip(zipPath, entries) {
   const localParts = [];

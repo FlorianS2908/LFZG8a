@@ -7,6 +7,7 @@ const { validateGeneratedContainer } = require('./generated-container-validator'
 const { buildContainerProfile } = require('./container-profile/container-profile-service');
 const { validateGeneratedArtifacts } = require('./container-profile/generated-artifact-validator');
 const { generateArtifactFiles } = require('./artifact-generators/artifact-generator-service');
+const { renderPreflightSummary } = require('./preflight/preflight-report-renderer');
 
 function createPlanContainerDraft(input = {}, options = {}) {
   const courseName = normalizeCourseName(input.course?.courseName || input.coursePlan?.courseTitle || 'Neuer Kurs');
@@ -283,6 +284,7 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
     wasUserChanged: false,
     solutionOnly: file.solutionOnly === true
   }));
+  const preflightSummary = input.preflight ? renderPreflightSummary(input.preflight) : null;
   return {
     courseName,
     courseId,
@@ -316,6 +318,15 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
     aiMode: input.aiMode || 'local',
     openAiUsed: (input.aiMode || 'local').startsWith('openai') && !warnings.some((warning) => /OpenAI ist nicht konfiguriert|OpenAI-.*Fallback/i.test(warning)),
     fallbackUsed: warnings.some((warning) => /Fallback|nicht konfiguriert/i.test(warning)),
+    testRunStatus: input.testRun ? 'test-run' : 'manual-draft',
+    readyForReview: validation.isValid && input.preflight?.status !== 'red',
+    preset: input.selectedPresetId || input.preset || '',
+    preflight: preflightSummary,
+    cleanupHints: [
+      'Test-Drafts koennen ueber ContentFactory Cleanup geloescht werden.',
+      'Staging-Dateien koennen separat geleert werden.',
+      'Referenzbibliothek wird niemals automatisch geloescht oder exportiert.'
+    ],
     dayCount: dayResults.length,
     topicCount: (curriculum.days || []).reduce((sum, day) => sum + (day.topics || []).length, 0),
     taskCount,
@@ -344,9 +355,10 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
     nextRecommendedSteps: [
       ...(validation.errors || []).length ? ['Export-Schutz-Fehler beheben und Draft neu erzeugen.'] : [],
       ...(generatedArtifacts.length ? [] : ['Container-Konfiguration pruefen: Es wurden keine Artefakte erzeugt.']),
+      input.preflight?.status === 'yellow' ? 'Preflight-Warnungen pruefen und bestaetigen.' : '',
       ...(warnings.length ? ['Warnungen fachlich pruefen.'] : []),
       curriculum.quality?.score < 70 ? 'Curriculum Review nachschaerfen und erneut freigeben.' : 'Standalone fachlich pruefen und Kursinstanz vorbereiten.'
-    ],
+    ].filter(Boolean),
     generatedFiles: files.map((file) => file.path),
     exportedPath: rootDir
   };
@@ -363,6 +375,7 @@ function renderReportHtml(report) {
     <main>
       <h1>Analysebericht</h1>
       <section class="card"><h2>Kursdaten</h2><p><strong>${escapeHtml(report.courseName)}</strong> (${escapeHtml(report.courseId)}) - ${escapeHtml(report.department)}</p><p>Anchor: ${escapeHtml(report.anchorType)} | AI: ${escapeHtml(report.aiMode)} | Fallback: ${report.fallbackUsed ? 'ja' : 'nein'}</p></section>
+      <section class="card"><h2>Preflight & Testlauf</h2><p>Status: <strong>${escapeHtml(report.preflight?.status || 'nicht ausgefuehrt')}</strong> | Score: ${escapeHtml(report.preflight?.score ?? '-')} | Modus: ${escapeHtml(report.testRunStatus)}</p><p>Preset: ${escapeHtml(report.preset || 'kein Preset')}</p><p>Ready for Review: ${report.readyForReview ? 'ja' : 'nein'}</p>${listHtml([...(report.preflight?.errors || []), ...(report.preflight?.warnings || []), ...(report.cleanupHints || [])])}</section>
       <section class="card"><h2>Quality</h2><p><strong>${escapeHtml(report.curriculumQuality.score)}</strong>/100 (${escapeHtml(report.curriculumQuality.level)})</p>${listHtml(report.curriculumQuality.recommendations || [])}</section>
       <section class="card"><h2>Quellen & Extraktion</h2>${tableHtml(['Quelle','Titel','Qualitaet','Warnungen'], (report.extractionStatus || []).map((item) => [item.sourceRef, item.title, item.quality ? `${item.quality.level} (${Math.round(item.quality.score * 100)}%)` : '-', (item.warnings || []).join(' | ')]))}</section>
       <section class="card"><h2>Tage & Themen</h2>${tableHtml(['Tag','Titel','UE','Themen','Warnungen'], (report.days || []).map((day) => [day.dayNumber, day.title, day.estimatedUE, (day.topics || []).map((topic) => topic.title).join(', '), (day.warnings || []).join(' | ')]))}</section>

@@ -5,6 +5,8 @@ const state = {
   importBatches: [],
   referenceSources: [],
   curriculumDrafts: [],
+  presets: [],
+  storageUsage: null,
   targetAreas: [],
   targetAreaLabels: {},
   selectedBatchId: '',
@@ -33,6 +35,10 @@ const state = {
     dayResults: [],
     corrections: '',
     generatedDraft: null,
+    selectedPresetId: '',
+    preflight: null,
+    testRun: null,
+    cleanupReport: null,
     status: ''
   }
 };
@@ -286,6 +292,8 @@ function renderPlanWizard() {
       <button class="primary-button" type="button" data-wizard-create-draft ${wizard.dayResults.length || wizard.dayDraft ? '' : 'disabled'}>Dual-Mode-Container-Draft erzeugen</button>
       ${wizard.generatedDraft ? renderGeneratedDraft(wizard.generatedDraft) : ''}
     </article>
+
+    ${renderPreflightTestRun(wizard)}
   `;
   bindPlanWizardEvents();
 }
@@ -308,13 +316,17 @@ function renderContainerProfileStep(wizard) {
   const profile = wizard.containerProfile;
   const types = ['theory', 'html-css', 'java', 'java-maven', 'python', 'jupyter', 'sql', 'php-xampp', 'uml-pap', 'database-project', 'mixed-project'];
   const modes = ['web-only', 'files-only', 'web-and-files'];
+  const presets = state.presets || [];
   return `
     <article class="tool-card">
       <h3>4. Container-Konfiguration</h3>
       <div class="factory-form-grid">
+        <label>Preset<select data-wizard-preset><option value="">Kein Preset</option>${presets.map((preset) => `<option value="${escapeHtml(preset.id)}" ${wizard.selectedPresetId === preset.id ? 'selected' : ''}>${escapeHtml(preset.label || preset.id)}</option>`).join('')}</select></label>
         <label>Kurstyp<select data-container-profile="courseType">${types.map((value) => `<option value="${value}" ${profile.courseType === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
         <label>Artefaktmodus<select data-container-profile="artifactMode">${modes.map((value) => `<option value="${value}" ${profile.artifactMode === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
       </div>
+      <button class="secondary-button" type="button" data-apply-preset ${wizard.selectedPresetId ? '' : 'disabled'}>Preset anwenden</button>
+      <small>Preset setzt Vorschlaege; alle Werte bleiben manuell korrigierbar.</small>
       <div class="summary-grid">
         ${['studentWorkspace', 'teacherSolutions', 'generateStarterFiles', 'generateSolutionFiles', 'generateReadme', 'generateSetupGuide'].map((key) => `<label class="checkline"><input data-container-profile-check="${key}" type="checkbox" ${profile[key] ? 'checked' : ''}> ${escapeHtml(key)}</label>`).join('')}
         <label class="checkline"><input data-container-profile-check="generateRunScripts" type="checkbox" ${profile.generateRunScripts ? 'checked' : ''}> Run-Skripte erzeugen</label>
@@ -331,6 +343,61 @@ function renderContainerProfileStep(wizard) {
       </div>
       ${wizard.curriculumDraft ? renderArtifactSuggestionPreview(wizard) : '<small>Artefakt-Vorschlaege erscheinen nach der Curriculum-Analyse.</small>'}
     </article>
+  `;
+}
+
+function renderPreflightTestRun(wizard) {
+  const preflight = wizard.preflight;
+  const testRun = wizard.testRun;
+  const storage = state.storageUsage || {};
+  const canPreflight = Boolean(wizard.course.courseName && wizard.course.courseId && wizard.approvedCurriculumPlan?.status === 'approved');
+  const canTest = canPreflight && (wizard.dayResults.length || wizard.dayDraft || wizard.approvedCurriculumPlan?.days?.length);
+  return `
+    <article class="tool-card">
+      <h3>13. Testlauf / Preflight</h3>
+      <div class="summary-grid">
+        <span>Preflight: ${escapeHtml(preflight?.status || 'offen')}</span>
+        <span>Score: ${escapeHtml(preflight?.score ?? '-')}</span>
+        <span>Staging: ${formatBytes(storage.stagingBytes || 0)}</span>
+        <span>Drafts: ${formatBytes(storage.draftsBytes || 0)}</span>
+        <span>Referenzen: ${formatBytes(storage.referenceLibraryBytes || 0)}</span>
+      </div>
+      ${preflight ? renderPreflightResult(preflight) : '<p class="status-line">Prueft Kursdaten, freigegebenes Curriculum, Profil, KI-Fallback und Export-Schutz.</p>'}
+      ${testRun ? renderTestRunResult(testRun) : ''}
+      ${wizard.cleanupReport ? `<p class="status-line">${escapeHtml(wizard.cleanupReport.action)}: ${(wizard.cleanupReport.deleted || []).length} geloescht.</p>` : ''}
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-wizard-preflight ${canPreflight ? '' : 'disabled'}>Preflight pruefen</button>
+        <button class="primary-button" type="button" data-wizard-test-run ${canTest ? '' : 'disabled'}>Testlauf erzeugen</button>
+        <button class="secondary-button" type="button" data-wizard-test-run-confirm ${preflight?.status === 'yellow' && canTest ? '' : 'disabled'}>Testlauf trotz Warnungen</button>
+        <button class="secondary-button" type="button" data-wizard-delete-last-test>Letzten Test-Draft loeschen</button>
+        <button class="secondary-button" type="button" data-wizard-clear-staging>Staging leeren</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderPreflightResult(preflight) {
+  const css = preflight.status === 'red' ? 'status-error' : preflight.status === 'yellow' ? 'status-warning' : '';
+  return `
+    <div class="validation-box">
+      <strong class="${css}">Preflight ${escapeHtml(preflight.status)} (${escapeHtml(preflight.score)}/100)</strong>
+      ${(preflight.errors || []).map((item) => `<p class="status-line status-error">${escapeHtml(item)}</p>`).join('')}
+      ${(preflight.warnings || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}
+      ${(preflight.recommendations || []).slice(0, 4).map((item) => `<p class="status-line">${escapeHtml(item)}</p>`).join('')}
+    </div>
+  `;
+}
+
+function renderTestRunResult(result) {
+  const css = result.status === 'failed' ? 'status-error' : result.status === 'warning' ? 'status-warning' : '';
+  return `
+    <div class="validation-box">
+      <strong class="${css}">Testlauf: ${escapeHtml(result.status)}</strong>
+      ${result.requiresConfirmation ? '<p class="status-line status-warning">Warnungen muessen fuer den Testlauf bestaetigt werden.</p>' : ''}
+      ${result.containerId ? `<p>Container: ${escapeHtml(result.containerId)}</p><p>Pfad: ${escapeHtml(result.storagePath)}</p>` : ''}
+      ${(result.errors || []).map((item) => `<p class="status-line status-error">${escapeHtml(item)}</p>`).join('')}
+      ${(result.warnings || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}
+    </div>
   `;
 }
 
@@ -493,6 +560,11 @@ function bindPlanWizardEvents() {
     state.wizard.containerProfile[field.dataset.containerProfile] = field.value;
     renderPlanWizard();
   }));
+  $('[data-wizard-preset]')?.addEventListener('change', (event) => {
+    state.wizard.selectedPresetId = event.target.value;
+    renderPlanWizard();
+  });
+  $('[data-apply-preset]')?.addEventListener('click', applyWizardPreset);
   $all('[data-container-profile-check]').forEach((field) => field.addEventListener('change', () => {
     state.wizard.containerProfile[field.dataset.containerProfileCheck] = field.checked;
   }));
@@ -566,7 +638,28 @@ function bindPlanWizardEvents() {
   });
   $('[data-wizard-create-draft]')?.addEventListener('click', createWizardDraft);
   $('[data-wizard-revise]')?.addEventListener('click', reviseWizardDayDraft);
+  $('[data-wizard-preflight]')?.addEventListener('click', runWizardPreflight);
+  $('[data-wizard-test-run]')?.addEventListener('click', () => runWizardTestDraft(false));
+  $('[data-wizard-test-run-confirm]')?.addEventListener('click', () => runWizardTestDraft(true));
+  $('[data-wizard-delete-last-test]')?.addEventListener('click', deleteLastWizardTestDraft);
+  $('[data-wizard-clear-staging]')?.addEventListener('click', clearWizardStaging);
   $all('[data-wizard-open]').forEach((button) => button.addEventListener('click', () => desktop.factory.openGeneratedDraft(state.wizard.generatedDraft.containerId, button.dataset.wizardOpen)));
+}
+
+async function applyWizardPreset() {
+  if (!state.wizard.selectedPresetId) return;
+  try {
+    const updated = await desktop.factory.applyPreset(state.wizard.selectedPresetId, {
+      containerProfile: state.wizard.containerProfile,
+      targetAudience: state.wizard.targetAudience
+    });
+    state.wizard.containerProfile = updated.containerProfile;
+    state.wizard.targetAudience = updated.targetAudience;
+    state.wizard.status = (updated.presetWarnings || []).join(' ');
+  } catch (error) {
+    state.wizard.status = error.message;
+  }
+  renderPlanWizard();
 }
 
 async function parseWizardPlan(event) {
@@ -878,6 +971,86 @@ async function createWizardDraft() {
   }
 }
 
+function buildWizardTestInput(overrides = {}) {
+  const dayResults = state.wizard.dayResults.length ? state.wizard.dayResults : [state.wizard.dayDraft].filter(Boolean);
+  return {
+    course: state.wizard.course,
+    coursePlan: state.wizard.coursePlan,
+    approvedCurriculumPlan: state.wizard.approvedCurriculumPlan,
+    curriculumPlan: state.wizard.approvedCurriculumPlan,
+    duration: state.wizard.duration,
+    materials: state.wizard.importBatch?.files || [],
+    uploads: state.wizard.importBatch?.files || state.wizard.uploadFiles || [],
+    references: [],
+    referenceUsage: { exportReferences: false, useReferences: state.wizard.useReferences },
+    useReferences: state.wizard.useReferences,
+    aiMode: state.wizard.aiMode || 'local',
+    corrections: state.wizard.corrections,
+    targetAudience: state.wizard.targetAudience,
+    containerProfile: state.wizard.containerProfile,
+    selectedPresetId: state.wizard.selectedPresetId,
+    dayResults,
+    ...overrides
+  };
+}
+
+async function runWizardPreflight() {
+  state.wizard.status = 'Preflight wird geprueft ...';
+  renderPlanWizard();
+  try {
+    state.wizard.preflight = await desktop.factory.runPreflight(buildWizardTestInput());
+    state.wizard.status = `Preflight ${state.wizard.preflight.status}: ${state.wizard.preflight.score}/100.`;
+  } catch (error) {
+    state.wizard.status = error.message;
+  }
+  renderPlanWizard();
+}
+
+async function runWizardTestDraft(confirmWarnings) {
+  state.wizard.status = confirmWarnings ? 'Testlauf wird trotz Warnungen erzeugt ...' : 'Testlauf wird erzeugt ...';
+  renderPlanWizard();
+  try {
+    const result = await desktop.factory.runTestDraft(buildWizardTestInput({ confirmWarnings }));
+    state.wizard.testRun = result;
+    state.wizard.preflight = result.preflight || state.wizard.preflight;
+    if (result.containerId) {
+      state.wizard.generatedDraft = result;
+    }
+    state.wizard.status = result.requiresConfirmation ? 'Preflight-Warnungen bestaetigen oder korrigieren.' : `Testlauf ${result.status}.`;
+    await loadState();
+  } catch (error) {
+    state.wizard.status = error.message;
+    renderPlanWizard();
+  }
+}
+
+async function deleteLastWizardTestDraft() {
+  state.wizard.status = 'Letzter Test-Draft wird geloescht ...';
+  renderPlanWizard();
+  try {
+    state.wizard.cleanupReport = await desktop.factory.deleteLastTestDraft();
+    state.wizard.generatedDraft = null;
+    state.wizard.testRun = null;
+    await loadState();
+  } catch (error) {
+    state.wizard.status = error.message;
+    renderPlanWizard();
+  }
+}
+
+async function clearWizardStaging() {
+  state.wizard.status = 'Staging wird geleert ...';
+  renderPlanWizard();
+  try {
+    state.wizard.cleanupReport = await desktop.factory.clearStaging();
+    state.storageUsage = await desktop.factory.listStorageUsage();
+    state.wizard.status = 'Staging geleert.';
+  } catch (error) {
+    state.wizard.status = error.message;
+  }
+  renderPlanWizard();
+}
+
 function curriculumToCoursePlan(curriculum) {
   return {
     courseTitle: curriculum.course?.courseName || 'Kurs',
@@ -955,6 +1128,8 @@ async function loadState() {
   state.importBatches = data.importBatches || [];
   state.referenceSources = data.referenceSources || [];
   state.curriculumDrafts = data.curriculumDrafts || [];
+  state.presets = data.presets || [];
+  state.storageUsage = data.storageUsage || state.storageUsage;
   state.targetAreas = data.targetAreas || [];
   state.targetAreaLabels = data.targetAreaLabels || {};
   renderContainers();

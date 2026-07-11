@@ -1118,6 +1118,38 @@ ipcMain.handle('factory:get-ai-provider-status', () => (
   getContentFactoryService().getAiProviderStatus(requireAdminSession())
 ));
 
+ipcMain.handle('factory:run-preflight', (event, input) => (
+  getContentFactoryService().runPreflight(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:run-test-draft', async (event, input) => (
+  getContentFactoryService().runContentFactoryTestDraft(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:list-presets', () => (
+  getContentFactoryService().listPresets(requireAdminSession())
+));
+
+ipcMain.handle('factory:apply-preset', (event, id, input) => (
+  getContentFactoryService().applyPreset(id, input, requireAdminSession())
+));
+
+ipcMain.handle('factory:delete-generated-draft', (event, containerId) => (
+  getContentFactoryService().deleteGeneratedDraft(containerId, requireAdminSession())
+));
+
+ipcMain.handle('factory:delete-last-test-draft', () => (
+  getContentFactoryService().deleteLastTestDraft(requireAdminSession())
+));
+
+ipcMain.handle('factory:clear-staging', () => (
+  getContentFactoryService().clearStaging(requireAdminSession())
+));
+
+ipcMain.handle('factory:list-storage-usage', () => (
+  getContentFactoryService().listStorageUsage(requireAdminSession())
+));
+
 ipcMain.handle('factory:generate-day-draft', async (event, input) => (
   getContentFactoryService().generateDayDraft(input, requireAdminSession())
 ));
