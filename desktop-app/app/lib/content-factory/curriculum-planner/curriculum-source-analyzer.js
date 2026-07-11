@@ -1,6 +1,7 @@
 const path = require('path');
 const { parseCoursePlan } = require('../course-plan-parser');
-const { extractTopicsFromCoursePlan, extractTopicsFromSource, applyAudienceToTopics } = require('./curriculum-topic-extractor');
+const { extractSourceOutlines } = require('../source-extraction/source-extractor-service');
+const { extractTopicsFromCoursePlan, extractTopicsFromSource, extractTopicsFromOutlines, applyAudienceToTopics } = require('./curriculum-topic-extractor');
 
 function analyzeCurriculumSource(anchor, input = {}) {
   const warnings = [...(anchor.warnings || [])];
@@ -23,18 +24,24 @@ function analyzeCurriculumSource(anchor, input = {}) {
       warnings: [...warnings, ...(coursePlan.warnings || [])]
     };
   }
-  const fileNames = (anchor.sourceFiles || []).map((file) => file.name || path.basename(file.path || 'Quelle'));
-  const outline = fileNames.map((name, index) => ({
-    sourceRef: `${anchor.id}:${index + 1}`,
-    title: name,
-    summary: 'Sicherer Quellenumriss ohne Originaltext.',
-    ranges: anchor.ranges || []
-  }));
+  const outlines = extractSourceOutlines(anchor.sourceFiles || [], { ranges: anchor.ranges || [] });
+  const outline = outlines.flatMap((sourceOutline) => (sourceOutline.sections || []).map((section) => ({
+    sourceRef: section.sourceRef,
+    title: section.title,
+    summary: section.summary,
+    pageNumber: section.pageNumber,
+    slideNumber: section.slideNumber,
+    chapter: section.chapter,
+    wordCount: section.wordCount,
+    warnings: section.warnings
+  })));
+  const fallbackTopics = extractTopicsFromSource(anchor, anchor.sourceFiles);
+  const outlineTopics = extractTopicsFromOutlines(outlines, anchor);
   return {
     outline,
-    topics: applyAudienceToTopics(extractTopicsFromSource(anchor, anchor.sourceFiles), input.targetAudience),
+    topics: applyAudienceToTopics(outlineTopics.length ? outlineTopics : fallbackTopics, input.targetAudience),
     coursePlan: null,
-    warnings
+    warnings: [...warnings, ...outlines.flatMap((item) => item.warnings || []), ...(outlineTopics.length ? [] : ['Themen nur aus Dateinamen erzeugt.'])]
   };
 }
 

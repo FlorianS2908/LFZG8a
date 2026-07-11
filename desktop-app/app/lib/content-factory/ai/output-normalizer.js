@@ -2,7 +2,7 @@ function normalizeDayGenerationResult(input = {}) {
   const dayNumber = Number(input.dayNumber || 1);
   const title = input.title || `Tag ${dayNumber}`;
   const sourceRefs = Array.from(new Set([...(input.sourceRefs || []), `course-plan-day-${dayNumber}`]));
-  return {
+  const normalized = {
     dayNumber,
     title,
     status: input.status || 'draft',
@@ -18,6 +18,11 @@ function normalizeDayGenerationResult(input = {}) {
     warnings: input.warnings || [],
     aiAdditions: input.aiAdditions || []
   };
+  normalized.webvariant.participantHtmlSections = normalized.webvariant.participantHtmlSections.map((section) => ({
+    ...section,
+    content: stripParticipantSolutions(section.content)
+  }));
+  return normalized;
 }
 
 function normalizeSections(items = [], sourceRefs = []) {
@@ -54,6 +59,11 @@ function normalizeQuiz(items = [], sourceRefs = []) {
   }));
 }
 
+function stripParticipantSolutions(value) {
+  return String(value || '').replace(/loesung/gi, 'Hinweis').replace(/lösung/gi, 'Hinweis').replace(/solution/gi, 'Hinweis');
+}
+
 module.exports = {
-  normalizeDayGenerationResult
+  normalizeDayGenerationResult,
+  stripParticipantSolutions
 };

@@ -68,6 +68,8 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
     parseCoursePlan: (input) => ipcRenderer.invoke('factory:parse-course-plan', input),
     getAiProviderStatus: () => ipcRenderer.invoke('factory:get-ai-provider-status'),
     generateDayDraft: (input) => ipcRenderer.invoke('factory:generate-day-draft', input),
+    generateAllDayDrafts: (input) => ipcRenderer.invoke('factory:generate-all-day-drafts', input),
+    reviseDayDraft: (input) => ipcRenderer.invoke('factory:revise-day-draft', input),
     createPlanContainerDraft: (input) => ipcRenderer.invoke('factory:create-plan-container-draft', input),
     validateGeneratedContainer: (containerId) => ipcRenderer.invoke('factory:validate-generated-container', containerId),
     openGeneratedDraft: (containerId, target) => ipcRenderer.invoke('factory:open-generated-draft', containerId, target),

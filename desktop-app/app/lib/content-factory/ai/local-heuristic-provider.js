@@ -82,6 +82,21 @@ class LocalHeuristicProvider {
       warnings: ['LocalHeuristicProvider nutzt die deterministische Curriculum-Zeitplanung.']
     };
   }
+
+  async reviseDayDraft(input = {}) {
+    const draft = input.existingDraft || await this.generateDayDraft(input);
+    return {
+      ...draft,
+      warnings: [
+        ...(draft.warnings || []),
+        `Korrekturhinweis lokal vorgemerkt: ${String(input.correctionPrompt || '').slice(0, 180)}`
+      ],
+      aiAdditions: [
+        ...(draft.aiAdditions || []),
+        'Lokale Revision: fachliche Korrektur bitte pruefen.'
+      ]
+    };
+  }
 }
 
 function section(title, content, sourceRefs) {

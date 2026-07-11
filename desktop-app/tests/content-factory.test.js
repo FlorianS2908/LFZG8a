@@ -6,6 +6,9 @@ const { createAppData, INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD } = require('
 const { createContentFactoryService } = require('../app/lib/content-factory/content-factory-service');
 const { detectTargetArea, extractDayNumber, detectFileKind } = require('../app/lib/content-factory/file-type-rules');
 const { createMappingSuggestion, applyMapping } = require('../app/lib/content-factory/mapping-service');
+const { extractSourceOutline } = require('../app/lib/content-factory/source-extraction/source-extractor-service');
+const { AiOrchestrator } = require('../app/lib/content-factory/ai/ai-orchestrator');
+const { LocalHeuristicProvider } = require('../app/lib/content-factory/ai/local-heuristic-provider');
 
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
@@ -91,6 +94,47 @@ test('content factory detects file types target areas and day numbers', () => {
   assert.equal(extractDayNumber('day01_task.html'), 1);
 });
 
+test('content factory extracts safe source outlines from office epub text and pdf fallbacks', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-outlines-'));
+  try {
+    const mdPath = path.join(dir, 'curriculum.md');
+    fs.writeFileSync(mdPath, '# Datenbanken\n\nGrundlagen und Tabellen.\n\n## SQL Abfragen\nSELECT nur als Thema.', 'utf8');
+    const pptxPath = path.join(dir, 'slides.pptx');
+    const docxPath = path.join(dir, 'doc.docx');
+    const epubPath = path.join(dir, 'book.epub');
+    const pdfPath = path.join(dir, 'fallback.pdf');
+
+    createZip(pptxPath, {
+      'ppt/slides/slide1.xml': '<p:sld><a:t>Agenda</a:t><a:t>Ignoriert</a:t></p:sld>',
+      'ppt/slides/slide2.xml': '<p:sld><a:t>Normalisierung</a:t><a:t>Tabellen strukturieren</a:t></p:sld>'
+    });
+    createZip(docxPath, {
+      'word/document.xml': '<w:document><w:t>Netzwerk Grundlagen</w:t><w:t>IP Adressen und Subnetze</w:t></w:document>'
+    });
+    createZip(epubPath, {
+      'OPS/chapter1.xhtml': '<html><body><h1>Programmierung</h1><p>Variablen und Kontrollstrukturen.</p></body></html>'
+    });
+    fs.writeFileSync(pdfPath, '%PDF-1.4\n1 0 obj\n(Objektorientierung und Klassen) Tj\nendobj', 'latin1');
+
+    const md = extractSourceOutline({ name: 'curriculum.md', path: mdPath });
+    const ppt = extractSourceOutline({ name: 'slides.pptx', path: pptxPath }, { ranges: [{ type: 'slides', from: 2, to: 2 }] });
+    const doc = extractSourceOutline({ name: 'doc.docx', path: docxPath });
+    const epub = extractSourceOutline({ name: 'book.epub', path: epubPath });
+    const pdf = extractSourceOutline({ name: 'fallback.pdf', path: pdfPath });
+
+    assert.equal(md.sections.some((section) => section.title === 'Datenbanken'), true);
+    assert.equal(ppt.sections.length, 1);
+    assert.equal(ppt.sections[0].title, 'Normalisierung');
+    assert.equal(doc.sections.some((section) => /Netzwerk/.test(section.title)), true);
+    assert.equal(epub.sections.some((section) => /Programmierung/.test(section.title)), true);
+    assert.equal(pdf.format, 'pdf');
+    assert.equal(Array.isArray(pdf.warnings), true);
+    assert.ok((ppt.sections[0].textPreview || '').length <= 180);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('content factory productive MVP creates draft with runtime modes and standalone', async () => {
   const { dir, service, session, cleanup } = createTempFactory();
 
@@ -144,21 +188,39 @@ test('content factory productive MVP creates draft with runtime modes and standa
       aiMode: 'openai',
       useReferences: false
     }, session);
+    const allDays = await service.generateAllDayDrafts({
+      course: { courseName: 'LF05 FIAE', courseId: 'lf05-fiae', department: 'FIAE' },
+      coursePlan: plan,
+      approvedCurriculumPlan: curriculum,
+      aiMode: 'openai',
+      useReferences: false
+    }, session);
     const draft = service.createPlanContainerDraft({
       course: { courseName: 'LF05 FIAE', courseId: 'lf05-fiae', department: 'FIAE' },
       coursePlan: plan,
       approvedCurriculumPlan: curriculum,
-      dayResults: [draftDay],
-      aiMode: 'local'
+      dayResults: allDays,
+      aiMode: 'openai'
     }, session);
     const manifest = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'manifest.json'), 'utf8'));
     const participantWeb = fs.readFileSync(path.join(draft.storagePath, 'teilnehmer', 'tag_01', 'webvariante.html'), 'utf8');
+    const participantContent = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'participant-content.json'), 'utf8'));
+    const sourceMap = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'source-map.json'), 'utf8'));
+    const standalone = fs.readFileSync(path.join(draft.storagePath, 'standalone', 'index.html'), 'utf8');
 
+    assert.equal(draftDay.warnings.some((warning) => /OpenAI ist nicht konfiguriert/.test(warning)), true);
+    assert.equal(allDays.length, 2);
     assert.equal(manifest.status, 'draft');
     assert.equal(manifest.runtimeModes.standalone.entry, 'standalone/index.html');
     assert.equal(fs.existsSync(path.join(draft.storagePath, 'standalone', 'index.html')), true);
     assert.equal(fs.existsSync(path.join(draft.storagePath, 'platform', 'adapter.json')), true);
+    assert.equal(fs.existsSync(path.join(draft.storagePath, 'teilnehmer', 'tag_02', 'webvariante.html')), true);
     assert.doesNotMatch(participantWeb, /Loesung|solution/i);
+    assert.doesNotMatch(JSON.stringify(participantContent), /Loesung|solution/i);
+    assert.doesNotMatch(JSON.stringify(sourceMap), /Originaltext|Reference chunk|Buchseite/i);
+    assert.match(standalone, /data-role="participant"/);
+    assert.equal(draft.analysisReport.dayCount, 2);
+    assert.equal(draft.analysisReport.fallbackUsed, true);
     assert.equal(draft.validation.isValid, true);
   } finally {
     cleanup();
@@ -196,6 +258,80 @@ test('curriculum planner handles text anchors ranges target audience moves and a
   } finally {
     cleanup();
   }
+});
+
+test('curriculum planner uses real pptx ranges and keeps topic edits under review', async () => {
+  const { dir, service, session, cleanup } = createTempFactory();
+
+  try {
+    const pptxPath = path.join(dir, 'unterricht.pptx');
+    createZip(pptxPath, {
+      'ppt/slides/slide1.xml': '<p:sld><a:t>Agenda</a:t></p:sld>',
+      'ppt/slides/slide2.xml': '<p:sld><a:t>Klassen und Objekte</a:t><a:t>Attribute und Methoden</a:t></p:sld>',
+      'ppt/slides/slide3.xml': '<p:sld><a:t>Vererbung</a:t><a:t>Basisklassen</a:t></p:sld>'
+    });
+    const anchor = service.createCurriculumAnchor({
+      type: 'book-or-presentation',
+      title: 'OOP Folien',
+      sourceFiles: [{ name: 'unterricht.pptx', path: pptxPath }],
+      ranges: [{ type: 'slides', from: 2, to: 3 }]
+    }, session);
+    let draft = await service.analyzeCurriculumAnchor({
+      anchor,
+      course: { courseName: 'OOP Kurs', courseId: 'oop-kurs', department: 'FIAE' },
+      duration: { durationMode: 'days', numberOfDays: 1, uePerDay: 9, hoursPerDay: 8 },
+      targetAudience: { department: 'FIAE', priorKnowledge: 'basic', difficultyMode: 'normal', projectOrientation: true },
+      courseGoal: 'OOP Grundlagen',
+      expectedOutcome: 'Projekt',
+      didacticStyle: 'guided'
+    }, session);
+
+    assert.equal(draft.extractedSourceOutline.length, 2);
+    assert.equal(draft.extractedSourceOutline.some((section) => section.title === 'Klassen und Objekte'), true);
+    assert.equal(draft.extractedSourceOutline.some((section) => section.title === 'Agenda'), false);
+    assert.equal(draft.days[0].topics.some((topic) => topic.practiceType === 'project'), true);
+
+    draft = service.approveCurriculumDraft(draft.id, session);
+    assert.equal(draft.status, 'approved');
+    draft = service.updateCurriculumDraft(draft.id, { days: [{ ...draft.days[0], topics: [{ ...draft.days[0].topics[0], title: 'Objekte sauber modellieren' }] }] }, session);
+    assert.equal(draft.status, 'needs-review');
+    await assert.rejects(() => service.generateAllDayDrafts({
+      course: draft.course,
+      coursePlan: { days: [] },
+      approvedCurriculumPlan: draft,
+      aiMode: 'local'
+    }, session), /Freigabe/);
+  } finally {
+    cleanup();
+  }
+});
+
+test('invalid openai day output falls back to local without leaking solutions to participants', async () => {
+  const orchestrator = new AiOrchestrator({
+    localProvider: new LocalHeuristicProvider(),
+    openaiProvider: {
+      model: 'test-model',
+      isConfigured: () => true,
+      generateDayDraft: async () => ({ title: '', webvariant: { participantHtmlSections: [{ title: 'Loesung', content: 'solution' }] } })
+    }
+  });
+  const result = await orchestrator.generateDayDraft({
+    dayNumber: 1,
+    title: 'Fallback Tag',
+    day: {
+      dayNumber: 1,
+      title: 'Fallback Tag',
+      mainTopic: 'HTML',
+      learningGoals: ['HTML verstehen'],
+      ueBlocks: [{ topic: 'HTML', learnerTask: 'Struktur bauen', teacherTask: 'Demo', evaluation: 'Pruefen' }]
+    },
+    materials: []
+  }, 'openai');
+
+  assert.equal(result.dayNumber, 1);
+  assert.equal(result.warnings.some((warning) => /OpenAI-Fallback/.test(warning)), true);
+  assert.doesNotMatch(JSON.stringify(result.webvariant.participantHtmlSections), /Loesung|solution/i);
+  assert.ok(result.solutions.length > 0);
 });
 
 test('content factory mappings can be manually locked over suggestions', () => {
@@ -252,3 +388,68 @@ test('content factory requires an admin session', () => {
     cleanup();
   }
 });
+
+function createZip(zipPath, entries) {
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+  Object.entries(entries).forEach(([relativePath, content]) => {
+    const name = Buffer.from(relativePath.replace(/\\/g, '/'), 'utf8');
+    const data = Buffer.from(content, 'utf8');
+    const crc = crc32(data);
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(0, 6);
+    local.writeUInt16LE(0, 8);
+    local.writeUInt32LE(0, 10);
+    local.writeUInt32LE(crc, 14);
+    local.writeUInt32LE(data.length, 18);
+    local.writeUInt32LE(data.length, 22);
+    local.writeUInt16LE(name.length, 26);
+    local.writeUInt16LE(0, 28);
+    localParts.push(local, name, data);
+
+    const central = Buffer.alloc(46);
+    central.writeUInt32LE(0x02014b50, 0);
+    central.writeUInt16LE(20, 4);
+    central.writeUInt16LE(20, 6);
+    central.writeUInt16LE(0, 8);
+    central.writeUInt16LE(0, 10);
+    central.writeUInt32LE(0, 12);
+    central.writeUInt32LE(crc, 16);
+    central.writeUInt32LE(data.length, 20);
+    central.writeUInt32LE(data.length, 24);
+    central.writeUInt16LE(name.length, 28);
+    central.writeUInt16LE(0, 30);
+    central.writeUInt16LE(0, 32);
+    central.writeUInt16LE(0, 34);
+    central.writeUInt16LE(0, 36);
+    central.writeUInt32LE(0, 38);
+    central.writeUInt32LE(offset, 42);
+    centralParts.push(central, name);
+    offset += local.length + name.length + data.length;
+  });
+  const centralSize = centralParts.reduce((sum, item) => sum + item.length, 0);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(0, 4);
+  end.writeUInt16LE(0, 6);
+  end.writeUInt16LE(Object.keys(entries).length, 8);
+  end.writeUInt16LE(Object.keys(entries).length, 10);
+  end.writeUInt32LE(centralSize, 12);
+  end.writeUInt32LE(offset, 16);
+  end.writeUInt16LE(0, 20);
+  fs.writeFileSync(zipPath, Buffer.concat([...localParts, ...centralParts, end]));
+}
+
+function crc32(buffer) {
+  let crc = 0xffffffff;
+  for (const byte of buffer) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}

@@ -1122,6 +1122,14 @@ ipcMain.handle('factory:generate-day-draft', async (event, input) => (
   getContentFactoryService().generateDayDraft(input, requireAdminSession())
 ));
 
+ipcMain.handle('factory:generate-all-day-drafts', async (event, input) => (
+  getContentFactoryService().generateAllDayDrafts(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:revise-day-draft', async (event, input) => (
+  getContentFactoryService().reviseDayDraft(input, requireAdminSession())
+));
+
 ipcMain.handle('factory:create-plan-container-draft', (event, input) => (
   getContentFactoryService().createPlanContainerDraft(input, requireAdminSession())
 ));

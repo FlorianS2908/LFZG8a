@@ -129,6 +129,70 @@ function createContentFactoryService({ appData }) {
     }, input.aiMode || 'local');
   }
 
+  async function generateAllDayDrafts(input, session) {
+    assertAdmin(session);
+    ensureFactory();
+    const curriculumPlan = input.approvedCurriculumPlan || input.curriculumPlan;
+    if (!curriculumPlan || curriculumPlan.status !== 'approved') {
+      throw new Error('Alle-Tage-Generierung ist erst nach Freigabe des Curriculum-Plans moeglich.');
+    }
+    const results = [];
+    for (const day of curriculumPlan.days || []) {
+      const dayTopic = day.mainTopic || day.title || '';
+      const referenceSearch = input.useReferences
+        ? referenceLibrary.searchReferences({ dayTopic, query: dayTopic, maxResults: 5 })
+        : { results: [] };
+      const referenceContext = (referenceSearch.results || []).map((result) => ({
+        referenceId: result.referenceId,
+        title: result.title,
+        author: result.author,
+        sectionTitle: result.sectionTitle,
+        pageNumber: result.pageNumber,
+        summary: result.generatedSummary,
+        sourceRef: result.sourceRef
+      }));
+      const courseDay = input.coursePlan?.days?.find((item) => item.dayNumber === day.dayNumber) || day;
+      try {
+        const result = await aiOrchestrator.generateDayDraft({
+          ...input,
+          day: courseDay,
+          dayNumber: day.dayNumber,
+          title: day.title,
+          curriculumPlan,
+          referenceContext
+        }, input.aiMode || 'local');
+        result.progress = `Tag ${day.dayNumber}/${curriculumPlan.days.length} erzeugt`;
+        results.push(result);
+      } catch (error) {
+        const fallback = await aiOrchestrator.generateDayDraft({
+          ...input,
+          aiMode: 'local',
+          day: courseDay,
+          dayNumber: day.dayNumber,
+          title: day.title,
+          curriculumPlan,
+          referenceContext: []
+        }, 'local');
+        fallback.warnings.push(`Fallback fuer Tag ${day.dayNumber}: ${error.message}`);
+        results.push(fallback);
+      }
+    }
+    return results;
+  }
+
+  async function reviseDayDraft(input, session) {
+    assertAdmin(session);
+    ensureFactory();
+    const curriculumPlan = input.approvedCurriculumPlan || input.curriculumPlan;
+    if (!curriculumPlan || curriculumPlan.status !== 'approved') {
+      throw new Error('Revision ist erst nach Freigabe des Curriculum-Plans moeglich.');
+    }
+    return aiOrchestrator.reviseDayDraft({
+      ...input,
+      curriculumPlan
+    }, input.aiMode || 'local');
+  }
+
   function createPlanDraft(input, session) {
     assertAdmin(session);
     ensureFactory();
@@ -479,6 +543,8 @@ function createContentFactoryService({ appData }) {
     parseCoursePlan: parseCoursePlanUpload,
     getAiProviderStatus,
     generateDayDraft,
+    generateAllDayDrafts,
+    reviseDayDraft,
     createPlanContainerDraft: createPlanDraft,
     validateGeneratedContainer: validatePlanDraft,
     getImportBatch,

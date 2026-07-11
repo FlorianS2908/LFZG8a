@@ -67,6 +67,7 @@ function createCurriculumPlannerService({ factoryDir, aiOrchestrator }) {
       didacticStyle: input.didacticStyle || 'guided',
       days: distributed.days,
       unassignedTopics: [],
+      extractedSourceOutline: analyzed.outline,
       warnings: [...(analyzed.warnings || []), ...(generated?.warnings || [])],
       status: 'needs-review'
     };

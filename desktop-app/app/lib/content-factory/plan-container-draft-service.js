@@ -19,7 +19,7 @@ function createPlanContainerDraft(input = {}, options = {}) {
   files.forEach((file) => writeFile(rootDir, file.path, file.content));
   const namingReport = createNamingReport(files, { courseName, courseId });
   const validation = validateGeneratedContainer(rootDir, { courseName, courseId });
-  const analysisReport = createAnalysisReport({ courseName, courseId, department, input, files, namingReport, validation, rootDir });
+  const analysisReport = createAnalysisReport({ courseName, courseId, department, input, dayResults, files, namingReport, validation, rootDir });
   writeJson(path.join(rootDir, 'reports', `${containerId}-analysis-report.json`), analysisReport);
   writeFile(rootDir, `reports/${containerId}-analysis-report.html`, renderReportHtml(analysisReport));
   writeJson(path.join(rootDir, 'container.json'), {
@@ -114,7 +114,7 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
     { path: 'dozent/index.html', content: renderIndex(courseName, days, 'Dozentenansicht') },
     { path: 'teilnehmer/index.html', content: renderIndex(courseName, days, 'Teilnehmer-Vorschau') },
     { path: 'standalone/index.html', content: renderStandalone(courseName, days, dayResults) },
-    { path: 'standalone/standalone.js', content: 'document.documentElement.dataset.ready = "true";\n' },
+    { path: 'standalone/standalone.js', content: standaloneJs() },
     { path: 'standalone/standalone.css', content: standaloneCss() }
   ];
   dayResults.forEach((result) => {
@@ -160,8 +160,18 @@ function createFallbackDayResult(day = {}) {
 }
 
 function renderStandalone(courseName, days, dayResults) {
-  const data = JSON.stringify({ courseName, days, dayResults }).replace(/</g, '\\u003c');
-  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>${escapeHtml(courseName)}</title><link rel="stylesheet" href="standalone.css"></head><body><header><strong>Standalone-Draft: keine echte Plattform-Freigabe</strong><h1>${escapeHtml(courseName)}</h1></header><main id="app"></main><script>const DATA=${data};document.getElementById('app').innerHTML=DATA.days.map((day,index)=>{const result=DATA.dayResults[index];return \`<section><h2>Tag \${day.dayNumber}: \${day.title}</h2><h3>Dozentenansicht</h3>\${result.webvariant.teacherHtmlSections.map(s=>\`<article><h4>\${s.title}</h4>\${s.content}</article>\`).join('')}<h3>Teilnehmer-Vorschau</h3>\${result.webvariant.participantHtmlSections.map(s=>\`<article><h4>\${s.title}</h4>\${s.content}</article>\`).join('')}<h3>Aufgaben</h3><ul>\${result.tasks.map(t=>\`<li>\${t.title}: \${t.text}</li>\`).join('')}</ul><h3>Quiz</h3><ul>\${result.quiz.map(q=>\`<li>\${q.text}</li>\`).join('')}</ul><details><summary>Loesungen nur Dozentenansicht</summary><ul>\${result.solutions.map(s=>\`<li>\${s.title}: \${s.text}</li>\`).join('')}</ul></details></section>\`;}).join('');</script><script src="standalone.js"></script></body></html>`;
+  const safeResults = dayResults.map((result) => ({
+    dayNumber: result.dayNumber,
+    title: result.title,
+    webvariant: result.webvariant || { teacherHtmlSections: [], participantHtmlSections: [] },
+    tasks: result.tasks || [],
+    solutions: result.solutions || [],
+    quiz: result.quiz || [],
+    sourceRefs: result.sourceRefs || [],
+    warnings: result.warnings || []
+  }));
+  const data = JSON.stringify({ courseName, days, dayResults: safeResults }).replace(/</g, '\\u003c');
+  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(courseName)}</title><link rel="stylesheet" href="standalone.css"></head><body><header><p>Standalone-Draft: lokale Testvorschau ohne Plattform-Freigabe</p><h1>${escapeHtml(courseName)}</h1><nav><button type="button" data-role="participant" class="active">Teilnehmer-Vorschau</button><button type="button" data-role="teacher">Dozentenansicht</button></nav></header><main id="app"></main><script>window.CONTENT_FACTORY_DATA=${data};</script><script src="standalone.js"></script></body></html>`;
 }
 
 function renderSections(courseName, title, sections, teacher) {
@@ -181,21 +191,89 @@ function page(title, body) {
 }
 
 function standaloneCss() {
-  return 'body{font-family:Arial,sans-serif;margin:24px;line-height:1.5;color:#0f1f33}section{border:1px solid #d7e3f4;border-radius:8px;padding:16px;margin:16px 0}header{background:#f2f7fd;padding:16px;border-radius:8px}details{background:#fff7e6;padding:10px;border-radius:6px}';
+  return `:root{color-scheme:light;--ink:#102033;--muted:#64748b;--line:#d8e3f2;--soft:#f5f8fc;--brand:#0b6fbd;--warn:#fff4d6}*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;line-height:1.5;color:var(--ink);background:#f8fafc}header{position:sticky;top:0;background:#ffffff;border-bottom:1px solid var(--line);padding:18px 28px;z-index:2}header p{margin:0 0 6px;color:var(--muted);font-size:14px}h1{margin:0 0 14px;font-size:28px}nav{display:flex;gap:8px;flex-wrap:wrap}button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:6px;padding:9px 12px;font-weight:700;cursor:pointer}button.active{background:var(--brand);border-color:var(--brand);color:#fff}main{max-width:1120px;margin:0 auto;padding:24px}section.day{background:#fff;border:1px solid var(--line);border-radius:8px;padding:18px;margin:0 0 18px}article{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.panel{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:14px}.warning{background:var(--warn);border:1px solid #f4d17c;border-radius:6px;padding:10px}.teacher-only{display:none}body.teacher .teacher-only{display:block}.refs{color:var(--muted);font-size:13px;word-break:break-word}`;
 }
 
-function createAnalysisReport({ courseName, courseId, department, input, files, namingReport, validation, rootDir }) {
+function standaloneJs() {
+  return `(() => {
+  const data = window.CONTENT_FACTORY_DATA || { days: [], dayResults: [] };
+  let role = 'participant';
+  const app = document.getElementById('app');
+  const escapeHtml = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const renderSections = (sections) => (sections || []).map((section) => '<article><h3>' + escapeHtml(section.title) + '</h3>' + String(section.content || '') + '</article>').join('');
+  const renderList = (items, formatter) => '<ul>' + (items || []).map(formatter).join('') + '</ul>';
+  function render() {
+    document.body.classList.toggle('teacher', role === 'teacher');
+    app.innerHTML = data.dayResults.map((result) => {
+      const sections = role === 'teacher' ? result.webvariant.teacherHtmlSections : result.webvariant.participantHtmlSections;
+      return '<section class="day"><h2>Tag ' + escapeHtml(result.dayNumber) + ': ' + escapeHtml(result.title) + '</h2>'
+        + renderSections(sections)
+        + '<div class="grid"><div class="panel"><h3>Aufgaben</h3>' + renderList(result.tasks, (task) => '<li><strong>' + escapeHtml(task.title) + '</strong><br>' + escapeHtml(task.text) + '</li>') + '</div>'
+        + '<div class="panel"><h3>Quiz</h3>' + renderList(result.quiz, (quiz) => '<li>' + escapeHtml(quiz.text) + '</li>') + '</div></div>'
+        + (role === 'teacher' ? '<div class="panel teacher-only"><h3>Loesungen</h3>' + renderList(result.solutions, (solution) => '<li><strong>' + escapeHtml(solution.title) + '</strong><br>' + escapeHtml(solution.text) + '</li>') + '</div>' : '')
+        + ((result.warnings || []).length ? '<p class="warning">' + escapeHtml(result.warnings.join(' | ')) + '</p>' : '')
+        + ((result.sourceRefs || []).length ? '<p class="refs">Quellen: ' + escapeHtml(result.sourceRefs.join(', ')) + '</p>' : '')
+        + '</section>';
+    }).join('');
+  }
+  document.querySelectorAll('[data-role]').forEach((button) => button.addEventListener('click', () => {
+    role = button.dataset.role;
+    document.querySelectorAll('[data-role]').forEach((item) => item.classList.toggle('active', item === button));
+    render();
+  }));
+  render();
+  document.documentElement.dataset.ready = 'true';
+})();\n`;
+}
+
+function createAnalysisReport({ courseName, courseId, department, input, dayResults, files, namingReport, validation, rootDir }) {
+  const curriculum = input.approvedCurriculumPlan || input.curriculumPlan || {};
+  const anchor = curriculum.anchor || input.anchor || {};
+  const warnings = [
+    ...(input.warnings || []),
+    ...(curriculum.warnings || []),
+    ...dayResults.flatMap((result) => result.warnings || []),
+    ...(validation.warnings || [])
+  ];
+  const solutionCount = dayResults.reduce((sum, result) => sum + (result.solutions || []).length, 0);
+  const taskCount = dayResults.reduce((sum, result) => sum + (result.tasks || []).length, 0);
+  const quizCount = dayResults.reduce((sum, result) => sum + (result.quiz || []).length, 0);
   return {
     courseName,
     courseId,
     department,
+    anchorType: anchor.type || '',
+    anchorFiles: (anchor.sourceFiles || []).map((file) => file.name || file.originalFilename || ''),
+    usedRanges: anchor.ranges || [],
+    extractionStatus: (curriculum.extractedSourceOutline || curriculum.outline || []).map((item) => ({
+      sourceRef: item.sourceRef,
+      title: item.title,
+      pageNumber: item.pageNumber || null,
+      slideNumber: item.slideNumber || null,
+      chapter: item.chapter || null,
+      warnings: item.warnings || []
+    })),
+    targetAudience: curriculum.targetAudience || input.targetAudience || {},
+    duration: curriculum.duration || input.duration || {},
     coursePlan: input.coursePlan?.sourceFile || '',
     selectedSheet: input.coursePlan?.selectedSheet || '',
     recognizedDays: input.coursePlan?.days?.length || 0,
     aiMode: input.aiMode || 'local',
+    openAiUsed: (input.aiMode || 'local').startsWith('openai') && !warnings.some((warning) => /OpenAI ist nicht konfiguriert|OpenAI-.*Fallback/i.test(warning)),
+    fallbackUsed: warnings.some((warning) => /Fallback|nicht konfiguriert/i.test(warning)),
+    dayCount: dayResults.length,
+    topicCount: (curriculum.days || []).reduce((sum, day) => sum + (day.topics || []).length, 0),
+    taskCount,
+    solutionCount,
+    quizCount,
     usedMaterials: (input.materials || []).map((file) => file.originalFilename || file.filename || file.name),
     usedReferences: (input.references || []).map(publicReference),
-    warnings: [...(input.warnings || []), ...(validation.warnings || [])],
+    referenceUsage: {
+      enabled: Boolean(input.useReferences),
+      exported: false,
+      note: 'Referenzliteratur bleibt reference-only und wird nicht in den Kurscontainer kopiert.'
+    },
+    warnings: Array.from(new Set(warnings.filter(Boolean))),
     namingReport,
     exportSafetyReport: validation,
     openItems: validation.errors || [],

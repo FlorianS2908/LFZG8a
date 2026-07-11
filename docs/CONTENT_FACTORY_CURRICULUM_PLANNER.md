@@ -23,10 +23,27 @@ Das Zielgruppenprofil enthaelt unter anderem Fachbereich, Vorkenntnisse, Lernniv
 Der lokale MVP nutzt ohne API-Key deterministische Heuristiken:
 
 - Unterrichtsplan: Tage und UE-Bloecke werden uebernommen.
-- Buch/PDF/EPUB/PPTX: Dateiname, Anchor-Titel und optionale Bereiche erzeugen sichere Themenkarten ohne Originalseiten.
-- Text/Word/Markdown/HTML/TXT: Datei- und Strukturhinweise erzeugen Themenkarten ohne vollstaendige Originaltexte im Renderer.
+- PDF/PPTX/DOCX/EPUB/TXT/MD/HTML: die ContentFactory erzeugt sichere Outlines aus Seiten, Folien, Kapiteln, Ueberschriften und kurzen Metadaten.
+- Buch/PDF/EPUB/PPTX: optionale Seiten- oder Folienbereiche werden beruecksichtigt. Bereiche ausserhalb der Auswahl werden ignoriert.
+- Text/Word/Markdown/HTML/TXT: Ueberschriften, Listen- und Abschnittsstruktur werden als Themenkandidaten genutzt.
 
 Wenn OpenAI spaeter serverseitig konfiguriert wird, kann `generateCurriculumPlan` bessere Cluster und didaktische Reihenfolgen vorschlagen. Der Output bleibt validierungspflichtig.
+
+Die Outlines enthalten nur kurze Vorschauen und eigenformulierte Zusammenfassungen. Volltexte, Buchseiten, Folienbilder, Tabellenbilder und Referenzchunks werden nicht in den Renderer oder in den Kurscontainer geschrieben.
+
+## Source Extraction
+
+Die Extraktion liegt unter `desktop-app/app/lib/content-factory/source-extraction/`.
+
+Unterstuetzte Formate:
+
+- PDF: sicherer Text-/Latin1-Fallback mit Seiten-/Abschnittswarnung, keine OCR und keine Bilder.
+- PPTX: ZIP/XML-Auswertung von `ppt/slides/slide*.xml`, Folientitel und sichtbarer Text als kurze Outline, keine Screenshots.
+- DOCX: ZIP/XML-Auswertung von `word/document.xml`, Ueberschriften und Absaetze als sichere Struktur.
+- EPUB: ZIP/XHTML-Auswertung von HTML-Kapiteln, Kapitel- und Heading-Struktur, reference-only fuer Literatur.
+- TXT/MD/HTML: lokale Text- und Heading-Heuristik.
+
+Wenn eine Quelle nicht gelesen werden kann, bricht der Planner nicht ab. Stattdessen erzeugt er eine Warnung und einen Fallback aus Dateiname und Anchor-Metadaten.
 
 ## Tages- und UE-Verteilung
 
@@ -34,11 +51,27 @@ Themen werden anhand der Dauer gleichmaessig auf Tage verteilt. Pro Tag werden U
 
 ## Review-Zwischenschritt
 
-Die UI zeigt eine Kanban-/Spaltenansicht je Tag. Themen koennen im MVP per Drag & Drop oder Buttons auf andere Tage verschoben werden. UE lassen sich pro Thema erhoehen oder reduzieren. Jede Aenderung setzt den Status wieder auf `needs-review`.
+Die UI zeigt eine Kanban-/Spaltenansicht je Tag. Themen koennen per Drag & Drop oder Buttons auf andere Tage verschoben werden. Tagesname, Tagesziel, Titel, Summary, UE, Difficulty und Active-Status sind editierbar. Themen koennen deaktiviert, dupliziert oder unterhalb neu angelegt werden. Jede Aenderung setzt den Status wieder auf `needs-review`.
 
 ## Freigabe vor Generierung
 
 Tagesgenerierung und Container-Draft sind blockiert, bis der CurriculumPlanDraft den Status `approved` hat. Der freigegebene Plan wird als `approvedCurriculumPlan` an DayGeneration und Draft-Erzeugung uebergeben.
+
+Nach Freigabe kann die UI entweder einen ausgewaehlten Tag neu erzeugen oder mit `generateAllDayDrafts` alle Tage generieren. Fehler pro Tag fuehren zu einem lokalen Fallback fuer genau diesen Tag und werden als Warnung im DayResult gespeichert.
+
+Das Feld `corrections` steuert die Korrekturschleife. `reviseDayDraft` ueberarbeitet den vorhandenen Tagesentwurf lokal oder optional mit OpenAI und speichert die Revision unter `reviews/tag_XX.json`.
+
+## OpenAIProvider
+
+Default bleibt `AI_PROVIDER=local`. OpenAI ist nur aktiv, wenn `OPENAI_API_KEY` und `OPENAI_MODEL` im Node/Main-Prozess gesetzt sind. Der Renderer erhaelt nur `configured` und Modellname, niemals den Key.
+
+Der Provider nutzt JSON-only Prompts, validiert DayGeneration-Ergebnisse und faellt bei Timeout, API-Fehlern oder ungueltigem JSON auf `LocalHeuristicProvider` zurueck. Teilnehmerbereiche werden nach der Normalisierung auf Loesungshinweise geprueft.
+
+## Standalone und Analysebericht
+
+Der erzeugte Dual-Mode-Draft enthaelt alle DayResults. `standalone/index.html` bietet einen Umschalter zwischen Teilnehmer-Vorschau und Dozentenansicht. Loesungen erscheinen nur in der Dozentenansicht.
+
+Der Analysebericht enthaelt Kursdaten, Anchor-Typ, Anchor-Dateien, Ranges, Extraktionsstatus, Zielgruppe, Dauer, AI-Modus, OpenAI-/Fallback-Hinweise, Anzahl Tage/Themen/Aufgaben/Loesungen/Quizfragen, Warnungen, Referenznutzung, Export-Schutz-Ergebnis, erzeugte Dateien und offene Punkte.
 
 ## Sicherheit
 
@@ -59,4 +92,4 @@ Enthalten sind `anchor.json`, `extracted-outline.json`, `curriculum-plan.json`, 
 
 ## Grenzen des MVP
 
-Der lokale Fallback analysiert keine kompletten Buchseiten oder PowerPoint-Folieninhalte semantisch, sondern erzeugt sichere, pruefbare Themenvorschlaege aus Metadaten, Bereichen und Dateinamen. Eine tiefere Inhaltsanalyse sollte spaeter serverseitig mit sauberer Rechte- und Secret-Verwaltung erfolgen.
+Der lokale Fallback ist bewusst konservativ. Er extrahiert keine Bilder, keine Tabellenbilder, keine OCR-Inhalte und keine vollstaendigen Buchseiten. PDF-Text kann je nach Datei nur eingeschraenkt lesbar sein; in diesem Fall wird mit Warnung weitergearbeitet. Eine tiefere semantische Inhaltsanalyse sollte serverseitig mit sauberer Rechte- und Secret-Verwaltung erfolgen.

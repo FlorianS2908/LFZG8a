@@ -29,6 +29,7 @@ const state = {
     aiMode: 'local',
     selectedDayNumber: 1,
     dayDraft: null,
+    dayResults: [],
     corrections: '',
     generatedDraft: null,
     status: ''
@@ -262,15 +263,18 @@ function renderPlanWizard() {
         <label>Tag<select data-wizard-day>${(wizard.approvedCurriculumPlan?.days || []).map((day) => `<option value="${day.dayNumber}" ${Number(wizard.selectedDayNumber) === day.dayNumber ? 'selected' : ''}>Tag ${day.dayNumber}: ${escapeHtml(day.title)}</option>`).join('')}</select></label>
       </div>
       <small>Provider: local ${state.aiStatus?.providers?.openai?.configured ? '| OpenAI konfiguriert' : '| OpenAI nicht konfiguriert, Fallback lokal'}</small>
-      <button class="primary-button" type="button" data-wizard-generate ${selectedDay && wizard.approvedCurriculumPlan?.status === 'approved' ? '' : 'disabled'}>Tagesentwurf erzeugen</button>
+      <button class="primary-button" type="button" data-wizard-generate-all ${selectedDay && wizard.approvedCurriculumPlan?.status === 'approved' ? '' : 'disabled'}>Alle Tage generieren</button>
+      <button class="secondary-button" type="button" data-wizard-generate ${selectedDay && wizard.approvedCurriculumPlan?.status === 'approved' ? '' : 'disabled'}>Ausgewaehlten Tag neu generieren</button>
       ${!wizard.approvedCurriculumPlan ? '<p class="status-line status-warning">Tagesentwurf erst nach Curriculum-Freigabe moeglich.</p>' : ''}
     </article>
 
     <article class="tool-card">
       <h3>10-12. Tagesentwurf, Korrektur & Draft</h3>
+      ${wizard.dayResults.length ? `<p class="status-line">${wizard.dayResults.length} Tagesentwurf/Tagesentwuerfe erzeugt.</p>` : ''}
       ${wizard.dayDraft ? renderDayDraftPreview(wizard.dayDraft) : '<p class="status-line">Noch kein Tagesentwurf erzeugt.</p>'}
       <label>Korrekturhinweis<textarea data-wizard-corrections>${escapeHtml(wizard.corrections)}</textarea></label>
-      <button class="primary-button" type="button" data-wizard-create-draft ${wizard.dayDraft ? '' : 'disabled'}>Dual-Mode-Container-Draft erzeugen</button>
+      <button class="secondary-button" type="button" data-wizard-revise ${wizard.dayDraft ? '' : 'disabled'}>Tagesentwurf mit Korrektur neu erzeugen</button>
+      <button class="primary-button" type="button" data-wizard-create-draft ${wizard.dayResults.length || wizard.dayDraft ? '' : 'disabled'}>Dual-Mode-Container-Draft erzeugen</button>
       ${wizard.generatedDraft ? renderGeneratedDraft(wizard.generatedDraft) : ''}
     </article>
   `;
@@ -308,24 +312,33 @@ function renderCurriculumReview(draft) {
           <section class="factory-card curriculum-day" data-curriculum-day="${day.dayNumber}">
             <strong>Tag ${day.dayNumber}: ${escapeHtml(day.mainTopic || day.title)}</strong>
             <small>${escapeHtml(day.estimatedUE || 0)} UE | ${(day.topics || []).length} Thema/Themen</small>
+            <label>Tagesname<input data-day-field="${day.dayNumber}" data-day-prop="title" value="${escapeHtml(day.title || '')}"></label>
+            <label>Tagesziel<textarea data-day-field="${day.dayNumber}" data-day-prop="learningGoal">${escapeHtml((day.learningGoals || [])[0] || '')}</textarea></label>
             ${(day.warnings || []).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
             ${(day.topics || []).map((topic) => `
               <article class="mapping-item curriculum-topic" draggable="true" data-topic-id="${escapeHtml(topic.id)}">
                 <strong>${escapeHtml(topic.title)}</strong>
-                <p>${escapeHtml(topic.summary)}</p>
-                <small>${escapeHtml(topic.estimatedUE)} UE | ${escapeHtml(topic.difficulty)} | ${escapeHtml(topic.depth)}</small>
+                <label>Titel<input data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="title" value="${escapeHtml(topic.title)}"></label>
+                <label>Summary<textarea data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="summary">${escapeHtml(topic.summary)}</textarea></label>
+                <label>UE<input data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="estimatedUE" type="number" min="0" value="${escapeHtml(topic.estimatedUE)}"></label>
+                <label>Difficulty<select data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="difficulty">${['easy', 'normal', 'hard'].map((value) => `<option value="${value}" ${topic.difficulty === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+                <label class="checkline"><input data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="active" type="checkbox" ${topic.active !== false ? 'checked' : ''}> aktiv</label>
+                <small>${escapeHtml(topic.depth)} | ${escapeHtml(topic.practiceType)}</small>
                 <div class="button-row">
                   <button class="secondary-button" type="button" data-topic-move="${escapeHtml(topic.id)}" data-target-day="${Math.max(1, day.dayNumber - 1)}">Tag -</button>
                   <button class="secondary-button" type="button" data-topic-move="${escapeHtml(topic.id)}" data-target-day="${day.dayNumber + 1}">Tag +</button>
-                  <button class="secondary-button" type="button" data-topic-ue="${escapeHtml(topic.id)}" data-ue="${Number(topic.estimatedUE || 1) + 1}">UE +</button>
-                  <button class="secondary-button" type="button" data-topic-ue="${escapeHtml(topic.id)}" data-ue="${Math.max(0, Number(topic.estimatedUE || 1) - 1)}">UE -</button>
+                  <button class="secondary-button" type="button" data-topic-duplicate="${escapeHtml(topic.id)}">duplizieren</button>
+                  <button class="secondary-button" type="button" data-topic-new-after="${escapeHtml(topic.id)}">neues Thema darunter</button>
                 </div>
               </article>
             `).join('')}
+            <button class="secondary-button" type="button" data-day-new-topic="${day.dayNumber}">Neues Thema</button>
           </section>
         `).join('')}
       </div>
       <button class="primary-button" type="button" data-wizard-approve ${draft.validation?.canApprove === false ? 'disabled' : ''}>Plan freigeben</button>
+      <button class="secondary-button" type="button" data-day-add>Tag hinzufuegen</button>
+      <button class="secondary-button" type="button" data-day-remove ${draft.days?.length > 1 ? '' : 'disabled'}>Letzten Tag loeschen</button>
     </article>
   `;
 }
@@ -412,7 +425,18 @@ function bindPlanWizardEvents() {
   $('[data-wizard-analyze]')?.addEventListener('click', analyzeWizardCurriculum);
   $('[data-wizard-approve]')?.addEventListener('click', approveWizardCurriculum);
   $all('[data-topic-move]').forEach((button) => button.addEventListener('click', () => moveWizardTopic(button.dataset.topicMove, Number(button.dataset.targetDay), 1)));
-  $all('[data-topic-ue]').forEach((button) => button.addEventListener('click', () => updateWizardTopic(button.dataset.topicUe, { estimatedUE: Number(button.dataset.ue) })));
+  $all('[data-topic-field]').forEach((field) => field.addEventListener('change', () => {
+    const value = field.type === 'checkbox' ? field.checked : field.type === 'number' ? Number(field.value) : field.value;
+    updateWizardTopic(field.dataset.topicField, { [field.dataset.topicProp]: value });
+  }));
+  $all('[data-day-field]').forEach((field) => field.addEventListener('change', () => {
+    updateWizardDay(Number(field.dataset.dayField), field.dataset.dayProp, field.value);
+  }));
+  $all('[data-topic-duplicate]').forEach((button) => button.addEventListener('click', () => duplicateWizardTopic(button.dataset.topicDuplicate)));
+  $all('[data-topic-new-after]').forEach((button) => button.addEventListener('click', () => addWizardTopicAfter(button.dataset.topicNewAfter)));
+  $all('[data-day-new-topic]').forEach((button) => button.addEventListener('click', () => addWizardTopicToDay(Number(button.dataset.dayNewTopic))));
+  $('[data-day-add]')?.addEventListener('click', addWizardDay);
+  $('[data-day-remove]')?.addEventListener('click', removeLastWizardDay);
   $all('[data-topic-id]').forEach((topic) => topic.addEventListener('dragstart', (event) => {
     event.dataTransfer.setData('text/plain', topic.dataset.topicId);
   }));
@@ -451,10 +475,12 @@ function bindPlanWizardEvents() {
     renderPlanWizard();
   });
   $('[data-wizard-generate]')?.addEventListener('click', generateWizardDayDraft);
+  $('[data-wizard-generate-all]')?.addEventListener('click', generateAllWizardDayDrafts);
   $('[data-wizard-corrections]')?.addEventListener('input', (event) => {
     state.wizard.corrections = event.target.value;
   });
   $('[data-wizard-create-draft]')?.addEventListener('click', createWizardDraft);
+  $('[data-wizard-revise]')?.addEventListener('click', reviseWizardDayDraft);
   $all('[data-wizard-open]').forEach((button) => button.addEventListener('click', () => desktop.factory.openGeneratedDraft(state.wizard.generatedDraft.containerId, button.dataset.wizardOpen)));
 }
 
@@ -575,6 +601,92 @@ async function updateWizardTopic(topicId, patch) {
   renderPlanWizard();
 }
 
+async function updateWizardDay(dayNumber, prop, value) {
+  const draft = state.wizard.curriculumDraft;
+  if (!draft?.id) return;
+  const days = (draft.days || []).map((day) => {
+    if (day.dayNumber !== dayNumber) return day;
+    if (prop === 'learningGoal') return { ...day, learningGoals: [value].filter(Boolean) };
+    return { ...day, [prop]: value };
+  });
+  try {
+    state.wizard.curriculumDraft = await desktop.factory.updateCurriculumDraft(draft.id, { days });
+    state.wizard.approvedCurriculumPlan = null;
+    state.wizard.status = 'Curriculum geaendert. Bitte erneut freigeben.';
+  } catch (error) {
+    state.wizard.status = error.message;
+  }
+  renderPlanWizard();
+}
+
+async function duplicateWizardTopic(topicId) {
+  const draft = state.wizard.curriculumDraft;
+  if (!draft?.id) return;
+  const days = (draft.days || []).map((day) => ({
+    ...day,
+    topics: (day.topics || []).flatMap((topic) => topic.id === topicId ? [topic, { ...topic, id: `${topic.id}-copy-${Date.now()}`, title: `${topic.title} Kopie` }] : [topic])
+  }));
+  state.wizard.curriculumDraft = await desktop.factory.updateCurriculumDraft(draft.id, { days });
+  state.wizard.approvedCurriculumPlan = null;
+  state.wizard.status = 'Thema dupliziert. Bitte erneut freigeben.';
+  renderPlanWizard();
+}
+
+async function addWizardTopicAfter(topicId) {
+  const draft = state.wizard.curriculumDraft;
+  if (!draft?.id) return;
+  const days = (draft.days || []).map((day) => ({
+    ...day,
+    topics: (day.topics || []).flatMap((topic) => topic.id === topicId ? [topic, createUiTopic(day.dayNumber)] : [topic])
+  }));
+  state.wizard.curriculumDraft = await desktop.factory.updateCurriculumDraft(draft.id, { days });
+  state.wizard.approvedCurriculumPlan = null;
+  renderPlanWizard();
+}
+
+async function addWizardTopicToDay(dayNumber) {
+  const draft = state.wizard.curriculumDraft;
+  if (!draft?.id) return;
+  const days = (draft.days || []).map((day) => day.dayNumber === dayNumber ? { ...day, topics: [...(day.topics || []), createUiTopic(dayNumber)] } : day);
+  state.wizard.curriculumDraft = await desktop.factory.updateCurriculumDraft(draft.id, { days });
+  state.wizard.approvedCurriculumPlan = null;
+  renderPlanWizard();
+}
+
+async function addWizardDay() {
+  const draft = state.wizard.curriculumDraft;
+  if (!draft?.id) return;
+  const next = Math.max(0, ...(draft.days || []).map((day) => day.dayNumber)) + 1;
+  const days = [...(draft.days || []), { dayNumber: next, title: `Tag ${next} - Neues Thema`, mainTopic: 'Neues Thema', estimatedUE: 0, estimatedHours: draft.duration?.hoursPerDay || 8, learningGoals: [], topics: [], practiceBlocks: [], quizPlanned: true, projectContextPlanned: false, warnings: ['Tag ist noch leer.'] }];
+  state.wizard.curriculumDraft = await desktop.factory.updateCurriculumDraft(draft.id, { days });
+  state.wizard.approvedCurriculumPlan = null;
+  renderPlanWizard();
+}
+
+async function removeLastWizardDay() {
+  const draft = state.wizard.curriculumDraft;
+  if (!draft?.id || (draft.days || []).length <= 1) return;
+  const days = draft.days.slice(0, -1);
+  state.wizard.curriculumDraft = await desktop.factory.updateCurriculumDraft(draft.id, { days });
+  state.wizard.approvedCurriculumPlan = null;
+  renderPlanWizard();
+}
+
+function createUiTopic(dayNumber) {
+  return {
+    id: `topic-ui-${dayNumber}-${Date.now()}`,
+    title: 'Neues Thema',
+    summary: 'Eigene Kurzbeschreibung ergaenzen.',
+    sourceRefs: ['manual-review'],
+    estimatedUE: 1,
+    difficulty: 'normal',
+    depth: 'basic',
+    practiceType: 'guided-task',
+    active: true,
+    warnings: []
+  };
+}
+
 async function generateWizardDayDraft() {
   const curriculumDay = state.wizard.approvedCurriculumPlan?.days?.find((item) => item.dayNumber === Number(state.wizard.selectedDayNumber));
   const day = curriculumDayToCourseDay(curriculumDay);
@@ -593,7 +705,55 @@ async function generateWizardDayDraft() {
       useReferences: state.wizard.useReferences,
       aiMode: state.wizard.aiMode
     });
+    state.wizard.dayResults = [
+      ...state.wizard.dayResults.filter((item) => item.dayNumber !== state.wizard.dayDraft.dayNumber),
+      state.wizard.dayDraft
+    ].sort((a, b) => a.dayNumber - b.dayNumber);
     state.wizard.status = 'Tagesentwurf erzeugt.';
+  } catch (error) {
+    state.wizard.status = error.message;
+  }
+  renderPlanWizard();
+}
+
+async function generateAllWizardDayDrafts() {
+  state.wizard.status = 'Alle Tagesentwuerfe werden erzeugt ...';
+  renderPlanWizard();
+  try {
+    state.wizard.dayResults = await desktop.factory.generateAllDayDrafts({
+      course: state.wizard.course,
+      coursePlan: state.wizard.coursePlan,
+      approvedCurriculumPlan: state.wizard.approvedCurriculumPlan,
+      materials: state.wizard.importBatch?.files || [],
+      useReferences: state.wizard.useReferences,
+      aiMode: state.wizard.aiMode
+    });
+    state.wizard.dayDraft = state.wizard.dayResults[0] || null;
+    state.wizard.status = `${state.wizard.dayResults.length} Tagesentwuerfe erzeugt.`;
+  } catch (error) {
+    state.wizard.status = error.message;
+  }
+  renderPlanWizard();
+}
+
+async function reviseWizardDayDraft() {
+  if (!state.wizard.dayDraft) return;
+  state.wizard.status = 'Tagesentwurf wird mit Korrektur ueberarbeitet ...';
+  renderPlanWizard();
+  try {
+    state.wizard.dayDraft = await desktop.factory.reviseDayDraft({
+      course: state.wizard.course,
+      coursePlan: state.wizard.coursePlan,
+      approvedCurriculumPlan: state.wizard.approvedCurriculumPlan,
+      existingDraft: state.wizard.dayDraft,
+      correctionPrompt: state.wizard.corrections,
+      aiMode: state.wizard.aiMode
+    });
+    state.wizard.dayResults = [
+      ...state.wizard.dayResults.filter((item) => item.dayNumber !== state.wizard.dayDraft.dayNumber),
+      state.wizard.dayDraft
+    ].sort((a, b) => a.dayNumber - b.dayNumber);
+    state.wizard.status = 'Tagesentwurf wurde ueberarbeitet.';
   } catch (error) {
     state.wizard.status = error.message;
   }
@@ -604,7 +764,7 @@ async function createWizardDraft() {
   state.wizard.status = 'Draft-Container wird geschrieben ...';
   renderPlanWizard();
   try {
-    const dayResults = [state.wizard.dayDraft];
+    const dayResults = state.wizard.dayResults.length ? state.wizard.dayResults : [state.wizard.dayDraft];
     state.wizard.generatedDraft = await desktop.factory.createPlanContainerDraft({
       course: state.wizard.course,
       coursePlan: state.wizard.coursePlan,
