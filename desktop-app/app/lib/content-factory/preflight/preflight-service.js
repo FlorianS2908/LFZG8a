@@ -6,6 +6,7 @@ function runPreflight(input = {}, options = {}) {
   const curriculum = input.approvedCurriculumPlan || input.curriculumPlan || {};
   const targetAudience = input.targetAudience || curriculum.targetAudience || {};
   const aiStatus = options.aiStatus || {};
+  const providerMode = input.aiMode || aiStatus.defaultProvider || 'local';
   const profileContext = buildContainerProfile({
     ...input,
     curriculumPlan: curriculum,
@@ -40,7 +41,8 @@ function runPreflight(input = {}, options = {}) {
     checkOk('solution-targets', 'Loesungsschutz Artefakte', targets.every((target) => !(target.solutionOnly && /^teilnehmer\//i.test(target.targetPath || ''))), 'solutionOnly Artefakt liegt im Teilnehmerbereich.'),
     checkOk('no-executables', 'Keine EXE/Skripte', [...(input.uploads || []), ...targets].every((item) => !/\.(exe|bat|cmd|ps1)$/i.test(item.name || item.path || item.targetPath || '')), 'Ausfuehrbare Datei oder Skript im Exportpfad erkannt.'),
     checkOk('no-participant-solutions', 'Teilnehmer loesungsfrei', JSON.stringify(input.dayResults || []).match(/teilnehmer.*(loesung|lösung|solution)/i) === null, 'Moegliche Loesung im Teilnehmerbereich.'),
-    checkOpenAi(input.aiMode || 'local', aiStatus),
+    checkOpenAi(providerMode, aiStatus),
+    checkCostEstimate(input.costEstimate),
     checkOk('reference-export', 'Referenzexport', !(input.referenceUsage?.exportReferences), 'Referenzliteratur darf nicht exportiert werden.'),
     checkOk('no-reference-paths', 'Keine reference-library Pfade', !JSON.stringify(referencePaths).match(/reference-library|chunks\.json|extracted\.json/i), 'Rohdaten-/Referenzpfade erkannt.')
   ];
@@ -67,7 +69,19 @@ function checkOpenAi(aiMode, aiStatus = {}) {
     id: 'ai-openai',
     label: 'OpenAI',
     status: configured ? 'ok' : 'warning',
-    message: configured ? 'OpenAI ist konfiguriert.' : 'OpenAI ist nicht konfiguriert; lokaler Fallback wird genutzt.'
+    message: configured ? 'OpenAI ist konfiguriert.' : 'OpenAI gewaehlt, aber kein API-Key gefunden. Local/Fallback wird genutzt.'
+  };
+}
+
+function checkCostEstimate(costEstimate = null) {
+  if (!costEstimate) return { id: 'cost-estimate', label: 'Kostenabschaetzung', status: 'ok', message: 'Keine externe Kostenabschaetzung erforderlich.' };
+  return {
+    id: 'cost-estimate',
+    label: 'Kostenabschaetzung',
+    status: costEstimate.warning ? 'warning' : 'ok',
+    message: costEstimate.warning
+      ? `Geschaetzte Kosten ${costEstimate.estimatedCostUsd} USD liegen ueber Limit ${costEstimate.warningLimitUsd} USD.`
+      : `Geschaetzte Kosten ${costEstimate.estimatedCostUsd} USD.`
   };
 }
 

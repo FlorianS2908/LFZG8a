@@ -4,11 +4,38 @@ class OpenAIProvider {
   constructor(options = {}) {
     this.name = 'openai';
     this.apiKey = options.apiKey || process.env.OPENAI_API_KEY || '';
-    this.model = options.model || process.env.OPENAI_MODEL || '';
+    this.model = options.model || process.env.OPENAI_MODEL || 'gpt-5.4-mini';
+    this.timeoutMs = Number(options.timeoutMs || process.env.OPENAI_TIMEOUT_MS || 30000);
+    this.keySource = options.keySource || (this.apiKey ? 'env' : 'missing');
   }
 
   isConfigured() {
     return Boolean(this.apiKey && this.model);
+  }
+
+  getStatus() {
+    return {
+      provider: this.name,
+      configured: this.isConfigured(),
+      model: this.model || 'gpt-5.4-mini',
+      keySource: this.apiKey ? this.keySource : 'missing'
+    };
+  }
+
+  async testConnection() {
+    if (!this.isConfigured()) {
+      return { status: 'warning', message: 'OpenAI ist nicht konfiguriert. Local/Fallback bleibt aktiv.' };
+    }
+    try {
+      await this.requestJson({
+        schema: 'ConnectionTest',
+        rules: ['Antworte ausschliesslich als JSON.', 'Keine sensiblen Daten.'],
+        input: { ping: true }
+      }, { maxTokens: 20 });
+      return { status: 'success', message: 'OpenAI Testanfrage erfolgreich.' };
+    } catch (error) {
+      return { status: 'failed', message: `OpenAI Testanfrage fehlgeschlagen: ${error.message}` };
+    }
   }
 
   async generateDayDraft(input = {}) {
@@ -53,12 +80,13 @@ class OpenAIProvider {
     return this.requestJson(prompt);
   }
 
-  requestJson(payload) {
+  requestJson(payload, options = {}) {
     if (!this.isConfigured()) {
       return Promise.reject(new Error('OpenAI ist nicht konfiguriert.'));
     }
     const body = JSON.stringify({
       model: this.model,
+      max_tokens: options.maxTokens || undefined,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: 'Du erzeugst ausschliesslich JSON nach dem angeforderten Schema.' },
@@ -70,7 +98,7 @@ class OpenAIProvider {
         hostname: 'api.openai.com',
         path: '/v1/chat/completions',
         method: 'POST',
-        timeout: 30000,
+        timeout: this.timeoutMs,
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',

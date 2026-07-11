@@ -4,21 +4,35 @@ const { normalizeDayGenerationResult } = require('./output-normalizer');
 const { validateDayGenerationResult, validateCurriculumPlanPartial } = require('./schemas');
 const { buildPrompt, runPromptQualityGate, createAiMeta } = require('../ai-quality-gate/ai-quality-gate-service');
 const { reviewOutput } = require('../ai-quality-gate/output-review-service');
+const { loadAppEnv } = require('../../env/env-loader');
 
 class AiOrchestrator {
   constructor(options = {}) {
+    this.env = options.env || loadAppEnv(options.projectRoot || process.cwd());
     this.local = options.localProvider || new LocalHeuristicProvider();
-    this.openai = options.openaiProvider || new OpenAIProvider(options.openai || {});
+    this.openai = options.openaiProvider || new OpenAIProvider({
+      ...(options.openai || {}),
+      model: options.openai?.model || this.env.openAiModel,
+      timeoutMs: options.openai?.timeoutMs || this.env.timeoutMs,
+      keySource: this.env.keySource
+    });
   }
 
   getStatus() {
     return {
-      defaultProvider: process.env.AI_PROVIDER || 'local',
+      defaultProvider: this.env.aiProvider || process.env.AI_PROVIDER || 'local',
+      timeoutMs: this.env.timeoutMs,
+      maxPromptChars: this.env.maxPromptChars,
+      costWarningUsd: this.env.costWarningUsd,
       providers: {
         local: { configured: true },
-        openai: { configured: this.openai.isConfigured(), model: this.openai.model || '' }
+        openai: this.openai.getStatus ? this.openai.getStatus() : { provider: 'openai', configured: this.openai.isConfigured(), model: this.openai.model || '', keySource: this.openai.isConfigured() ? 'env' : 'missing' }
       }
     };
+  }
+
+  testOpenAiConnection() {
+    return this.openai.testConnection ? this.openai.testConnection() : Promise.resolve({ status: 'warning', message: 'OpenAI Provider unterstuetzt keine Testanfrage.' });
   }
 
   async generateDayDraft(input = {}, mode = 'local') {

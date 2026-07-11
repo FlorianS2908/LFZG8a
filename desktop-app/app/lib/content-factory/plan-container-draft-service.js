@@ -86,7 +86,9 @@ function createProtocolInput({ courseName, containerId, input, dayResults, files
     expectedDayCount: (curriculum.days || input.coursePlan?.days || []).length,
     files,
     validation,
-    aiRuns: dayResults.map((result) => result.aiMeta).filter(Boolean)
+    aiRuns: dayResults.map((result) => result.aiMeta).filter(Boolean),
+    aiConfig: input.aiConfig || {},
+    costEstimate: input.costEstimate || null
   };
 }
 
@@ -363,6 +365,8 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
       summary: testProtocol.summary
     } : null,
     promptQuality,
+    aiConfig: input.aiConfig || {},
+    costEstimate: input.costEstimate || null,
     aiRunCount: promptQuality.runCount,
     aiFallbackCount: promptQuality.fallbackCount,
     readyForReview: validation.isValid && input.preflight?.status !== 'red',
@@ -424,6 +428,7 @@ function renderReportHtml(report) {
       <section class="card"><h2>Preflight & Testlauf</h2><p>Status: <strong>${escapeHtml(report.preflight?.status || 'nicht ausgefuehrt')}</strong> | Score: ${escapeHtml(report.preflight?.score ?? '-')} | Modus: ${escapeHtml(report.testRunStatus)}</p><p>Preset: ${escapeHtml(report.preset || 'kein Preset')}</p><p>Ready for Review: ${report.readyForReview ? 'ja' : 'nein'}</p>${listHtml([...(report.preflight?.errors || []), ...(report.preflight?.warnings || []), ...(report.cleanupHints || [])])}</section>
       <section class="card"><h2>Testprotokoll</h2><p>Status: <strong>${escapeHtml(report.testProtocol?.overallStatus || 'fehlt')}</strong></p><p>Pfad: ${escapeHtml(report.testProtocol?.path || '-')}</p><p>Passed: ${escapeHtml(report.testProtocol?.summary?.passed || 0)} | Warnings: ${escapeHtml(report.testProtocol?.summary?.warnings || 0)} | Failed: ${escapeHtml(report.testProtocol?.summary?.failed || 0)} | Manuell: ${escapeHtml(report.testProtocol?.summary?.manualChecks || 0)}</p></section>
       <section class="card"><h2>Prompt Quality</h2><p>KI-Laeufe: ${escapeHtml(report.promptQuality?.runCount || 0)} | Fallbacks: ${escapeHtml(report.promptQuality?.fallbackCount || 0)} | Gate blockiert: ${escapeHtml(report.promptQuality?.blockedCount || 0)}</p><p>Prompt Score: ${escapeHtml(report.promptQuality?.averagePromptQualityScore || 0)} | Output Review: ${escapeHtml(report.promptQuality?.averageOutputReviewScore || 0)}</p><p>Templates: ${escapeHtml((report.promptQuality?.promptTemplates || []).join(', ') || '-')}</p>${listHtml(report.promptQuality?.warnings || [])}</section>
+      <section class="card"><h2>KI-Konfiguration & Kosten</h2><p>AI_PROVIDER: ${escapeHtml(report.aiConfig?.aiProvider || report.aiMode)} | OpenAI configured: ${report.aiConfig?.openAiConfigured ? 'ja' : 'nein'} | Modell: ${escapeHtml(report.aiConfig?.openAiModel || '-')} | keySource: ${escapeHtml(report.aiConfig?.keySource || 'missing')}</p><p>Geschaetzte Kosten: ${escapeHtml(report.costEstimate?.estimatedCostUsd ?? 0)} USD | Limit: ${escapeHtml(report.costEstimate?.warningLimitUsd ?? '-')} USD</p></section>
       <section class="card"><h2>Quality</h2><p><strong>${escapeHtml(report.curriculumQuality.score)}</strong>/100 (${escapeHtml(report.curriculumQuality.level)})</p>${listHtml(report.curriculumQuality.recommendations || [])}</section>
       <section class="card"><h2>Quellen & Extraktion</h2>${tableHtml(['Quelle','Titel','Qualitaet','Warnungen'], (report.extractionStatus || []).map((item) => [item.sourceRef, item.title, item.quality ? `${item.quality.level} (${Math.round(item.quality.score * 100)}%)` : '-', (item.warnings || []).join(' | ')]))}</section>
       <section class="card"><h2>Tage & Themen</h2>${tableHtml(['Tag','Titel','UE','Themen','Warnungen'], (report.days || []).map((day) => [day.dayNumber, day.title, day.estimatedUE, (day.topics || []).map((topic) => topic.title).join(', '), (day.warnings || []).join(' | ')]))}</section>

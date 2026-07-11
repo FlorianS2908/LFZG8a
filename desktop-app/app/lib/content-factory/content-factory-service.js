@@ -18,6 +18,7 @@ const { runPreflight } = require('./preflight/preflight-service');
 const { listPresets, applyPreset } = require('./presets/preset-service');
 const { createCleanupService } = require('./cleanup/cleanup-service');
 const { buildPrompt, runPromptQualityGate } = require('./ai-quality-gate/ai-quality-gate-service');
+const { estimateContentFactoryCost } = require('./ai/cost-estimator');
 
 function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
@@ -103,6 +104,11 @@ function createContentFactoryService({ appData }) {
   function getAiProviderStatus(session) {
     assertAdmin(session);
     return aiOrchestrator.getStatus();
+  }
+
+  async function testOpenAiConnection(session) {
+    assertAdmin(session);
+    return aiOrchestrator.testOpenAiConnection();
   }
 
   async function generateDayDraft(input, session) {
@@ -207,7 +213,23 @@ function createContentFactoryService({ appData }) {
     if (!curriculumPlan || curriculumPlan.status !== 'approved') {
       throw new Error('Container-Draft ist erst nach Freigabe des Curriculum-Plans moeglich.');
     }
-    const draft = createPlanContainerDraft(input, { factoryDir });
+    const aiStatus = aiOrchestrator.getStatus();
+    const costEstimate = input.costEstimate || estimateContentFactoryCost(input, {
+      model: aiStatus.providers.openai.model,
+      warningLimitUsd: aiStatus.costWarningUsd
+    });
+    const draft = createPlanContainerDraft({
+      ...input,
+      costEstimate,
+      aiConfig: {
+        aiProvider: aiStatus.defaultProvider,
+        openAiConfigured: aiStatus.providers.openai.configured,
+        openAiModel: aiStatus.providers.openai.model,
+        keySource: aiStatus.providers.openai.keySource,
+        timeoutMs: aiStatus.timeoutMs,
+        costWarningUsd: aiStatus.costWarningUsd
+      }
+    }, { factoryDir });
     const generated = storage.listGeneratedContainers();
     writeJson(storage.indexPath, [
       {
@@ -233,7 +255,12 @@ function createContentFactoryService({ appData }) {
   function runContentFactoryPreflight(input, session) {
     assertAdmin(session);
     ensureFactory();
-    return runPreflight(input, { aiStatus: aiOrchestrator.getStatus() });
+    const aiStatus = aiOrchestrator.getStatus();
+    const costEstimate = estimateContentFactoryCost(input, {
+      model: aiStatus.providers.openai.model,
+      warningLimitUsd: aiStatus.costWarningUsd
+    });
+    return runPreflight({ ...input, costEstimate }, { aiStatus });
   }
 
   function previewPromptQuality(input, session) {
@@ -627,6 +654,12 @@ function createContentFactoryService({ appData }) {
     },
     parseCoursePlan: parseCoursePlanUpload,
     getAiProviderStatus,
+    testOpenAiConnection,
+    estimateAiCost: (input, session) => {
+      assertAdmin(session);
+      const aiStatus = aiOrchestrator.getStatus();
+      return estimateContentFactoryCost(input, { model: aiStatus.providers.openai.model, warningLimitUsd: aiStatus.costWarningUsd });
+    },
     runPreflight: runContentFactoryPreflight,
     previewPromptQuality,
     runContentFactoryTestDraft,

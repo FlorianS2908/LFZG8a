@@ -3,3 +3,11 @@ _analysis_*
 dist/
 node_modules/
 desktop-app/node_modules/
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.p12
+secrets.json
+openai-key.txt

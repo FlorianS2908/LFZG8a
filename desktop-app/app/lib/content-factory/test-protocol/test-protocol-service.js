@@ -27,10 +27,23 @@ function createTestProtocol(input = {}) {
     summary,
     checks,
     aiRuns: (input.aiRuns || []).map(safeAiRun),
+    aiConfig: safeAiConfig(input.aiConfig || {}),
+    costEstimate: input.costEstimate || null,
     manualChecks: MANUAL_CHECKS.map((label, index) => ({ id: `manual-${index + 1}`, label, status: 'open' })),
     warnings: checks.filter((check) => check.status === STATUS.WARNING).map((check) => check.message),
     errors: checks.filter((check) => check.status === STATUS.FAILED).map((check) => check.message)
   });
+}
+
+function safeAiConfig(config = {}) {
+  return {
+    aiProvider: config.aiProvider || 'local',
+    openAiConfigured: config.openAiConfigured === true,
+    openAiModel: config.openAiModel || '',
+    keySource: config.keySource || 'missing',
+    timeoutMs: config.timeoutMs || 30000,
+    costWarningUsd: config.costWarningUsd || 1
+  };
 }
 
 function safeAiRun(run = {}, index = 0) {

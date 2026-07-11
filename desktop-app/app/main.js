@@ -30,8 +30,10 @@ const {
   createWindowOptions,
   getDisplaySummaries: summarizeDisplays
 } = require('./lib/display');
+const { applyAppEnv } = require('./lib/env/env-loader');
 
 const projectRoot = path.resolve(__dirname, '..', '..');
+applyAppEnv(projectRoot);
 const contentFile = path.join(__dirname, 'renderer', 'course.html');
 const workspaceFile = path.join(__dirname, 'renderer', 'tool-center', 'workspace.html');
 const loginFile = path.join(__dirname, 'renderer', 'tool-center', 'login.html');
@@ -1117,6 +1119,19 @@ ipcMain.handle('factory:parse-course-plan', (event, input) => (
 ipcMain.handle('factory:get-ai-provider-status', () => (
   getContentFactoryService().getAiProviderStatus(requireAdminSession())
 ));
+
+ipcMain.handle('factory:test-openai-connection', () => (
+  getContentFactoryService().testOpenAiConnection(requireAdminSession())
+));
+
+ipcMain.handle('factory:estimate-ai-cost', (event, input) => (
+  getContentFactoryService().estimateAiCost(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:open-openai-setup-guide', () => {
+  requireAdminSession();
+  return shell.openPath(path.join(projectRoot, 'docs', 'OPENAI_API_SETUP.md'));
+});
 
 ipcMain.handle('factory:run-preflight', (event, input) => (
   getContentFactoryService().runPreflight(input, requireAdminSession())

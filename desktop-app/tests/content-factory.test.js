@@ -10,6 +10,7 @@ const { extractSourceOutline } = require('../app/lib/content-factory/source-extr
 const { AiOrchestrator } = require('../app/lib/content-factory/ai/ai-orchestrator');
 const { LocalHeuristicProvider } = require('../app/lib/content-factory/ai/local-heuristic-provider');
 const { sanitizeInput, parseJsonLoose } = require('../app/lib/content-factory/ai/openai-provider');
+const { OpenAIProvider } = require('../app/lib/content-factory/ai/openai-provider');
 const { assessCurriculumQuality } = require('../app/lib/content-factory/curriculum-planner/curriculum-quality-service');
 const { decideArtifactSuggestions } = require('../app/lib/content-factory/container-profile/audience-artifact-decision-service');
 const { suggestionsToTargets } = require('../app/lib/content-factory/container-profile/artifact-target-service');
@@ -20,6 +21,8 @@ const { listPresets, applyPreset } = require('../app/lib/content-factory/presets
 const { buildPrompt, runPromptQualityGate } = require('../app/lib/content-factory/ai-quality-gate/ai-quality-gate-service');
 const { lintPrompt } = require('../app/lib/content-factory/ai-quality-gate/prompt-linter');
 const { reviewOutput, reviewArtifactContent } = require('../app/lib/content-factory/ai-quality-gate/output-review-service');
+const { loadAppEnv } = require('../app/lib/env/env-loader');
+const { estimateContentFactoryCost } = require('../app/lib/content-factory/ai/cost-estimator');
 
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
@@ -264,6 +267,7 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.ok(testProtocol.manualChecks.length >= 8);
     assert.doesNotMatch(JSON.stringify(testProtocol), /Originaltext|Reference chunk|Buchseite|rawText|textPreview|reference-library|chunks\.json|extracted\.json/i);
     assert.doesNotMatch(testProtocolHtml, /Originaltext|Reference chunk|Buchseite|rawText|textPreview|reference-library|chunks\.json|extracted\.json/i);
+    assert.doesNotMatch(JSON.stringify(testProtocol) + testProtocolHtml, /OPENAI_API_KEY|sk-[A-Za-z0-9_-]{10,}|apiKey|secret/i);
     assert.doesNotMatch(JSON.stringify(participantContent), /testprotokoll/i);
     assert.equal(draft.analysisReport.fallbackUsed, true);
     assert.match(reportHtml, /<h2>Quality<\/h2>/);
@@ -271,6 +275,7 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.match(reportHtml, /<h2>Prompt Quality<\/h2>/);
     assert.ok(draft.analysisReport.promptQuality.runCount >= 2);
     assert.doesNotMatch(reportHtml, /Originaltext|Reference chunk|Buchseite/i);
+    assert.doesNotMatch(reportHtml + JSON.stringify(draft.analysisReport), /OPENAI_API_KEY|sk-[A-Za-z0-9_-]{10,}|apiKey|secret/i);
     assert.equal(draft.validation.isValid, true);
   } finally {
     cleanup();
@@ -449,6 +454,80 @@ test('content factory quality and ai helpers protect local output and secrets', 
   assert.deepEqual(parseJsonLoose('```json\n{"ok":true}\n```'), { ok: true });
 });
 
+test('openai env setup files and loader keep api keys out of repository outputs', () => {
+  const repoRoot = path.join(__dirname, '..', '..');
+  const gitignore = fs.readFileSync(path.join(repoRoot, '.gitignore'), 'utf8');
+  const example = fs.readFileSync(path.join(repoRoot, '.env.example'), 'utf8');
+  const setupScript = fs.readFileSync(path.join(repoRoot, 'scripts', 'setup-openai-env.ps1'), 'utf8');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-env-'));
+  const oldKey = process.env.OPENAI_API_KEY;
+  const oldProvider = process.env.AI_PROVIDER;
+  const oldModel = process.env.OPENAI_MODEL;
+  try {
+    fs.writeFileSync(path.join(tmp, '.env'), 'AI_PROVIDER=openai\nOPENAI_API_KEY=LOCAL_TEST_PLACEHOLDER\nOPENAI_MODEL=dotenv-model\nOPENAI_TIMEOUT_MS=12345\nCONTENT_FACTORY_COST_WARNING_USD=0.25\n', 'utf8');
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.AI_PROVIDER;
+    delete process.env.OPENAI_MODEL;
+    const dotenvEnv = loadAppEnv(tmp);
+    process.env.OPENAI_MODEL = 'env-model';
+    const envOverride = loadAppEnv(tmp);
+
+    assert.match(gitignore, /^\.env$/m);
+    assert.match(gitignore, /^\.env\.local$/m);
+    assert.match(gitignore, /^openai-key\.txt$/m);
+    assert.doesNotMatch(example, /sk-[A-Za-z0-9_-]{10,}/);
+    assert.match(example, /OPENAI_API_KEY=/);
+    assert.doesNotMatch(setupScript, /sk-[A-Za-z0-9_-]{10,}/);
+    assert.equal(dotenvEnv.openAiConfigured, true);
+    assert.equal(dotenvEnv.keySource, 'dotenv');
+    assert.equal(dotenvEnv.openAiModel, 'dotenv-model');
+    assert.equal(envOverride.openAiModel, 'env-model');
+    assert.equal(Object.prototype.hasOwnProperty.call(dotenvEnv, 'OPENAI_API_KEY'), false);
+  } finally {
+    restoreEnv('OPENAI_API_KEY', oldKey);
+    restoreEnv('AI_PROVIDER', oldProvider);
+    restoreEnv('OPENAI_MODEL', oldModel);
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('openai provider status and fallback never expose api keys', async () => {
+  const provider = new OpenAIProvider({ apiKey: 'LOCAL_TEST_PLACEHOLDER', model: 'test-model', keySource: 'env' });
+  const missing = new OpenAIProvider({ apiKey: '', model: 'test-model' });
+  const orchestrator = new AiOrchestrator({
+    env: { aiProvider: 'openai', openAiModel: 'test-model', timeoutMs: 30000, maxPromptChars: 40000, costWarningUsd: 1, keySource: 'missing' },
+    localProvider: new LocalHeuristicProvider(),
+    openaiProvider: missing
+  });
+  const status = provider.getStatus();
+  const missingStatus = orchestrator.getStatus();
+  const result = await orchestrator.generateDayDraft({ ...createApprovedTestInput(), day: createApprovedTestInput().coursePlan.days[0] }, 'openai');
+
+  assert.deepEqual(status, { provider: 'openai', configured: true, model: 'test-model', keySource: 'env' });
+  assert.doesNotMatch(JSON.stringify(status), /LOCAL_TEST_PLACEHOLDER/);
+  assert.equal(missingStatus.providers.openai.configured, false);
+  assert.equal(missingStatus.providers.openai.keySource, 'missing');
+  assert.equal(result.aiMeta.provider, 'local');
+  assert.equal(result.aiMeta.fallbackUsed, true);
+});
+
+test('content factory cost estimator and preflight warn on openai cost or missing key', () => {
+  const input = createApprovedTestInput({ aiMode: 'openai' });
+  const estimate = estimateContentFactoryCost(input, { model: 'gpt-5.4-mini', warningLimitUsd: 0.0001 });
+  const preflight = runPreflight({ ...input, costEstimate: estimate }, {
+    aiStatus: {
+      defaultProvider: 'openai',
+      providers: { openai: { configured: false, model: 'gpt-5.4-mini', keySource: 'missing' } }
+    }
+  });
+
+  assert.equal(estimate.warning, true);
+  assert.ok(estimate.inputTokens > 0);
+  assert.ok(estimate.outputTokens > 0);
+  assert.equal(preflight.status, 'yellow');
+  assert.ok(preflight.warnings.some((warning) => /kein API-Key|Kosten/.test(warning)));
+});
+
 test('prompt linter blocks unsafe prompts and warns about age range', () => {
   const complete = buildPrompt('generateDayDraft', createApprovedTestInput());
   const passed = runPromptQualityGate(complete);
@@ -622,7 +701,7 @@ test('content factory preflight blocks incomplete input and warns before cloud f
   assert.equal(red.status, 'red');
   assert.ok(red.errors.some((error) => /Kursname|CurriculumPlanDraft/.test(error)));
   assert.equal(yellow.status, 'yellow');
-  assert.ok(yellow.warnings.some((warning) => /OpenAI ist nicht konfiguriert/.test(warning)));
+  assert.ok(yellow.warnings.some((warning) => /OpenAI.*kein API-Key|OpenAI ist nicht konfiguriert/.test(warning)));
   assert.equal(green.status, 'green');
   assert.equal(unknownAge.status, 'yellow');
   assert.ok(unknownAge.warnings.some((warning) => /Zielgruppenalter/.test(warning)));
@@ -766,6 +845,11 @@ function createApprovedTestInput(patch = {}) {
     },
     ...patch
   };
+}
+
+function restoreEnv(key, value) {
+  if (value === undefined) delete process.env[key];
+  else process.env[key] = value;
 }
 
 function createZip(zipPath, entries) {

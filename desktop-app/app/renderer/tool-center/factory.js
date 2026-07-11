@@ -11,6 +11,7 @@ const state = {
   targetAreaLabels: {},
   selectedBatchId: '',
   aiStatus: null,
+  aiTestResult: null,
   wizard: {
     course: { courseName: '', courseId: '', department: '', description: '' },
     anchorType: 'course-plan',
@@ -39,6 +40,7 @@ const state = {
     preflight: null,
     testRun: null,
     promptQuality: null,
+    costEstimate: null,
     promptRulesVisible: false,
     cleanupReport: null,
     status: ''
@@ -285,6 +287,8 @@ function renderPlanWizard() {
       ${!wizard.approvedCurriculumPlan ? '<p class="status-line status-warning">Tagesentwurf erst nach Curriculum-Freigabe moeglich.</p>' : ''}
     </article>
 
+    ${renderAiSettings(wizard)}
+
     ${renderPromptQualityGate(wizard)}
 
     <article class="tool-card">
@@ -430,6 +434,33 @@ function renderPromptQualityGate(wizard) {
         <button class="secondary-button" type="button" data-prompt-preview>Prompt-Vorschau aktualisieren</button>
         <button class="secondary-button" type="button" data-prompt-quality>Quality Gate pruefen</button>
         <button class="secondary-button" type="button" data-prompt-rules>Prompt-Regeln anzeigen</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderAiSettings(wizard) {
+  const openai = state.aiStatus?.providers?.openai || {};
+  const estimate = wizard.costEstimate;
+  const test = state.aiTestResult;
+  return `
+    <article class="tool-card">
+      <h3>KI-Einstellungen</h3>
+      <div class="summary-grid">
+        <span>Provider: ${escapeHtml(state.aiStatus?.defaultProvider || wizard.aiMode || 'local')}</span>
+        <span>OpenAI konfiguriert: ${openai.configured ? 'ja' : 'nein'}</span>
+        <span>Modell: ${escapeHtml(openai.model || '-')}</span>
+        <span>Key-Quelle: ${escapeHtml(openai.keySource || 'missing')}</span>
+        <span>Timeout: ${escapeHtml(state.aiStatus?.timeoutMs || 30000)} ms</span>
+        <span>Local/Fallback aktiv: ja</span>
+        <span>Kostenwarnung: ${state.aiStatus?.costWarningUsd ? 'ja' : 'nein'}</span>
+      </div>
+      ${estimate ? `<p class="status-line ${estimate.warning ? 'status-warning' : ''}">Geschaetzte Kosten: ca. ${escapeHtml(estimate.estimatedCostUsd)} USD | Input ${escapeHtml(estimate.inputTokens)} Tokens | Output ${escapeHtml(estimate.outputTokens)} Tokens</p>` : ''}
+      ${test ? `<p class="status-line ${test.status === 'failed' ? 'status-error' : test.status === 'warning' ? 'status-warning' : ''}">Testanfrage: ${escapeHtml(test.status)} - ${escapeHtml(test.message)}</p>` : ''}
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-ai-status-check>KI-Status pruefen</button>
+        <button class="secondary-button" type="button" data-ai-test-request>Testanfrage senden</button>
+        <button class="secondary-button" type="button" data-ai-setup-guide>Setup-Anleitung oeffnen</button>
       </div>
     </article>
   `;
@@ -687,6 +718,9 @@ function bindPlanWizardEvents() {
     state.wizard.promptRulesVisible = !state.wizard.promptRulesVisible;
     renderPlanWizard();
   });
+  $('[data-ai-status-check]')?.addEventListener('click', refreshAiStatus);
+  $('[data-ai-test-request]')?.addEventListener('click', testAiConnection);
+  $('[data-ai-setup-guide]')?.addEventListener('click', () => desktop.factory.openOpenAiSetupGuide());
   $('[data-wizard-preflight]')?.addEventListener('click', runWizardPreflight);
   $('[data-wizard-test-run]')?.addEventListener('click', () => runWizardTestDraft(false));
   $('[data-wizard-test-run-confirm]')?.addEventListener('click', () => runWizardTestDraft(true));
@@ -1071,7 +1105,14 @@ async function runWizardTestDraft(confirmWarnings) {
   state.wizard.status = confirmWarnings ? 'Testlauf wird trotz Warnungen erzeugt ...' : 'Testlauf wird erzeugt ...';
   renderPlanWizard();
   try {
-    const result = await desktop.factory.runTestDraft(buildWizardTestInput({ confirmWarnings }));
+    const input = buildWizardTestInput({ confirmWarnings });
+    state.wizard.costEstimate = await desktop.factory.estimateAiCost(input);
+    if (state.wizard.costEstimate.warning && !confirmWarnings && !window.confirm(`Geschaetzte Kosten: ca. ${state.wizard.costEstimate.estimatedCostUsd} USD. Fortfahren?`)) {
+      state.wizard.status = 'Testlauf wegen Kostenwarnung abgebrochen.';
+      renderPlanWizard();
+      return;
+    }
+    const result = await desktop.factory.runTestDraft(input);
     state.wizard.testRun = result;
     state.wizard.preflight = result.preflight || state.wizard.preflight;
     if (result.containerId) {
@@ -1083,6 +1124,23 @@ async function runWizardTestDraft(confirmWarnings) {
     state.wizard.status = error.message;
     renderPlanWizard();
   }
+}
+
+async function refreshAiStatus() {
+  state.aiStatus = await desktop.factory.getAiProviderStatus();
+  state.wizard.costEstimate = await desktop.factory.estimateAiCost(buildWizardTestInput());
+  renderPlanWizard();
+}
+
+async function testAiConnection() {
+  state.wizard.status = 'KI-Testanfrage laeuft ...';
+  renderPlanWizard();
+  try {
+    state.aiTestResult = await desktop.factory.testOpenAiConnection();
+  } catch (error) {
+    state.aiTestResult = { status: 'failed', message: error.message };
+  }
+  await refreshAiStatus();
 }
 
 async function deleteLastWizardTestDraft() {
@@ -1185,6 +1243,7 @@ function renderMapping(batch) {
 async function loadState() {
   const data = await desktop.factory.getState();
   state.aiStatus = await desktop.factory.getAiProviderStatus();
+  state.wizard.costEstimate = await desktop.factory.estimateAiCost(buildWizardTestInput()).catch(() => null);
   state.containers = data.containers || [];
   state.importBatches = data.importBatches || [];
   state.referenceSources = data.referenceSources || [];
