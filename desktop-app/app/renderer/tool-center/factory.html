@@ -28,6 +28,7 @@
         <button class="workspace-track-tab" type="button" data-factory-tab="overview">Uebersicht</button>
         <button class="workspace-track-tab" type="button" data-factory-tab="duplicate">Duplizieren</button>
         <button class="workspace-track-tab" type="button" data-factory-tab="import">Rohdaten</button>
+        <button class="workspace-track-tab" type="button" data-factory-tab="references">Referenzbibliothek</button>
         <button class="workspace-track-tab" type="button" data-factory-tab="batches">Import-Batches</button>
       </nav>
 
@@ -45,6 +46,13 @@
             <span class="tool-copy">
               <strong>Container Erstellung</strong>
               <small>Rohdaten importieren, mappen und als Draft erzeugen</small>
+            </span>
+          </button>
+          <button class="tool-tile" type="button" data-open-factory-section="references">
+            <span class="tool-visual">RF</span>
+            <span class="tool-copy">
+              <strong>Referenzliteratur / Fachquellen</strong>
+              <small>Eigene lizenzierte Quellen lokal indexieren, nicht exportieren</small>
             </span>
           </button>
         </div>
@@ -89,6 +97,34 @@
           <button class="primary-button" type="button" data-run-import>In Staging importieren</button>
           <p class="status-line" data-import-status></p>
         </article>
+      </section>
+
+      <section class="factory-panel" data-factory-panel="references">
+        <article class="tool-card">
+          <h2>Referenzliteratur / Fachquellen</h2>
+          <p class="status-line">Referenzliteratur wird nur lokal und intern zur Analyse und zur Erstellung eigener Inhalte verwendet. Urheberrechtlich geschuetzte Inhalte werden nicht in Kurscontainer kopiert und nicht an Teilnehmer exportiert.</p>
+          <div class="factory-form-grid">
+            <label>Quellen<input data-reference-files type="file" multiple accept=".pdf,.epub,.docx,.txt,.md,.html"></label>
+            <label>Titel optional<input data-reference-title placeholder="Titel aus Metadaten oder Dateiname"></label>
+            <label>Autor optional<input data-reference-author placeholder="Autor"></label>
+            <label>Lizenznotiz optional<input data-reference-license placeholder="eigene Lizenznotiz"></label>
+          </div>
+          <label class="checkline"><input type="checkbox" data-reference-confirm> Ich bestaetige, dass ich diese Quelle nur als interne Referenz verwende und dass sie nicht als Kursmaterial veroeffentlicht oder weitergegeben werden darf.</label>
+          <button class="primary-button" type="button" data-import-references>Referenzquellen lokal importieren</button>
+          <p class="status-line" data-reference-status></p>
+        </article>
+
+        <article class="tool-card">
+          <h2>Quellen suchen</h2>
+          <div class="factory-form-grid">
+            <label>Suchbegriff<input data-reference-query placeholder="z. B. Datenbank Normalisierung"></label>
+            <label>Tagesthema<input data-reference-day-topic placeholder="optional"></label>
+          </div>
+          <button class="secondary-button" type="button" data-search-references>Lokale Referenzen suchen</button>
+          <div class="mapping-list" data-reference-search-results></div>
+        </article>
+
+        <div class="factory-grid" data-reference-list></div>
       </section>
 
       <section class="factory-panel" data-factory-panel="batches">

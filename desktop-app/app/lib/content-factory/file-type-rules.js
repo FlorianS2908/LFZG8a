@@ -7,6 +7,7 @@ const supportedExtensions = new Set([
   '.xlsx',
   '.xlsm',
   '.pdf',
+  '.epub',
   '.docx',
   '.pptx',
   ...imageExtensions,
@@ -37,6 +38,8 @@ function extractDayNumber(fileName) {
 function detectTargetArea(fileName) {
   const value = normalizeFilename(fileName);
   const extension = path.extname(value);
+  if (extension === '.epub' || extension === '.pdf') return 'referenceLiterature';
+  if (/(referenz|reference|literatur|fachquelle|quelle|buch|book)/i.test(value)) return 'referenceLiterature';
 
   if (/(loesung|lösung|solution|antwort)/i.test(value)) return 'solution';
   if (/(aufgabe|task|exercise|uebung|übung)/i.test(value)) return 'task';
@@ -50,7 +53,7 @@ function detectTargetArea(fileName) {
   if (imageExtensions.has(extension)) return 'asset';
   if (extension === '.pptx') return 'presentation';
   if (extension === '.docx') return 'documentation';
-  if (extension === '.pdf') return 'documentation';
+  if (extension === '.pdf' || extension === '.epub') return 'referenceLiterature';
   if (['.xlsx', '.xlsm'].includes(extension)) return 'material';
   if (/(webvariante|web|index|tag)/i.test(value) && ['.html', '.md', '.txt'].includes(extension)) return 'webvariant';
   if (extension === '.zip') return 'other';
@@ -63,7 +66,7 @@ function detectFileKind(fileName) {
   if (imageExtensions.has(extension)) return 'image';
   if (['.xlsx', '.xlsm'].includes(extension)) return 'spreadsheet';
   if (extension === '.pptx') return 'presentation';
-  if (['.pdf', '.docx'].includes(extension)) return 'document';
+  if (['.pdf', '.epub', '.docx'].includes(extension)) return 'document';
   if (['.mp4', '.mp3'].includes(extension)) return 'media';
   if (extension === '.zip') return 'archive';
   return 'unknown';

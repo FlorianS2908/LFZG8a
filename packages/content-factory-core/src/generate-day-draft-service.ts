@@ -7,6 +7,7 @@ export function prepareDayInput(input: {
   plan: CoursePlan;
   day: CoursePlanDay;
   files?: FileAnalysis[];
+  referenceContext?: DayGenerationInput['referenceContext'];
   correctionPrompt?: string;
 }): DayGenerationInput {
   const blocks = input.day.ueBlocks || [];
@@ -25,6 +26,7 @@ export function prepareDayInput(input: {
       `Tag ${input.day.dayNumber}: ${input.day.mainTopic}`,
       ...(input.files || []).map((file) => `Datei: ${file.fileName} (${file.contentCategory})`)
     ],
+    referenceContext: input.referenceContext || [],
     correctionPrompt: input.correctionPrompt
   };
 }
@@ -34,6 +36,7 @@ export async function generateDayDraftFromPlan(input: {
   plan: CoursePlan;
   day: CoursePlanDay;
   files?: FileAnalysis[];
+  referenceContext?: DayGenerationInput['referenceContext'];
   aiMode?: AiMode;
   correctionPrompt?: string;
   orchestrator?: AiOrchestrator;

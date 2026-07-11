@@ -66,6 +66,14 @@ function createImportedRawFile(fileInput, now = new Date()) {
     mappingLocked: false
   };
 
+  if (imported.selectedTarget === 'referenceLiterature') {
+    imported.warnings.push('Referenzliteratur ist nur lokale interne Wissensquelle und wird nicht in Container exportiert.');
+    imported.allowedForExport = false;
+    imported.allowedForParticipant = false;
+    imported.allowedForCloud = false;
+    imported.usageMode = 'local-reference-only';
+  }
+
   return {
     ...imported,
     ...createMappingSuggestion(imported)

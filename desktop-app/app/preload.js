@@ -62,7 +62,13 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
     createContainerFromBatch: (batchId, options) => ipcRenderer.invoke('factory:create-container-from-batch', batchId, options),
     publishContainer: (containerId, options) => ipcRenderer.invoke('factory:publish-container', containerId, options),
     disableContainer: (containerId) => ipcRenderer.invoke('factory:disable-container', containerId),
-    archiveContainer: (containerId) => ipcRenderer.invoke('factory:archive-container', containerId)
+    archiveContainer: (containerId) => ipcRenderer.invoke('factory:archive-container', containerId),
+    importReferenceSources: (input) => ipcRenderer.invoke('factory:import-reference-sources', input),
+    listReferenceSources: () => ipcRenderer.invoke('factory:list-reference-sources'),
+    getReferenceSource: (referenceId) => ipcRenderer.invoke('factory:get-reference-source', referenceId),
+    searchReferences: (query) => ipcRenderer.invoke('factory:search-references', query),
+    removeReferenceSource: (referenceId) => ipcRenderer.invoke('factory:remove-reference-source', referenceId),
+    getReferenceSafetyReport: (referenceId) => ipcRenderer.invoke('factory:get-reference-safety-report', referenceId)
   },
   releaseCenter: {
     getState: () => ipcRenderer.invoke('release-center:get-state'),

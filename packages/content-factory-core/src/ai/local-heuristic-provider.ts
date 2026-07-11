@@ -28,7 +28,8 @@ export class LocalHeuristicProvider implements AiProvider {
 }
 
 function createLocalDraft(input: DayGenerationInput): DayGenerationResult {
-  const sourceRefs = input.sourceTexts.length ? input.sourceTexts.map((_, index) => `source-${index + 1}`) : [`course-plan-day-${input.dayNumber}`];
+  const referenceRefs = (input.referenceContext || []).map((reference) => `reference:${reference.sourceRef}`);
+  const sourceRefs = input.sourceTexts.length ? input.sourceTexts.map((_, index) => `source-${index + 1}`).concat(referenceRefs) : [`course-plan-day-${input.dayNumber}`, ...referenceRefs];
   const learnerTasks = input.learnerTasks?.length ? input.learnerTasks : ['Aufgabe noch ergaenzen'];
   const teacherTasks = input.teacherTasks?.length ? input.teacherTasks : ['Loesungshinweis noch ergaenzen'];
   const resources = input.resources?.length ? input.resources : ['Material noch ergaenzen'];
@@ -41,7 +42,8 @@ function createLocalDraft(input: DayGenerationInput): DayGenerationResult {
       teacherHtmlSections: [
         { title: input.title, content: `${input.courseName}: lokal erzeugter Tagesentwurf.`, sourceRefs, aiGenerated: false },
         { title: 'Tagesziel', content: learningGoals.join('\n'), sourceRefs, aiGenerated: false },
-        { title: 'Ressourcen', content: resources.join('\n'), sourceRefs, aiGenerated: false }
+        { title: 'Ressourcen', content: resources.join('\n'), sourceRefs, aiGenerated: false },
+        ...(input.referenceContext?.length ? [{ title: 'Referenzhinweise', content: input.referenceContext.map((reference) => reference.summary).join('\n'), sourceRefs: referenceRefs, aiGenerated: false }] : [])
       ],
       participantHtmlSections: [
         { title: input.title, content: `${input.courseName}: Teilnehmer-Vorschau mit freigegebenen Arbeitsmaterialien.`, sourceRefs, aiGenerated: false },

@@ -6,6 +6,8 @@ const { applyMapping, validateMappings } = require('./mapping-service');
 const { createManifest, cloneManifestForDuplicate } = require('./manifest-service');
 const { createContainerStorageService } = require('./container-storage-service');
 const { targetAreas, targetAreaLabels } = require('./target-areas');
+const { createReferenceLibraryService } = require('./reference-library/reference-library-service');
+const { validateNoReferenceExport } = require('./reference-library/reference-safety-service');
 
 function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
@@ -18,11 +20,13 @@ function createContentFactoryService({ appData }) {
     dataDir: appData.dataDir,
     staticContainers: moduleRegistry.getAllModules()
   });
+  const referenceLibrary = createReferenceLibraryService({ appData });
 
   function ensureFactory() {
     appData.ensureDataFiles();
     ensureDir(factoryDir);
     storage.ensureStorage();
+    referenceLibrary.ensureLibrary();
     if (!readJson(batchesPath, null)) {
       writeJson(batchesPath, []);
     }
@@ -61,6 +65,8 @@ function createContentFactoryService({ appData }) {
       containers: storage.listContainers(),
       generatedContainers: storage.listGeneratedContainers(),
       importBatches: listImportBatches(),
+      referenceLibraryRoot: referenceLibrary.rootDir,
+      referenceSources: referenceLibrary.listReferenceSources(),
       targetAreas,
       targetAreaLabels
     };
@@ -85,6 +91,15 @@ function createContentFactoryService({ appData }) {
       .reduce((sum, key) => sum + (container[key] || []).length, 0);
     if (contentCount === 0) errors.push('Mindestens ein Inhalt muss vorhanden sein.');
     if (!(container.routes || []).length) warnings.push('Keine Haupt-Webvariante oder Route vorhanden.');
+    errors.push(...validateNoReferenceExport({
+      files: [
+        ...(container.materials || []).map((item) => ({ path: item.sourcePath || item.targetPath || '', content: JSON.stringify(item) })),
+        ...(container.assets || []).map((item) => ({ path: item.sourcePath || item.targetPath || '', content: JSON.stringify(item) })),
+        ...(container.tasks || []).map((item) => ({ path: item.sourcePath || '', content: JSON.stringify(item) })),
+        ...(container.solutions || []).map((item) => ({ path: item.sourcePath || '', content: JSON.stringify(item) })),
+        ...(container.quizzes || []).map((item) => ({ path: item.sourcePath || '', content: JSON.stringify(item) }))
+      ]
+    }));
 
     return {
       isValid: errors.length === 0,
@@ -229,6 +244,9 @@ function createContentFactoryService({ appData }) {
     };
 
     validatedBatch.files.forEach((file, index) => {
+      if (file.selectedTarget === 'referenceLiterature') {
+        return;
+      }
       const copiedPath = storage.copyImportedFile(file, id);
       const item = {
         id: `${file.selectedTarget}-${index + 1}`,
@@ -302,6 +320,7 @@ function createContentFactoryService({ appData }) {
 
   return {
     storage,
+    referenceLibrary,
     getState,
     duplicateContainer,
     createImportBatch,

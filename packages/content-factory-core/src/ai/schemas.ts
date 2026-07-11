@@ -3,6 +3,15 @@ export type DayGenerationInput = {
   title: string;
   courseName: string;
   sourceTexts: string[];
+  referenceContext?: Array<{
+    referenceId: string;
+    title: string;
+    author?: string;
+    sectionTitle?: string;
+    pageNumber?: number;
+    summary: string;
+    sourceRef: string;
+  }>;
   planTopic?: string;
   learningGoals?: string[];
   learnerTasks?: string[];

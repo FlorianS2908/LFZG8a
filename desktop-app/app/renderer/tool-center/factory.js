@@ -3,6 +3,7 @@ const desktop = window.lfzq8aDesktop;
 const state = {
   containers: [],
   importBatches: [],
+  referenceSources: [],
   targetAreas: [],
   targetAreaLabels: {},
   selectedBatchId: ''
@@ -101,6 +102,32 @@ function renderBatches() {
   $all('[data-open-batch]').forEach((button) => button.addEventListener('click', () => openBatch(button.dataset.openBatch)));
 }
 
+function renderReferences() {
+  const list = $('[data-reference-list]');
+  if (!list) return;
+  list.innerHTML = state.referenceSources.length
+    ? state.referenceSources.map((source) => `
+      <article class="factory-card">
+        <div class="factory-card-header">
+          <strong>${escapeHtml(source.title)}</strong>
+          <span class="status-badge">${escapeHtml(source.format)}</span>
+        </div>
+        <p>${escapeHtml(source.author || 'Autor unbekannt')}</p>
+        <dl class="factory-meta">
+          <div><dt>Nutzung</dt><dd>${escapeHtml(source.usageMode)}</dd></div>
+          <div><dt>Export</dt><dd>${source.allowedForExport ? 'ja' : 'nein'}</dd></div>
+          <div><dt>Teilnehmer</dt><dd>${source.allowedForParticipant ? 'ja' : 'nein'}</dd></div>
+          <div><dt>Cloud</dt><dd>${source.allowedForCloud ? 'ja' : 'nein'}</dd></div>
+          <div><dt>Suchbar</dt><dd>${source.searchable ? 'ja' : 'nein'}</dd></div>
+        </dl>
+        ${(source.warnings || []).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
+        <button class="secondary-button" type="button" data-remove-reference="${escapeHtml(source.id)}">Entfernen</button>
+      </article>
+    `).join('')
+    : '<article class="empty-state"><strong>Noch keine Referenzen</strong><span>Importiere eigene lizenzierte Quellen lokal.</span></article>';
+  $all('[data-remove-reference]').forEach((button) => button.addEventListener('click', () => removeReference(button.dataset.removeReference)));
+}
+
 function renderMapping(batch) {
   $('[data-batch-detail]').hidden = false;
   $('[data-batch-title]').textContent = batch.name;
@@ -130,14 +157,74 @@ async function loadState() {
   const data = await desktop.factory.getState();
   state.containers = data.containers || [];
   state.importBatches = data.importBatches || [];
+  state.referenceSources = data.referenceSources || [];
   state.targetAreas = data.targetAreas || [];
   state.targetAreaLabels = data.targetAreaLabels || {};
   renderContainers();
   renderBatches();
+  renderReferences();
   if (state.selectedBatchId) {
     const batch = state.importBatches.find((item) => item.id === state.selectedBatchId);
     if (batch) renderMapping(batch);
   }
+}
+
+async function importReferences() {
+  const status = $('[data-reference-status]');
+  const files = Array.from($('[data-reference-files]').files || []).map((file) => ({
+    name: file.name,
+    path: file.path || '',
+    size: file.size,
+    type: file.type,
+    title: $('[data-reference-title]').value,
+    author: $('[data-reference-author]').value,
+    licenseNotes: $('[data-reference-license]').value
+  }));
+  if (!$('[data-reference-confirm]').checked) {
+    status.textContent = 'Bitte bestaetige zuerst die interne reference-only Nutzung.';
+    return;
+  }
+  status.textContent = 'Referenzen werden lokal importiert ...';
+  try {
+    const result = await desktop.factory.importReferenceSources({
+      files,
+      confirmReferenceOnly: true
+    });
+    status.textContent = `Import abgeschlossen: ${result.length} Quelle(n).`;
+    $('[data-reference-files]').value = '';
+    await loadState();
+  } catch (error) {
+    status.textContent = error.message;
+  }
+}
+
+async function searchReferences() {
+  const target = $('[data-reference-search-results]');
+  target.innerHTML = '<p class="status-line">Suche laeuft lokal ...</p>';
+  try {
+    const result = await desktop.factory.searchReferences({
+      query: $('[data-reference-query]').value,
+      dayTopic: $('[data-reference-day-topic]').value,
+      maxResults: 5
+    });
+    target.innerHTML = (result.results || []).length
+      ? result.results.map((item) => `
+        <article class="mapping-item">
+          <strong>${escapeHtml(item.title)}</strong>
+          <small>${escapeHtml(item.sourceRef)} | Score ${Math.round(item.relevanceScore * 100)}%</small>
+          <p>${escapeHtml(item.shortSummary)}</p>
+        </article>
+      `).join('')
+      : '<p class="status-line">Keine Treffer. Es werden keine vollstaendigen Chunks angezeigt.</p>';
+  } catch (error) {
+    target.innerHTML = `<p class="status-line status-error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+async function removeReference(referenceId) {
+  if (!window.confirm('Referenzquelle lokal entfernen?')) return;
+  await desktop.factory.removeReferenceSource(referenceId);
+  await loadState();
 }
 
 async function duplicateContainer() {
@@ -262,6 +349,8 @@ async function init() {
   $('[data-refresh]').addEventListener('click', loadState);
   $('[data-run-duplicate]').addEventListener('click', duplicateContainer);
   $('[data-run-import]').addEventListener('click', importRawFiles);
+  $('[data-import-references]').addEventListener('click', importReferences);
+  $('[data-search-references]').addEventListener('click', searchReferences);
   $('[data-validate-batch]').addEventListener('click', validateBatch);
   $('[data-create-from-batch]').addEventListener('click', createContainerFromBatch);
   await loadState();

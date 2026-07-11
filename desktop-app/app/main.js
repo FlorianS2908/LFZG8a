@@ -1102,6 +1102,35 @@ ipcMain.handle('factory:archive-container', (event, containerId) => (
   getContentFactoryService().archiveContainer(containerId, requireAdminSession())
 ));
 
+ipcMain.handle('factory:import-reference-sources', (event, input) => (
+  getContentFactoryService().referenceLibrary.importReferenceSources(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:list-reference-sources', () => {
+  requireAdminSession();
+  return getContentFactoryService().referenceLibrary.listReferenceSources();
+});
+
+ipcMain.handle('factory:get-reference-source', (event, referenceId) => {
+  requireAdminSession();
+  return getContentFactoryService().referenceLibrary.getReferenceSource(referenceId);
+});
+
+ipcMain.handle('factory:search-references', (event, query) => {
+  requireAdminSession();
+  return getContentFactoryService().referenceLibrary.searchReferences(query);
+});
+
+ipcMain.handle('factory:remove-reference-source', (event, referenceId) => {
+  requireAdminSession();
+  return getContentFactoryService().referenceLibrary.removeReferenceSource(referenceId);
+});
+
+ipcMain.handle('factory:get-reference-safety-report', (event, referenceId) => {
+  requireAdminSession();
+  return getContentFactoryService().referenceLibrary.getReferenceSafetyReport(referenceId);
+});
+
 ipcMain.handle('auth:get-state', () => {
   getAppData().ensureDataFiles();
   return getAppData().getCurrentSession();

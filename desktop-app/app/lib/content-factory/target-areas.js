@@ -13,6 +13,7 @@ const targetAreas = [
   'classbookTemplate',
   'trainerInfo',
   'participantMaterial',
+  'referenceLiterature',
   'report',
   'other'
 ];
@@ -32,6 +33,7 @@ const targetAreaLabels = {
   classbookTemplate: 'Klassenbuch-Vorlage',
   trainerInfo: 'Dozenteninformation',
   participantMaterial: 'Teilnehmermaterial',
+  referenceLiterature: 'Referenzliteratur / Fachquelle',
   report: 'Testbericht',
   other: 'Sonstiges'
 };
@@ -51,6 +53,7 @@ const targetAreaFolders = {
   classbookTemplate: 'classbook',
   trainerInfo: 'trainer-info',
   participantMaterial: 'participant-materials',
+  referenceLiterature: 'references',
   report: 'reports',
   other: 'other'
 };

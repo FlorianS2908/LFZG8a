@@ -13,6 +13,8 @@ export function buildDualModeContainer(input: {
   gapAnalysis: GapAnalysis;
   containerId?: string;
   dayDrafts?: DayGenerationResult[];
+  referenceSources?: DraftContainer['analysisReport']['referenceSources'];
+  referenceSafety?: DraftContainer['analysisReport']['referenceSafety'];
 }): DraftContainer {
   if (!input.coursePlan) {
     throw new Error('Unterrichtsplan ist Pflicht fuer Containerexport.');
@@ -175,6 +177,8 @@ export function buildDualModeContainer(input: {
     aiMode: input.dayDrafts?.length ? 'configured' : 'local-plan-template',
     generatedDayCount: input.dayDrafts?.length || input.mappings.length,
     generatedFiles: files.map((file) => file.path),
+    referenceSources: input.referenceSources || [],
+    referenceSafety: input.referenceSafety || { directCopyDetected: false, personalWatermarkDetected: false, exportBlocked: false, warnings: [] },
     warnings: input.gapAnalysis.warnings,
     conflicts: input.gapAnalysis.conflicts,
     gaps: input.gapAnalysis.gaps,

@@ -13,6 +13,8 @@ export function validateOutput(draft: DraftContainer): string[] {
     if (/(^|\/)(node_modules|\.git)(\/|$)/.test(file.path)) errors.push(`Gesperrter Ordner im Export: ${file.path}`);
     if (/(^|\/)\.env($|\.)/.test(file.path)) errors.push(`Secret-Datei im Export: ${file.path}`);
     if (/\.(exe|bat|cmd|ps1|sh|msi)$/i.test(file.path)) errors.push(`Ausfuehrbare Datei im Export: ${file.path}`);
+    if (/reference-library|\/original\/|extracted\.json|chunks\.json/i.test(file.path)) errors.push(`Referenzbibliothek darf nicht exportiert werden: ${file.path}`);
+    if (/\.(pdf|epub)$/i.test(file.path)) errors.push(`Referenz-/Buchdatei darf nicht im Container liegen: ${file.path}`);
   });
   ['manifest.json', 'container.json', 'catalog/days.json', 'catalog/participant-content.json', 'catalog/release-keys.json', 'standalone/index.html', 'platform/adapter.json', 'source-map.json'].forEach((path) => {
     if (!paths.has(path)) errors.push(`${path} fehlt.`);

@@ -191,6 +191,21 @@ export type DraftContainer = {
     aiMode?: string;
     generatedDayCount?: number;
     generatedFiles?: string[];
+    referenceSources?: Array<{
+      title: string;
+      author?: string;
+      format?: string;
+      usageMode: string;
+      allowedForExport: boolean;
+      usedForDays?: number[];
+      warnings?: string[];
+    }>;
+    referenceSafety?: {
+      directCopyDetected: boolean;
+      personalWatermarkDetected: boolean;
+      exportBlocked: boolean;
+      warnings: string[];
+    };
     warnings: string[];
     conflicts: string[];
     gaps: string[];

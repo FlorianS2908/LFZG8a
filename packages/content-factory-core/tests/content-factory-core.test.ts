@@ -1,5 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { createRequire } from 'node:module';
 import {
   analyzeGaps,
   AiOrchestrator,
@@ -26,6 +30,10 @@ import {
   validateDraftExport,
   validateQuizQuestions
 } from '../src/index.ts';
+
+const require = createRequire(import.meta.url);
+const desktopFileRules = require('../../../desktop-app/app/lib/content-factory/file-type-rules.js');
+const { createReferenceLibraryService } = require('../../../desktop-app/app/lib/content-factory/reference-library/reference-library-service.js');
 
 test('classification detects common web and code file types by context', () => {
   assert.equal(classifyUploadedFile({ fileName: 'tag_01_webvariante.html' }).technicalType, 'web-document');
@@ -145,8 +153,58 @@ test('output validator blocks env files and executable files', () => {
   assert.match(validateDraftExport(draft).join(' '), /Ausfuehrbare Datei/);
 });
 
+test('output validator blocks reference library files and book formats', () => {
+  const plan = createFallbackCoursePlan({ fileName: 'LF05_FIAE.xlsx' });
+  const draft = buildDraftContainer({ coursePlan: plan, mappings: mapFilesToDays(plan, []), gapAnalysis: { warnings: [], conflicts: [], gaps: [], riskFiles: [] } });
+  draft.files.push({ path: 'reference-library/sources/ref-1/chunks.json', content: '[]' });
+  draft.files.push({ path: 'standalone/book.pdf', content: '' });
+  draft.files.push({ path: 'teilnehmer/ref.epub', content: '' });
+
+  const errors = validateDraftExport(draft).join(' ');
+  assert.match(errors, /Referenzbibliothek/);
+  assert.match(errors, /Buchdatei|Referenz/);
+});
+
 test('quiz validation detects invalid correct indexes', () => {
   assert.deepEqual(validateQuizQuestions([{ id: 'q1', options: ['A'], correct: [2] }]), ['q1: correct-Index 2 ist ungueltig.']);
+});
+
+test('desktop file rules detect reference literature PDF and EPUB target area', () => {
+  assert.equal(desktopFileRules.detectTargetArea('Fachbuch_Datenbanken.pdf'), 'referenceLiterature');
+  assert.equal(desktopFileRules.detectTargetArea('referenz.epub'), 'referenceLiterature');
+  assert.equal(desktopFileRules.isSupportedExtension('referenz.epub'), true);
+});
+
+test('reference library blocks import without confirmation and stores metadata locally', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cf-ref-lib-'));
+  const sourcePath = path.join(tempDir, 'Fachbuch.pdf');
+  fs.writeFileSync(sourcePath, 'Normalisierung Datenbanken licensed to test@example.com', 'utf8');
+  const appData = {
+    dataDir: tempDir,
+    ensureDataFiles() {}
+  };
+  const service = createReferenceLibraryService({ appData });
+
+  assert.throws(() => service.importReferenceSources({ files: [{ name: 'Fachbuch.pdf', path: sourcePath }] }), /reference-only/);
+
+  const imported = service.importReferenceSources({
+    confirmReferenceOnly: true,
+    files: [{ name: 'Fachbuch.pdf', path: sourcePath, author: 'Autor' }]
+  });
+  const metadata = imported[0].metadata;
+  const listed = service.listReferenceSources();
+  const search = service.searchReferences({ query: 'Datenbanken', maxResults: 1 });
+  const safety = service.getReferenceSafetyReport(metadata.id);
+
+  assert.equal(metadata.usageMode, 'local-reference-only');
+  assert.equal(metadata.allowedForExport, false);
+  assert.equal(metadata.allowedForParticipant, false);
+  assert.equal(metadata.allowedForCloud, false);
+  assert.equal(listed.length, 1);
+  assert.equal(search.results.length, 1);
+  assert.ok(search.results[0].shortSummary.length < 240);
+  assert.equal(safety.personalWatermarkDetected, true);
+  assert.ok(fs.existsSync(path.join(tempDir, 'content-factory', 'reference-library', 'sources', metadata.id, 'metadata.json')));
 });
 
 test('local heuristic provider works without API key and orchestrator falls back locally', async () => {
