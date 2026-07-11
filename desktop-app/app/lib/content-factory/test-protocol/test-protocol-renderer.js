@@ -9,6 +9,7 @@ function renderTestProtocolHtml(protocol = {}) {
     <h1>Testprotokoll</h1>
     <section class="card"><p><strong>${escapeHtml(protocol.courseName)}</strong> (${escapeHtml(protocol.containerId)})</p><p>Status: <strong class="${escapeHtml(protocol.overallStatus)}">${escapeHtml(protocol.overallStatus)}</strong></p><p>Erstellt: ${escapeHtml(protocol.createdAt)}</p></section>
     <section class="card"><h2>Zusammenfassung</h2><p>Passed: ${escapeHtml(protocol.summary?.passed || 0)} | Warnings: ${escapeHtml(protocol.summary?.warnings || 0)} | Failed: ${escapeHtml(protocol.summary?.failed || 0)} | Manuell: ${escapeHtml(protocol.summary?.manualChecks || 0)}</p></section>
+    <section class="card"><h2>KI-Laeufe</h2>${table(['Purpose','Provider','Prompt','Prompt Score','Output Review','Fallback'], (protocol.aiRuns || []).map((run) => [run.purpose, run.provider, `${run.promptId} ${run.promptVersion}`, run.promptQualityScore, run.outputReviewStatus, run.fallbackUsed ? 'ja' : 'nein']))}</section>
     <section class="card"><h2>Checks</h2>${table(['Gruppe','Check','Status','Meldung','Nachweis'], (protocol.checks || []).map((check) => [check.group, check.label, check.status, check.message, (check.evidence || []).join(' | ')]))}</section>
     <section class="card"><h2>Manuelle Pruefpunkte</h2>${list(protocol.manualChecks || [])}</section>
     <section class="card"><h2>Warnungen</h2>${list(protocol.warnings || [])}</section>

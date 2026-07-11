@@ -26,10 +26,31 @@ function createTestProtocol(input = {}) {
     overallStatus,
     summary,
     checks,
+    aiRuns: (input.aiRuns || []).map(safeAiRun),
     manualChecks: MANUAL_CHECKS.map((label, index) => ({ id: `manual-${index + 1}`, label, status: 'open' })),
     warnings: checks.filter((check) => check.status === STATUS.WARNING).map((check) => check.message),
     errors: checks.filter((check) => check.status === STATUS.FAILED).map((check) => check.message)
   });
+}
+
+function safeAiRun(run = {}, index = 0) {
+  return {
+    id: `ai-run-${index + 1}`,
+    purpose: run.purpose || '',
+    provider: run.provider || '',
+    model: run.model || '',
+    promptId: run.promptId || '',
+    promptVersion: run.promptVersion || '',
+    promptQualityStatus: run.promptQualityStatus || 'warning',
+    promptQualityScore: run.promptQualityScore || 0,
+    qualityGateBlockedProvider: run.qualityGateBlockedProvider === true,
+    fallbackUsed: run.fallbackUsed === true,
+    schemaValid: run.schemaValid !== false,
+    outputReviewStatus: run.outputReviewStatus || 'warning',
+    outputReviewScore: run.outputReviewScore || 0,
+    warnings: run.warnings || [],
+    manualCheckRequired: run.promptQualityStatus !== 'passed' || run.outputReviewStatus !== 'passed'
+  };
 }
 
 function check(id, group, label, status, message, evidence = [], manualCheckRequired = false) {

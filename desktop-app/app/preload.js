@@ -68,6 +68,7 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
     parseCoursePlan: (input) => ipcRenderer.invoke('factory:parse-course-plan', input),
     getAiProviderStatus: () => ipcRenderer.invoke('factory:get-ai-provider-status'),
     runPreflight: (input) => ipcRenderer.invoke('factory:run-preflight', input),
+    previewPromptQuality: (input) => ipcRenderer.invoke('factory:preview-prompt-quality', input),
     runTestDraft: (input) => ipcRenderer.invoke('factory:run-test-draft', input),
     listPresets: () => ipcRenderer.invoke('factory:list-presets'),
     applyPreset: (id, input) => ipcRenderer.invoke('factory:apply-preset', id, input),

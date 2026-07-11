@@ -38,6 +38,8 @@ const state = {
     selectedPresetId: '',
     preflight: null,
     testRun: null,
+    promptQuality: null,
+    promptRulesVisible: false,
     cleanupReport: null,
     status: ''
   }
@@ -283,6 +285,8 @@ function renderPlanWizard() {
       ${!wizard.approvedCurriculumPlan ? '<p class="status-line status-warning">Tagesentwurf erst nach Curriculum-Freigabe moeglich.</p>' : ''}
     </article>
 
+    ${renderPromptQualityGate(wizard)}
+
     <article class="tool-card">
       <h3>10-12. Tagesentwurf, Korrektur & Draft</h3>
       ${wizard.dayResults.length ? `<p class="status-line">${wizard.dayResults.length} Tagesentwurf/Tagesentwuerfe erzeugt.</p>` : ''}
@@ -400,6 +404,34 @@ function renderTestRunResult(result) {
       ${(result.errors || []).map((item) => `<p class="status-line status-error">${escapeHtml(item)}</p>`).join('')}
       ${(result.warnings || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}
     </div>
+  `;
+}
+
+function renderPromptQualityGate(wizard) {
+  const quality = wizard.promptQuality;
+  return `
+    <article class="tool-card">
+      <h3>KI-Prompt & Quality Gate</h3>
+      <div class="summary-grid">
+        <span>Zweck: ${escapeHtml(quality?.purpose || 'generateDayDraft')}</span>
+        <span>Prompt: ${escapeHtml(quality?.promptId || '-')}</span>
+        <span>Version: ${escapeHtml(quality?.promptVersion || '-')}</span>
+        <span>Schema: ${escapeHtml(quality?.expectedSchema || 'DayGenerationResult')}</span>
+        <span>Provider: ${escapeHtml(quality?.provider || wizard.aiMode || 'local')}</span>
+        <span>Modell: ${escapeHtml(quality?.model || '-')}</span>
+        <span>Status: ${escapeHtml(quality?.status || 'offen')}</span>
+        <span>Score: ${escapeHtml(quality?.score ?? '-')}</span>
+        <span>Provider erlaubt: ${quality ? (quality.maySendToProvider ? 'ja' : 'nein') : '-'}</span>
+      </div>
+      ${(quality?.errors || []).map((item) => `<p class="status-line status-error">${escapeHtml(item)}</p>`).join('')}
+      ${(quality?.warnings || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}
+      ${wizard.promptRulesVisible && quality?.rules ? `<div class="validation-box"><strong>Prompt-Regeln</strong><ul>${quality.rules.map((rule) => `<li>${escapeHtml(rule)}</li>`).join('')}</ul></div>` : ''}
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-prompt-preview>Prompt-Vorschau aktualisieren</button>
+        <button class="secondary-button" type="button" data-prompt-quality>Quality Gate pruefen</button>
+        <button class="secondary-button" type="button" data-prompt-rules>Prompt-Regeln anzeigen</button>
+      </div>
+    </article>
   `;
 }
 
@@ -649,6 +681,12 @@ function bindPlanWizardEvents() {
   });
   $('[data-wizard-create-draft]')?.addEventListener('click', createWizardDraft);
   $('[data-wizard-revise]')?.addEventListener('click', reviseWizardDayDraft);
+  $('[data-prompt-preview]')?.addEventListener('click', previewWizardPromptQuality);
+  $('[data-prompt-quality]')?.addEventListener('click', previewWizardPromptQuality);
+  $('[data-prompt-rules]')?.addEventListener('click', () => {
+    state.wizard.promptRulesVisible = !state.wizard.promptRulesVisible;
+    renderPlanWizard();
+  });
   $('[data-wizard-preflight]')?.addEventListener('click', runWizardPreflight);
   $('[data-wizard-test-run]')?.addEventListener('click', () => runWizardTestDraft(false));
   $('[data-wizard-test-run-confirm]')?.addEventListener('click', () => runWizardTestDraft(true));
@@ -1011,6 +1049,18 @@ async function runWizardPreflight() {
   try {
     state.wizard.preflight = await desktop.factory.runPreflight(buildWizardTestInput());
     state.wizard.status = `Preflight ${state.wizard.preflight.status}: ${state.wizard.preflight.score}/100.`;
+  } catch (error) {
+    state.wizard.status = error.message;
+  }
+  renderPlanWizard();
+}
+
+async function previewWizardPromptQuality() {
+  state.wizard.status = 'Prompt Quality Gate wird geprueft ...';
+  renderPlanWizard();
+  try {
+    state.wizard.promptQuality = await desktop.factory.previewPromptQuality(buildWizardTestInput({ purpose: 'generateDayDraft' }));
+    state.wizard.status = `Prompt Quality ${state.wizard.promptQuality.status}: ${state.wizard.promptQuality.score}/100.`;
   } catch (error) {
     state.wizard.status = error.message;
   }

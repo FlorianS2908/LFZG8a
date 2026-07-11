@@ -17,6 +17,7 @@ const { createCurriculumPlannerService } = require('./curriculum-planner/curricu
 const { runPreflight } = require('./preflight/preflight-service');
 const { listPresets, applyPreset } = require('./presets/preset-service');
 const { createCleanupService } = require('./cleanup/cleanup-service');
+const { buildPrompt, runPromptQualityGate } = require('./ai-quality-gate/ai-quality-gate-service');
 
 function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
@@ -233,6 +234,28 @@ function createContentFactoryService({ appData }) {
     assertAdmin(session);
     ensureFactory();
     return runPreflight(input, { aiStatus: aiOrchestrator.getStatus() });
+  }
+
+  function previewPromptQuality(input, session) {
+    assertAdmin(session);
+    ensureFactory();
+    const promptInput = buildPrompt(input.purpose || 'generateDayDraft', input);
+    const quality = runPromptQualityGate(promptInput);
+    return {
+      purpose: promptInput.purpose,
+      promptId: quality.promptId,
+      promptVersion: quality.promptVersion,
+      expectedSchema: promptInput.expectedSchema,
+      provider: String(input.aiMode || 'local').startsWith('openai') ? 'openai' : 'local',
+      model: String(input.aiMode || 'local').startsWith('openai') ? aiOrchestrator.getStatus().providers.openai.model || '' : 'LocalHeuristicProvider',
+      status: quality.status,
+      score: quality.score,
+      warnings: quality.warnings,
+      errors: quality.errors,
+      maySendToProvider: quality.maySendToProvider,
+      checks: quality.checks.map((check) => ({ id: check.id, label: check.label, status: check.status, message: check.message })),
+      rules: promptInput.prompt.rules
+    };
   }
 
   async function runContentFactoryTestDraft(input, session) {
@@ -605,6 +628,7 @@ function createContentFactoryService({ appData }) {
     parseCoursePlan: parseCoursePlanUpload,
     getAiProviderStatus,
     runPreflight: runContentFactoryPreflight,
+    previewPromptQuality,
     runContentFactoryTestDraft,
     listPresets: (session) => {
       assertAdmin(session);

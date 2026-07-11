@@ -17,6 +17,9 @@ const { generateArtifactFiles } = require('../app/lib/content-factory/artifact-g
 const { validateGeneratedArtifacts } = require('../app/lib/content-factory/container-profile/generated-artifact-validator');
 const { runPreflight } = require('../app/lib/content-factory/preflight/preflight-service');
 const { listPresets, applyPreset } = require('../app/lib/content-factory/presets/preset-service');
+const { buildPrompt, runPromptQualityGate } = require('../app/lib/content-factory/ai-quality-gate/ai-quality-gate-service');
+const { lintPrompt } = require('../app/lib/content-factory/ai-quality-gate/prompt-linter');
+const { reviewOutput, reviewArtifactContent } = require('../app/lib/content-factory/ai-quality-gate/output-review-service');
 
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
@@ -225,7 +228,7 @@ test('content factory productive MVP creates draft with runtime modes and standa
     const testProtocolHtml = fs.readFileSync(path.join(draft.storagePath, 'reports', 'testprotokoll.html'), 'utf8');
     const artifacts = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'artifacts.json'), 'utf8'));
 
-    assert.equal(draftDay.warnings.some((warning) => /OpenAI ist nicht konfiguriert/.test(warning)), true);
+    assert.equal(draftDay.warnings.some((warning) => /OpenAI ist nicht konfiguriert|Quality Gate|Fallback/.test(warning)), true);
     assert.equal(allDays.length, 2);
     assert.ok(allDays[0].tasks.length >= 1);
     assert.ok(allDays[0].quiz.length >= 5);
@@ -256,6 +259,8 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.equal(testProtocol.checks.some((check) => check.group === 'Artefakte'), true);
     assert.equal(testProtocol.checks.some((check) => check.group === 'Export'), true);
     assert.equal(testProtocol.checks.some((check) => check.group === 'Sicherheit'), true);
+    assert.ok(testProtocol.aiRuns.length >= 2);
+    assert.equal(testProtocol.aiRuns.every((run) => run.promptId && run.promptVersion), true);
     assert.ok(testProtocol.manualChecks.length >= 8);
     assert.doesNotMatch(JSON.stringify(testProtocol), /Originaltext|Reference chunk|Buchseite|rawText|textPreview|reference-library|chunks\.json|extracted\.json/i);
     assert.doesNotMatch(testProtocolHtml, /Originaltext|Reference chunk|Buchseite|rawText|textPreview|reference-library|chunks\.json|extracted\.json/i);
@@ -263,6 +268,8 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.equal(draft.analysisReport.fallbackUsed, true);
     assert.match(reportHtml, /<h2>Quality<\/h2>/);
     assert.match(reportHtml, /<h2>Testprotokoll<\/h2>/);
+    assert.match(reportHtml, /<h2>Prompt Quality<\/h2>/);
+    assert.ok(draft.analysisReport.promptQuality.runCount >= 2);
     assert.doesNotMatch(reportHtml, /Originaltext|Reference chunk|Buchseite/i);
     assert.equal(draft.validation.isValid, true);
   } finally {
@@ -361,6 +368,7 @@ test('invalid openai day output falls back to local without leaking solutions to
     }
   });
   const result = await orchestrator.generateDayDraft({
+    ...createApprovedTestInput(),
     dayNumber: 1,
     title: 'Fallback Tag',
     day: {
@@ -375,8 +383,35 @@ test('invalid openai day output falls back to local without leaking solutions to
 
   assert.equal(result.dayNumber, 1);
   assert.equal(result.warnings.some((warning) => /OpenAI-Fallback/.test(warning)), true);
+  assert.equal(result.aiMeta.provider, 'local');
+  assert.equal(result.aiMeta.fallbackUsed, true);
+  assert.equal(result.aiMeta.promptQualityStatus, 'passed');
+  assert.ok(['passed', 'warning'].includes(result.aiMeta.outputReviewStatus));
   assert.doesNotMatch(JSON.stringify(result.webvariant.participantHtmlSections), /Loesung|solution/i);
   assert.ok(result.solutions.length > 0);
+});
+
+test('ai orchestrator blocks unsafe openai prompt and records ai meta', async () => {
+  const orchestrator = new AiOrchestrator({
+    localProvider: new LocalHeuristicProvider(),
+    openaiProvider: {
+      model: 'test-model',
+      isConfigured: () => true,
+      generateDayDraft: async () => { throw new Error('OpenAI should not be called'); }
+    }
+  });
+  const result = await orchestrator.generateDayDraft({
+    ...createApprovedTestInput(),
+    apiKey: 'secret',
+    dayNumber: 1,
+    day: createApprovedTestInput().coursePlan.days[0],
+    materials: []
+  }, 'openai-review');
+
+  assert.equal(result.aiMeta.qualityGateBlockedProvider, true);
+  assert.equal(result.aiMeta.fallbackUsed, true);
+  assert.equal(result.aiMeta.promptQualityStatus, 'failed');
+  assert.equal(result.aiMeta.provider, 'local');
 });
 
 test('content factory quality and ai helpers protect local output and secrets', async () => {
@@ -412,6 +447,46 @@ test('content factory quality and ai helpers protect local output and secrets', 
   assert.equal(sanitized.referenceContext[0].textPreview, undefined);
   assert.ok(sanitized.longText.length < 1010);
   assert.deepEqual(parseJsonLoose('```json\n{"ok":true}\n```'), { ok: true });
+});
+
+test('prompt linter blocks unsafe prompts and warns about age range', () => {
+  const complete = buildPrompt('generateDayDraft', createApprovedTestInput());
+  const passed = runPromptQualityGate(complete);
+  const missingId = lintPrompt({ ...complete, promptId: '', prompt: { ...complete.prompt, promptId: '' } });
+  const unknownAge = runPromptQualityGate(buildPrompt('generateDayDraft', createApprovedTestInput({ targetAudience: { ...createApprovedTestInput().targetAudience, ageRange: 'unknown' } })));
+  const rawText = runPromptQualityGate({ ...complete, prompt: { ...complete.prompt, input: { rawText: 'Originaltext' } } });
+  const secret = runPromptQualityGate({ ...complete, prompt: { ...complete.prompt, apiKey: 'secret' } });
+  const referencePath = runPromptQualityGate({ ...complete, prompt: { ...complete.prompt, path: 'AppData/content-factory/reference-library/chunks.json' } });
+  const mavenWarn = runPromptQualityGate(buildPrompt('generateDayDraft', createApprovedTestInput({ containerProfile: { ...createApprovedTestInput().containerProfile, courseType: 'java-maven' }, targetAudience: { ...createApprovedTestInput().targetAudience, priorKnowledge: 'basic' } })));
+
+  assert.equal(passed.status, 'passed');
+  assert.equal(missingId.status, 'failed');
+  assert.equal(unknownAge.status, 'warning');
+  assert.equal(rawText.maySendToProvider, false);
+  assert.equal(secret.status, 'failed');
+  assert.equal(referencePath.status, 'failed');
+  assert.equal(mavenWarn.status, 'warning');
+  assert.equal(passed.checks.some((check) => check.id === 'expected-schema'), true);
+});
+
+test('output review catches participant solutions placeholders and unsafe artifacts', async () => {
+  const provider = new LocalHeuristicProvider();
+  const good = await provider.generateDayDraft(createApprovedTestInput());
+  const solutionLeak = reviewOutput({ ...good, tasks: [{ title: 'A', text: 'Loesung: fertig' }] }, { purpose: 'generateDayDraft', targetAudience: createApprovedTestInput().targetAudience });
+  const placeholder = reviewOutput({ ...good, tasks: [{ title: 'A', text: 'Aufgabe noch ergaenzen' }] }, { purpose: 'generateDayDraft', targetAudience: createApprovedTestInput().targetAudience });
+  const goodReview = reviewOutput(good, { purpose: 'generateDayDraft', targetAudience: createApprovedTestInput().targetAudience });
+  const exe = reviewArtifactContent({ path: 'teilnehmer/tool.exe', content: '' }, {});
+  const participantSolution = reviewArtifactContent({ path: 'teilnehmer/tag_01/loesung.md', content: 'solution', solutionOnly: true }, {});
+  const javaSimple = reviewArtifactContent({ path: 'teilnehmer/tag_01/Aufgabe.java', content: 'class Aufgabe {}' }, { targetAudience: { priorKnowledge: 'none' } });
+  const mavenIntermediate = reviewArtifactContent({ path: 'teilnehmer/tag_01/pom.xml', content: '<project><modelVersion>4.0.0</modelVersion></project>' }, { targetAudience: { priorKnowledge: 'intermediate' } });
+
+  assert.equal(solutionLeak.status, 'failed');
+  assert.equal(placeholder.status, 'warning');
+  assert.equal(goodReview.status, 'passed');
+  assert.equal(exe.status, 'failed');
+  assert.equal(participantSolution.status, 'failed');
+  assert.equal(javaSimple.status, 'passed');
+  assert.equal(mavenIntermediate.status, 'passed');
 });
 
 test('content factory artifact suggestions respect audience and safe formats', () => {
@@ -598,6 +673,9 @@ test('content factory ui exposes test protocol open action', () => {
 
   assert.match(ui, /Testprotokoll oeffnen/);
   assert.match(ui, /data-wizard-open="test-protocol"/);
+  assert.match(ui, /KI-Prompt & Quality Gate/);
+  assert.match(ui, /previewPromptQuality/);
+  assert.doesNotMatch(ui, /OPENAI_API_KEY|apiKey|secret/i);
 });
 
 test('content factory requires an admin session', () => {

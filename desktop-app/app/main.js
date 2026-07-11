@@ -1122,6 +1122,10 @@ ipcMain.handle('factory:run-preflight', (event, input) => (
   getContentFactoryService().runPreflight(input, requireAdminSession())
 ));
 
+ipcMain.handle('factory:preview-prompt-quality', (event, input) => (
+  getContentFactoryService().previewPromptQuality(input, requireAdminSession())
+));
+
 ipcMain.handle('factory:run-test-draft', async (event, input) => (
   getContentFactoryService().runContentFactoryTestDraft(input, requireAdminSession())
 ));
