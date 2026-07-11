@@ -82,10 +82,49 @@ test('content factory detects file types target areas and day numbers', () => {
   assert.equal(detectTargetArea('LFZQ8a_tag_01_Webvariante.html'), 'webvariant');
   assert.equal(detectTargetArea('arbeitsdatei.css'), 'style');
   assert.equal(detectTargetArea('fragenpool.json'), 'quiz');
+  assert.equal(detectTargetArea('material.pdf'), 'material');
+  assert.equal(detectTargetArea('Fachbuch_Datenbanken.pdf'), 'referenceLiterature');
+  assert.equal(detectTargetArea('referenz.epub'), 'referenceLiterature');
   assert.equal(detectFileKind('grafik.png'), 'image');
   assert.equal(detectFileKind('material.pdf'), 'document');
   assert.equal(extractDayNumber('LFZQ8a_tag_10_Webvariante.html'), 10);
   assert.equal(extractDayNumber('day01_task.html'), 1);
+});
+
+test('content factory productive MVP creates draft with runtime modes and standalone', async () => {
+  const { dir, service, session, cleanup } = createTempFactory();
+
+  try {
+    const planPath = path.join(dir, 'Plan.xlsx');
+    fs.writeFileSync(planPath, 'placeholder', 'utf8');
+    const plan = service.parseCoursePlan({
+      files: [{ name: 'Plan.xlsx', path: planPath }]
+    }, session);
+    const draftDay = await service.generateDayDraft({
+      course: { courseName: 'LF05 FIAE', courseId: 'lf05-fiae', department: 'FIAE' },
+      coursePlan: plan,
+      day: plan.days[0],
+      aiMode: 'openai',
+      useReferences: false
+    }, session);
+    const draft = service.createPlanContainerDraft({
+      course: { courseName: 'LF05 FIAE', courseId: 'lf05-fiae', department: 'FIAE' },
+      coursePlan: plan,
+      dayResults: [draftDay],
+      aiMode: 'local'
+    }, session);
+    const manifest = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'manifest.json'), 'utf8'));
+    const participantWeb = fs.readFileSync(path.join(draft.storagePath, 'teilnehmer', 'tag_01', 'webvariante.html'), 'utf8');
+
+    assert.equal(manifest.status, 'draft');
+    assert.equal(manifest.runtimeModes.standalone.entry, 'standalone/index.html');
+    assert.equal(fs.existsSync(path.join(draft.storagePath, 'standalone', 'index.html')), true);
+    assert.equal(fs.existsSync(path.join(draft.storagePath, 'platform', 'adapter.json')), true);
+    assert.doesNotMatch(participantWeb, /Loesung|solution/i);
+    assert.equal(draft.validation.isValid, true);
+  } finally {
+    cleanup();
+  }
 });
 
 test('content factory mappings can be manually locked over suggestions', () => {

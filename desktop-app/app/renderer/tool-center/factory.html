@@ -25,6 +25,7 @@
     <main class="factory-layout">
       <nav class="workspace-track-tabs" aria-label="Factory Bereiche">
         <button class="workspace-track-tab is-active" type="button" data-factory-tab="home">Start</button>
+        <button class="workspace-track-tab" type="button" data-factory-tab="plan-wizard">Plan -> KI/Fallback -> Container</button>
         <button class="workspace-track-tab" type="button" data-factory-tab="overview">Uebersicht</button>
         <button class="workspace-track-tab" type="button" data-factory-tab="duplicate">Duplizieren</button>
         <button class="workspace-track-tab" type="button" data-factory-tab="import">Rohdaten</button>
@@ -56,6 +57,10 @@
             </span>
           </button>
         </div>
+      </section>
+
+      <section class="factory-panel" data-factory-panel="plan-wizard">
+        <div data-plan-wizard></div>
       </section>
 
       <section class="factory-panel" data-factory-panel="overview">

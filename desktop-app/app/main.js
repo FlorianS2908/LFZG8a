@@ -1078,6 +1078,40 @@ ipcMain.handle('factory:import-files', (event, input) => (
   getContentFactoryService().createImportBatch(input, requireAdminSession())
 ));
 
+ipcMain.handle('factory:parse-course-plan', (event, input) => (
+  getContentFactoryService().parseCoursePlan(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:get-ai-provider-status', () => (
+  getContentFactoryService().getAiProviderStatus(requireAdminSession())
+));
+
+ipcMain.handle('factory:generate-day-draft', async (event, input) => (
+  getContentFactoryService().generateDayDraft(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:create-plan-container-draft', (event, input) => (
+  getContentFactoryService().createPlanContainerDraft(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:validate-generated-container', (event, containerId) => (
+  getContentFactoryService().validateGeneratedContainer(containerId, requireAdminSession())
+));
+
+ipcMain.handle('factory:open-generated-draft', (event, containerId, target = 'standalone') => {
+  const session = requireAdminSession();
+  const service = getContentFactoryService();
+  const draft = service.storage.listGeneratedContainers().find((entry) => entry.id === containerId || entry.manifest?.id === containerId);
+  if (!draft?.storagePath) throw new Error('Draft-Container wurde nicht gefunden.');
+  const targetPath = target === 'folder'
+    ? draft.storagePath
+    : target === 'report'
+      ? path.join(draft.storagePath, 'reports', `${containerId}-analysis-report.html`)
+      : path.join(draft.storagePath, 'standalone', 'index.html');
+  if (target === 'folder') return shell.openPath(targetPath);
+  return shell.openPath(targetPath);
+});
+
 ipcMain.handle('factory:update-mapping', (event, batchId, fileId, mapping) => (
   getContentFactoryService().updateMapping(batchId, fileId, mapping, requireAdminSession())
 ));

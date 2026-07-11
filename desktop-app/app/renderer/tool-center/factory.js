@@ -6,8 +6,37 @@ const state = {
   referenceSources: [],
   targetAreas: [],
   targetAreaLabels: {},
-  selectedBatchId: ''
+  selectedBatchId: '',
+  aiStatus: null,
+  wizard: {
+    course: { courseName: '', courseId: '', department: '', description: '' },
+    coursePlan: null,
+    planFile: null,
+    uploadFiles: [],
+    importBatch: null,
+    useReferences: false,
+    aiMode: 'local',
+    selectedDayNumber: 1,
+    dayDraft: null,
+    corrections: '',
+    generatedDraft: null,
+    status: ''
+  }
 };
+
+const uploadAreas = [
+  ['materials', 'Unterrichtsmaterialien', '.pptx,.pdf,.docx,.md,.html,.ipynb,.zip'],
+  ['tasks', 'Aufgaben', '.html,.md,.pdf,.docx,.ipynb,.json,.zip'],
+  ['solutions', 'Loesungen', '.html,.md,.pdf,.docx,.ipynb,.java,.cs,.sql,.zip'],
+  ['quiz', 'Fragenpools / Quiz', '.json,.xml,.docx,.txt,.zip'],
+  ['project', 'Projektmaterialien', '.zip,.html,.css,.js,.java,.cs,.php,.sql,.png,.jpg,.pdf,.docx'],
+  ['source-code', 'Quellcode', '.html,.css,.js,.ts,.tsx,.jsx,.php,.java,.cs,.py,.zip'],
+  ['database', 'Datenbank / SQL', '.sql,.csv,.zip'],
+  ['assets', 'Assets / Medien', '.png,.jpg,.jpeg,.svg,.webp,.gif,.zip'],
+  ['reference-literature', 'Referenzliteratur / Fachquellen', '.pdf,.epub,.docx,.txt,.md,.html,.zip'],
+  ['other', 'Sonstige Dateien', ''],
+  ['zip-package', 'ZIP-Gesamtpaket', '.zip']
+];
 
 function $(selector) {
   return document.querySelector(selector);
@@ -138,6 +167,252 @@ function renderReferences() {
   $all('[data-remove-reference]').forEach((button) => button.addEventListener('click', () => removeReference(button.dataset.removeReference)));
 }
 
+function renderPlanWizard() {
+  const root = $('[data-plan-wizard]');
+  if (!root) return;
+  const wizard = state.wizard;
+  const gates = getWizardGates();
+  const selectedDay = wizard.coursePlan?.days?.find((day) => day.dayNumber === Number(wizard.selectedDayNumber)) || wizard.coursePlan?.days?.[0];
+  root.innerHTML = `
+    <article class="tool-card">
+      <h2>Plan -> KI/Fallback -> Container</h2>
+      <div class="factory-meta wizard-steps">
+        ${gates.map((gate) => `<div><dt>${escapeHtml(gate.label)}</dt><dd>${gate.done ? 'erfuellt' : gate.active ? 'aktiv' : 'gesperrt'}</dd></div>`).join('')}
+      </div>
+      ${wizard.status ? `<p class="status-line">${escapeHtml(wizard.status)}</p>` : ''}
+    </article>
+
+    <article class="tool-card">
+      <h3>1. Kursdaten</h3>
+      <div class="factory-form-grid">
+        <label>Kursname<input data-wizard-course="courseName" value="${escapeHtml(wizard.course.courseName)}" placeholder="Kursname"></label>
+        <label>Kurs-ID<input data-wizard-course="courseId" value="${escapeHtml(wizard.course.courseId)}" placeholder="kurs-id"></label>
+        <label>Fachbereich<select data-wizard-course="department">${['', 'FIAE', 'FISI', 'KABUE', 'KITS', 'ALLGEMEIN'].map((value) => `<option value="${value}" ${wizard.course.department === value ? 'selected' : ''}>${value || 'Bitte waehlen'}</option>`).join('')}</select></label>
+      </div>
+      <label>Beschreibung<textarea data-wizard-course="description">${escapeHtml(wizard.course.description)}</textarea></label>
+    </article>
+
+    <article class="tool-card">
+      <h3>2. Unterrichtsplan</h3>
+      <label class="drop-line">Unterrichtsplan (.xlsx/.xlsm)<input data-wizard-plan type="file" accept=".xlsx,.xlsm"></label>
+      ${wizard.coursePlan ? `<div class="summary-grid"><span>Datei: ${escapeHtml(wizard.coursePlan.sourceFile)}</span><span>Sheet: ${escapeHtml(wizard.coursePlan.selectedSheet)}</span><span>Tage: ${wizard.coursePlan.days.length}</span><span>UE: ${wizard.coursePlan.totalUE}</span></div>
+      <label>Planvariante<select data-wizard-sheet>${(wizard.coursePlan.availableSheets || []).map((sheet) => `<option value="${escapeHtml(sheet)}" ${wizard.coursePlan.selectedSheet === sheet ? 'selected' : ''}>${escapeHtml(sheet)}</option>`).join('')}</select></label>` : '<p class="status-line status-warning">Unterrichtsplan ist Pflicht.</p>'}
+    </article>
+
+    <article class="tool-card">
+      <h3>3. Uploads</h3>
+      <div class="factory-grid">
+        ${uploadAreas.map(([area, label, accept]) => {
+          const files = wizard.uploadFiles.filter((file) => file.uploadArea === area);
+          return `<div class="factory-card"><strong>${escapeHtml(label)}</strong><small>${files.length} Datei(en), ${formatBytes(files.reduce((sum, file) => sum + Number(file.size || 0), 0))}</small><label class="drop-line">Dateien/ZIPs<input data-wizard-upload="${escapeHtml(area)}" type="file" multiple ${accept ? `accept="${escapeHtml(accept)}"` : ''}></label></div>`;
+        }).join('')}
+      </div>
+      <button class="secondary-button" type="button" data-wizard-import ${wizard.uploadFiles.length ? '' : 'disabled'}>Uploads in Staging importieren</button>
+      ${wizard.importBatch ? `<p class="status-line">Import-Batch: ${escapeHtml(wizard.importBatch.id)} (${wizard.importBatch.files.length} Datei(en))</p>` : ''}
+    </article>
+
+    <article class="tool-card">
+      <h3>4. Referenzen & KI-Modus</h3>
+      <label class="checkline"><input data-wizard-references type="checkbox" ${wizard.useReferences ? 'checked' : ''}> Lokale Referenzbibliothek fuer Kontext verwenden</label>
+      <div class="factory-form-grid">
+        <label>KI-Modus<select data-wizard-ai-mode>${['local', 'openai', 'openai-review', 'openai-review-repair'].map((mode) => `<option value="${mode}" ${wizard.aiMode === mode ? 'selected' : ''}>${mode}</option>`).join('')}</select></label>
+        <label>Tag<select data-wizard-day>${(wizard.coursePlan?.days || []).map((day) => `<option value="${day.dayNumber}" ${Number(wizard.selectedDayNumber) === day.dayNumber ? 'selected' : ''}>Tag ${day.dayNumber}: ${escapeHtml(day.title)}</option>`).join('')}</select></label>
+      </div>
+      <small>Provider: local ${state.aiStatus?.providers?.openai?.configured ? '| OpenAI konfiguriert' : '| OpenAI nicht konfiguriert, Fallback lokal'}</small>
+      <button class="primary-button" type="button" data-wizard-generate ${selectedDay ? '' : 'disabled'}>Tagesentwurf erzeugen</button>
+    </article>
+
+    <article class="tool-card">
+      <h3>5. Tagesentwurf, Korrektur & Draft</h3>
+      ${wizard.dayDraft ? renderDayDraftPreview(wizard.dayDraft) : '<p class="status-line">Noch kein Tagesentwurf erzeugt.</p>'}
+      <label>Korrekturhinweis<textarea data-wizard-corrections>${escapeHtml(wizard.corrections)}</textarea></label>
+      <button class="primary-button" type="button" data-wizard-create-draft ${wizard.dayDraft ? '' : 'disabled'}>Dual-Mode-Container-Draft erzeugen</button>
+      ${wizard.generatedDraft ? renderGeneratedDraft(wizard.generatedDraft) : ''}
+    </article>
+  `;
+  bindPlanWizardEvents();
+}
+
+function renderDayDraftPreview(draft) {
+  return `
+    <div class="validation-box">
+      <strong>${escapeHtml(draft.title)}</strong>
+      <h4>Teilnehmer-Vorschau</h4>
+      ${(draft.webvariant?.participantHtmlSections || []).map((section) => `<section><strong>${escapeHtml(section.title)}</strong>${section.content}</section>`).join('')}
+      <h4>Aufgaben</h4><ul>${(draft.tasks || []).map((task) => `<li>${escapeHtml(task.title)}: ${escapeHtml(task.text)}</li>`).join('')}</ul>
+      <h4>Quiz</h4><ul>${(draft.quiz || []).map((quiz) => `<li>${escapeHtml(quiz.text)}</li>`).join('')}</ul>
+      <details><summary>Dozentenloesungen</summary><ul>${(draft.solutions || []).map((solution) => `<li>${escapeHtml(solution.title)}: ${escapeHtml(solution.text)}</li>`).join('')}</ul></details>
+      ${(draft.warnings || []).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
+    </div>
+  `;
+}
+
+function renderGeneratedDraft(draft) {
+  return `
+    <div class="validation-box">
+      <strong>Draft erzeugt: ${escapeHtml(draft.containerId)}</strong>
+      <p>Pfad: ${escapeHtml(draft.storagePath)}</p>
+      <dl class="factory-meta">
+        <div><dt>Tage</dt><dd>${escapeHtml(draft.analysisReport?.recognizedDays || 0)}</dd></div>
+        <div><dt>Warnungen</dt><dd>${escapeHtml((draft.analysisReport?.warnings || []).length)}</dd></div>
+        <div><dt>Validierung</dt><dd>${draft.validation?.isValid ? 'ok' : 'pruefen'}</dd></div>
+      </dl>
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-wizard-open="standalone">Standalone oeffnen</button>
+        <button class="secondary-button" type="button" data-wizard-open="folder">Ordner oeffnen</button>
+        <button class="secondary-button" type="button" data-wizard-open="report">Analysebericht oeffnen</button>
+      </div>
+    </div>
+  `;
+}
+
+function getWizardGates() {
+  const wizard = state.wizard;
+  const courseDone = Boolean(wizard.course.courseName && wizard.course.courseId && wizard.course.department);
+  const planDone = Boolean(wizard.coursePlan?.days?.length);
+  const draftDone = Boolean(wizard.dayDraft);
+  const containerDone = Boolean(wizard.generatedDraft);
+  return [
+    { label: 'Kursdaten', done: courseDone, active: !courseDone },
+    { label: 'Plan', done: planDone, active: courseDone && !planDone },
+    { label: 'Uploads/Referenzen', done: Boolean(wizard.importBatch || wizard.uploadFiles.length || wizard.useReferences), active: planDone },
+    { label: 'KI/Fallback', done: draftDone, active: planDone && !draftDone },
+    { label: 'Draft/Standalone', done: containerDone, active: draftDone && !containerDone }
+  ];
+}
+
+function bindPlanWizardEvents() {
+  $all('[data-wizard-course]').forEach((field) => field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', () => {
+    state.wizard.course[field.dataset.wizardCourse] = field.value;
+    if (field.dataset.wizardCourse === 'courseName' && !state.wizard.course.courseId) {
+      state.wizard.course.courseId = field.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+    if (field.tagName === 'SELECT') renderPlanWizard();
+  }));
+  $('[data-wizard-plan]')?.addEventListener('change', parseWizardPlan);
+  $('[data-wizard-sheet]')?.addEventListener('change', parseWizardPlanSheet);
+  $all('[data-wizard-upload]').forEach((input) => input.addEventListener('change', () => {
+    const area = input.dataset.wizardUpload;
+    Array.from(input.files || []).forEach((file) => state.wizard.uploadFiles.push({
+      name: file.name,
+      path: file.path || '',
+      size: file.size,
+      type: file.type,
+      uploadArea: area
+    }));
+    input.value = '';
+    renderPlanWizard();
+  }));
+  $('[data-wizard-import]')?.addEventListener('click', importWizardUploads);
+  $('[data-wizard-references]')?.addEventListener('change', (event) => {
+    state.wizard.useReferences = event.target.checked;
+    renderPlanWizard();
+  });
+  $('[data-wizard-ai-mode]')?.addEventListener('change', (event) => {
+    state.wizard.aiMode = event.target.value;
+  });
+  $('[data-wizard-day]')?.addEventListener('change', (event) => {
+    state.wizard.selectedDayNumber = Number(event.target.value);
+    renderPlanWizard();
+  });
+  $('[data-wizard-generate]')?.addEventListener('click', generateWizardDayDraft);
+  $('[data-wizard-corrections]')?.addEventListener('input', (event) => {
+    state.wizard.corrections = event.target.value;
+  });
+  $('[data-wizard-create-draft]')?.addEventListener('click', createWizardDraft);
+  $all('[data-wizard-open]').forEach((button) => button.addEventListener('click', () => desktop.factory.openGeneratedDraft(state.wizard.generatedDraft.containerId, button.dataset.wizardOpen)));
+}
+
+async function parseWizardPlan(event) {
+  const file = Array.from(event.target.files || [])[0];
+  if (!file) return;
+  state.wizard.planFile = { name: file.name, path: file.path || '', size: file.size, type: file.type };
+  state.wizard.status = 'Unterrichtsplan wird gelesen ...';
+  renderPlanWizard();
+  try {
+    state.wizard.coursePlan = await desktop.factory.parseCoursePlan({
+      files: [state.wizard.planFile],
+      courseTitle: state.wizard.course.courseName
+    });
+    state.wizard.selectedDayNumber = state.wizard.coursePlan.days[0]?.dayNumber || 1;
+    state.wizard.status = 'Unterrichtsplan erkannt.';
+  } catch (error) {
+    state.wizard.status = error.message;
+  }
+  renderPlanWizard();
+}
+
+async function parseWizardPlanSheet(event) {
+  if (!state.wizard.planFile) return;
+  state.wizard.coursePlan = await desktop.factory.parseCoursePlan({
+    files: [state.wizard.planFile],
+    selectedSheet: event.target.value,
+    courseTitle: state.wizard.course.courseName
+  });
+  renderPlanWizard();
+}
+
+async function importWizardUploads() {
+  state.wizard.status = 'Uploads werden sicher in Staging importiert ...';
+  renderPlanWizard();
+  try {
+    state.wizard.importBatch = await desktop.factory.importFiles({
+      name: `${state.wizard.course.courseName || 'Plan'} Uploads`,
+      files: state.wizard.uploadFiles
+    });
+    state.wizard.status = 'Uploads importiert und klassifiziert.';
+    await loadState();
+  } catch (error) {
+    state.wizard.status = error.message;
+    renderPlanWizard();
+  }
+}
+
+async function generateWizardDayDraft() {
+  const day = state.wizard.coursePlan?.days?.find((item) => item.dayNumber === Number(state.wizard.selectedDayNumber));
+  if (!day) return;
+  state.wizard.status = 'Tagesentwurf wird erzeugt ...';
+  renderPlanWizard();
+  try {
+    state.wizard.dayDraft = await desktop.factory.generateDayDraft({
+      course: state.wizard.course,
+      coursePlan: state.wizard.coursePlan,
+      day,
+      dayNumber: day.dayNumber,
+      title: day.title,
+      materials: state.wizard.importBatch?.files || [],
+      useReferences: state.wizard.useReferences,
+      aiMode: state.wizard.aiMode
+    });
+    state.wizard.status = 'Tagesentwurf erzeugt.';
+  } catch (error) {
+    state.wizard.status = error.message;
+  }
+  renderPlanWizard();
+}
+
+async function createWizardDraft() {
+  state.wizard.status = 'Draft-Container wird geschrieben ...';
+  renderPlanWizard();
+  try {
+    const dayResults = [state.wizard.dayDraft];
+    state.wizard.generatedDraft = await desktop.factory.createPlanContainerDraft({
+      course: state.wizard.course,
+      coursePlan: state.wizard.coursePlan,
+      materials: state.wizard.importBatch?.files || [],
+      references: [],
+      aiMode: state.wizard.aiMode,
+      corrections: state.wizard.corrections,
+      dayResults
+    });
+    state.wizard.status = 'Draft-Container erzeugt.';
+    await loadState();
+  } catch (error) {
+    state.wizard.status = error.message;
+    renderPlanWizard();
+  }
+}
+
 function renderMapping(batch) {
   $('[data-batch-detail]').hidden = false;
   $('[data-batch-title]').textContent = batch.name;
@@ -169,6 +444,7 @@ function renderMapping(batch) {
 
 async function loadState() {
   const data = await desktop.factory.getState();
+  state.aiStatus = await desktop.factory.getAiProviderStatus();
   state.containers = data.containers || [];
   state.importBatches = data.importBatches || [];
   state.referenceSources = data.referenceSources || [];
@@ -177,6 +453,7 @@ async function loadState() {
   renderContainers();
   renderBatches();
   renderReferences();
+  renderPlanWizard();
   if (state.selectedBatchId) {
     const batch = state.importBatches.find((item) => item.id === state.selectedBatchId);
     if (batch) renderMapping(batch);
@@ -226,7 +503,7 @@ async function searchReferences() {
         <article class="mapping-item">
           <strong>${escapeHtml(item.title)}</strong>
           <small>${escapeHtml(item.sourceRef)} | Score ${Math.round(item.relevanceScore * 100)}%</small>
-          <p>${escapeHtml(item.shortSummary)}</p>
+          <p>${escapeHtml(item.generatedSummary || 'Diese Quelle enthaelt wahrscheinlich passende Inhalte zum Suchthema.')}</p>
         </article>
       `).join('')
       : '<p class="status-line">Keine Treffer. Es werden keine vollstaendigen Chunks angezeigt.</p>';

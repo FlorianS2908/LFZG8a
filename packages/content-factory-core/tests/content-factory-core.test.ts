@@ -198,6 +198,7 @@ test('quiz validation detects invalid correct indexes', () => {
 
 test('desktop file rules detect reference literature PDF and EPUB target area', () => {
   assert.equal(desktopFileRules.detectTargetArea('Fachbuch_Datenbanken.pdf'), 'referenceLiterature');
+  assert.equal(desktopFileRules.detectTargetArea('material.pdf'), 'material');
   assert.equal(desktopFileRules.detectTargetArea('referenz.epub'), 'referenceLiterature');
   assert.equal(desktopFileRules.isSupportedExtension('referenz.epub'), true);
   assert.equal(classifyUploadedFile({ fileName: 'Fachbuch.epub', uploadArea: 'reference-literature' }).contentCategory, 'reference-literature');
@@ -230,7 +231,7 @@ test('reference library blocks import without confirmation and stores metadata l
   assert.equal(metadata.allowedForCloud, false);
   assert.equal(listed.length, 1);
   assert.equal(search.results.length, 1);
-  assert.ok(search.results[0].shortSummary.length < 240);
+  assert.equal(search.results[0].generatedSummary, 'Diese Quelle enthaelt wahrscheinlich passende Inhalte zum Suchthema.');
   assert.equal(safety.personalWatermarkDetected, true);
   assert.ok(fs.existsSync(path.join(tempDir, 'content-factory', 'reference-library', 'sources', metadata.id, 'metadata.json')));
 });

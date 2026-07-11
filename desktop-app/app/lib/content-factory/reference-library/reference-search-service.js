@@ -27,7 +27,7 @@ function searchReferences(store, input = {}) {
         sectionTitle: chunk.sectionTitle,
         pageNumber: chunk.pageNumber,
         relevanceScore: Math.min(0.99, hits / Math.max(terms.length, 1)),
-        shortSummary: paraphraseSummary(chunk.text),
+        generatedSummary: createGeneratedSummary(),
         sourceRef: chunk.sourceRef,
         metadata: publicReferenceMetadata(source)
       });
@@ -42,14 +42,11 @@ function searchReferences(store, input = {}) {
   };
 }
 
-function paraphraseSummary(text) {
-  const clean = String(text || '').replace(/\s+/g, ' ').trim();
-  if (!clean) return 'Keine durchsuchbare Textzusammenfassung vorhanden.';
-  const words = clean.split(/\s+/).slice(0, 28);
-  return `Interne Referenz weist auf relevante Inhalte zu: ${words.join(' ')}${clean.split(/\s+/).length > words.length ? ' ...' : ''}`;
+function createGeneratedSummary() {
+  return 'Diese Quelle enthaelt wahrscheinlich passende Inhalte zum Suchthema.';
 }
 
 module.exports = {
   searchReferences,
-  paraphraseSummary
+  createGeneratedSummary
 };

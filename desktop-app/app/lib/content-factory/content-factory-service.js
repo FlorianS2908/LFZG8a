@@ -9,6 +9,10 @@ const { targetAreas, targetAreaLabels } = require('./target-areas');
 const { createReferenceLibraryService } = require('./reference-library/reference-library-service');
 const { validateNoReferenceExport } = require('./reference-library/reference-safety-service');
 const { stageUploadFiles } = require('./upload-staging-service');
+const { parseCoursePlan } = require('./course-plan-parser');
+const { AiOrchestrator } = require('./ai/ai-orchestrator');
+const { createPlanContainerDraft } = require('./plan-container-draft-service');
+const { validateGeneratedContainer } = require('./generated-container-validator');
 
 function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
@@ -22,6 +26,7 @@ function createContentFactoryService({ appData }) {
     staticContainers: moduleRegistry.getAllModules()
   });
   const referenceLibrary = createReferenceLibraryService({ appData });
+  const aiOrchestrator = new AiOrchestrator();
 
   function ensureFactory() {
     appData.ensureDataFiles();
@@ -71,6 +76,70 @@ function createContentFactoryService({ appData }) {
       targetAreas,
       targetAreaLabels
     };
+  }
+
+  function parseCoursePlanUpload(input, session) {
+    assertAdmin(session);
+    ensureFactory();
+    const file = (input.files || [])[0] || input;
+    return parseCoursePlan(file.path || file.sourcePath, {
+      fileName: file.name || file.originalFilename,
+      selectedSheet: input.selectedSheet,
+      courseTitle: input.courseTitle
+    });
+  }
+
+  function getAiProviderStatus(session) {
+    assertAdmin(session);
+    return aiOrchestrator.getStatus();
+  }
+
+  async function generateDayDraft(input, session) {
+    assertAdmin(session);
+    ensureFactory();
+    const dayTopic = input.day?.mainTopic || input.title || '';
+    const referenceSearch = input.useReferences
+      ? referenceLibrary.searchReferences({ dayTopic, query: dayTopic, maxResults: 5 })
+      : { results: [] };
+    const referenceContext = (referenceSearch.results || []).map((result) => ({
+      referenceId: result.referenceId,
+      title: result.title,
+      author: result.author,
+      sectionTitle: result.sectionTitle,
+      pageNumber: result.pageNumber,
+      summary: result.generatedSummary,
+      sourceRef: result.sourceRef
+    }));
+    return aiOrchestrator.generateDayDraft({
+      ...input,
+      referenceContext
+    }, input.aiMode || 'local');
+  }
+
+  function createPlanDraft(input, session) {
+    assertAdmin(session);
+    ensureFactory();
+    const draft = createPlanContainerDraft(input, { factoryDir });
+    const generated = storage.listGeneratedContainers();
+    writeJson(storage.indexPath, [
+      {
+        id: draft.containerId,
+        generated: true,
+        status: 'draft',
+        storagePath: draft.storagePath,
+        manifest: readJson(path.join(draft.storagePath, 'manifest.json'), {}),
+        analysisReport: draft.analysisReport
+      },
+      ...generated.filter((entry) => entry.manifest?.id !== draft.containerId)
+    ]);
+    return draft;
+  }
+
+  function validatePlanDraft(containerId, session) {
+    assertAdmin(session);
+    const draft = storage.listGeneratedContainers().find((entry) => entry.id === containerId || entry.manifest?.id === containerId);
+    if (!draft?.storagePath) throw new Error('Draft-Container wurde nicht gefunden.');
+    return validateGeneratedContainer(draft.storagePath, draft.manifest || {});
   }
 
   function validateContainerDraft(container) {
@@ -349,6 +418,11 @@ function createContentFactoryService({ appData }) {
     getState,
     duplicateContainer,
     createImportBatch,
+    parseCoursePlan: parseCoursePlanUpload,
+    getAiProviderStatus,
+    generateDayDraft,
+    createPlanContainerDraft: createPlanDraft,
+    validateGeneratedContainer: validatePlanDraft,
     getImportBatch,
     listImportBatches,
     updateMapping,

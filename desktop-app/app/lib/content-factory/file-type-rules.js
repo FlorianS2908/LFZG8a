@@ -35,10 +35,11 @@ function extractDayNumber(fileName) {
   return null;
 }
 
-function detectTargetArea(fileName) {
+function detectTargetArea(fileName, uploadArea = '') {
   const value = normalizeFilename(fileName);
   const extension = path.extname(value);
-  if (extension === '.epub' || extension === '.pdf') return 'referenceLiterature';
+  if (uploadArea === 'referenceLiterature' || uploadArea === 'reference-literature') return 'referenceLiterature';
+  if (extension === '.epub') return 'referenceLiterature';
   if (/(referenz|reference|literatur|fachquelle|quelle|buch|book)/i.test(value)) return 'referenceLiterature';
 
   if (/(loesung|lösung|solution|antwort)/i.test(value)) return 'solution';
@@ -48,12 +49,13 @@ function detectTargetArea(fileName) {
   if (/(teilnehmer|student|\btn\b)/i.test(value)) return 'participantMaterial';
   if (/(klassenbuch|classbook)/i.test(value)) return 'classbookTemplate';
   if (/(bericht|report)/i.test(value)) return 'report';
+  if (/(unterricht|material|handout|skript)/i.test(value)) return 'material';
   if (extension === '.css') return 'style';
   if (['.js', '.ts', '.tsx'].includes(extension)) return 'script';
   if (imageExtensions.has(extension)) return 'asset';
   if (extension === '.pptx') return 'presentation';
   if (extension === '.docx') return 'documentation';
-  if (extension === '.pdf' || extension === '.epub') return 'referenceLiterature';
+  if (extension === '.pdf') return 'documentation';
   if (['.xlsx', '.xlsm'].includes(extension)) return 'material';
   if (/(webvariante|web|index|tag)/i.test(value) && ['.html', '.md', '.txt'].includes(extension)) return 'webvariant';
   if (extension === '.zip') return 'other';
