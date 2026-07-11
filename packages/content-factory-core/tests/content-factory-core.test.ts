@@ -34,6 +34,12 @@ import {
 const require = createRequire(import.meta.url);
 const desktopFileRules = require('../../../desktop-app/app/lib/content-factory/file-type-rules.js');
 const { createReferenceLibraryService } = require('../../../desktop-app/app/lib/content-factory/reference-library/reference-library-service.js');
+const {
+  inspectPathSafety,
+  normalizeZipEntryPath,
+  stageUploadFiles,
+  uploadLimits
+} = require('../../../desktop-app/app/lib/content-factory/upload-staging-service.js');
 
 test('classification detects common web and code file types by context', () => {
   assert.equal(classifyUploadedFile({ fileName: 'tag_01_webvariante.html' }).technicalType, 'web-document');
@@ -69,6 +75,27 @@ test('security rules prevent zip slip and flag ignored or blocked files', () => 
   assert.equal(classifyUploadedFile({ fileName: 'node_modules/pkg/index.js' }).ignored, true);
   assert.equal(classifyUploadedFile({ fileName: '.env' }).blocked, true);
   assert.equal(classifyUploadedFile({ fileName: 'tools/setup.exe' }).blocked, true);
+});
+
+test('desktop upload staging rules enforce safe ZIP paths and export blockers', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cf-upload-stage-'));
+  assert.equal(normalizeZipEntryPath('../evil.txt').safe, false);
+  assert.equal(normalizeZipEntryPath('tag_01/material.pdf').safe, true);
+  assert.equal(inspectPathSafety('node_modules/pkg/index.js').ignored, true);
+  assert.equal(inspectPathSafety('.env').blocked, true);
+  assert.equal(inspectPathSafety('tools/setup.exe').blocked, true);
+  const staged = stageUploadFiles([{ name: 'grosses-material.pdf', size: uploadLimits.maxSingleFileBytes + 1 }], {
+    factoryDir: tempDir,
+    batchId: 'batch-test',
+    now: new Date('2026-01-01T00:00:00.000Z')
+  });
+  assert.equal(staged.files[0].blocked, true);
+  assert.match(staged.warnings.join(' '), /250 MB/);
+  assert.equal(uploadLimits.maxSingleFileBytes, 250 * 1024 * 1024);
+  assert.equal(uploadLimits.maxBatchBytes, 2 * 1024 * 1024 * 1024);
+  assert.equal(uploadLimits.maxZipExtractedBytes, 3 * 1024 * 1024 * 1024);
+  assert.equal(uploadLimits.maxFilesPerBatch, 1000);
+  assert.equal(uploadLimits.maxZipDepth, 2);
 });
 
 test('course plan is required for container export', () => {
@@ -173,6 +200,7 @@ test('desktop file rules detect reference literature PDF and EPUB target area', 
   assert.equal(desktopFileRules.detectTargetArea('Fachbuch_Datenbanken.pdf'), 'referenceLiterature');
   assert.equal(desktopFileRules.detectTargetArea('referenz.epub'), 'referenceLiterature');
   assert.equal(desktopFileRules.isSupportedExtension('referenz.epub'), true);
+  assert.equal(classifyUploadedFile({ fileName: 'Fachbuch.epub', uploadArea: 'reference-literature' }).contentCategory, 'reference-literature');
 });
 
 test('reference library blocks import without confirmation and stores metadata locally', () => {
@@ -362,7 +390,14 @@ test('upload areas expose context and safety descriptions', () => {
   assert.ok(uploadCategoryDefinitions.length >= 9);
   assert.match(getUploadCategory('ai-materials')?.description || '', /keine fertigen Materialien/);
   assert.match(getUploadCategory('materials')?.description || '', /Materialien/);
-  assert.deepEqual(getUploadCategory('quiz')?.accept, ['.json', '.xml', '.docx', '.txt']);
+  assert.ok(getUploadCategory('quiz')?.accept.includes('.zip'));
+  assert.ok(getUploadCategory('course-plan')?.accept.includes('.zip'));
+  assert.ok(getUploadCategory('reference-literature')?.accept.includes('.zip'));
+  assert.ok(getUploadCategory('reference-literature')?.accept.includes('.epub'));
+  assert.deepEqual(
+    uploadCategoryDefinitions.filter((category) => category.area !== 'ai-materials').filter((category) => !category.accept.includes('.zip')).map((category) => category.area),
+    []
+  );
   assert.match(getUploadCategory('solutions')?.safetyNote || '', /Teilnehmerbereich/);
   assert.match(getUploadCategory('source-code')?.safetyNote || '', /nicht ausgefuehrt/);
   assert.match(getUploadCategory('database')?.safetyNote || '', /nicht automatisch ausgefuehrt/);

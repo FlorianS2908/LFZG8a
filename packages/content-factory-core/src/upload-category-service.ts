@@ -2,6 +2,14 @@ import type { UploadArea, UploadCategoryDefinition } from './types.ts';
 
 export const uploadCategoryDefinitions: UploadCategoryDefinition[] = [
   {
+    area: 'course-plan',
+    title: 'Unterrichtsplan',
+    description: 'Offizieller Unterrichtsplan als Excel, Word, PDF oder ZIP mit Planvarianten.',
+    examples: ['Excel-Unterrichtsplan', 'Word-Plan', 'PDF-Plan', 'ZIP mit Plan und Anlagen'],
+    accept: ['.xlsx', '.xlsm', '.docx', '.pdf', '.zip'],
+    safetyNote: 'ZIPs werden sicher entpackt; jede enthaltene Datei wird einzeln geprueft und zugeordnet.'
+  },
+  {
     area: 'ai-materials',
     title: 'Materialien mittels KI generieren',
     description: 'Nutzen Sie diese Option, wenn keine fertigen Materialien vorhanden sind. Die ContentFactory erzeugt spaeter Basisentwuerfe aus Unterrichtsplan, Kursdaten und offenen Lernzielen.',
@@ -14,14 +22,14 @@ export const uploadCategoryDefinitions: UploadCategoryDefinition[] = [
     title: 'Unterrichtsmaterialien',
     description: 'Materialien, mit denen Inhalte erklaert werden: Folien, PDFs, Word-Dateien, Markdown, HTML-Webvarianten oder Notebooks.',
     examples: ['Praesentationen', 'Handouts', 'Webvarianten', 'zentrale Wissensvermittlung', 'Notebooks mit Theorie'],
-    accept: ['.pptx', '.pdf', '.docx', '.md', '.html', '.ipynb']
+    accept: ['.pptx', '.pdf', '.docx', '.md', '.html', '.ipynb', '.zip']
   },
   {
     area: 'tasks',
     title: 'Aufgaben',
     description: 'Aufgaben, die Teilnehmer bearbeiten sollen. Die ContentFactory ordnet sie passenden Tagen und Themen zu.',
     examples: ['Aufgabenblaetter', 'Notebook-Aufgaben', 'HTML-Aufgaben', 'Uebungsdateien'],
-    accept: ['.html', '.md', '.pdf', '.docx', '.ipynb', '.json', 'sonstige']
+    accept: ['.html', '.md', '.pdf', '.docx', '.ipynb', '.json', '.zip', 'sonstige']
   },
   {
     area: 'solutions',
@@ -36,7 +44,7 @@ export const uploadCategoryDefinitions: UploadCategoryDefinition[] = [
     title: 'Fragenpools / Quiz',
     description: 'Vorhandene Fragenpools fuer Tagesquiz oder eigene Quiz-Kacheln.',
     examples: ['JSON-Fragenpool', 'XML-Fragenpool', 'Word-Fragenkatalog', 'TXT-Fragensammlung'],
-    accept: ['.json', '.xml', '.docx', '.txt']
+    accept: ['.json', '.xml', '.docx', '.txt', '.zip']
   },
   {
     area: 'project',
@@ -50,7 +58,7 @@ export const uploadCategoryDefinitions: UploadCategoryDefinition[] = [
     title: 'Quellcode',
     description: 'Technische Dateien als Beispiel, Startercode oder Loesungscode. Sie werden analysiert, aber niemals ausgefuehrt.',
     examples: ['HTML/CSS/JavaScript', 'Java', 'C#', 'PHP', 'Python', 'TypeScript'],
-    accept: ['.html', '.css', '.js', '.ts', '.tsx', '.jsx', '.php', '.java', '.cs', '.py'],
+    accept: ['.html', '.css', '.js', '.ts', '.tsx', '.jsx', '.php', '.java', '.cs', '.py', '.zip'],
     safetyNote: 'Quellcode wird analysiert, aber nicht ausgefuehrt.'
   },
   {
@@ -58,7 +66,7 @@ export const uploadCategoryDefinitions: UploadCategoryDefinition[] = [
     title: 'Datenbank / SQL',
     description: 'SQL-Dateien und Datenbankmaterialien. DDL, DML, SELECT, Views, Trigger und Prozeduren werden erkannt.',
     examples: ['CREATE TABLE', 'INSERT-Testdaten', 'SELECT-Aufgaben', 'JOIN-Abfragen', 'Stored Procedures'],
-    accept: ['.sql', '.csv optional'],
+    accept: ['.sql', '.csv', '.zip'],
     safetyNote: 'SQL wird aus Sicherheitsgruenden nicht automatisch ausgefuehrt.'
   },
   {
@@ -66,14 +74,22 @@ export const uploadCategoryDefinitions: UploadCategoryDefinition[] = [
     title: 'Assets / Medien',
     description: 'Bilder, Icons und Begleitdateien fuer Aufgaben, Projekte oder Webvarianten.',
     examples: ['Screenshots', 'Bilder', 'Icons', 'SVGs', 'Projektgrafiken'],
-    accept: ['.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif']
+    accept: ['.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif', '.zip']
+  },
+  {
+    area: 'reference-literature',
+    title: 'Referenzliteratur / Fachquellen',
+    description: 'Eigene rechtmaessig lizenzierte Fachquellen fuer lokale interne Analyse und KI-Kontext.',
+    examples: ['PDF-Fachbuch', 'EPUB', 'eigene Dokumentation', 'Fachartikel'],
+    accept: ['.pdf', '.epub', '.docx', '.txt', '.md', '.html', '.zip'],
+    safetyNote: 'Referenzliteratur bleibt local-reference-only und wird nicht in Kurscontainer oder Teilnehmerexports kopiert.'
   },
   {
     area: 'other',
     title: 'Sonstige Dateien',
     description: 'Dateien, die nicht eindeutig erkannt werden. Sie koennen spaeter manuell zugeordnet, ignoriert oder als Begleitmaterial uebernommen werden.',
     examples: ['unbekannte Dateitypen', 'alte Exportdateien', 'zusaetzliche Materialien'],
-    accept: ['sonstige']
+    accept: ['sonstige', '.zip']
   },
   {
     area: 'zip-package',

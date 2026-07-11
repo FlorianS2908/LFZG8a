@@ -70,9 +70,13 @@ export function classifyUploadedFile(file: UploadedFileDescriptor): FileAnalysis
     technicalType = 'presentation';
     contentCategory = 'presentation';
     confidence = 0.85;
+  } else if (extension === '.epub') {
+    technicalType = 'document';
+    contentCategory = 'reference-literature';
+    confidence = 0.86;
   } else if (['.pdf', '.docx'].includes(extension)) {
     technicalType = 'document';
-    contentCategory = detectCategoryFromWords(lowerPath, 'handout');
+    contentCategory = detectCategoryFromWords(lowerPath, /(referenz|reference|literatur|fachquelle|fachbuch|quelle)/i.test(lowerPath) ? 'reference-literature' : 'handout');
     confidence = 0.76;
   } else if (extension === '.md') {
     technicalType = 'document';
@@ -196,6 +200,7 @@ function categoryFromUploadArea(area: string, fallback: ContentCategory): Conten
     'source-code': 'source-code',
     database: fallback.startsWith('database-') ? fallback : 'database-schema',
     assets: 'asset',
+    'reference-literature': 'reference-literature',
     'ai-materials': 'participant-material'
   };
   return map[area] || fallback;

@@ -20,7 +20,7 @@ function createImportedRawFile(fileInput, now = new Date()) {
   const originalFilename = fileInput.originalFilename || fileInput.name || path.basename(fileInput.path || '');
   const extension = path.extname(String(originalFilename || '')).toLowerCase();
   const sourcePath = fileInput.path || fileInput.sourcePath || '';
-  const warnings = [];
+  const warnings = [...(fileInput.warnings || [])];
   const errors = [];
   let stat = null;
   let rawText = '';
@@ -47,12 +47,16 @@ function createImportedRawFile(fileInput, now = new Date()) {
     extension,
     mimeType: fileInput.type || '',
     size: Number(fileInput.size || stat?.size || 0),
+    sha256: fileInput.sha256 || '',
     detectedType: detectTargetArea(originalFilename),
     fileKind: detectFileKind(originalFilename),
     rawText,
     structuredData: null,
     preview: rawText || (detectFileKind(originalFilename) === 'image' ? sourcePath : ''),
     sourcePath,
+    originalZipFilename: fileInput.originalZipFilename || '',
+    zipEntryPath: fileInput.zipEntryPath || '',
+    staging: fileInput.staging || null,
     importStatus: errors.length ? 'failed' : 'imported',
     suggestedTarget: detectTargetArea(originalFilename),
     selectedTarget: detectTargetArea(originalFilename),
@@ -65,6 +69,16 @@ function createImportedRawFile(fileInput, now = new Date()) {
     createdAt: now.toISOString(),
     mappingLocked: false
   };
+
+  if (fileInput.blocked) {
+    imported.blocked = true;
+    imported.importStatus = 'blocked';
+    imported.warnings.push('Datei wurde zur Pruefung importiert, ist aber fuer Export/Verwendung blockiert.');
+  }
+  if (fileInput.ignored) {
+    imported.ignored = true;
+    imported.warnings.push('Datei liegt in einem ignorierten technischen Ordner.');
+  }
 
   if (imported.selectedTarget === 'referenceLiterature') {
     imported.warnings.push('Referenzliteratur ist nur lokale interne Wissensquelle und wird nicht in Container exportiert.');

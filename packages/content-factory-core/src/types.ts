@@ -48,6 +48,7 @@ export type ContentCategory =
   | 'database-query'
   | 'database-solution'
   | 'asset'
+  | 'reference-literature'
   | 'tool'
   | 'trainer-info'
   | 'participant-material'
@@ -65,6 +66,7 @@ export type UploadArea =
   | 'source-code'
   | 'database'
   | 'assets'
+  | 'reference-literature'
   | 'other';
 
 export type UploadedFileDescriptor = {

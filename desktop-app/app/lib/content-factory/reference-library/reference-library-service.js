@@ -4,6 +4,7 @@ const { publicReferenceMetadata } = require('./reference-metadata-service');
 const { createReferenceIndexStore } = require('./reference-index-store');
 const { importReferenceSource } = require('./reference-ingest-service');
 const { searchReferences } = require('./reference-search-service');
+const { stageUploadFiles } = require('../upload-staging-service');
 
 function createReferenceLibraryService({ appData }) {
   const rootDir = path.join(appData.dataDir, 'content-factory', 'reference-library');
@@ -27,7 +28,11 @@ function createReferenceLibraryService({ appData }) {
 
   function importReferenceSources(input = {}) {
     ensureLibrary();
-    return (input.files || []).map((file) => importReferenceSource(store, file, {
+    const staged = stageUploadFiles(input.files || [], {
+      factoryDir: path.join(rootDir, 'reports'),
+      batchId: `reference-import-${Date.now()}`
+    });
+    return (staged.files || []).filter((file) => !file.blocked && !file.ignored).map((file) => importReferenceSource(store, file, {
       confirmReferenceOnly: input.confirmReferenceOnly === true
     }));
   }

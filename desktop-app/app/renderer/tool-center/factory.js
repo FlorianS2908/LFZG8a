@@ -26,6 +26,14 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function formatBytes(value) {
+  const bytes = Number(value || 0);
+  if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
 function showPanel(panelName) {
   $all('[data-factory-tab]').forEach((button) => button.classList.toggle('is-active', button.dataset.factoryTab === panelName));
   $all('[data-factory-panel]').forEach((panel) => panel.classList.toggle('is-active', panel.dataset.factoryPanel === panelName));
@@ -94,6 +102,8 @@ function renderBatches() {
           <span class="status-badge status-${escapeHtml(batch.status)}">${escapeHtml(batch.status)}</span>
         </div>
         <p>${escapeHtml(batch.files.length)} Datei(en), erstellt ${escapeHtml(new Date(batch.createdAt).toLocaleString('de-DE'))}</p>
+        <small>Speicher: ${formatBytes(batch.staging?.inputBytes || 0)} | ZIPs: ${batch.staging?.zipCount || 0}</small>
+        ${(batch.warnings || []).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
         <button class="secondary-button" type="button" data-open-batch="${escapeHtml(batch.id)}">Zuordnung bearbeiten</button>
       </article>
     `).join('')
@@ -137,6 +147,10 @@ function renderMapping(batch) {
     <article class="mapping-item" data-file-id="${escapeHtml(file.id)}">
       <strong>${escapeHtml(file.originalFilename)}</strong>
       <small>${escapeHtml(file.extension)} | ${escapeHtml(file.fileKind)} | ${escapeHtml(file.mappingSource === 'manual' ? 'manuell festgelegt' : 'automatisch vorgeschlagen')}</small>
+      ${file.originalZipFilename ? `<details><summary>Aus ZIP: ${escapeHtml(file.originalZipFilename)}</summary><small>${escapeHtml(file.zipEntryPath || '')}</small></details>` : ''}
+      ${file.sha256 ? `<small>SHA-256: ${escapeHtml(file.sha256.slice(0, 16))}...</small>` : ''}
+      ${file.duplicate ? '<p class="status-line status-warning">Duplikat per Hash erkannt.</p>' : ''}
+      ${file.blocked ? '<p class="status-line status-error">Gesperrt: Datei wird nicht exportiert oder ausgefuehrt.</p>' : ''}
       <div class="factory-form-grid">
         <label>Zielbereich<select data-map-target>${state.targetAreas.map((area) => `<option value="${escapeHtml(area)}" ${file.selectedTarget === area ? 'selected' : ''}>${escapeHtml(state.targetAreaLabels[area] || area)}</option>`).join('')}</select></label>
         <label>Tag<input data-map-day type="number" min="1" max="99" value="${escapeHtml(file.dayNumber ?? '')}"></label>

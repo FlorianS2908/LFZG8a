@@ -8,6 +8,7 @@ const { createContainerStorageService } = require('./container-storage-service')
 const { targetAreas, targetAreaLabels } = require('./target-areas');
 const { createReferenceLibraryService } = require('./reference-library/reference-library-service');
 const { validateNoReferenceExport } = require('./reference-library/reference-safety-service');
+const { stageUploadFiles } = require('./upload-staging-service');
 
 function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
@@ -153,14 +154,35 @@ function createContentFactoryService({ appData }) {
 
   function createImportBatch(input, session, now = new Date()) {
     assertAdmin(session);
-    const files = importFiles(input.files || [], now);
+    ensureFactory();
+    const batchId = `batch-${now.getTime()}`;
+    const staged = stageUploadFiles(input.files || [], {
+      factoryDir,
+      batchId,
+      now
+    });
+    const files = importFiles(staged.files || [], now);
+    const duplicateHashes = files.reduce((map, file) => {
+      if (file.sha256) map[file.sha256] = (map[file.sha256] || 0) + 1;
+      return map;
+    }, {});
+    const enrichedFiles = files.map((file) => ({
+      ...file,
+      duplicate: Boolean(file.sha256 && duplicateHashes[file.sha256] > 1),
+      warnings: [
+        ...(file.warnings || []),
+        ...(file.sha256 && duplicateHashes[file.sha256] > 1 ? ['Duplikat per SHA-256 erkannt.'] : [])
+      ]
+    }));
     const batch = {
-      id: `batch-${now.getTime()}`,
+      id: batchId,
       name: input.name || `Import ${now.toLocaleString('de-DE')}`,
       createdAt: now.toISOString(),
       createdBy: session.user.email || session.user.id,
-      files,
-      status: files.some((file) => file.errors.length) ? 'failed' : 'imported',
+      files: enrichedFiles,
+      status: enrichedFiles.some((file) => file.errors.length) ? 'failed' : 'imported',
+      staging: staged.storageSummary,
+      warnings: staged.warnings,
       validation: null
     };
     return saveImportBatch(batch);
@@ -244,7 +266,10 @@ function createContentFactoryService({ appData }) {
     };
 
     validatedBatch.files.forEach((file, index) => {
-      if (file.selectedTarget === 'referenceLiterature') {
+      if (file.selectedTarget === 'referenceLiterature' || file.blocked || file.ignored) {
+        return;
+      }
+      if (file.extension === '.zip' && file.deliverArchive !== true) {
         return;
       }
       const copiedPath = storage.copyImportedFile(file, id);

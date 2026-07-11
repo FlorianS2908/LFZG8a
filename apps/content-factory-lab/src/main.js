@@ -43,14 +43,14 @@ const uploadCategories = [
     title: 'Unterrichtsmaterialien',
     description: 'Hier gehoeren Materialien hinein, mit denen Inhalte erklaert werden.',
     examples: ['Praesentationen', 'Handouts', 'Webvarianten', 'zentrale Wissensvermittlung', 'Notebooks mit Theorie'],
-    accept: '.pptx,.pdf,.docx,.md,.html,.ipynb'
+    accept: '.pptx,.pdf,.docx,.md,.html,.ipynb,.zip'
   },
   {
     area: 'tasks',
     title: 'Aufgaben',
     description: 'Hier gehoeren Aufgaben hinein, die Teilnehmer bearbeiten sollen.',
     examples: ['Aufgabenblaetter', 'Notebook-Aufgaben', 'HTML-Aufgaben', 'Uebungsdateien'],
-    accept: '.html,.md,.pdf,.docx,.ipynb,.json'
+    accept: '.html,.md,.pdf,.docx,.ipynb,.json,.zip'
   },
   {
     area: 'solutions',
@@ -65,7 +65,7 @@ const uploadCategories = [
     title: 'Fragenpools / Quiz',
     description: 'Hier gehoeren vorhandene Fragenpools hinein.',
     examples: ['JSON-Fragenpool', 'XML-Fragenpool', 'Word-Fragenkatalog', 'TXT-Fragensammlung'],
-    accept: '.json,.xml,.docx,.txt'
+    accept: '.json,.xml,.docx,.txt,.zip'
   },
   {
     area: 'project',
@@ -79,7 +79,7 @@ const uploadCategories = [
     title: 'Quellcode',
     description: 'Technische Dateien als Beispiel, Startercode oder Loesungscode.',
     examples: ['HTML/CSS/JavaScript', 'Java', 'C#', 'PHP', 'Python', 'TypeScript'],
-    accept: '.html,.css,.js,.ts,.tsx,.jsx,.php,.java,.cs,.py',
+    accept: '.html,.css,.js,.ts,.tsx,.jsx,.php,.java,.cs,.py,.zip',
     safety: 'Quellcode wird analysiert, aber nicht ausgefuehrt.'
   },
   {
@@ -87,7 +87,7 @@ const uploadCategories = [
     title: 'Datenbank / SQL',
     description: 'SQL-Dateien und Datenbankmaterialien. Die ContentFactory erkennt DDL, DML, SELECT, Views, Trigger und Prozeduren.',
     examples: ['CREATE TABLE', 'INSERT-Testdaten', 'SELECT-Aufgaben', 'JOIN-Abfragen', 'Stored Procedures'],
-    accept: '.sql,.csv',
+    accept: '.sql,.csv,.zip',
     safety: 'SQL wird aus Sicherheitsgruenden nicht automatisch ausgefuehrt.'
   },
   {
@@ -95,7 +95,15 @@ const uploadCategories = [
     title: 'Assets / Medien',
     description: 'Bilder, Icons oder Begleitdateien fuer Aufgaben, Projekte oder Webvarianten.',
     examples: ['Screenshots', 'Bilder', 'Icons', 'SVGs', 'Projektgrafiken'],
-    accept: '.png,.jpg,.jpeg,.svg,.webp,.gif'
+    accept: '.png,.jpg,.jpeg,.svg,.webp,.gif,.zip'
+  },
+  {
+    area: 'reference-literature',
+    title: 'Referenzliteratur / Fachquellen',
+    description: 'Eigene lizenzierte Fachquellen nur als lokale interne Referenz fuer Analyse und KI-Kontext.',
+    examples: ['PDF-Fachbuch', 'EPUB', 'eigene Dokumentation', 'Fachartikel'],
+    accept: '.pdf,.epub,.docx,.txt,.md,.html,.zip',
+    safety: 'Referenzliteratur bleibt reference-only, wird nicht in Kurscontainer kopiert und nicht an Teilnehmer exportiert.'
   },
   {
     area: 'other',
@@ -270,7 +278,7 @@ function renderCoursePlanStep() {
       <label class="upload-drop" data-plan-drop>
         <span>Unterrichtsplan hier ablegen</span>
         <small>oder Datei auswaehlen (.xlsx, .xlsm, .docx, .pdf)</small>
-        <input type="file" data-plan-upload accept=".xlsx,.xlsm,.docx,.pdf">
+        <input type="file" multiple data-plan-upload accept=".xlsx,.xlsm,.docx,.pdf,.zip">
       </label>
       ${state.coursePlan ? renderPlanSummary() : '<p class="warning">Der Unterrichtsplan ist verpflichtend.</p>'}
       <button class="primary-button" data-action="confirm-plan" ${state.coursePlan ? '' : 'disabled'}>Unterrichtsplan bestaetigen</button>
@@ -307,14 +315,20 @@ function renderUploadStep() {
 }
 
 function renderUploadCard(category) {
-  const count = state.files.filter((file) => file.uploadArea === category.area).length;
+  const files = state.files.filter((file) => file.uploadArea === category.area);
+  const count = files.length;
+  const totalSize = files.reduce((sum, file) => sum + Number(file.size || 0), 0);
+  const zipCount = files.filter((file) => file.extension === '.zip').length;
+  const warnings = files.flatMap((file) => file.warnings || []).filter(uniqueFilter);
   return `
     <article class="upload-card">
       <div class="upload-card-header"><strong>${category.title}</strong><span>${count} Datei(en)</span></div>
       <p>${category.description}</p>
+      <small>Speicher: ${formatBytes(totalSize)} | ZIPs: ${zipCount}</small>
       <small>Beispiele: ${category.examples.join(', ')}</small>
       <small>${category.actionOnly ? 'Dateitypen: keine Datei notwendig' : `Dateitypen: ${category.accept || 'sonstige'}`}</small>
       ${category.safety ? `<p class="safety">${category.safety}</p>` : ''}
+      ${warnings.map((warning) => `<p class="warning">${escapeHtml(warning)}</p>`).join('')}
       ${category.actionOnly ? `<button class="file-button ai-generate-button" type="button" data-action="enable-ai-materials"><span>KI-Materialien nutzen</span><small>${state.aiMaterialsEnabled ? 'aktiviert' : 'statt Uploads verwenden'}</small></button>` : `<label class="file-button" data-drop-area="${category.area}">
         <span>Dateien hier ablegen</span>
         <small>oder Dateien hinzufuegen</small>
@@ -692,18 +706,18 @@ function updateCourseDataLiveFeedback() {
 }
 
 function handlePlanUpload(event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  addPlanFile(file);
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+  files.forEach(addPlanFile);
   event.target.value = '';
 }
 
 function handlePlanDrop(event) {
   event.preventDefault();
   event.currentTarget.classList.remove('is-dragging');
-  const file = Array.from(event.dataTransfer?.files || [])[0];
-  if (!file) return;
-  addPlanFile(file);
+  const files = Array.from(event.dataTransfer?.files || []);
+  if (!files.length) return;
+  files.forEach(addPlanFile);
 }
 
 function addPlanFile(file) {
@@ -1195,7 +1209,7 @@ function renderMessages(messages, kind) {
 }
 
 function areaCategory(area, fallback) {
-  return { materials: 'participant-material', tasks: 'task', solutions: 'solution', quiz: 'quiz', project: fallback.startsWith('project') ? fallback : 'project-scenario', 'source-code': 'source-code', database: fallback.startsWith('database') ? fallback : 'database-schema', assets: 'asset', other: fallback, 'zip-package': fallback.startsWith('project') ? fallback : 'project-starter', 'ai-materials': 'participant-material', 'course-plan': 'course-plan' }[area] || fallback;
+  return { materials: 'participant-material', tasks: 'task', solutions: 'solution', quiz: 'quiz', project: fallback.startsWith('project') ? fallback : 'project-scenario', 'source-code': 'source-code', database: fallback.startsWith('database') ? fallback : 'database-schema', assets: 'asset', other: fallback, 'zip-package': fallback.startsWith('project') ? fallback : 'project-starter', 'reference-literature': 'trainer-info', 'ai-materials': 'participant-material', 'course-plan': 'course-plan' }[area] || fallback;
 }
 
 function detectCategory(value, fallback) {
@@ -1274,6 +1288,14 @@ function downloadJson(fileName, data) {
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function formatBytes(value) {
+  const bytes = Number(value || 0);
+  if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
 }
 
 function escapeAttribute(value) {
