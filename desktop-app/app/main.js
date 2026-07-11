@@ -1078,6 +1078,38 @@ ipcMain.handle('factory:import-files', (event, input) => (
   getContentFactoryService().createImportBatch(input, requireAdminSession())
 ));
 
+ipcMain.handle('factory:create-curriculum-anchor', (event, input) => (
+  getContentFactoryService().createCurriculumAnchor(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:analyze-curriculum-anchor', (event, input) => (
+  getContentFactoryService().analyzeCurriculumAnchor(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:get-curriculum-draft', (event, draftId) => (
+  getContentFactoryService().getCurriculumDraft(draftId, requireAdminSession())
+));
+
+ipcMain.handle('factory:update-curriculum-draft', (event, draftId, patch) => (
+  getContentFactoryService().updateCurriculumDraft(draftId, patch, requireAdminSession())
+));
+
+ipcMain.handle('factory:move-curriculum-topic', (event, draftId, topicId, targetDayNumber, targetOrder) => (
+  getContentFactoryService().moveCurriculumTopic(draftId, topicId, targetDayNumber, targetOrder, requireAdminSession())
+));
+
+ipcMain.handle('factory:approve-curriculum-draft', (event, draftId) => (
+  getContentFactoryService().approveCurriculumDraft(draftId, requireAdminSession())
+));
+
+ipcMain.handle('factory:list-curriculum-drafts', () => (
+  getContentFactoryService().listCurriculumDrafts(requireAdminSession())
+));
+
+ipcMain.handle('factory:remove-curriculum-draft', (event, draftId) => (
+  getContentFactoryService().removeCurriculumDraft(draftId, requireAdminSession())
+));
+
 ipcMain.handle('factory:parse-course-plan', (event, input) => (
   getContentFactoryService().parseCoursePlan(input, requireAdminSession())
 ));

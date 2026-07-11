@@ -13,6 +13,7 @@ const { parseCoursePlan } = require('./course-plan-parser');
 const { AiOrchestrator } = require('./ai/ai-orchestrator');
 const { createPlanContainerDraft } = require('./plan-container-draft-service');
 const { validateGeneratedContainer } = require('./generated-container-validator');
+const { createCurriculumPlannerService } = require('./curriculum-planner/curriculum-planner-service');
 
 function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
@@ -27,12 +28,14 @@ function createContentFactoryService({ appData }) {
   });
   const referenceLibrary = createReferenceLibraryService({ appData });
   const aiOrchestrator = new AiOrchestrator();
+  const curriculumPlanner = createCurriculumPlannerService({ factoryDir, aiOrchestrator });
 
   function ensureFactory() {
     appData.ensureDataFiles();
     ensureDir(factoryDir);
     storage.ensureStorage();
     referenceLibrary.ensureLibrary();
+    curriculumPlanner.ensurePlanner();
     if (!readJson(batchesPath, null)) {
       writeJson(batchesPath, []);
     }
@@ -73,6 +76,7 @@ function createContentFactoryService({ appData }) {
       importBatches: listImportBatches(),
       referenceLibraryRoot: referenceLibrary.rootDir,
       referenceSources: referenceLibrary.listReferenceSources(),
+      curriculumDrafts: curriculumPlanner.listCurriculumDrafts(),
       targetAreas,
       targetAreaLabels
     };
@@ -97,6 +101,10 @@ function createContentFactoryService({ appData }) {
   async function generateDayDraft(input, session) {
     assertAdmin(session);
     ensureFactory();
+    const curriculumPlan = input.approvedCurriculumPlan || input.curriculumPlan;
+    if (!curriculumPlan || curriculumPlan.status !== 'approved') {
+      throw new Error('Tagesentwurf ist erst nach Freigabe des Curriculum-Plans moeglich.');
+    }
     const dayTopic = input.day?.mainTopic || input.title || '';
     const referenceSearch = input.useReferences
       ? referenceLibrary.searchReferences({ dayTopic, query: dayTopic, maxResults: 5 })
@@ -112,6 +120,11 @@ function createContentFactoryService({ appData }) {
     }));
     return aiOrchestrator.generateDayDraft({
       ...input,
+      curriculumPlan,
+      targetAudience: curriculumPlan.targetAudience || input.targetAudience,
+      difficultyMode: curriculumPlan.targetAudience?.difficultyMode,
+      didacticStyle: curriculumPlan.didacticStyle,
+      expectedOutcome: curriculumPlan.expectedOutcome,
       referenceContext
     }, input.aiMode || 'local');
   }
@@ -119,6 +132,10 @@ function createContentFactoryService({ appData }) {
   function createPlanDraft(input, session) {
     assertAdmin(session);
     ensureFactory();
+    const curriculumPlan = input.approvedCurriculumPlan || input.curriculumPlan;
+    if (!curriculumPlan || curriculumPlan.status !== 'approved') {
+      throw new Error('Container-Draft ist erst nach Freigabe des Curriculum-Plans moeglich.');
+    }
     const draft = createPlanContainerDraft(input, { factoryDir });
     const generated = storage.listGeneratedContainers();
     writeJson(storage.indexPath, [
@@ -418,6 +435,47 @@ function createContentFactoryService({ appData }) {
     getState,
     duplicateContainer,
     createImportBatch,
+    curriculumPlanner,
+    createCurriculumAnchor: (input, session) => {
+      assertAdmin(session);
+      ensureFactory();
+      return curriculumPlanner.createCurriculumAnchor(input);
+    },
+    analyzeCurriculumAnchor: (input, session) => {
+      assertAdmin(session);
+      ensureFactory();
+      return curriculumPlanner.analyzeCurriculumAnchor(input);
+    },
+    getCurriculumDraft: (draftId, session) => {
+      assertAdmin(session);
+      ensureFactory();
+      return curriculumPlanner.getCurriculumDraft(draftId);
+    },
+    updateCurriculumDraft: (draftId, patch, session) => {
+      assertAdmin(session);
+      ensureFactory();
+      return curriculumPlanner.updateCurriculumDraft(draftId, patch);
+    },
+    moveCurriculumTopic: (draftId, topicId, targetDayNumber, targetOrder, session) => {
+      assertAdmin(session);
+      ensureFactory();
+      return curriculumPlanner.moveCurriculumTopic(draftId, topicId, targetDayNumber, targetOrder);
+    },
+    approveCurriculumDraft: (draftId, session) => {
+      assertAdmin(session);
+      ensureFactory();
+      return curriculumPlanner.approveCurriculumDraft(draftId);
+    },
+    listCurriculumDrafts: (session) => {
+      assertAdmin(session);
+      ensureFactory();
+      return curriculumPlanner.listCurriculumDrafts();
+    },
+    removeCurriculumDraft: (draftId, session) => {
+      assertAdmin(session);
+      ensureFactory();
+      return curriculumPlanner.removeCurriculumDraft(draftId);
+    },
     parseCoursePlan: parseCoursePlanUpload,
     getAiProviderStatus,
     generateDayDraft,

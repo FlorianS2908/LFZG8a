@@ -36,6 +36,23 @@ class AiOrchestrator {
     }
     return normalizeDayGenerationResult(await this.local.generateDayDraft(input));
   }
+
+  async generateCurriculumPlan(input = {}, mode = 'local') {
+    const requested = mode || process.env.AI_PROVIDER || 'local';
+    if (requested.startsWith('openai') && this.openai.isConfigured()) {
+      try {
+        return await this.openai.generateCurriculumPlan(input);
+      } catch (error) {
+        const fallback = await this.local.generateCurriculumPlan(input);
+        return { ...fallback, warnings: [...(fallback.warnings || []), `OpenAI-Curriculum-Fallback genutzt: ${error.message}`] };
+      }
+    }
+    if (requested.startsWith('openai')) {
+      const fallback = await this.local.generateCurriculumPlan(input);
+      return { ...fallback, warnings: [...(fallback.warnings || []), 'OpenAI ist nicht konfiguriert. Curriculum-Planung nutzt lokalen Fallback.'] };
+    }
+    return this.local.generateCurriculumPlan(input);
+  }
 }
 
 module.exports = {

@@ -12,6 +12,10 @@ class OpenAIProvider {
   async generateDayDraft() {
     throw new Error('OpenAIProvider ist vorbereitet, aber im MVP ohne Server-Request deaktiviert.');
   }
+
+  async generateCurriculumPlan() {
+    throw new Error('OpenAIProvider ist vorbereitet, aber im MVP ohne Server-Request deaktiviert.');
+  }
 }
 
 module.exports = {

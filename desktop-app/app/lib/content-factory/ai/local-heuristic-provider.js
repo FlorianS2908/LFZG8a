@@ -75,6 +75,13 @@ class LocalHeuristicProvider {
       aiAdditions: input.referenceContext?.length ? ['Referenzmetadaten wurden als Kontext beruecksichtigt.'] : []
     });
   }
+
+  async generateCurriculumPlan(input = {}) {
+    return {
+      days: [],
+      warnings: ['LocalHeuristicProvider nutzt die deterministische Curriculum-Zeitplanung.']
+    };
+  }
 }
 
 function section(title, content, sourceRefs) {

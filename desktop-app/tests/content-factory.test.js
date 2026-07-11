@@ -97,12 +97,49 @@ test('content factory productive MVP creates draft with runtime modes and standa
   try {
     const planPath = path.join(dir, 'Plan.xlsx');
     fs.writeFileSync(planPath, 'placeholder', 'utf8');
-    const plan = service.parseCoursePlan({
-      files: [{ name: 'Plan.xlsx', path: planPath }]
+    const anchor = service.createCurriculumAnchor({
+      type: 'course-plan',
+      title: 'LF05 FIAE',
+      sourceFiles: [{ name: 'Plan.xlsx', path: planPath }]
     }, session);
+    let curriculum = await service.analyzeCurriculumAnchor({
+      anchor,
+      course: { courseName: 'LF05 FIAE', courseId: 'lf05-fiae', department: 'FIAE' },
+      duration: { durationMode: 'days', numberOfDays: 2, uePerDay: 9, hoursPerDay: 8 },
+      targetAudience: { department: 'FIAE', priorKnowledge: 'basic', difficultyMode: 'normal' },
+      courseGoal: 'HTML und CSS Grundlagen',
+      expectedOutcome: 'webseite',
+      didacticStyle: 'guided'
+    }, session);
+    await assert.rejects(() => service.generateDayDraft({
+      course: { courseName: 'LF05 FIAE', courseId: 'lf05-fiae', department: 'FIAE' },
+      curriculumPlan: curriculum,
+      day: curriculum.days[0],
+      aiMode: 'local'
+    }, session), /Freigabe/);
+    curriculum = service.approveCurriculumDraft(curriculum.id, session);
+    const plan = {
+      courseTitle: curriculum.course.courseName,
+      courseId: curriculum.course.courseId,
+      department: curriculum.course.department,
+      sourceFile: curriculum.anchor.title,
+      selectedSheet: 'Curriculum Planner',
+      days: curriculum.days.map((day) => ({
+        dayNumber: day.dayNumber,
+        title: day.title,
+        mainTopic: day.mainTopic,
+        learningGoals: day.learningGoals,
+        subTopics: [],
+        ueBlocks: day.topics.map((topic) => ({ topic: topic.title, learnerTask: topic.summary, teacherTask: topic.summary, evaluation: `Pruefen: ${topic.title}`, resources: topic.sourceRefs.join(', ') })),
+        pauses: [],
+        warnings: day.warnings
+      })),
+      warnings: []
+    };
     const draftDay = await service.generateDayDraft({
       course: { courseName: 'LF05 FIAE', courseId: 'lf05-fiae', department: 'FIAE' },
       coursePlan: plan,
+      approvedCurriculumPlan: curriculum,
       day: plan.days[0],
       aiMode: 'openai',
       useReferences: false
@@ -110,6 +147,7 @@ test('content factory productive MVP creates draft with runtime modes and standa
     const draft = service.createPlanContainerDraft({
       course: { courseName: 'LF05 FIAE', courseId: 'lf05-fiae', department: 'FIAE' },
       coursePlan: plan,
+      approvedCurriculumPlan: curriculum,
       dayResults: [draftDay],
       aiMode: 'local'
     }, session);
@@ -122,6 +160,39 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.equal(fs.existsSync(path.join(draft.storagePath, 'platform', 'adapter.json')), true);
     assert.doesNotMatch(participantWeb, /Loesung|solution/i);
     assert.equal(draft.validation.isValid, true);
+  } finally {
+    cleanup();
+  }
+});
+
+test('curriculum planner handles text anchors ranges target audience moves and approval', async () => {
+  const { service, session, cleanup } = createTempFactory();
+
+  try {
+    const anchor = service.createCurriculumAnchor({
+      type: 'text-document',
+      title: 'SQL Grundlagen',
+      sourceFiles: [{ name: 'sql-grundlagen.md', path: '' }],
+      ranges: []
+    }, session);
+    let draft = await service.analyzeCurriculumAnchor({
+      anchor,
+      course: { courseName: 'SQL Kurs', courseId: 'sql-kurs', department: 'FISI' },
+      duration: { durationMode: 'ue', totalUE: 18, uePerDay: 9, hoursPerDay: 8 },
+      targetAudience: { department: 'FISI', priorKnowledge: 'none', difficultyMode: 'easy-normal-hard', projectOrientation: false },
+      courseGoal: 'SQL Grundlagen anwenden',
+      expectedOutcome: 'datenbankmodell',
+      didacticStyle: 'guided'
+    }, session);
+    const firstTopic = draft.days[0].topics[0];
+    assert.equal(draft.anchor.type, 'text-document');
+    assert.equal(draft.duration.numberOfDays, 2);
+    assert.equal(firstTopic.difficulty, 'easy');
+    draft = service.moveCurriculumTopic(draft.id, firstTopic.id, 2, 1, session);
+    assert.equal(draft.days[1].topics.some((topic) => topic.id === firstTopic.id), true);
+    draft = service.approveCurriculumDraft(draft.id, session);
+    assert.equal(draft.status, 'approved');
+    assert.doesNotMatch(JSON.stringify(draft), /Originaltext|SELECT \*/i);
   } finally {
     cleanup();
   }
