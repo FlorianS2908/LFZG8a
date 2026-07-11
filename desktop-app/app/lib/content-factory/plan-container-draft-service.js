@@ -251,10 +251,20 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
       pageNumber: item.pageNumber || null,
       slideNumber: item.slideNumber || null,
       chapter: item.chapter || null,
+      quality: item.quality || null,
       warnings: item.warnings || []
     })),
+    curriculumQuality: curriculum.quality || { score: 0, level: 'unknown', recommendations: [] },
     targetAudience: curriculum.targetAudience || input.targetAudience || {},
     duration: curriculum.duration || input.duration || {},
+    days: (curriculum.days || []).map((day) => ({
+      dayNumber: day.dayNumber,
+      title: day.title,
+      estimatedUE: day.estimatedUE,
+      topicCount: (day.topics || []).length,
+      topics: (day.topics || []).map((topic) => ({ title: topic.title, estimatedUE: topic.estimatedUE, sourceRefs: topic.sourceRefs || [] })),
+      warnings: day.warnings || []
+    })),
     coursePlan: input.coursePlan?.sourceFile || '',
     selectedSheet: input.coursePlan?.selectedSheet || '',
     recognizedDays: input.coursePlan?.days?.length || 0,
@@ -277,13 +287,45 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
     namingReport,
     exportSafetyReport: validation,
     openItems: validation.errors || [],
+    nextRecommendedSteps: [
+      ...(validation.errors || []).length ? ['Export-Schutz-Fehler beheben und Draft neu erzeugen.'] : [],
+      ...(warnings.length ? ['Warnungen fachlich pruefen.'] : []),
+      curriculum.quality?.score < 70 ? 'Curriculum Review nachschaerfen und erneut freigeben.' : 'Standalone fachlich pruefen und Kursinstanz vorbereiten.'
+    ],
     generatedFiles: files.map((file) => file.path),
     exportedPath: rootDir
   };
 }
 
 function renderReportHtml(report) {
-  return page(`${report.courseName} Analysebericht`, `<h1>Analysebericht</h1><pre>${escapeHtml(JSON.stringify(report, null, 2))}</pre>`);
+  return page(`${report.courseName} Analysebericht`, `
+    <style>
+      body{font-family:Arial,sans-serif;color:#102033;line-height:1.5;margin:24px;background:#f8fafc}
+      main{max-width:1120px;margin:auto}.card{background:#fff;border:1px solid #d8e3f2;border-radius:8px;padding:16px;margin:14px 0}
+      table{width:100%;border-collapse:collapse;background:#fff}th,td{border-bottom:1px solid #d8e3f2;text-align:left;padding:8px;vertical-align:top}
+      .ok{color:#137333}.warn{color:#9a6700}.error{color:#b42318}
+    </style>
+    <main>
+      <h1>Analysebericht</h1>
+      <section class="card"><h2>Kursdaten</h2><p><strong>${escapeHtml(report.courseName)}</strong> (${escapeHtml(report.courseId)}) - ${escapeHtml(report.department)}</p><p>Anchor: ${escapeHtml(report.anchorType)} | AI: ${escapeHtml(report.aiMode)} | Fallback: ${report.fallbackUsed ? 'ja' : 'nein'}</p></section>
+      <section class="card"><h2>Quality</h2><p><strong>${escapeHtml(report.curriculumQuality.score)}</strong>/100 (${escapeHtml(report.curriculumQuality.level)})</p>${listHtml(report.curriculumQuality.recommendations || [])}</section>
+      <section class="card"><h2>Quellen & Extraktion</h2>${tableHtml(['Quelle','Titel','Qualitaet','Warnungen'], (report.extractionStatus || []).map((item) => [item.sourceRef, item.title, item.quality ? `${item.quality.level} (${Math.round(item.quality.score * 100)}%)` : '-', (item.warnings || []).join(' | ')]))}</section>
+      <section class="card"><h2>Tage & Themen</h2>${tableHtml(['Tag','Titel','UE','Themen','Warnungen'], (report.days || []).map((day) => [day.dayNumber, day.title, day.estimatedUE, (day.topics || []).map((topic) => topic.title).join(', '), (day.warnings || []).join(' | ')]))}</section>
+      <section class="card"><h2>Content</h2><p>Aufgaben: ${escapeHtml(report.taskCount)} | Loesungen: ${escapeHtml(report.solutionCount)} | Quizfragen: ${escapeHtml(report.quizCount)}</p></section>
+      <section class="card"><h2>Export-Schutz</h2><p class="${report.exportSafetyReport?.isValid ? 'ok' : 'error'}">${report.exportSafetyReport?.isValid ? 'Bestanden' : 'Pruefen'}</p>${listHtml([...(report.exportSafetyReport?.errors || []), ...(report.exportSafetyReport?.warnings || [])])}</section>
+      <section class="card"><h2>Warnungen</h2>${listHtml(report.warnings || [])}</section>
+      <section class="card"><h2>Naechste Schritte</h2>${listHtml(report.nextRecommendedSteps || [])}</section>
+      <section class="card"><h2>Erzeugte Dateien</h2>${listHtml((report.generatedFiles || []).slice(0, 200))}</section>
+    </main>
+  `);
+}
+
+function listHtml(items) {
+  return items?.length ? `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : '<p>Keine Eintraege.</p>';
+}
+
+function tableHtml(headers, rows) {
+  return `<table><thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join('')}</tr></thead><tbody>${(rows.length ? rows : [['-']]).map((row) => `<tr>${headers.map((_, index) => `<td>${escapeHtml(row[index] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
 }
 
 function publicReference(ref) {

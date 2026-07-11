@@ -1,5 +1,5 @@
 const path = require('path');
-const { detectFormat, createOutline } = require('./source-outline-types');
+const { detectFormat, createOutline, createQuality } = require('./source-outline-types');
 const { extractPdfOutline } = require('./pdf-outline-extractor');
 const { extractPptxOutline } = require('./pptx-outline-extractor');
 const { extractDocxOutline } = require('./docx-outline-extractor');
@@ -30,21 +30,23 @@ function extractSourceOutlines(files = [], options = {}) {
 
 function fallbackOutline(sourceFile, format, warning) {
   const title = path.basename(sourceFile || 'Quelle', path.extname(sourceFile || '')).replace(/[_-]+/g, ' ');
+  const sections = [{
+    id: 'section-fallback-1',
+    title,
+    summary: `Eigenformulierte Zusammenfassung zu ${title}.`,
+    textPreview: '',
+    sourceRef: `${format}:${sourceFile}:Fallback`,
+    wordCount: 0,
+    warnings: [warning]
+  }];
   return createOutline({
     sourceFile,
     format,
     title,
-    sections: [{
-      id: 'section-fallback-1',
-      title,
-      summary: `Eigenformulierte Zusammenfassung zu ${title}.`,
-      textPreview: '',
-      sourceRef: `${format}:${sourceFile}:Fallback`,
-      wordCount: 0,
-      warnings: [warning]
-    }],
+    sections,
     warnings: [warning],
-    searchable: false
+    searchable: false,
+    quality: createQuality(sections, [warning], { usedFallback: true, extractedCharacters: 0, reason: 'Nur Dateiname/Fallback verfuegbar.' })
   });
 }
 

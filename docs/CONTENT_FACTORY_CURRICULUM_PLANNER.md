@@ -45,6 +45,25 @@ Unterstuetzte Formate:
 
 Wenn eine Quelle nicht gelesen werden kann, bricht der Planner nicht ab. Stattdessen erzeugt er eine Warnung und einen Fallback aus Dateiname und Anchor-Metadaten.
 
+Jeder Extractor liefert ein `quality`-Objekt mit Score, Level, Fallback-Hinweis, erkannter Zeichenmenge und Abschnittszahl. `high` steht fuer mehrere echte Abschnitte/Folien/Kapitel, `medium` fuer erkannten Text mit unsicherer Struktur und `low` fuer Dateiname/Fallback.
+
+## Curriculum Quality
+
+Der Planner bewertet jeden `CurriculumPlanDraft` mit `quality.score` von 0 bis 100.
+
+Bewertet werden:
+
+- passende Anzahl Tage zur Dauer
+- UE-Verteilung
+- aktive Themen
+- sinnvolle Titel und SourceRefs
+- Zielgruppe und Kursziel
+- leere, zu kurze oder ueberladene Tage
+- niedrige Extraktionsqualitaet
+- Warnungen zu Originaltext oder Referenzchunks
+
+Level: `weak`, `usable`, `good`, `strong`. Die UI zeigt den Score im Review als Ampel-/Warnblock. `weak` blockiert die Freigabe nicht automatisch, macht aber Nacharbeit sichtbar.
+
 ## Tages- und UE-Verteilung
 
 Themen werden anhand der Dauer gleichmaessig auf Tage verteilt. Pro Tag werden UE summiert. Leere Tage und ueberladene Tage erzeugen Warnungen.
@@ -66,6 +85,8 @@ Das Feld `corrections` steuert die Korrekturschleife. `reviseDayDraft` ueberarbe
 Default bleibt `AI_PROVIDER=local`. OpenAI ist nur aktiv, wenn `OPENAI_API_KEY` und `OPENAI_MODEL` im Node/Main-Prozess gesetzt sind. Der Renderer erhaelt nur `configured` und Modellname, niemals den Key.
 
 Der Provider nutzt JSON-only Prompts, validiert DayGeneration-Ergebnisse und faellt bei Timeout, API-Fehlern oder ungueltigem JSON auf `LocalHeuristicProvider` zurueck. Teilnehmerbereiche werden nach der Normalisierung auf Loesungshinweise geprueft.
+
+Der lokale Fallback erzeugt strukturierte Tagesentwuerfe mit Einstieg, Lernzielen, Vorwissen, Themenabschnitten, Demo, Arbeitsphase, Reflexion, Zusammenfassung und Quellenhinweisen. Aufgaben, Erwartungshorizonte und Quizfragen werden aus Themen/UE-Bloecken abgeleitet und an Zielgruppe, Schwierigkeit, Projekt- und Pruefungsorientierung angepasst.
 
 ## Standalone und Analysebericht
 

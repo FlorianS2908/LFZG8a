@@ -271,6 +271,7 @@ function renderPlanWizard() {
     <article class="tool-card">
       <h3>10-12. Tagesentwurf, Korrektur & Draft</h3>
       ${wizard.dayResults.length ? `<p class="status-line">${wizard.dayResults.length} Tagesentwurf/Tagesentwuerfe erzeugt.</p>` : ''}
+      ${wizard.dayResults.length ? renderDayResultList(wizard.dayResults) : ''}
       ${wizard.dayDraft ? renderDayDraftPreview(wizard.dayDraft) : '<p class="status-line">Noch kein Tagesentwurf erzeugt.</p>'}
       <label>Korrekturhinweis<textarea data-wizard-corrections>${escapeHtml(wizard.corrections)}</textarea></label>
       <button class="secondary-button" type="button" data-wizard-revise ${wizard.dayDraft ? '' : 'disabled'}>Tagesentwurf mit Korrektur neu erzeugen</button>
@@ -295,15 +296,38 @@ function renderDayDraftPreview(draft) {
   `;
 }
 
+function renderDayResultList(results) {
+  return `
+    <div class="summary-grid">
+      ${results.map((result) => {
+        const hasFallback = (result.warnings || []).some((warning) => /Fallback|nicht konfiguriert/i.test(warning));
+        const status = hasFallback ? 'fallback' : (result.warnings || []).length ? 'warning' : 'generated';
+        return `<button class="secondary-button" type="button" data-preview-day="${result.dayNumber}">Tag ${escapeHtml(result.dayNumber)}: ${escapeHtml(status)}</button>`;
+      }).join('')}
+    </div>
+  `;
+}
+
 function renderCurriculumReview(draft) {
+  const quality = draft.quality || { score: 0, level: 'weak', recommendations: [] };
+  const totalTopics = (draft.days || []).reduce((sum, day) => sum + (day.topics || []).length, 0);
+  const totalUE = (draft.days || []).reduce((sum, day) => sum + Number(day.estimatedUE || 0), 0);
+  const sourceQualities = Array.from(new Map((draft.extractedSourceOutline || []).map((item) => [item.sourceFile || item.sourceRef, item.quality]).filter((item) => item[1])).entries());
   return `
     <article class="tool-card">
       <h3>6-7. Curriculum pruefen und freigeben</h3>
       <div class="summary-grid">
         <span>Status: ${escapeHtml(draft.status)}</span>
         <span>Tage: ${escapeHtml(draft.days?.length || 0)}</span>
+        <span>Themen: ${escapeHtml(totalTopics)}</span>
+        <span>Gesamt-UE: ${escapeHtml(totalUE)}</span>
         <span>Anchor: ${escapeHtml(draft.anchor?.type || '')}</span>
         <span>Dauer: ${escapeHtml(draft.duration?.totalUE || 0)} UE</span>
+      </div>
+      <div class="validation-box">
+        <strong>Quality Score: ${escapeHtml(quality.score)} / 100 (${escapeHtml(quality.level)})</strong>
+        ${(quality.recommendations || []).slice(0, 5).map((item) => `<p class="status-line ${quality.level === 'weak' ? 'status-error' : 'status-warning'}">${escapeHtml(item)}</p>`).join('')}
+        ${sourceQualities.length ? `<small>Extraktion: ${sourceQualities.map(([file, item]) => `${escapeHtml(file)} ${escapeHtml(item.level)} (${escapeHtml(Math.round(item.score * 100))}%)`).join(' | ')}</small>` : ''}
       </div>
       ${(draft.validation?.errors || []).map((error) => `<p class="status-line status-error">${escapeHtml(error)}</p>`).join('')}
       ${(draft.validation?.warnings || draft.warnings || []).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
@@ -472,8 +496,14 @@ function bindPlanWizardEvents() {
   });
   $('[data-wizard-day]')?.addEventListener('change', (event) => {
     state.wizard.selectedDayNumber = Number(event.target.value);
+    state.wizard.dayDraft = state.wizard.dayResults.find((result) => result.dayNumber === state.wizard.selectedDayNumber) || state.wizard.dayDraft;
     renderPlanWizard();
   });
+  $all('[data-preview-day]').forEach((button) => button.addEventListener('click', () => {
+    state.wizard.selectedDayNumber = Number(button.dataset.previewDay);
+    state.wizard.dayDraft = state.wizard.dayResults.find((result) => result.dayNumber === state.wizard.selectedDayNumber) || state.wizard.dayDraft;
+    renderPlanWizard();
+  }));
   $('[data-wizard-generate]')?.addEventListener('click', generateWizardDayDraft);
   $('[data-wizard-generate-all]')?.addEventListener('click', generateAllWizardDayDrafts);
   $('[data-wizard-corrections]')?.addEventListener('input', (event) => {

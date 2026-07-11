@@ -27,13 +27,16 @@ function analyzeCurriculumSource(anchor, input = {}) {
   const outlines = extractSourceOutlines(anchor.sourceFiles || [], { ranges: anchor.ranges || [] });
   const outline = outlines.flatMap((sourceOutline) => (sourceOutline.sections || []).map((section) => ({
     sourceRef: section.sourceRef,
+    sourceFile: sourceOutline.sourceFile,
+    format: sourceOutline.format,
     title: section.title,
     summary: section.summary,
     pageNumber: section.pageNumber,
     slideNumber: section.slideNumber,
     chapter: section.chapter,
     wordCount: section.wordCount,
-    warnings: section.warnings
+    warnings: section.warnings,
+    quality: sourceOutline.quality
   })));
   const fallbackTopics = extractTopicsFromSource(anchor, anchor.sourceFiles);
   const outlineTopics = extractTopicsFromOutlines(outlines, anchor);

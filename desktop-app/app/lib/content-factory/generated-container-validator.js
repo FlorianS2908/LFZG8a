@@ -29,17 +29,27 @@ function validateGeneratedContainer(containerDir, course = {}) {
   walkFiles(containerDir).forEach((filePath) => {
     const relative = path.relative(containerDir, filePath).replace(/\\/g, '/');
     const lower = relative.toLowerCase();
-    if (lower.startsWith('teilnehmer/') && /loesung|solution/.test(lower + readText(filePath))) {
+    const content = readText(filePath);
+    if ((lower.startsWith('teilnehmer/') || lower === 'catalog/participant-content.json') && /loesung|lösung|solution/i.test(lower + content)) {
       errors.push(`Teilnehmerbereich enthaelt Loesungshinweis: ${relative}`);
     }
-    if (/reference-library|chunks\.json|extracted\.json|original/.test(lower)) {
+    if (/reference-library|chunks\.json|extracted\.json|original|originaltext|buchseite/.test(lower + content)) {
       errors.push(`Referenz-/Rohdaten duerfen nicht exportiert werden: ${relative}`);
     }
-    if (/\.(epub|pdf)$/i.test(relative) && /buch|book|referenz|literatur/i.test(relative)) {
+    if (/\.(epub|pdf)$/i.test(relative) && /buch|book|referenz|literatur|reference/i.test(relative)) {
       errors.push(`Referenzbuch im Export blockiert: ${relative}`);
     }
+    if (/[\w.+-]+@[\w.-]+\.[a-z]{2,}/i.test(content) && /referenz|reference|source-map|report/i.test(relative)) {
+      errors.push(`Moegliche E-Mail-Adresse aus Referenzquelle im Export: ${relative}`);
+    }
+    if (lower === 'source-map.json') {
+      const sourceMap = readJson(filePath, {});
+      const serialized = JSON.stringify(sourceMap);
+      if (/textPreview|chunk|rawText|original/i.test(serialized)) errors.push('source-map.json enthaelt Rohtext-/Preview-Felder.');
+      if (serialized.length > 25000) warnings.push('source-map.json ist ungewoehnlich gross und sollte geprueft werden.');
+    }
     if (!/^source-map\.json$|^reports\//.test(relative)) {
-      const legacyNames = detectLegacyNames(readText(filePath));
+      const legacyNames = detectLegacyNames(content);
       if (legacyNames.length) warnings.push(`${relative}: Legacy-Namen sichtbar (${legacyNames.join(', ')})`);
     }
   });

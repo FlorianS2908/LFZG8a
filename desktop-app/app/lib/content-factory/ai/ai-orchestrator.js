@@ -1,7 +1,7 @@
 const { LocalHeuristicProvider } = require('./local-heuristic-provider');
 const { OpenAIProvider } = require('./openai-provider');
 const { normalizeDayGenerationResult } = require('./output-normalizer');
-const { validateDayGenerationResult } = require('./schemas');
+const { validateDayGenerationResult, validateCurriculumPlanPartial } = require('./schemas');
 
 class AiOrchestrator {
   constructor(options = {}) {
@@ -66,7 +66,10 @@ class AiOrchestrator {
     const requested = mode || process.env.AI_PROVIDER || 'local';
     if (requested.startsWith('openai') && this.openai.isConfigured()) {
       try {
-        return await this.openai.generateCurriculumPlan(input);
+        const result = await this.openai.generateCurriculumPlan(input);
+        const validation = validateCurriculumPlanPartial(result);
+        if (!validation.valid) throw new Error(`Ungueltige Curriculum-KI-Ausgabe: ${validation.errors.join(', ')}`);
+        return result;
       } catch (error) {
         const fallback = await this.local.generateCurriculumPlan(input);
         return { ...fallback, warnings: [...(fallback.warnings || []), `OpenAI-Curriculum-Fallback genutzt: ${error.message}`] };

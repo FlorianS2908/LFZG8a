@@ -86,7 +86,7 @@ class OpenAIProvider {
           }
           try {
             const parsed = JSON.parse(data);
-            resolve(JSON.parse(parsed.choices?.[0]?.message?.content || '{}'));
+            resolve(parseJsonLoose(parsed.choices?.[0]?.message?.content || '{}'));
           } catch (error) {
             reject(new Error(`OpenAI JSON konnte nicht gelesen werden: ${error.message}`));
           }
@@ -105,11 +105,28 @@ class OpenAIProvider {
 function sanitizeInput(input) {
   return JSON.parse(JSON.stringify(input || {}, (key, value) => {
     if (/apiKey|OPENAI|secret|token/i.test(key)) return undefined;
+    if (/textPreview|original|chunk|raw/i.test(key) && typeof value === 'string') return undefined;
     if (typeof value === 'string' && value.length > 1000) return `${value.slice(0, 1000)}...`;
     return value;
   }));
 }
 
+function parseJsonLoose(content) {
+  const text = String(content || '').trim();
+  try {
+    return JSON.parse(text);
+  } catch {
+    const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(text)?.[1];
+    if (fenced) return JSON.parse(fenced);
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start >= 0 && end > start) return JSON.parse(text.slice(start, end + 1));
+    throw new Error('Keine JSON-Struktur gefunden.');
+  }
+}
+
 module.exports = {
-  OpenAIProvider
+  OpenAIProvider,
+  sanitizeInput,
+  parseJsonLoose
 };

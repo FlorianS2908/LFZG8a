@@ -8,6 +8,7 @@ const { distributeTopics, normalizeDuration } = require('./curriculum-time-plann
 const { validateCurriculumPlan } = require('./curriculum-plan-validator');
 const { renderCurriculumReport } = require('./curriculum-plan-renderer');
 const { createCurriculumReviewStore } = require('./curriculum-review-store');
+const { assessCurriculumQuality } = require('./curriculum-quality-service');
 
 function createCurriculumPlannerService({ factoryDir, aiOrchestrator }) {
   const store = createCurriculumReviewStore(path.join(factoryDir, 'curriculum-drafts'));
@@ -71,6 +72,7 @@ function createCurriculumPlannerService({ factoryDir, aiOrchestrator }) {
       warnings: [...(analyzed.warnings || []), ...(generated?.warnings || [])],
       status: 'needs-review'
     };
+    draft.quality = assessCurriculumQuality(draft, analyzed.outline);
     return saveDraftWithReports(draft, analyzed.outline);
   }
 
@@ -133,6 +135,7 @@ function createCurriculumPlannerService({ factoryDir, aiOrchestrator }) {
   function saveDraftWithReports(draft, outline = []) {
     recalculateDays(draft);
     const validation = validateCurriculumPlan(draft);
+    draft.quality = assessCurriculumQuality(draft, outline.length ? outline : draft.extractedSourceOutline || []);
     const report = {
       anchorType: draft.anchor?.type,
       sourceFiles: draft.anchor?.sourceFiles || [],
@@ -143,6 +146,7 @@ function createCurriculumPlannerService({ factoryDir, aiOrchestrator }) {
       dayDistribution: draft.days.map((day) => ({ dayNumber: day.dayNumber, estimatedUE: day.estimatedUE, topicCount: day.topics.length })),
       unassignedTopics: draft.unassignedTopics,
       warnings: [...(draft.warnings || []), ...validation.warnings],
+      quality: draft.quality,
       aiMode: 'local',
       status: draft.status,
       validation

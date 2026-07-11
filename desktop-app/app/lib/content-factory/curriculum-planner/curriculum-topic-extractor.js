@@ -57,20 +57,25 @@ function extractTopicsFromSource(anchor, fileInputs = []) {
 function extractTopicsFromOutlines(outlines = [], anchor = {}) {
   const topics = [];
   outlines.forEach((outline, outlineIndex) => {
-    (outline.sections || []).forEach((section, sectionIndex) => {
+    const sections = mergeTinySections(outline.sections || []);
+    sections.forEach((section, sectionIndex) => {
       if (!isRelevantTitle(section.title)) return;
-      topics.push({
-        id: `topic-outline-${outlineIndex + 1}-${sectionIndex + 1}`,
-        title: section.title,
-        summary: section.summary || createSummary(section.title),
-        sourceRefs: [section.sourceRef].filter(Boolean),
-        estimatedUE: estimateUE(section, outline.format),
+      splitLargeSection(section, outline.format).forEach((part, partIndex) => topics.push({
+        id: `topic-outline-${outlineIndex + 1}-${sectionIndex + 1}-${partIndex + 1}`,
+        title: partIndex ? `${part.title} Teil ${partIndex + 1}` : part.title,
+        summary: part.summary || createSummary(part.title),
+        sourceRefs: [part.sourceRef].filter(Boolean),
+        estimatedUE: estimateUE(part, outline.format),
         difficulty: 'normal',
         depth: 'basic',
-        practiceType: outline.format === 'pptx' ? 'demo' : 'guided-task',
+        practiceType: defaultPracticeType(outline.format),
         active: true,
-        warnings: [...(section.warnings || []), ...(outline.warnings || [])].filter(Boolean)
-      });
+        warnings: [
+          ...(part.warnings || []),
+          ...(outline.warnings || []),
+          outline.quality?.level === 'low' ? 'Quelle hat niedrige Extraktionsqualitaet.' : ''
+        ].filter(Boolean)
+      }));
     });
   });
   const unique = mergeDuplicateTopics(topics);
@@ -86,7 +91,7 @@ function applyAudienceToTopics(topics, targetAudience = {}) {
       ...topic,
       difficulty: easy ? 'easy' : advanced ? 'hard' : topic.difficulty,
       depth: easy ? 'intro' : advanced ? 'deep' : topic.depth,
-      practiceType: targetAudience.projectOrientation ? 'project' : topic.practiceType
+      practiceType: choosePracticeType(topic.practiceType, targetAudience, advanced)
     };
   });
 }
@@ -117,9 +122,54 @@ function mergeDuplicateTopics(topics) {
 }
 
 function estimateUE(section, format) {
-  if (format === 'pptx') return Math.max(1, Math.ceil((section.slideNumber ? 1 : 6) / 8));
-  if (format === 'pdf' || format === 'epub') return Math.max(1, Math.ceil(Number(section.wordCount || 300) / 900));
+  if (format === 'pptx') return Math.max(1, Math.ceil(Number(section.slideCount || 1) / 8));
+  if (format === 'pdf' || format === 'epub') return Math.max(1, Math.ceil(Number(section.wordCount || 500) / 1200));
   return Math.max(1, Math.ceil(Number(section.wordCount || 500) / 1000));
+}
+
+function mergeTinySections(sections) {
+  const result = [];
+  (sections || []).forEach((section) => {
+    const previous = result[result.length - 1];
+    if (previous && Number(section.wordCount || 0) < 80 && Number(previous.wordCount || 0) < 300) {
+      previous.title = previous.title || section.title;
+      previous.summary = `${previous.summary || createSummary(previous.title)} ${section.summary || createSummary(section.title)}`.trim();
+      previous.sourceRefs = Array.from(new Set([previous.sourceRef, section.sourceRef].filter(Boolean)));
+      previous.sourceRef = previous.sourceRefs[0];
+      previous.wordCount = Number(previous.wordCount || 0) + Number(section.wordCount || 0);
+      previous.slideCount = Number(previous.slideCount || 1) + Number(section.slideNumber ? 1 : 0);
+      previous.warnings = Array.from(new Set([...(previous.warnings || []), ...(section.warnings || [])]));
+    } else {
+      result.push({ ...section, slideCount: section.slideNumber ? 1 : 0 });
+    }
+  });
+  return result;
+}
+
+function splitLargeSection(section, format) {
+  const words = Number(section.wordCount || 0);
+  const limit = format === 'pptx' ? 9999 : format === 'pdf' || format === 'epub' ? 1800 : 1500;
+  if (words <= limit) return [section];
+  const parts = Math.min(3, Math.ceil(words / limit));
+  return Array.from({ length: parts }, (_, index) => ({
+    ...section,
+    wordCount: Math.ceil(words / parts),
+    title: section.title,
+    summary: `${section.summary || createSummary(section.title)} Schwerpunkt ${index + 1}.`,
+    warnings: [...(section.warnings || []), 'Grosser Abschnitt wurde in mehrere Unterrichtsthemen aufgeteilt.']
+  }));
+}
+
+function defaultPracticeType(format) {
+  if (format === 'pptx') return 'demo';
+  if (format === 'pdf' || format === 'epub') return 'guided-task';
+  return 'exercise';
+}
+
+function choosePracticeType(current, targetAudience, advanced) {
+  if (targetAudience.examOrientation) return advanced ? 'exercise' : 'quiz';
+  if (targetAudience.projectOrientation) return advanced ? 'project' : 'guided-task';
+  return current;
 }
 
 function normalizeTitle(value) {
@@ -130,5 +180,6 @@ module.exports = {
   extractTopicsFromCoursePlan,
   extractTopicsFromSource,
   extractTopicsFromOutlines,
-  applyAudienceToTopics
+  applyAudienceToTopics,
+  mergeDuplicateTopics
 };

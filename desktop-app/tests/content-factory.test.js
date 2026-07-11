@@ -9,6 +9,8 @@ const { createMappingSuggestion, applyMapping } = require('../app/lib/content-fa
 const { extractSourceOutline } = require('../app/lib/content-factory/source-extraction/source-extractor-service');
 const { AiOrchestrator } = require('../app/lib/content-factory/ai/ai-orchestrator');
 const { LocalHeuristicProvider } = require('../app/lib/content-factory/ai/local-heuristic-provider');
+const { sanitizeInput, parseJsonLoose } = require('../app/lib/content-factory/ai/openai-provider');
+const { assessCurriculumQuality } = require('../app/lib/content-factory/curriculum-planner/curriculum-quality-service');
 
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
@@ -128,6 +130,9 @@ test('content factory extracts safe source outlines from office epub text and pd
     assert.equal(doc.sections.some((section) => /Netzwerk/.test(section.title)), true);
     assert.equal(epub.sections.some((section) => /Programmierung/.test(section.title)), true);
     assert.equal(pdf.format, 'pdf');
+    assert.ok(['medium', 'high', 'low'].includes(pdf.quality.level));
+    assert.equal(ppt.quality.usedFallback, false);
+    assert.ok(md.quality.score >= 0.45);
     assert.equal(Array.isArray(pdf.warnings), true);
     assert.ok((ppt.sections[0].textPreview || '').length <= 180);
   } finally {
@@ -207,9 +212,14 @@ test('content factory productive MVP creates draft with runtime modes and standa
     const participantContent = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'participant-content.json'), 'utf8'));
     const sourceMap = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'source-map.json'), 'utf8'));
     const standalone = fs.readFileSync(path.join(draft.storagePath, 'standalone', 'index.html'), 'utf8');
+    const reportHtml = fs.readFileSync(path.join(draft.storagePath, 'reports', `${draft.containerId}-analysis-report.html`), 'utf8');
 
     assert.equal(draftDay.warnings.some((warning) => /OpenAI ist nicht konfiguriert/.test(warning)), true);
     assert.equal(allDays.length, 2);
+    assert.ok(allDays[0].tasks.length >= 1);
+    assert.ok(allDays[0].quiz.length >= 5);
+    assert.doesNotMatch(JSON.stringify(allDays[0].tasks), /Aufgabe noch ergaenzen/i);
+    assert.match(JSON.stringify(allDays[0].solutions), /Erwartungshorizont|Typische Fehler/);
     assert.equal(manifest.status, 'draft');
     assert.equal(manifest.runtimeModes.standalone.entry, 'standalone/index.html');
     assert.equal(fs.existsSync(path.join(draft.storagePath, 'standalone', 'index.html')), true);
@@ -220,7 +230,10 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.doesNotMatch(JSON.stringify(sourceMap), /Originaltext|Reference chunk|Buchseite/i);
     assert.match(standalone, /data-role="participant"/);
     assert.equal(draft.analysisReport.dayCount, 2);
+    assert.equal(typeof draft.analysisReport.curriculumQuality.score, 'number');
     assert.equal(draft.analysisReport.fallbackUsed, true);
+    assert.match(reportHtml, /<h2>Quality<\/h2>/);
+    assert.doesNotMatch(reportHtml, /Originaltext|Reference chunk|Buchseite/i);
     assert.equal(draft.validation.isValid, true);
   } finally {
     cleanup();
@@ -250,6 +263,7 @@ test('curriculum planner handles text anchors ranges target audience moves and a
     assert.equal(draft.anchor.type, 'text-document');
     assert.equal(draft.duration.numberOfDays, 2);
     assert.equal(firstTopic.difficulty, 'easy');
+    assert.ok(draft.quality.score >= 50);
     draft = service.moveCurriculumTopic(draft.id, firstTopic.id, 2, 1, session);
     assert.equal(draft.days[1].topics.some((topic) => topic.id === firstTopic.id), true);
     draft = service.approveCurriculumDraft(draft.id, session);
@@ -289,7 +303,8 @@ test('curriculum planner uses real pptx ranges and keeps topic edits under revie
     assert.equal(draft.extractedSourceOutline.length, 2);
     assert.equal(draft.extractedSourceOutline.some((section) => section.title === 'Klassen und Objekte'), true);
     assert.equal(draft.extractedSourceOutline.some((section) => section.title === 'Agenda'), false);
-    assert.equal(draft.days[0].topics.some((topic) => topic.practiceType === 'project'), true);
+    assert.ok(draft.extractedSourceOutline.every((section) => section.quality));
+    assert.equal(draft.days[0].topics.some((topic) => ['project', 'guided-task'].includes(topic.practiceType)), true);
 
     draft = service.approveCurriculumDraft(draft.id, session);
     assert.equal(draft.status, 'approved');
@@ -332,6 +347,41 @@ test('invalid openai day output falls back to local without leaking solutions to
   assert.equal(result.warnings.some((warning) => /OpenAI-Fallback/.test(warning)), true);
   assert.doesNotMatch(JSON.stringify(result.webvariant.participantHtmlSections), /Loesung|solution/i);
   assert.ok(result.solutions.length > 0);
+});
+
+test('content factory quality and ai helpers protect local output and secrets', async () => {
+  const provider = new LocalHeuristicProvider();
+  const result = await provider.generateDayDraft({
+    dayNumber: 1,
+    title: 'SQL Joins',
+    targetAudience: { difficultyMode: 'easy-normal-hard', examOrientation: true, projectOrientation: true, priorKnowledge: 'none' },
+    day: {
+      dayNumber: 1,
+      title: 'SQL Joins',
+      mainTopic: 'JOIN Arten',
+      learningGoals: ['JOIN Arten unterscheiden'],
+      ueBlocks: [{ topic: 'INNER JOIN', learnerTask: 'Beispieldaten verbinden', teacherTask: 'Join visualisieren', evaluation: 'Join-Typen korrekt bewerten' }]
+    },
+    materials: [{ name: 'demo.sql' }]
+  });
+  const quality = assessCurriculumQuality({
+    duration: { numberOfDays: 1, uePerDay: 9 },
+    targetAudience: { department: 'FISI' },
+    courseGoal: 'SQL sicher anwenden',
+    days: [{ dayNumber: 1, estimatedUE: 6, topics: [{ title: 'JOIN Arten', sourceRefs: ['sql:1'], estimatedUE: 6, active: true }] }],
+    warnings: []
+  }, [{ title: 'JOIN Arten', sourceRef: 'sql:1', quality: { level: 'high' }, warnings: [] }]);
+  const sanitized = sanitizeInput({ apiKey: 'secret', referenceContext: [{ textPreview: 'original preview', summary: 'kurz', sourceRef: 'ref:1' }], longText: 'x'.repeat(1100) });
+
+  assert.ok(result.tasks.length >= 3);
+  assert.ok(result.quiz.length >= 8);
+  assert.match(JSON.stringify(result.solutions), /Erwartungshorizont/);
+  assert.doesNotMatch(JSON.stringify(result.webvariant.participantHtmlSections), /Loesung|solution/i);
+  assert.ok(quality.score >= 70);
+  assert.equal(sanitized.apiKey, undefined);
+  assert.equal(sanitized.referenceContext[0].textPreview, undefined);
+  assert.ok(sanitized.longText.length < 1010);
+  assert.deepEqual(parseJsonLoose('```json\n{"ok":true}\n```'), { ok: true });
 });
 
 test('content factory mappings can be manually locked over suggestions', () => {
