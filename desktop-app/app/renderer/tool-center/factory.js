@@ -16,6 +16,7 @@ const state = {
     rangesText: '',
     duration: { durationMode: 'days', numberOfDays: 5, hoursPerDay: 8, uePerDay: 9, ueMinutes: 45, totalHours: 40, totalUE: 45, pauseModel: 'default' },
     targetAudience: { ageRange: 'mixed', educationContext: 'umschulung', department: 'ALLGEMEIN', priorKnowledge: 'basic', learningLevel: 'basic', languageLevel: 'normal', practiceLevel: 'medium', difficultyMode: 'normal', needsStepByStep: true, examOrientation: false, projectOrientation: true },
+    containerProfile: { courseType: 'theory', artifactMode: 'web-only', studentWorkspace: true, teacherSolutions: true, generateStarterFiles: true, generateSolutionFiles: true, generateReadme: true, generateSetupGuide: true, generateRunScripts: false, allowExecutableTools: false, allowDatabaseActions: false },
     courseGoal: '',
     expectedOutcome: 'grundlagenkurs',
     didacticStyle: 'guided',
@@ -238,6 +239,13 @@ function renderPlanWizard() {
       <label class="checkline"><input data-wizard-audience-check="needsStepByStep" type="checkbox" ${wizard.targetAudience.needsStepByStep ? 'checked' : ''}> Schritt fuer Schritt</label>
       <label class="checkline"><input data-wizard-audience-check="projectOrientation" type="checkbox" ${wizard.targetAudience.projectOrientation ? 'checked' : ''}> Projektorientierung</label>
       <label class="checkline"><input data-wizard-audience-check="examOrientation" type="checkbox" ${wizard.targetAudience.examOrientation ? 'checked' : ''}> Pruefungsorientierung</label>
+    </article>
+
+    ${renderContainerProfileStep(wizard)}
+
+    <article class="tool-card">
+      <h3>5. Analyse starten</h3>
+      <p class="status-line">Die Container-Konfiguration steuert sichere Artefaktvorschlaege. Code, SQL und externe Tools werden nie automatisch ausgefuehrt.</p>
       <button class="primary-button" type="button" data-wizard-analyze ${wizard.anchorFiles.length ? '' : 'disabled'}>Curriculum analysieren</button>
     </article>
 
@@ -294,6 +302,41 @@ function renderDayDraftPreview(draft) {
       ${(draft.warnings || []).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
     </div>
   `;
+}
+
+function renderContainerProfileStep(wizard) {
+  const profile = wizard.containerProfile;
+  const types = ['theory', 'html-css', 'java', 'java-maven', 'python', 'jupyter', 'sql', 'php-xampp', 'uml-pap', 'database-project', 'mixed-project'];
+  const modes = ['web-only', 'files-only', 'web-and-files'];
+  return `
+    <article class="tool-card">
+      <h3>4. Container-Konfiguration</h3>
+      <div class="factory-form-grid">
+        <label>Kurstyp<select data-container-profile="courseType">${types.map((value) => `<option value="${value}" ${profile.courseType === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+        <label>Artefaktmodus<select data-container-profile="artifactMode">${modes.map((value) => `<option value="${value}" ${profile.artifactMode === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+      </div>
+      <div class="summary-grid">
+        ${['studentWorkspace', 'teacherSolutions', 'generateStarterFiles', 'generateSolutionFiles', 'generateReadme', 'generateSetupGuide'].map((key) => `<label class="checkline"><input data-container-profile-check="${key}" type="checkbox" ${profile[key] ? 'checked' : ''}> ${escapeHtml(key)}</label>`).join('')}
+        <label class="checkline"><input data-container-profile-check="generateRunScripts" type="checkbox" ${profile.generateRunScripts ? 'checked' : ''}> Run-Skripte erzeugen</label>
+        <label class="checkline"><input data-container-profile-check="allowExecutableTools" type="checkbox" ${profile.allowExecutableTools ? 'checked' : ''}> externe Tools erlauben</label>
+        <label class="checkline"><input data-container-profile-check="allowDatabaseActions" type="checkbox" ${profile.allowDatabaseActions ? 'checked' : ''}> DB-Aktionen erlauben</label>
+      </div>
+      <p class="status-line status-warning">EXE/BAT/CMD/PS1 werden nie exportiert oder ausgefuehrt. SQL wird nur als Datei erzeugt.</p>
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-profile-preset="java-maven">Maven-Projekt erzwingen</button>
+        <button class="secondary-button" type="button" data-profile-preset="java">nur einfache Java-Dateien</button>
+        <button class="secondary-button" type="button" data-profile-preset="uml-pap">Diagramm hinzufuegen</button>
+        <button class="secondary-button" type="button" data-profile-preset="sql">SQL-Skripte hinzufuegen</button>
+        <button class="secondary-button" type="button" data-profile-preset="jupyter">Jupyter hinzufuegen</button>
+      </div>
+      ${wizard.curriculumDraft ? renderArtifactSuggestionPreview(wizard) : '<small>Artefakt-Vorschlaege erscheinen nach der Curriculum-Analyse.</small>'}
+    </article>
+  `;
+}
+
+function renderArtifactSuggestionPreview(wizard) {
+  const topics = (wizard.curriculumDraft?.days || []).flatMap((day) => (day.topics || []).slice(0, 2).map((topic) => ({ dayNumber: day.dayNumber, title: topic.title }))).slice(0, 8);
+  return `<div class="validation-box"><strong>Artefakt-Vorschlaege pruefen</strong>${topics.map((topic) => `<p>Tag ${escapeHtml(topic.dayNumber)} - ${escapeHtml(topic.title)}: ${escapeHtml(wizard.containerProfile.courseType)} / ${escapeHtml(wizard.containerProfile.artifactMode)}</p>`).join('')}<small>Details, Zielpfade und Begruendungen werden im Analysebericht dokumentiert. Sichere Defaults werden verwendet, wenn nichts manuell geaendert wird.</small></div>`;
 }
 
 function renderDayResultList(results) {
@@ -446,6 +489,18 @@ function bindPlanWizardEvents() {
   $('[data-wizard-style]')?.addEventListener('change', (event) => {
     state.wizard.didacticStyle = event.target.value;
   });
+  $all('[data-container-profile]').forEach((field) => field.addEventListener('change', () => {
+    state.wizard.containerProfile[field.dataset.containerProfile] = field.value;
+    renderPlanWizard();
+  }));
+  $all('[data-container-profile-check]').forEach((field) => field.addEventListener('change', () => {
+    state.wizard.containerProfile[field.dataset.containerProfileCheck] = field.checked;
+  }));
+  $all('[data-profile-preset]').forEach((button) => button.addEventListener('click', () => {
+    state.wizard.containerProfile.courseType = button.dataset.profilePreset;
+    state.wizard.containerProfile.artifactMode = button.dataset.profilePreset === 'theory' ? 'web-only' : 'web-and-files';
+    renderPlanWizard();
+  }));
   $('[data-wizard-analyze]')?.addEventListener('click', analyzeWizardCurriculum);
   $('[data-wizard-approve]')?.addEventListener('click', approveWizardCurriculum);
   $all('[data-topic-move]').forEach((button) => button.addEventListener('click', () => moveWizardTopic(button.dataset.topicMove, Number(button.dataset.targetDay), 1)));
@@ -577,6 +632,7 @@ async function analyzeWizardCurriculum() {
       courseGoal: state.wizard.courseGoal,
       expectedOutcome: state.wizard.expectedOutcome,
       didacticStyle: state.wizard.didacticStyle,
+      containerProfile: state.wizard.containerProfile,
       aiMode: state.wizard.aiMode
     });
     state.wizard.approvedCurriculumPlan = null;
@@ -733,6 +789,8 @@ async function generateWizardDayDraft() {
       title: day.title,
       materials: state.wizard.importBatch?.files || [],
       useReferences: state.wizard.useReferences,
+      targetAudience: state.wizard.targetAudience,
+      containerProfile: state.wizard.containerProfile,
       aiMode: state.wizard.aiMode
     });
     state.wizard.dayResults = [
@@ -756,6 +814,8 @@ async function generateAllWizardDayDrafts() {
       approvedCurriculumPlan: state.wizard.approvedCurriculumPlan,
       materials: state.wizard.importBatch?.files || [],
       useReferences: state.wizard.useReferences,
+      targetAudience: state.wizard.targetAudience,
+      containerProfile: state.wizard.containerProfile,
       aiMode: state.wizard.aiMode
     });
     state.wizard.dayDraft = state.wizard.dayResults[0] || null;
@@ -777,6 +837,8 @@ async function reviseWizardDayDraft() {
       approvedCurriculumPlan: state.wizard.approvedCurriculumPlan,
       existingDraft: state.wizard.dayDraft,
       correctionPrompt: state.wizard.corrections,
+      targetAudience: state.wizard.targetAudience,
+      containerProfile: state.wizard.containerProfile,
       aiMode: state.wizard.aiMode
     });
     state.wizard.dayResults = [
@@ -804,6 +866,8 @@ async function createWizardDraft() {
       references: [],
       aiMode: state.wizard.aiMode,
       corrections: state.wizard.corrections,
+      targetAudience: state.wizard.targetAudience,
+      containerProfile: state.wizard.containerProfile,
       dayResults
     });
     state.wizard.status = 'Draft-Container erzeugt.';

@@ -88,11 +88,50 @@ Der Provider nutzt JSON-only Prompts, validiert DayGeneration-Ergebnisse und fae
 
 Der lokale Fallback erzeugt strukturierte Tagesentwuerfe mit Einstieg, Lernzielen, Vorwissen, Themenabschnitten, Demo, Arbeitsphase, Reflexion, Zusammenfassung und Quellenhinweisen. Aufgaben, Erwartungshorizonte und Quizfragen werden aus Themen/UE-Bloecken abgeleitet und an Zielgruppe, Schwierigkeit, Projekt- und Pruefungsorientierung angepasst.
 
+## Container-Konfiguration und Artefakte
+
+Der Wizard enthaelt einen Schritt `Container-Konfiguration`. Dort werden Kurstyp, Artefaktmodus und sichere Erzeugungsoptionen gesetzt.
+
+Unterstuetzte Kurstypen im MVP:
+
+- `theory`
+- `html-css`
+- `java`
+- `java-maven`
+- `python`
+- `jupyter`
+- `sql`
+- `php-xampp`
+- `uml-pap`
+- `database-project`
+- `mixed-project`
+
+Aus Kurstyp, Zielgruppe, Vorkenntnissen, Kursziel und Didaktik werden Artefaktvorschlaege abgeleitet. Einsteiger erhalten einfache Dateien, Fortgeschrittene eher Projektstrukturen. Java erzeugt fuer Anfaenger keine Maven-Projekte als Default; `java-maven` oder fortgeschrittene Zielgruppen erzeugen eine Maven-Struktur.
+
+Generierte Artefakte koennen unter anderem sein:
+
+- Java-Dateien oder Maven-Projekte
+- Python-Dateien
+- Jupyter-Notebooks
+- SQL-Skripte und phpMyAdmin-README
+- PHP/XAMPP-Starter
+- Draw.io-Diagramme
+- README-/Setup-Dateien
+
+Sicherheitsregeln:
+
+- Code, SQL, externe Tools und EXE-Dateien werden nicht automatisch ausgefuehrt.
+- `.exe`, `.bat`, `.cmd` und `.ps1` werden im Export blockiert.
+- SQL wird nur als Datei erzeugt und muss manuell importiert werden.
+- Loesungsartefakte liegen nur unter `dozent/`.
+- `participant-content.json` referenziert keine Dozentenartefakte.
+- ToolProfiles beschreiben externe Werkzeuge nur als manuelle Hinweise.
+
 ## Standalone und Analysebericht
 
 Der erzeugte Dual-Mode-Draft enthaelt alle DayResults. `standalone/index.html` bietet einen Umschalter zwischen Teilnehmer-Vorschau und Dozentenansicht. Loesungen erscheinen nur in der Dozentenansicht.
 
-Der Analysebericht enthaelt Kursdaten, Anchor-Typ, Anchor-Dateien, Ranges, Extraktionsstatus, Zielgruppe, Dauer, AI-Modus, OpenAI-/Fallback-Hinweise, Anzahl Tage/Themen/Aufgaben/Loesungen/Quizfragen, Warnungen, Referenznutzung, Export-Schutz-Ergebnis, erzeugte Dateien und offene Punkte.
+Der Analysebericht enthaelt Kursdaten, Anchor-Typ, Anchor-Dateien, Ranges, Extraktionsstatus, Zielgruppe, Dauer, AI-Modus, OpenAI-/Fallback-Hinweise, Anzahl Tage/Themen/Aufgaben/Loesungen/Quizfragen, ContainerProfile, Artefaktvorschlaege, erzeugte Artefakte, Toolprofile, Warnungen, Referenznutzung, Export-Schutz-Ergebnis, erzeugte Dateien und offene Punkte.
 
 ## Sicherheit
 

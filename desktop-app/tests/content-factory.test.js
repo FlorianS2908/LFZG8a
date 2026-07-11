@@ -11,6 +11,10 @@ const { AiOrchestrator } = require('../app/lib/content-factory/ai/ai-orchestrato
 const { LocalHeuristicProvider } = require('../app/lib/content-factory/ai/local-heuristic-provider');
 const { sanitizeInput, parseJsonLoose } = require('../app/lib/content-factory/ai/openai-provider');
 const { assessCurriculumQuality } = require('../app/lib/content-factory/curriculum-planner/curriculum-quality-service');
+const { decideArtifactSuggestions } = require('../app/lib/content-factory/container-profile/audience-artifact-decision-service');
+const { suggestionsToTargets } = require('../app/lib/content-factory/container-profile/artifact-target-service');
+const { generateArtifactFiles } = require('../app/lib/content-factory/artifact-generators/artifact-generator-service');
+const { validateGeneratedArtifacts } = require('../app/lib/content-factory/container-profile/generated-artifact-validator');
 
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
@@ -205,7 +209,9 @@ test('content factory productive MVP creates draft with runtime modes and standa
       coursePlan: plan,
       approvedCurriculumPlan: curriculum,
       dayResults: allDays,
-      aiMode: 'openai'
+      aiMode: 'openai',
+      targetAudience: { department: 'FIAE', priorKnowledge: 'intermediate', projectOrientation: true },
+      containerProfile: { courseType: 'java-maven', artifactMode: 'web-and-files', generateReadme: true, generateStarterFiles: true, generateSolutionFiles: true }
     }, session);
     const manifest = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'manifest.json'), 'utf8'));
     const participantWeb = fs.readFileSync(path.join(draft.storagePath, 'teilnehmer', 'tag_01', 'webvariante.html'), 'utf8');
@@ -213,6 +219,7 @@ test('content factory productive MVP creates draft with runtime modes and standa
     const sourceMap = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'source-map.json'), 'utf8'));
     const standalone = fs.readFileSync(path.join(draft.storagePath, 'standalone', 'index.html'), 'utf8');
     const reportHtml = fs.readFileSync(path.join(draft.storagePath, 'reports', `${draft.containerId}-analysis-report.html`), 'utf8');
+    const artifacts = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'artifacts.json'), 'utf8'));
 
     assert.equal(draftDay.warnings.some((warning) => /OpenAI ist nicht konfiguriert/.test(warning)), true);
     assert.equal(allDays.length, 2);
@@ -225,12 +232,18 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.equal(fs.existsSync(path.join(draft.storagePath, 'standalone', 'index.html')), true);
     assert.equal(fs.existsSync(path.join(draft.storagePath, 'platform', 'adapter.json')), true);
     assert.equal(fs.existsSync(path.join(draft.storagePath, 'teilnehmer', 'tag_02', 'webvariante.html')), true);
+    assert.equal(artifacts.some((artifact) => artifact.path.endsWith('pom.xml')), true);
+    assert.equal(artifacts.some((artifact) => artifact.solutionOnly === true && artifact.path.startsWith('dozent/')), true);
+    assert.equal(fs.existsSync(path.join(draft.storagePath, artifacts.find((artifact) => artifact.path.endsWith('pom.xml')).path)), true);
     assert.doesNotMatch(participantWeb, /Loesung|solution/i);
     assert.doesNotMatch(JSON.stringify(participantContent), /Loesung|solution/i);
+    assert.equal(JSON.stringify(participantContent).includes('dozent/'), false);
     assert.doesNotMatch(JSON.stringify(sourceMap), /Originaltext|Reference chunk|Buchseite/i);
     assert.match(standalone, /data-role="participant"/);
     assert.equal(draft.analysisReport.dayCount, 2);
     assert.equal(typeof draft.analysisReport.curriculumQuality.score, 'number');
+    assert.equal(draft.analysisReport.containerProfile.courseType, 'java-maven');
+    assert.ok(draft.analysisReport.generatedArtifacts.length > 0);
     assert.equal(draft.analysisReport.fallbackUsed, true);
     assert.match(reportHtml, /<h2>Quality<\/h2>/);
     assert.doesNotMatch(reportHtml, /Originaltext|Reference chunk|Buchseite/i);
@@ -382,6 +395,66 @@ test('content factory quality and ai helpers protect local output and secrets', 
   assert.equal(sanitized.referenceContext[0].textPreview, undefined);
   assert.ok(sanitized.longText.length < 1010);
   assert.deepEqual(parseJsonLoose('```json\n{"ok":true}\n```'), { ok: true });
+});
+
+test('content factory artifact suggestions respect audience and safe formats', () => {
+  const beginnerJava = decideArtifactSuggestions({
+    topic: { id: 't1', title: 'Schleifen' },
+    day: { dayNumber: 1, title: 'Java Einstieg' },
+    containerProfile: { courseType: 'java' },
+    targetAudience: { priorKnowledge: 'none', learningLevel: 'intro', examOrientation: true }
+  }).artifactSuggestions;
+  const advancedJava = decideArtifactSuggestions({
+    topic: { id: 't2', title: 'Services' },
+    day: { dayNumber: 2, title: 'Java Projekt' },
+    containerProfile: { courseType: 'java' },
+    targetAudience: { priorKnowledge: 'intermediate', projectOrientation: true }
+  }).artifactSuggestions;
+  const sql = decideArtifactSuggestions({
+    topic: { id: 't3', title: 'Joins' },
+    day: { dayNumber: 3 },
+    containerProfile: { courseType: 'sql' },
+    targetAudience: { priorKnowledge: 'none' }
+  }).artifactSuggestions;
+  const diagram = decideArtifactSuggestions({
+    topic: { id: 't4', title: 'ERM' },
+    day: { dayNumber: 4 },
+    containerProfile: { courseType: 'uml-pap' },
+    targetAudience: { priorKnowledge: 'basic' }
+  }).artifactSuggestions;
+
+  assert.equal(beginnerJava.some((item) => item.format === 'java'), true);
+  assert.equal(beginnerJava.some((item) => item.format === 'maven-project'), false);
+  assert.equal(beginnerJava.some((item) => /Codeverstaendnis/.test(item.title)), true);
+  assert.equal(advancedJava.some((item) => item.format === 'maven-project'), true);
+  assert.equal(sql.some((item) => item.format === 'sql'), true);
+  assert.equal(sql.some((item) => /phpMyAdmin/.test(item.title)), true);
+  assert.equal(diagram.some((item) => item.format === 'drawio'), true);
+});
+
+test('content factory artifact generators create safe files and validate blocked executables', () => {
+  const suggestions = decideArtifactSuggestions({
+    topic: { id: 't1', title: 'Python Analyse' },
+    day: { dayNumber: 1 },
+    containerProfile: { courseType: 'jupyter' },
+    targetAudience: { needsStepByStep: true }
+  }).artifactSuggestions;
+  const targets = suggestionsToTargets(suggestions);
+  const files = generateArtifactFiles({
+    course: { courseId: 'python-analyse', courseName: 'Python Analyse' },
+    artifactTargets: targets
+  });
+  const blocked = validateGeneratedArtifacts([
+    ...files,
+    { path: 'teilnehmer/tag_01/starter/PapDesigner.exe', content: '', solutionOnly: false },
+    { path: 'teilnehmer/tag_01/loesung/hinweis.md', content: 'Loesung', solutionOnly: true }
+  ], targets);
+
+  assert.equal(files.some((file) => file.path.endsWith('.ipynb') && JSON.parse(file.content).nbformat === 4), true);
+  assert.equal(files.every((file) => !/\.(exe|bat|cmd|ps1)$/i.test(file.path)), true);
+  assert.equal(blocked.isValid, false);
+  assert.equal(blocked.errors.some((error) => /Ausfuehrbare Datei/.test(error)), true);
+  assert.equal(blocked.errors.some((error) => /solutionOnly/.test(error)), true);
 });
 
 test('content factory mappings can be manually locked over suggestions', () => {

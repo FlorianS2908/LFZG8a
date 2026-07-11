@@ -4,6 +4,9 @@ const { ensureDir, writeJson } = require('../json-store');
 const { normalizeCourseId, normalizeCourseName } = require('./naming/course-name-normalizer');
 const { createNamingReport } = require('./naming/naming-report-service');
 const { validateGeneratedContainer } = require('./generated-container-validator');
+const { buildContainerProfile } = require('./container-profile/container-profile-service');
+const { validateGeneratedArtifacts } = require('./container-profile/generated-artifact-validator');
+const { generateArtifactFiles } = require('./artifact-generators/artifact-generator-service');
 
 function createPlanContainerDraft(input = {}, options = {}) {
   const courseName = normalizeCourseName(input.course?.courseName || input.coursePlan?.courseTitle || 'Neuer Kurs');
@@ -15,11 +18,20 @@ function createPlanContainerDraft(input = {}, options = {}) {
   const providedResults = input.dayResults?.length ? input.dayResults : [];
   const resultByDay = new Map(providedResults.map((result) => [Number(result.dayNumber), result]));
   const dayResults = (input.coursePlan?.days || providedResults).map((day) => resultByDay.get(Number(day.dayNumber)) || createFallbackDayResult(day));
-  const files = createVirtualFiles({ courseName, courseId, department, containerId, coursePlan: input.coursePlan, dayResults, aiMode: input.aiMode || 'local', references: input.references || [] });
+  const profileContext = buildContainerProfile({
+    ...input,
+    curriculumPlan: input.approvedCurriculumPlan || input.curriculumPlan,
+    targetAudience: input.approvedCurriculumPlan?.targetAudience || input.targetAudience
+  });
+  const files = createVirtualFiles({ courseName, courseId, department, containerId, coursePlan: input.coursePlan, dayResults, aiMode: input.aiMode || 'local', references: input.references || [], profileContext });
   files.forEach((file) => writeFile(rootDir, file.path, file.content));
   const namingReport = createNamingReport(files, { courseName, courseId });
   const validation = validateGeneratedContainer(rootDir, { courseName, courseId });
-  const analysisReport = createAnalysisReport({ courseName, courseId, department, input, dayResults, files, namingReport, validation, rootDir });
+  const artifactValidation = validateGeneratedArtifacts(files, profileContext.artifactTargets);
+  validation.errors.push(...artifactValidation.errors);
+  validation.warnings.push(...artifactValidation.warnings);
+  validation.isValid = validation.errors.length === 0;
+  const analysisReport = createAnalysisReport({ courseName, courseId, department, input, dayResults, files, namingReport, validation, rootDir, profileContext });
   writeJson(path.join(rootDir, 'reports', `${containerId}-analysis-report.json`), analysisReport);
   writeFile(rootDir, `reports/${containerId}-analysis-report.html`, renderReportHtml(analysisReport));
   writeJson(path.join(rootDir, 'container.json'), {
@@ -41,9 +53,26 @@ function createPlanContainerDraft(input = {}, options = {}) {
   };
 }
 
-function createVirtualFiles({ courseName, courseId, department, containerId, coursePlan, dayResults, aiMode, references }) {
+function createVirtualFiles({ courseName, courseId, department, containerId, coursePlan, dayResults, aiMode, references, profileContext }) {
+  const artifactFiles = generateArtifactFiles({
+    course: { courseName, courseId, department },
+    dayResults,
+    containerProfile: profileContext.containerProfile,
+    artifactTargets: profileContext.artifactTargets,
+    artifactSuggestions: profileContext.artifactSuggestions
+  });
+  const artifactMetadata = artifactFiles.map((file) => ({
+    path: file.path,
+    role: file.role,
+    kind: file.kind,
+    solutionOnly: file.solutionOnly === true,
+    title: file.metadata?.title || path.basename(file.path),
+    reason: file.metadata?.reason || '',
+    targetAudienceImpact: file.metadata?.targetAudienceImpact || ''
+  }));
   const days = dayResults.map((result) => {
     const daySlug = `tag_${String(result.dayNumber).padStart(2, '0')}`;
+    const dayArtifacts = artifactMetadata.filter((artifact) => artifact.path.includes(`/${daySlug}/`) || artifact.path.includes(`\\${daySlug}\\`));
     return {
       dayNumber: result.dayNumber,
       title: result.title,
@@ -53,6 +82,7 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
       participantWeb: `teilnehmer/${daySlug}/webvariante.html`,
       participantTasks: `teilnehmer/${daySlug}/aufgaben.html`,
       quiz: `shared/quiz/${daySlug}.json`,
+      artifacts: dayArtifacts,
       sourceRefs: result.sourceRefs || [],
       warnings: result.warnings || []
     };
@@ -62,7 +92,8 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
     title: day.title,
     web: day.participantWeb,
     tasks: day.participantTasks,
-    quiz: day.quiz
+    quiz: day.quiz,
+    artifacts: (day.artifacts || []).filter((artifact) => artifact.role !== 'teacher' && !artifact.solutionOnly).map((artifact) => artifact.path)
   }));
   const releaseKeys = days.map((day) => `${courseId}-tag-${String(day.dayNumber).padStart(2, '0')}`);
   const manifest = {
@@ -103,19 +134,21 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
     jsonFile('manifest.json', manifest),
     jsonFile('catalog/days.json', days),
     jsonFile('catalog/projects.json', []),
-    jsonFile('catalog/tools.json', []),
+    jsonFile('catalog/tools.json', profileContext.toolProfiles),
+    jsonFile('catalog/artifacts.json', artifactMetadata),
     jsonFile('catalog/participant-content.json', participantContent),
     jsonFile('catalog/release-keys.json', releaseKeys),
     jsonFile('platform/adapter.json', adapter),
     jsonFile('platform/route-map.json', days.map((day) => ({ dayNumber: day.dayNumber, route: day.participantWeb }))),
     jsonFile('platform/integration.json', adapter.integration),
-    jsonFile('source-map.json', { generatedFrom: 'content-factory', coursePlan: coursePlan?.sourceFile || '', selectedSheet: coursePlan?.selectedSheet || '', references: references.map(publicReference), aiMode }),
+    jsonFile('source-map.json', { generatedFrom: 'content-factory', coursePlan: coursePlan?.sourceFile || '', selectedSheet: coursePlan?.selectedSheet || '', references: references.map(publicReference), aiMode, containerProfile: profileContext.containerProfile }),
     { path: 'README.md', content: `# ${courseName}\n\nStatus: Draft\n\nStandalone: standalone/index.html\n` },
     { path: 'dozent/index.html', content: renderIndex(courseName, days, 'Dozentenansicht') },
     { path: 'teilnehmer/index.html', content: renderIndex(courseName, days, 'Teilnehmer-Vorschau') },
     { path: 'standalone/index.html', content: renderStandalone(courseName, days, dayResults) },
     { path: 'standalone/standalone.js', content: standaloneJs() },
-    { path: 'standalone/standalone.css', content: standaloneCss() }
+    { path: 'standalone/standalone.css', content: standaloneCss() },
+    ...artifactFiles
   ];
   dayResults.forEach((result) => {
     const daySlug = `tag_${String(result.dayNumber).padStart(2, '0')}`;
@@ -226,7 +259,7 @@ function standaloneJs() {
 })();\n`;
 }
 
-function createAnalysisReport({ courseName, courseId, department, input, dayResults, files, namingReport, validation, rootDir }) {
+function createAnalysisReport({ courseName, courseId, department, input, dayResults, files, namingReport, validation, rootDir, profileContext }) {
   const curriculum = input.approvedCurriculumPlan || input.curriculumPlan || {};
   const anchor = curriculum.anchor || input.anchor || {};
   const warnings = [
@@ -238,6 +271,18 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
   const solutionCount = dayResults.reduce((sum, result) => sum + (result.solutions || []).length, 0);
   const taskCount = dayResults.reduce((sum, result) => sum + (result.tasks || []).length, 0);
   const quizCount = dayResults.reduce((sum, result) => sum + (result.quiz || []).length, 0);
+  const generatedArtifacts = files.filter((file) => file.kind || file.metadata).map((file) => ({
+    artifact: file.path,
+    topic: file.metadata?.title || '',
+    format: path.extname(file.path).replace('.', ''),
+    role: file.role || '',
+    kind: file.kind || '',
+    reason: file.metadata?.reason || '',
+    targetAudienceImpact: file.metadata?.targetAudienceImpact || '',
+    wasAutoSuggested: true,
+    wasUserChanged: false,
+    solutionOnly: file.solutionOnly === true
+  }));
   return {
     courseName,
     courseId,
@@ -276,6 +321,15 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
     taskCount,
     solutionCount,
     quizCount,
+    containerProfile: profileContext.containerProfile,
+    artifactSuggestions: profileContext.artifactSuggestions,
+    artifactTargets: profileContext.artifactTargets,
+    generatedArtifacts,
+    participantArtifacts: generatedArtifacts.filter((item) => item.role !== 'teacher' && !item.solutionOnly),
+    teacherArtifacts: generatedArtifacts.filter((item) => item.role === 'teacher' || item.solutionOnly),
+    toolProfiles: profileContext.toolProfiles,
+    requiredTools: profileContext.toolProfiles.filter((tool) => tool.required).map((tool) => tool.name),
+    artifactDecisionReasons: generatedArtifacts.map((item) => ({ artifact: item.artifact, reason: item.reason, targetAudienceImpact: item.targetAudienceImpact })),
     usedMaterials: (input.materials || []).map((file) => file.originalFilename || file.filename || file.name),
     usedReferences: (input.references || []).map(publicReference),
     referenceUsage: {
@@ -289,6 +343,7 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
     openItems: validation.errors || [],
     nextRecommendedSteps: [
       ...(validation.errors || []).length ? ['Export-Schutz-Fehler beheben und Draft neu erzeugen.'] : [],
+      ...(generatedArtifacts.length ? [] : ['Container-Konfiguration pruefen: Es wurden keine Artefakte erzeugt.']),
       ...(warnings.length ? ['Warnungen fachlich pruefen.'] : []),
       curriculum.quality?.score < 70 ? 'Curriculum Review nachschaerfen und erneut freigeben.' : 'Standalone fachlich pruefen und Kursinstanz vorbereiten.'
     ],
@@ -312,6 +367,8 @@ function renderReportHtml(report) {
       <section class="card"><h2>Quellen & Extraktion</h2>${tableHtml(['Quelle','Titel','Qualitaet','Warnungen'], (report.extractionStatus || []).map((item) => [item.sourceRef, item.title, item.quality ? `${item.quality.level} (${Math.round(item.quality.score * 100)}%)` : '-', (item.warnings || []).join(' | ')]))}</section>
       <section class="card"><h2>Tage & Themen</h2>${tableHtml(['Tag','Titel','UE','Themen','Warnungen'], (report.days || []).map((day) => [day.dayNumber, day.title, day.estimatedUE, (day.topics || []).map((topic) => topic.title).join(', '), (day.warnings || []).join(' | ')]))}</section>
       <section class="card"><h2>Content</h2><p>Aufgaben: ${escapeHtml(report.taskCount)} | Loesungen: ${escapeHtml(report.solutionCount)} | Quizfragen: ${escapeHtml(report.quizCount)}</p></section>
+      <section class="card"><h2>Container-Konfiguration</h2><p>Kurstyp: ${escapeHtml(report.containerProfile?.courseType)} | Modus: ${escapeHtml(report.containerProfile?.artifactMode)}</p><p>Tools: ${escapeHtml((report.toolProfiles || []).map((tool) => tool.name).join(', ') || 'keine')}</p></section>
+      <section class="card"><h2>Artefakte</h2>${tableHtml(['Artefakt','Rolle','Format','Grund'], (report.generatedArtifacts || []).map((item) => [item.artifact, item.role, item.format, item.reason]))}</section>
       <section class="card"><h2>Export-Schutz</h2><p class="${report.exportSafetyReport?.isValid ? 'ok' : 'error'}">${report.exportSafetyReport?.isValid ? 'Bestanden' : 'Pruefen'}</p>${listHtml([...(report.exportSafetyReport?.errors || []), ...(report.exportSafetyReport?.warnings || [])])}</section>
       <section class="card"><h2>Warnungen</h2>${listHtml(report.warnings || [])}</section>
       <section class="card"><h2>Naechste Schritte</h2>${listHtml(report.nextRecommendedSteps || [])}</section>

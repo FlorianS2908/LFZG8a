@@ -1,4 +1,5 @@
 const { normalizeDayGenerationResult } = require('./output-normalizer');
+const { decideArtifactSuggestions } = require('../container-profile/audience-artifact-decision-service');
 
 class LocalHeuristicProvider {
   constructor() {
@@ -23,6 +24,7 @@ class LocalHeuristicProvider {
     const tasks = createTasks(blocks, dayNumber, sourceRefs, targetAudience);
     const solutions = createSolutions(tasks, blocks, dayNumber, sourceRefs, targetAudience);
     const quiz = createQuiz(blocks, dayNumber, sourceRefs, targetAudience);
+    const artifacts = createArtifactPlan(day, dayNumber, input.containerProfile, targetAudience, input);
     const teacherSections = createTeacherSections({ title, goals, blocks, tasks, solutions, quiz, sourceRefs, warnings, targetAudience });
     const participantSections = createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRefs, targetAudience });
 
@@ -37,6 +39,7 @@ class LocalHeuristicProvider {
       tasks,
       solutions,
       quiz,
+      artifacts,
       sourceRefs,
       warnings,
       aiAdditions: input.referenceContext?.length ? ['Referenzmetadaten wurden als Kontext beruecksichtigt.'] : []
@@ -64,6 +67,31 @@ class LocalHeuristicProvider {
       ]
     };
   }
+}
+
+function createArtifactPlan(day, dayNumber, containerProfile, targetAudience, input) {
+  const topics = day.topics?.length ? day.topics : normalizeBlocks(day, day.title || `Tag ${dayNumber}`).map((block, index) => ({ id: `block-${dayNumber}-${index + 1}`, title: block.topic }));
+  return topics.slice(0, 3).flatMap((topic) => decideArtifactSuggestions({
+    topic,
+    day: { ...day, dayNumber },
+    containerProfile,
+    targetAudience,
+    courseGoal: input.courseGoal || input.curriculumPlan?.courseGoal || '',
+    expectedOutcome: input.expectedOutcome || input.curriculumPlan?.expectedOutcome || '',
+    didacticStyle: input.didacticStyle || input.curriculumPlan?.didacticStyle || 'guided'
+  }).artifactSuggestions.map((suggestion) => ({
+    id: suggestion.id,
+    title: suggestion.title,
+    kind: suggestion.kind,
+    format: suggestion.format,
+    role: suggestion.role,
+    path: '',
+    solutionOnly: suggestion.kind === 'solution' || suggestion.role === 'teacher',
+    description: suggestion.reason,
+    reason: suggestion.reason,
+    targetAudienceImpact: suggestion.targetAudienceImpact,
+    warnings: suggestion.warnings || []
+  })));
 }
 
 function normalizeBlocks(day, title) {

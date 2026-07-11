@@ -24,12 +24,22 @@ function validateGeneratedContainer(containerDir, course = {}) {
   days.forEach((day) => ['teacherWeb', 'teacherTasks', 'teacherSolutions', 'participantWeb', 'participantTasks'].forEach((key) => {
     if (day[key] && !fs.existsSync(path.join(containerDir, day[key]))) errors.push(`Pfad aus days.json fehlt: ${day[key]}`);
   }));
+  days.forEach((day) => (day.artifacts || []).forEach((artifact) => {
+    if (artifact.path && !fs.existsSync(path.join(containerDir, artifact.path))) errors.push(`Artefakt fehlt: ${artifact.path}`);
+    if (artifact.solutionOnly && /^teilnehmer\//i.test(artifact.path || '')) errors.push(`solutionOnly Artefakt im Teilnehmerbereich: ${artifact.path}`);
+  }));
+  (participant || []).forEach((entry) => (entry.artifacts || []).forEach((artifactPath) => {
+    if (/^dozent\//i.test(artifactPath) || /loesung|lösung|solution/i.test(artifactPath)) errors.push(`participant-content referenziert geschuetztes Artefakt: ${artifactPath}`);
+  }));
   const releaseKeys = readJson(path.join(containerDir, 'catalog', 'release-keys.json'), []);
   if (new Set(releaseKeys).size !== releaseKeys.length) errors.push('ReleaseKeys sind nicht eindeutig.');
   walkFiles(containerDir).forEach((filePath) => {
     const relative = path.relative(containerDir, filePath).replace(/\\/g, '/');
     const lower = relative.toLowerCase();
     const content = readText(filePath);
+    if (/\.(exe|bat|cmd|ps1)$/i.test(lower)) {
+      errors.push(`Ausfuehrbare Datei im Export blockiert: ${relative}`);
+    }
     if ((lower.startsWith('teilnehmer/') || lower === 'catalog/participant-content.json') && /loesung|lösung|solution/i.test(lower + content)) {
       errors.push(`Teilnehmerbereich enthaelt Loesungshinweis: ${relative}`);
     }
@@ -47,6 +57,18 @@ function validateGeneratedContainer(containerDir, course = {}) {
       const serialized = JSON.stringify(sourceMap);
       if (/textPreview|chunk|rawText|original/i.test(serialized)) errors.push('source-map.json enthaelt Rohtext-/Preview-Felder.');
       if (serialized.length > 25000) warnings.push('source-map.json ist ungewoehnlich gross und sollte geprueft werden.');
+    }
+    if (lower.endsWith('.ipynb')) {
+      try { JSON.parse(content); } catch { errors.push(`Notebook ist kein valides JSON: ${relative}`); }
+    }
+    if (lower.endsWith('.drawio') && !/^<mxfile[\s>]/.test(content.trim())) {
+      errors.push(`Draw.io Datei ist nicht XML-artig: ${relative}`);
+    }
+    if (lower.endsWith('pom.xml') && !content.includes('<project') && !content.includes('<modelVersion>')) {
+      errors.push(`Maven pom.xml ist nicht plausibel: ${relative}`);
+    }
+    if (lower.endsWith('.sql') && /drop\s+database|delete\s+from\s+\w+\s*;|update\s+\w+\s+set\s+/i.test(content)) {
+      warnings.push(`SQL-Datei enthaelt riskantes Statement und muss manuell geprueft werden: ${relative}`);
     }
     if (!/^source-map\.json$|^reports\//.test(relative)) {
       const legacyNames = detectLegacyNames(content);

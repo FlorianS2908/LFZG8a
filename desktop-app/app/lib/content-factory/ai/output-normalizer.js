@@ -13,6 +13,7 @@ function normalizeDayGenerationResult(input = {}) {
     tasks: normalizeItems(input.tasks, sourceRefs).map((task) => ({ ...task, text: stripParticipantSolutions(task.text) })),
     solutions: normalizeItems(input.solutions, sourceRefs),
     quiz: normalizeQuiz(input.quiz, sourceRefs),
+    artifacts: normalizeArtifacts(input.artifacts, sourceRefs),
     projectContext: input.projectContext || '',
     sourceRefs,
     warnings: input.warnings || [],
@@ -26,6 +27,23 @@ function normalizeDayGenerationResult(input = {}) {
     normalized.warnings = [...normalized.warnings, 'Loesungshinweise wurden aus Teilnehmerinhalten entfernt.'];
   }
   return normalized;
+}
+
+function normalizeArtifacts(items = [], sourceRefs = []) {
+  return (items || []).map((item, index) => ({
+    id: item.id || `artifact-${index + 1}`,
+    title: item.title || `Artefakt ${index + 1}`,
+    kind: item.kind || 'readme',
+    format: item.format || 'md',
+    role: item.role || 'participant',
+    path: item.path || '',
+    solutionOnly: item.solutionOnly === true || item.role === 'teacher' || item.kind === 'solution',
+    description: item.description || '',
+    reason: item.reason || '',
+    targetAudienceImpact: item.targetAudienceImpact || '',
+    sourceRefs: item.sourceRefs?.length ? item.sourceRefs : sourceRefs,
+    warnings: item.warnings || []
+  }));
 }
 
 function normalizeSections(items = [], sourceRefs = []) {
@@ -88,5 +106,6 @@ function normalizeCorrect(correct, optionCount) {
 module.exports = {
   normalizeDayGenerationResult,
   stripParticipantSolutions,
-  normalizeCorrect
+  normalizeCorrect,
+  normalizeArtifacts
 };
