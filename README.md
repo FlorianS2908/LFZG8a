@@ -2,7 +2,16 @@
 
 Dieses Repository enthaelt die Plattform `ueTool_asSaaS` und den Kurscontainer `HTML/CSS`.
 
-`ueTool_asSaaS` ist die lokale Desktop-Plattform. `HTML/CSS` ist der fachliche Kurscontainer. Die `ContentFactory` ist das Admin-Werkzeug zur Container-Erstellung und Duplizierung.
+`ueTool_asSaaS` ist die lokale Desktop-Plattform. `HTML/CSS` ist der fachliche Kurscontainer. Die `ContentFactory` ist das Admin-Werkzeug zur Erstellung, Pruefung und Duplizierung von Kurscontainern.
+
+## Aktueller Hauptstand
+
+- `main` ist die aktuelle Entwicklungsbasis.
+- `ueTool_asSaaS` ist die lokale Desktop-Plattform.
+- `HTML/CSS` ist der aktuell integrierte Kurscontainer.
+- Die ContentFactory ist das Admin-Werkzeug zur Erstellung, Pruefung und Duplizierung von Kurscontainern.
+- Datenschutz-/DSGVO-Zweige werden separat behandelt und nicht automatisch in `main` gemergt.
+- Fruehere Neustruktur-/SaaS-Branches bleiben nur als Referenz erhalten.
 
 ## Adminbereich und Registrierung
 
@@ -56,7 +65,7 @@ Standardkonten:
 - Dozent: `dozent@dozent.de` / `$$Klaus2908$$`
 - Teilnehmer: `tn@tn.de` / `$$Klaus2908$$`
 
-Der aktuelle Neustruktur-Arbeitsstand liegt auf dem Branch `codex/startview-neustruktur`.
+Der aktuelle Hauptstand liegt auf `main`. Fruehere Neustruktur-/SaaS-Branches bleiben nur als Referenz erhalten.
 
 ## Kurzueberblick
 

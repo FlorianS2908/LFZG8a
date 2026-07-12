@@ -1,5 +1,5 @@
 {
-    "name":  "uetool-assass",
+    "name":  "uetool-as-saas",
     "version":  "0.1.0",
     "description":  "ueTool_asSaaS Desktop-App fuer ContentFactory, DokuTool, QuizTools und HTML/CSS-Unterrichtsumgebung.",
     "main":  "app/main.js",
