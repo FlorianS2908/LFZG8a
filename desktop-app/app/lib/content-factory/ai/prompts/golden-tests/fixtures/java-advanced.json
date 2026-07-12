@@ -1,0 +1,8 @@
+{
+  "course": { "courseName": "Java Projekt", "courseId": "java-advanced" },
+  "targetAudience": { "ageRange": "20-30", "priorKnowledge": "advanced", "learningLevel": "advanced", "difficultyMode": "normal-and-hard", "needsStepByStep": false, "examOrientation": false, "projectOrientation": true },
+  "containerProfile": { "courseType": "java-maven", "artifactMode": "web-and-files" },
+  "artifactSuggestions": [{ "format": "maven-project", "title": "Service Projekt" }],
+  "day": { "dayNumber": 2, "title": "Services", "learningGoals": ["Services strukturieren"] },
+  "sourceRefs": ["plan:2"]
+}

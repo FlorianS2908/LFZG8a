@@ -1,0 +1,1 @@
+{ "mustContain": ["ipynb", "Jupyter", "valides ipynb JSON"], "mustNotContain": ["Lösung im Teilnehmerbereich"] }

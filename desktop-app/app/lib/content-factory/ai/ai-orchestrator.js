@@ -10,14 +10,26 @@ class AiOrchestrator {
   constructor(options = {}) {
     this.env = options.env || loadAppEnv(options.projectRoot || process.cwd());
     this.projectRoot = options.projectRoot || process.cwd();
+    this.aiKeyStore = options.aiKeyStore || null;
     this.local = options.localProvider || new LocalHeuristicProvider();
-    this.openai = options.openaiProvider || new OpenAIProvider({
+    this.openai = options.openaiProvider || this.createOpenAiProvider(options.openai || {});
+  }
+
+  createOpenAiProvider(options = {}) {
+    return new OpenAIProvider({
       ...(options.openai || {}),
-      model: options.openai?.model || this.env.openAiModel,
-      timeoutMs: options.openai?.timeoutMs || this.env.timeoutMs,
+      ...options,
+      model: options.model || this.aiKeyStore?.getAiProviderSafeStatus?.().model || this.env.openAiModel,
+      timeoutMs: options.timeoutMs || this.env.timeoutMs,
       keySource: this.env.openAiKeySource || this.env.keySource,
-      projectRoot: this.projectRoot
+      projectRoot: this.projectRoot,
+      aiKeyStore: this.aiKeyStore
     });
+  }
+
+  refreshOpenAiProvider() {
+    this.openai = this.createOpenAiProvider();
+    return this.getStatus();
   }
 
   getStatus() {
@@ -142,7 +154,19 @@ class AiOrchestrator {
 
   runGate(purpose, input, mode) {
     const promptInput = buildPrompt(purpose, { ...input, aiMode: mode });
-    return runPromptQualityGate(promptInput);
+    const gate = runPromptQualityGate(promptInput);
+    if (/apiKey|OPENAI_API_KEY|secret|token/i.test(JSON.stringify(input || {}))) {
+      return {
+        ...gate,
+        status: 'failed',
+        score: 0,
+        totalScore: 0,
+        errors: Array.from(new Set([...(gate.errors || []), 'Input enthaelt Secret-/Token-Felder.'])),
+        recommendations: Array.from(new Set([...(gate.recommendations || []), 'Secret-Felder vor Provider-Nutzung entfernen.'])),
+        maySendToProvider: false
+      };
+    }
+    return gate;
   }
 
   withAiMeta(result, { provider, purpose, gate, fallbackUsed = false, qualityGateBlockedProvider = false, outputWarning = '', input = {} }) {

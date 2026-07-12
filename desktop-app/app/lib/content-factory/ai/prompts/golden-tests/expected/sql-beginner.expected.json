@@ -1,0 +1,1 @@
+{ "mustContain": ["sql", "phpMyAdmin", "SQL wird niemals automatisch ausgefuehrt"], "mustNotContain": ["auto run", "DROP DATABASE"] }

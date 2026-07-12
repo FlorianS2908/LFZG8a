@@ -1,0 +1,8 @@
+{
+  "course": { "courseName": "Mixed Project", "courseId": "mixed-project" },
+  "targetAudience": { "ageRange": "mixed", "priorKnowledge": "intermediate", "learningLevel": "professional", "difficultyMode": "normal-and-hard", "needsStepByStep": false, "examOrientation": false, "projectOrientation": true },
+  "containerProfile": { "courseType": "mixed-project", "artifactMode": "web-and-files" },
+  "artifactSuggestions": [{ "format": "html" }, { "format": "sql" }, { "format": "drawio" }],
+  "day": { "dayNumber": 3, "title": "Projektintegration", "learningGoals": ["Artefakte verbinden"] },
+  "sourceRefs": ["plan:mixed"]
+}

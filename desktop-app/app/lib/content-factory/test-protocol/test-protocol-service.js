@@ -54,15 +54,33 @@ function safeAiRun(run = {}, index = 0) {
     model: run.model || '',
     promptId: run.promptId || '',
     promptVersion: run.promptVersion || '',
+    promptContract: run.promptId && run.promptVersion ? `${run.promptId}@${run.promptVersion}` : '',
+    promptScore: run.promptScore ?? run.promptQualityScore ?? 0,
+    promptStatus: run.promptStatus || run.promptQualityStatus || 'warning',
     promptQualityStatus: run.promptQualityStatus || 'warning',
     promptQualityScore: run.promptQualityScore || 0,
+    promptEvaluation: safePromptEvaluation(run.promptEvaluation),
     qualityGateBlockedProvider: run.qualityGateBlockedProvider === true,
     fallbackUsed: run.fallbackUsed === true,
+    repairUsed: run.repairUsed === true,
     schemaValid: run.schemaValid !== false,
     outputReviewStatus: run.outputReviewStatus || 'warning',
     outputReviewScore: run.outputReviewScore || 0,
     warnings: run.warnings || [],
     manualCheckRequired: run.promptQualityStatus !== 'passed' || run.outputReviewStatus !== 'passed'
+  };
+}
+
+function safePromptEvaluation(evaluation = null) {
+  if (!evaluation) return null;
+  return {
+    completenessScore: evaluation.completenessScore || 0,
+    didacticScore: evaluation.didacticScore || 0,
+    safetyScore: evaluation.safetyScore || 0,
+    schemaScore: evaluation.schemaScore || 0,
+    artifactScore: evaluation.artifactScore || 0,
+    totalScore: evaluation.totalScore || 0,
+    level: evaluation.level || 'unknown'
   };
 }
 

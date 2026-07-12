@@ -1,0 +1,8 @@
+{
+  "course": { "courseName": "Java Einstieg", "courseId": "java-beginner" },
+  "targetAudience": { "ageRange": "16-20", "priorKnowledge": "none", "learningLevel": "intro", "difficultyMode": "normal", "needsStepByStep": true, "examOrientation": false, "projectOrientation": true },
+  "containerProfile": { "courseType": "java", "artifactMode": "web-and-files" },
+  "artifactSuggestions": [{ "format": "java", "title": "Einfache Java Aufgabe" }],
+  "day": { "dayNumber": 1, "title": "Variablen", "learningGoals": ["Variablen nutzen"] },
+  "sourceRefs": ["plan:1"]
+}

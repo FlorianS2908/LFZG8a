@@ -1,0 +1,8 @@
+{
+  "course": { "courseName": "UML Einstieg", "courseId": "uml-drawio" },
+  "targetAudience": { "ageRange": "20-30", "priorKnowledge": "basic", "learningLevel": "basic", "difficultyMode": "normal", "needsStepByStep": true, "examOrientation": true, "projectOrientation": true },
+  "containerProfile": { "courseType": "uml-pap", "artifactMode": "web-and-files" },
+  "artifactSuggestions": [{ "format": "drawio", "title": "Klassendiagramm Vorlage" }],
+  "day": { "dayNumber": 1, "title": "UML", "learningGoals": ["Diagramm modellieren"] },
+  "sourceRefs": ["plan:uml"]
+}

@@ -7,15 +7,28 @@ function reviewDayGenerationResult(result = {}, context = {}) {
   const errors = [];
   const warnings = [];
   const serializedParticipant = JSON.stringify([result.webvariant?.participantHtmlSections || [], result.tasks || []]);
-  if (/loesung|lÃ¶sung|solution/i.test(serializedParticipant)) errors.push('Teilnehmerbereich enthaelt Loesungshinweise.');
+  const serialized = JSON.stringify(result || {});
+  const profile = context.containerProfile || {};
+  const audience = context.targetAudience || {};
+  if (/loesung|l.sung|solution/i.test(serializedParticipant)) errors.push('Teilnehmerbereich enthaelt Loesungshinweise.');
   if (!(result.solutions || []).length) warnings.push('Dozentenloesungen fehlen oder sind leer.');
   if (!(result.tasks || []).length) errors.push('Aufgaben fehlen.');
   if (JSON.stringify(result.tasks || []).match(/Aufgabe noch ergaenzen|TODO fachlich|Platzhalter/i)) warnings.push('Aufgaben enthalten Platzhalter.');
   if (!(result.quiz || []).length) warnings.push('Quizfragen fehlen.');
   if (!(result.sourceRefs || []).length) warnings.push('sourceRefs fehlen.');
-  if (!ageConsidered(result, context.targetAudience)) warnings.push('ageRange wurde im Output nicht sichtbar beruecksichtigt.');
-  if (JSON.stringify(result).match(/Originaltext|Reference chunk|Buchseite|rawText|textPreview/i)) errors.push('Output enthaelt Rohtext-/Referenzchunk-Hinweise.');
+  if (!ageConsidered(result, audience)) warnings.push('ageRange wurde im Output nicht sichtbar beruecksichtigt.');
+  if (serialized.match(/Originaltext|Reference chunk|Buchseite|rawText|textPreview|OPENAI_API_KEY|apiKey|secret|token/i)) errors.push('Output enthaelt Rohtext-/Referenzchunk- oder Secret-Hinweise.');
   if ((result.artifacts || []).some((item) => /\.(exe|bat|cmd|ps1)$/i.test(item.path || item.title || ''))) errors.push('Output enthaelt ausfuehrbare Artefakte.');
+  if (['none', 'basic'].includes(audience.priorKnowledge) && /pom\.xml|maven-project|java-maven/i.test(serialized)) warnings.push('Java Einsteiger/Maven-Konflikt im Output.');
+  if (profile.courseType === 'sql' && /drop\s+database|auto.*run|automatisch.*ausfuehr/i.test(serialized)) errors.push('SQL Output wirkt wie automatische Ausfuehrung.');
+  if (profile.courseType === 'uml-pap' && !/draw\.io|drawio|\.drawio|mxfile/i.test(serialized)) warnings.push('Draw.io Artefakt fehlt oder ist nicht plausibel sichtbar.');
+  (result.artifacts || []).forEach((artifact) => {
+    const targetPath = artifact.path || artifact.targetPath || '';
+    if (/\.drawio$/i.test(targetPath) && artifact.content && !/^<mxfile[\s>]/.test(String(artifact.content).trim())) errors.push('Draw.io Artefakt ist nicht plausibel.');
+    if (/\.ipynb$/i.test(targetPath) && artifact.content) {
+      try { JSON.parse(artifact.content); } catch { errors.push('Jupyter Artefakt ist kein valides JSON.'); }
+    }
+  });
   const status = errors.length ? 'failed' : warnings.length ? 'warning' : 'passed';
   return {
     status,
@@ -34,12 +47,13 @@ function reviewArtifactContent(artifact = {}, context = {}) {
   if (artifact.solutionOnly && /^teilnehmer\//i.test(path)) errors.push('solutionOnly Artefakt liegt im Teilnehmerbereich.');
   if (!artifact.solutionOnly && /^teilnehmer\//i.test(path) && /loesung|solution/i.test(content + path)) errors.push('Teilnehmerartefakt enthaelt Loesung.');
   if (/\.(exe|bat|cmd|ps1)$/i.test(path)) errors.push('Ausfuehrbares Artefakt blockiert.');
-  if (context.targetAudience?.priorKnowledge === 'none' && /pom\.xml|maven-project/i.test(path + content)) warnings.push('Java Einsteiger mit Maven manuell pruefen.');
-  if (/\.sql$/i.test(path) && /exec|auto.*run|drop\s+database/i.test(content)) errors.push('SQL wirkt wie automatische Ausfuehrung.');
+  if (['none', 'basic'].includes(context.targetAudience?.priorKnowledge) && /pom\.xml|maven-project/i.test(path + content)) warnings.push('Java Einsteiger mit Maven manuell pruefen.');
+  if (/\.sql$/i.test(path) && /exec|auto.*run|drop\s+database|automatisch.*ausfuehr/i.test(content)) errors.push('SQL wirkt wie automatische Ausfuehrung.');
   if (/\.drawio$/i.test(path) && !/^<mxfile[\s>]/.test(String(content).trim())) errors.push('Draw.io XML ist nicht plausibel.');
   if (/\.ipynb$/i.test(path)) {
     try { JSON.parse(content); } catch { errors.push('Jupyter Notebook ist kein valides JSON.'); }
   }
+  if (/Originaltext|Reference chunk|Buchseite|rawText|textPreview|OPENAI_API_KEY|apiKey|secret|token/i.test(content)) errors.push('Artefakt enthaelt Rohtext- oder Secret-Hinweise.');
   const status = errors.length ? 'failed' : warnings.length ? 'warning' : 'passed';
   return { status, score: Math.max(0, 100 - errors.length * 25 - warnings.length * 8), errors, warnings, recommendations: [...errors, ...warnings] };
 }

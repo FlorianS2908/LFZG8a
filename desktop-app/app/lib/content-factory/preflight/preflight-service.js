@@ -42,6 +42,7 @@ function runPreflight(input = {}, options = {}) {
     checkOk('no-executables', 'Keine EXE/Skripte', [...(input.uploads || []), ...targets].every((item) => !/\.(exe|bat|cmd|ps1)$/i.test(item.name || item.path || item.targetPath || '')), 'Ausfuehrbare Datei oder Skript im Exportpfad erkannt.'),
     checkOk('no-participant-solutions', 'Teilnehmer loesungsfrei', JSON.stringify(input.dayResults || []).match(/teilnehmer.*(loesung|lösung|solution)/i) === null, 'Moegliche Loesung im Teilnehmerbereich.'),
     checkOpenAi(providerMode, aiStatus),
+    checkPromptScore(input.promptQuality || input.promptEvaluation || null),
     checkCostEstimate(input.costEstimate),
     checkOk('reference-export', 'Referenzexport', !(input.referenceUsage?.exportReferences), 'Referenzliteratur darf nicht exportiert werden.'),
     checkOk('no-reference-paths', 'Keine reference-library Pfade', !JSON.stringify(referencePaths).match(/reference-library|chunks\.json|extracted\.json/i), 'Rohdaten-/Referenzpfade erkannt.')
@@ -60,16 +61,32 @@ function runPreflight(input = {}, options = {}) {
   };
 }
 
+function checkPromptScore(promptQuality = null) {
+  if (!promptQuality) return { id: 'prompt-score', label: 'Prompt Score', status: 'ok', message: 'Prompt Score wird spaetestens beim KI-Lauf geprueft.' };
+  const score = Number(promptQuality.totalScore ?? promptQuality.promptScore ?? promptQuality.score ?? 0);
+  return {
+    id: 'prompt-score',
+    label: 'Prompt Score',
+    status: score < 70 ? 'warning' : 'ok',
+    message: score < 70 ? `Prompt Score ${score} liegt unter 70 und sollte vor Provider-Nutzung verbessert werden.` : `Prompt Score ${score}.`
+  };
+}
+
 function checkOpenAi(aiMode, aiStatus = {}) {
   if (!String(aiMode || 'local').startsWith('openai')) {
     return { id: 'ai-local', label: 'KI-Modus', status: 'ok', message: 'LocalHeuristicProvider aktiv.' };
   }
   const configured = aiStatus.providers?.openai?.configured === true;
+  const connectionFailed = ['failed', 'warning'].includes(aiStatus.providers?.openai?.connectionTestStatus);
   return {
     id: 'ai-openai',
     label: 'OpenAI',
-    status: configured ? 'ok' : 'warning',
-    message: configured ? 'OpenAI ist konfiguriert.' : 'OpenAI gewaehlt, aber kein API-Key gefunden. Local/Fallback wird genutzt.'
+    status: configured && !connectionFailed ? 'ok' : 'warning',
+    message: !configured
+      ? 'OpenAI gewaehlt, aber kein API-Key gefunden. Local/Fallback wird genutzt.'
+      : connectionFailed
+        ? 'OpenAI ist konfiguriert, aber der letzte Verbindungstest war nicht erfolgreich. Local/Fallback bleibt verfuegbar.'
+        : 'OpenAI ist konfiguriert.'
   };
 }
 

@@ -1,0 +1,1 @@
+{ "mustContain": ["java", "Schritt", "Teilnehmerbereich enthaelt niemals Loesungen"], "mustNotContain": ["maven-project", "pom.xml", "JUnit Pflicht"] }

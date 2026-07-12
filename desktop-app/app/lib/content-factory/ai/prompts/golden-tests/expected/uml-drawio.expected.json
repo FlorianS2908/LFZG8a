@@ -1,0 +1,1 @@
+{ "mustContain": ["drawio", "Draw.io", "Keine EXE"], "mustNotContain": ["PapDesigner.exe"] }

@@ -1,55 +1,22 @@
 const crypto = require('crypto');
 const { PROMPT_VERSION } = require('./prompt-quality-types');
-const { lintPrompt } = require('./prompt-linter');
+const legacyLinter = require('./prompt-linter');
 const { runPromptReviews } = require('./prompt-review-service');
+const contractPromptBuilder = require('../ai/prompts/prompt-builder');
+const contractPromptLinter = require('../ai/prompts/prompt-linter');
+const { evaluatePrompt } = require('../ai/prompts/prompt-evaluation-service');
 
 function buildPrompt(purpose, input = {}) {
-  const promptId = `${purpose.replace(/([A-Z])/g, '-$1').toLowerCase()}-v1`;
-  const expectedSchema = schemaForPurpose(purpose);
-  const targetAudience = input.targetAudience || input.curriculumPlan?.targetAudience || {};
-  const containerProfile = input.containerProfile || {};
-  const prompt = {
-    promptId,
-    promptVersion: PROMPT_VERSION,
-    purpose,
-    expectedSchema,
-    rules: [
-      'Antworte ausschliesslich als JSON.',
-      'Pflichtfelder gemaess expectedSchema befuellen.',
-      'Teilnehmerbereich enthaelt keine Loesungen.',
-      'Loesungen nur in solutions/dozent/teacher.',
-      'Keine Originaltexte, rawText, textPreview oder Referenzchunks uebernehmen.',
-      'Keine Secrets, API-Keys oder Tokens verwenden.',
-      'EXE/BAT/CMD/PS1 ausschliessen und SQL nie automatisch ausfuehren.',
-      'Java-Einsteiger nicht automatisch auf Maven zwingen.',
-      'Draw.io fuer Diagramme bevorzugen.',
-      'ageRange/Zielgruppenalter, priorKnowledge, learningLevel, difficultyMode, needsStepByStep, examOrientation und projectOrientation beachten.'
-    ],
-    course: safeObject(input.course || input.curriculumPlan?.course || {}),
-    targetAudience: safeObject(targetAudience),
-    containerProfile: safeObject(containerProfile),
-    day: safeObject(input.day || {}),
-    payloadKeys: Object.keys(input || {}),
-    expectedOutput: expectedSchema,
-    output: { format: 'json-only', schema: expectedSchema }
-  };
-  return {
-    purpose,
-    prompt,
-    promptId,
-    promptVersion: PROMPT_VERSION,
-    expectedSchema,
-    course: prompt.course,
-    targetAudience: prompt.targetAudience,
-    containerProfile: prompt.containerProfile,
-    aiMode: input.aiMode || 'local'
-  };
+  return contractPromptBuilder.buildPrompt(purpose, input);
 }
 
 function runPromptQualityGate(input = {}) {
   const promptId = input.promptId || input.prompt?.promptId || stablePromptId(input);
   const promptVersion = input.promptVersion || input.prompt?.promptVersion || PROMPT_VERSION;
-  const lintResult = lintPrompt({ ...input, promptId, promptVersion });
+  const contractLint = contractPromptLinter.lintPrompt({ ...input, promptId, promptVersion });
+  const legacyLint = legacyLinter.lintPrompt({ ...input, promptId, promptVersion });
+  const lintResult = mergeLintResults(contractLint, legacyLint);
+  const evaluation = evaluatePrompt({ ...input, promptId, promptVersion }, lintResult);
   const reviews = runPromptReviews({ ...input, promptId, promptVersion }, lintResult);
   const reviewErrors = reviews.filter((review) => review.status === 'failed').map((review) => review.message);
   const reviewWarnings = reviews.filter((review) => review.status === 'warning').map((review) => review.message);
@@ -62,6 +29,14 @@ function runPromptQualityGate(input = {}) {
     promptId,
     promptVersion,
     checks: lintResult.checks,
+    evaluation,
+    completenessScore: evaluation.completenessScore,
+    didacticScore: evaluation.didacticScore,
+    safetyScore: evaluation.safetyScore,
+    schemaScore: evaluation.schemaScore,
+    artifactScore: evaluation.artifactScore,
+    totalScore: evaluation.totalScore,
+    level: evaluation.level,
     reviews,
     warnings,
     errors,
@@ -77,8 +52,11 @@ function createAiMeta({ provider, model = '', purpose, promptQuality, fallbackUs
     purpose,
     promptId: promptQuality?.promptId || stablePromptId({ purpose }),
     promptVersion: promptQuality?.promptVersion || PROMPT_VERSION,
+    promptScore: promptQuality?.totalScore ?? promptQuality?.score ?? 0,
+    promptStatus: promptQuality?.status || 'failed',
     promptQualityStatus: promptQuality?.status || 'failed',
     promptQualityScore: promptQuality?.score || 0,
+    promptEvaluation: promptQuality?.evaluation || null,
     qualityGateBlockedProvider,
     fallbackUsed,
     reviewUsed,
@@ -87,6 +65,21 @@ function createAiMeta({ provider, model = '', purpose, promptQuality, fallbackUs
     outputReviewStatus: outputReview?.status || 'warning',
     outputReviewScore: outputReview?.score || 0,
     warnings: Array.from(new Set([...(promptQuality?.warnings || []), ...(outputReview?.warnings || []), ...warnings].filter(Boolean)))
+  };
+}
+
+function mergeLintResults(primary, secondary) {
+  const checks = [...(primary.checks || []), ...(secondary.checks || [])];
+  const errors = Array.from(new Set([...(primary.errors || []), ...(secondary.errors || [])]));
+  const warnings = Array.from(new Set([...(primary.warnings || []), ...(secondary.warnings || [])]));
+  return {
+    status: errors.length ? 'failed' : warnings.length ? 'warning' : 'passed',
+    score: Math.min(primary.score ?? 0, secondary.score ?? 0),
+    checks,
+    errors,
+    warnings,
+    recommendations: Array.from(new Set([...(primary.recommendations || []), ...(secondary.recommendations || [])])),
+    maySendToProvider: errors.length === 0
   };
 }
 

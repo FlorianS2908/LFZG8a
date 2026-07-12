@@ -1,0 +1,8 @@
+{
+  "course": { "courseName": "SQL Einstieg", "courseId": "sql-beginner" },
+  "targetAudience": { "ageRange": "20-30", "priorKnowledge": "none", "learningLevel": "basic", "difficultyMode": "normal", "needsStepByStep": true, "examOrientation": true, "projectOrientation": false },
+  "containerProfile": { "courseType": "sql", "artifactMode": "web-and-files", "allowDatabaseActions": false },
+  "artifactSuggestions": [{ "format": "sql", "title": "SELECT Aufgabe" }, { "format": "md", "title": "phpMyAdmin README" }],
+  "day": { "dayNumber": 1, "title": "SELECT", "learningGoals": ["SELECT anwenden"] },
+  "sourceRefs": ["plan:sql"]
+}

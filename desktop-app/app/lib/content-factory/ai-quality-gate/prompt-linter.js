@@ -7,7 +7,11 @@ function lintPrompt(input = {}) {
   const targetAudience = input.targetAudience || prompt.targetAudience || {};
   const containerProfile = input.containerProfile || prompt.containerProfile || {};
   const serialized = JSON.stringify(input);
-  const safetySerialized = JSON.stringify({ ...input, prompt: { ...prompt, rules: undefined } });
+  const safetySerialized = JSON.stringify({
+    userPayload: input.userPayload,
+    input: input.userPayload?.input || input.input,
+    prompt: { ...prompt, rules: undefined, output: prompt.output }
+  });
 
   required(checks, 'prompt-id', 'promptId vorhanden', Boolean(input.promptId || prompt.promptId));
   required(checks, 'prompt-version', 'promptVersion vorhanden', Boolean(input.promptVersion || prompt.promptVersion));

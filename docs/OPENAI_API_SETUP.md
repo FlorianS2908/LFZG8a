@@ -29,9 +29,21 @@ Hinweise:
 - Datei nur kurzzeitig verwenden.
 - Datei nicht in den Projektordner kopieren.
 - Datei nicht in GitHub hochladen.
-- Das Setup-Script loescht die Datei nach erfolgreicher Uebernahme.
+- Die Admin-UI oder das Setup-Script loescht die Datei nach erfolgreicher Uebernahme.
 
-## 4. Setup-Script ausfuehren
+## 4. Bevorzugt: Admin-UI verwenden
+
+In der ContentFactory:
+
+1. Bereich `KI-Einstellungen` oeffnen.
+2. `Standardpfad verwenden` ausfuehren, wenn die Datei unter `Desktop\api_key_ContentFactory.txt` liegt.
+3. Alternativ `TXT-Datei auswaehlen` verwenden.
+4. Nach erfolgreicher Uebernahme pruefen, ob `OpenAI konfiguriert: ja` und `Key-Quelle: admin-key-store` angezeigt wird.
+5. `OpenAI-Testanfrage senden` ausfuehren.
+
+Die UI zeigt niemals den Key oder Key-Fragmente. Der Key wird lokal unter AppData in der Admin-Konfiguration gespeichert, nicht im Repository und nicht in Kurscontainern.
+
+## 5. Alternative: Setup-Script ausfuehren
 
 PowerShell im Projektroot:
 
@@ -47,7 +59,7 @@ powershell -ExecutionPolicy Bypass -File scripts/setup-openai-key-from-txt.ps1 -
 
 Das Script uebernimmt den Key lokal in `.env`, zeigt ihn nicht an und loescht danach die TXT-Datei.
 
-## 5. Ergebnis pruefen
+## 6. Ergebnis pruefen
 
 In der ContentFactory:
 
@@ -55,10 +67,11 @@ In der ContentFactory:
 2. `KI-Status pruefen` ausfuehren.
 3. `OpenAI-Testanfrage senden` ausfuehren.
 
-## 6. Sicherheit
+## 7. Sicherheit
 
 - Geleakte Keys sofort loeschen oder rotieren.
 - `.env` nie committen.
 - `api_key_ContentFactory.txt` nach Setup loeschen.
+- AppData-Key-Store nicht in Kurscontainer oder Reports kopieren.
 - Kostenlimit setzen und niedrig starten.
 - Local/Fallback bleibt auch ohne Key verfuegbar.

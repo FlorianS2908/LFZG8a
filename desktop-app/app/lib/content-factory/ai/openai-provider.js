@@ -6,9 +6,10 @@ class OpenAIProvider {
     this.name = 'openai';
     const keyInfo = Object.prototype.hasOwnProperty.call(options, 'apiKey')
       ? { value: options.apiKey || '', source: options.keySource || 'process.env' }
-      : getOpenAiApiKey(options.projectRoot || process.cwd());
+      : resolveOpenAiKey(options);
     this.apiKey = keyInfo.value || '';
-    this.model = options.model || process.env.OPENAI_MODEL || 'gpt-5.4-mini';
+    const storeStatus = options.aiKeyStore?.getAiProviderSafeStatus?.() || {};
+    this.model = options.model || storeStatus.model || process.env.OPENAI_MODEL || 'gpt-5.4-mini';
     this.timeoutMs = Number(options.timeoutMs || process.env.OPENAI_TIMEOUT_MS || 30000);
     this.keySource = this.apiKey ? keyInfo.source : 'missing';
   }
@@ -28,7 +29,7 @@ class OpenAIProvider {
 
   async testConnection() {
     if (!this.isConfigured()) {
-      return { status: 'warning', message: 'OpenAI ist nicht konfiguriert. Local/Fallback bleibt aktiv.' };
+      return { status: 'warning', message: 'OpenAI ist nicht konfiguriert. Local/Fallback bleibt aktiv.', provider: this.name, model: this.model || 'gpt-5.4-mini', keySource: 'missing', errorCategory: 'missing-key' };
     }
     try {
       await this.requestJson({
@@ -36,9 +37,9 @@ class OpenAIProvider {
         rules: ['Antworte ausschliesslich als JSON.', 'Keine sensiblen Daten.'],
         input: { ping: true }
       }, { maxTokens: 20 });
-      return { status: 'success', message: 'OpenAI Testanfrage erfolgreich.' };
+      return { status: 'success', message: 'OpenAI Testanfrage erfolgreich.', provider: this.name, model: this.model || 'gpt-5.4-mini', keySource: this.keySource, errorCategory: '' };
     } catch (error) {
-      return { status: 'failed', message: `OpenAI Testanfrage fehlgeschlagen: ${error.message}` };
+      return { status: 'failed', message: 'OpenAI Testanfrage fehlgeschlagen.', provider: this.name, model: this.model || 'gpt-5.4-mini', keySource: this.keySource, errorCategory: categorizeOpenAiError(error) };
     }
   }
 
@@ -132,6 +133,22 @@ class OpenAIProvider {
       request.end();
     });
   }
+}
+
+function resolveOpenAiKey(options = {}) {
+  if (process.env.OPENAI_API_KEY) return { value: process.env.OPENAI_API_KEY, source: 'process.env' };
+  const storeKey = options.aiKeyStore?.getOpenAiKeyForServerUse?.();
+  if (storeKey?.value) return storeKey;
+  return getOpenAiApiKey(options.projectRoot || process.cwd());
+}
+
+function categorizeOpenAiError(error) {
+  const message = String(error?.message || '');
+  if (/timeout/i.test(message)) return 'timeout';
+  if (/401|403/.test(message)) return 'auth';
+  if (/429/.test(message)) return 'rate-limit';
+  if (/5\d\d/.test(message)) return 'provider';
+  return 'connection-failed';
 }
 
 function sanitizeInput(input) {

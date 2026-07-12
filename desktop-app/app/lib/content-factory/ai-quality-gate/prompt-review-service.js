@@ -2,7 +2,11 @@ const { REVIEW_ROLES } = require('./prompt-quality-types');
 
 function runPromptReviews(input = {}, lintResult = {}) {
   const serialized = JSON.stringify(input);
-  const safetySerialized = JSON.stringify({ ...input, prompt: { ...(input.prompt || {}), rules: undefined } });
+  const safetySerialized = JSON.stringify({
+    userPayload: input.userPayload,
+    input: input.userPayload?.input || input.input,
+    prompt: { ...(input.prompt || {}), rules: undefined, output: input.prompt?.output }
+  });
   const reviews = REVIEW_ROLES.map((role) => reviewRole(role, input, lintResult, serialized, safetySerialized));
   return reviews;
 }

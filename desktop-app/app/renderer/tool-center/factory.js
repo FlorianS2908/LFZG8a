@@ -12,6 +12,8 @@ const state = {
   selectedBatchId: '',
   aiStatus: null,
   aiTestResult: null,
+  aiImportResult: null,
+  goldenPromptResult: null,
   wizard: {
     course: { courseName: '', courseId: '', department: '', description: '' },
     anchorType: 'course-plan',
@@ -413,26 +415,30 @@ function renderTestRunResult(result) {
 
 function renderPromptQualityGate(wizard) {
   const quality = wizard.promptQuality;
+  const golden = state.goldenPromptResult;
   return `
     <article class="tool-card">
-      <h3>KI-Prompt & Quality Gate</h3>
+      <h3>Prompt-Praezision</h3>
       <div class="summary-grid">
         <span>Zweck: ${escapeHtml(quality?.purpose || 'generateDayDraft')}</span>
         <span>Prompt: ${escapeHtml(quality?.promptId || '-')}</span>
         <span>Version: ${escapeHtml(quality?.promptVersion || '-')}</span>
         <span>Schema: ${escapeHtml(quality?.expectedSchema || 'DayGenerationResult')}</span>
-        <span>Provider: ${escapeHtml(quality?.provider || wizard.aiMode || 'local')}</span>
-        <span>Modell: ${escapeHtml(quality?.model || '-')}</span>
+        <span>Prompt Score: ${escapeHtml(quality?.totalScore ?? quality?.score ?? '-')}</span>
+        <span>Safety Score: ${escapeHtml(quality?.safetyScore ?? '-')}</span>
+        <span>Didaktik Score: ${escapeHtml(quality?.didacticScore ?? '-')}</span>
+        <span>Artefakt Score: ${escapeHtml(quality?.artifactScore ?? '-')}</span>
         <span>Status: ${escapeHtml(quality?.status || 'offen')}</span>
-        <span>Score: ${escapeHtml(quality?.score ?? '-')}</span>
+        <span>Golden Tests: ${escapeHtml(golden ? `${golden.status} (${golden.passed}/${golden.total})` : '-')}</span>
         <span>Provider erlaubt: ${quality ? (quality.maySendToProvider ? 'ja' : 'nein') : '-'}</span>
       </div>
       ${(quality?.errors || []).map((item) => `<p class="status-line status-error">${escapeHtml(item)}</p>`).join('')}
       ${(quality?.warnings || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}
       ${wizard.promptRulesVisible && quality?.rules ? `<div class="validation-box"><strong>Prompt-Regeln</strong><ul>${quality.rules.map((rule) => `<li>${escapeHtml(rule)}</li>`).join('')}</ul></div>` : ''}
       <div class="button-row">
-        <button class="secondary-button" type="button" data-prompt-preview>Prompt-Vorschau aktualisieren</button>
-        <button class="secondary-button" type="button" data-prompt-quality>Quality Gate pruefen</button>
+        <button class="secondary-button" type="button" data-prompt-preview>Prompt-Vorschau anzeigen</button>
+        <button class="secondary-button" type="button" data-prompt-quality>Prompt pruefen</button>
+        <button class="secondary-button" type="button" data-prompt-golden>Golden Tests ausfuehren</button>
         <button class="secondary-button" type="button" data-prompt-rules>Prompt-Regeln anzeigen</button>
       </div>
     </article>
@@ -443,23 +449,37 @@ function renderAiSettings(wizard) {
   const openai = state.aiStatus?.providers?.openai || {};
   const estimate = wizard.costEstimate;
   const test = state.aiTestResult;
+  const adminStore = state.aiStatus?.adminKeyStore || {};
+  const importResult = state.aiImportResult;
   return `
     <article class="tool-card">
       <h3>KI-Einstellungen</h3>
+      <div class="factory-form-grid">
+        <label>Provider-Auswahl<select data-wizard-ai-mode-settings>${['local', 'openai', 'openai-review', 'openai-review-repair'].map((mode) => `<option value="${mode}" ${wizard.aiMode === mode ? 'selected' : ''}>${mode}</option>`).join('')}</select></label>
+        <label>Modellfeld<input data-ai-model value="${escapeHtml(openai.model || adminStore.model || 'gpt-5.4-mini')}"></label>
+        <label>Kostenwarnung USD<input data-ai-cost-warning type="number" min="0" step="0.01" value="${escapeHtml(state.aiStatus?.costWarningUsd || 1)}" disabled></label>
+      </div>
       <div class="summary-grid">
         <span>Provider: ${escapeHtml(state.aiStatus?.defaultProvider || wizard.aiMode || 'local')}</span>
         <span>OpenAI konfiguriert: ${openai.configured ? 'ja' : 'nein'}</span>
         <span>Modell: ${escapeHtml(openai.model || '-')}</span>
         <span>Key-Quelle: ${escapeHtml(openai.keySource || 'missing')}</span>
+        <span>Standardpfad: ${escapeHtml(openai.defaultPathStatus || adminStore.defaultPathStatus || 'unbekannt')}</span>
+        <span>Verbindungstest: ${escapeHtml(openai.connectionTestStatus || adminStore.connectionTestStatus || 'unknown')}</span>
         <span>Timeout: ${escapeHtml(state.aiStatus?.timeoutMs || 30000)} ms</span>
         <span>Local/Fallback aktiv: ja</span>
         <span>Kostenwarnung: ${state.aiStatus?.costWarningUsd ? 'ja' : 'nein'}</span>
       </div>
       ${estimate ? `<p class="status-line ${estimate.warning ? 'status-warning' : ''}">Geschaetzte Kosten: ca. ${escapeHtml(estimate.estimatedCostUsd)} USD | Input ${escapeHtml(estimate.inputTokens)} Tokens | Output ${escapeHtml(estimate.outputTokens)} Tokens</p>` : ''}
       ${test ? `<p class="status-line ${test.status === 'failed' ? 'status-error' : test.status === 'warning' ? 'status-warning' : ''}">Testanfrage: ${escapeHtml(test.status)} - ${escapeHtml(test.message)}</p>` : ''}
+      ${importResult ? `<p class="status-line ${importResult.success === false ? 'status-error' : ''}">${escapeHtml(importResult.message || importResult.status || '')}</p>` : ''}
       <div class="button-row">
         <button class="secondary-button" type="button" data-ai-status-check>KI-Status pruefen</button>
+        <button class="secondary-button" type="button" data-ai-model-save>Modell speichern</button>
+        <button class="secondary-button" type="button" data-ai-import-default>Standardpfad verwenden</button>
+        <button class="secondary-button" type="button" data-ai-import-select>TXT-Datei auswaehlen</button>
         <button class="secondary-button" type="button" data-ai-test-request>OpenAI-Testanfrage senden</button>
+        <button class="secondary-button" type="button" data-ai-clear-key>OpenAI-Key entfernen</button>
         <button class="secondary-button" type="button" data-ai-setup-guide>Setup-Anleitung oeffnen</button>
       </div>
     </article>
@@ -714,12 +734,21 @@ function bindPlanWizardEvents() {
   $('[data-wizard-revise]')?.addEventListener('click', reviseWizardDayDraft);
   $('[data-prompt-preview]')?.addEventListener('click', previewWizardPromptQuality);
   $('[data-prompt-quality]')?.addEventListener('click', previewWizardPromptQuality);
+  $('[data-prompt-golden]')?.addEventListener('click', runPromptGoldenTests);
   $('[data-prompt-rules]')?.addEventListener('click', () => {
     state.wizard.promptRulesVisible = !state.wizard.promptRulesVisible;
     renderPlanWizard();
   });
   $('[data-ai-status-check]')?.addEventListener('click', refreshAiStatus);
+  $('[data-wizard-ai-mode-settings]')?.addEventListener('change', (event) => {
+    state.wizard.aiMode = event.target.value;
+    renderPlanWizard();
+  });
+  $('[data-ai-model-save]')?.addEventListener('click', updateAiModel);
+  $('[data-ai-import-default]')?.addEventListener('click', importAiKeyFromDefaultPath);
+  $('[data-ai-import-select]')?.addEventListener('click', importAiKeyFromSelectedTxt);
   $('[data-ai-test-request]')?.addEventListener('click', testAiConnection);
+  $('[data-ai-clear-key]')?.addEventListener('click', clearAiKey);
   $('[data-ai-setup-guide]')?.addEventListener('click', () => desktop.factory.openOpenAiSetupGuide());
   $('[data-wizard-preflight]')?.addEventListener('click', runWizardPreflight);
   $('[data-wizard-test-run]')?.addEventListener('click', () => runWizardTestDraft(false));
@@ -1101,6 +1130,19 @@ async function previewWizardPromptQuality() {
   renderPlanWizard();
 }
 
+async function runPromptGoldenTests() {
+  state.wizard.status = 'Golden Prompt Tests laufen ...';
+  renderPlanWizard();
+  try {
+    state.goldenPromptResult = await desktop.factory.runPromptGoldenTests();
+    state.wizard.status = `Golden Prompt Tests ${state.goldenPromptResult.status}: ${state.goldenPromptResult.passed}/${state.goldenPromptResult.total}.`;
+  } catch (error) {
+    state.goldenPromptResult = { status: 'failed', passed: 0, total: 0, results: [], message: error.message };
+    state.wizard.status = error.message;
+  }
+  renderPlanWizard();
+}
+
 async function runWizardTestDraft(confirmWarnings) {
   state.wizard.status = confirmWarnings ? 'Testlauf wird trotz Warnungen erzeugt ...' : 'Testlauf wird erzeugt ...';
   renderPlanWizard();
@@ -1130,6 +1172,59 @@ async function refreshAiStatus() {
   state.aiStatus = await desktop.factory.getAiProviderStatus();
   state.wizard.costEstimate = await desktop.factory.estimateAiCost(buildWizardTestInput());
   renderPlanWizard();
+}
+
+async function updateAiModel() {
+  const model = $('[data-ai-model]')?.value || 'gpt-5.4-mini';
+  state.wizard.status = 'KI-Modell wird gespeichert ...';
+  renderPlanWizard();
+  try {
+    await desktop.factory.updateAiModel(model);
+    state.aiImportResult = { success: true, message: 'KI-Modell wurde gespeichert.' };
+    await refreshAiStatus();
+  } catch (error) {
+    state.aiImportResult = { success: false, message: error.message };
+    renderPlanWizard();
+  }
+}
+
+async function importAiKeyFromDefaultPath() {
+  state.wizard.status = 'OpenAI-Key wird vom Standardpfad uebernommen ...';
+  renderPlanWizard();
+  try {
+    state.aiImportResult = await desktop.factory.importOpenAiKeyFromDefaultPath();
+    await refreshAiStatus();
+  } catch (error) {
+    state.aiImportResult = { success: false, message: error.message };
+    renderPlanWizard();
+  }
+}
+
+async function importAiKeyFromSelectedTxt() {
+  state.wizard.status = 'TXT-Datei wird ausgewaehlt ...';
+  renderPlanWizard();
+  try {
+    const result = await desktop.factory.selectOpenAiKeyTxt();
+    state.aiImportResult = result?.canceled ? { success: false, message: 'Dateiauswahl abgebrochen.' } : result;
+    await refreshAiStatus();
+  } catch (error) {
+    state.aiImportResult = { success: false, message: error.message };
+    renderPlanWizard();
+  }
+}
+
+async function clearAiKey() {
+  if (!window.confirm('OpenAI-Key aus der lokalen Admin-Konfiguration entfernen?')) return;
+  state.wizard.status = 'OpenAI-Key wird entfernt ...';
+  renderPlanWizard();
+  try {
+    state.aiImportResult = await desktop.factory.clearOpenAiKey();
+    state.aiTestResult = null;
+    await refreshAiStatus();
+  } catch (error) {
+    state.aiImportResult = { success: false, message: error.message };
+    renderPlanWizard();
+  }
 }
 
 async function testAiConnection() {

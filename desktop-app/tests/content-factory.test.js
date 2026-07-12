@@ -11,6 +11,7 @@ const { AiOrchestrator } = require('../app/lib/content-factory/ai/ai-orchestrato
 const { LocalHeuristicProvider } = require('../app/lib/content-factory/ai/local-heuristic-provider');
 const { sanitizeInput, parseJsonLoose } = require('../app/lib/content-factory/ai/openai-provider');
 const { OpenAIProvider } = require('../app/lib/content-factory/ai/openai-provider');
+const { createAiKeyStoreService } = require('../app/lib/content-factory/ai/ai-key-store-service');
 const { assessCurriculumQuality } = require('../app/lib/content-factory/curriculum-planner/curriculum-quality-service');
 const { decideArtifactSuggestions } = require('../app/lib/content-factory/container-profile/audience-artifact-decision-service');
 const { suggestionsToTargets } = require('../app/lib/content-factory/container-profile/artifact-target-service');
@@ -23,6 +24,12 @@ const { lintPrompt } = require('../app/lib/content-factory/ai-quality-gate/promp
 const { reviewOutput, reviewArtifactContent } = require('../app/lib/content-factory/ai-quality-gate/output-review-service');
 const { loadAppEnv, getOpenAiApiKey } = require('../app/lib/env/env-loader');
 const { estimateContentFactoryCost } = require('../app/lib/content-factory/ai/cost-estimator');
+const { validateGeneratedContainer } = require('../app/lib/content-factory/generated-container-validator');
+const { contracts } = require('../app/lib/content-factory/ai/prompts/contracts');
+const { dayDraftContract } = require('../app/lib/content-factory/ai/prompts/contracts/day-draft-contract');
+const promptBuilder = require('../app/lib/content-factory/ai/prompts/prompt-builder');
+const contractPromptLinter = require('../app/lib/content-factory/ai/prompts/prompt-linter');
+const { runGoldenPromptTest, summarizeGoldenPromptTests } = require('../app/lib/content-factory/ai/prompts/golden-tests/golden-test-runner');
 
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
@@ -264,6 +271,7 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.equal(testProtocol.checks.some((check) => check.group === 'Sicherheit'), true);
     assert.ok(testProtocol.aiRuns.length >= 2);
     assert.equal(testProtocol.aiRuns.every((run) => run.promptId && run.promptVersion), true);
+    assert.equal(testProtocol.aiRuns.every((run) => run.promptContract && typeof run.promptScore === 'number'), true);
     assert.ok(testProtocol.manualChecks.length >= 8);
     assert.doesNotMatch(JSON.stringify(testProtocol), /Originaltext|Reference chunk|Buchseite|rawText|textPreview|reference-library|chunks\.json|extracted\.json/i);
     assert.doesNotMatch(testProtocolHtml, /Originaltext|Reference chunk|Buchseite|rawText|textPreview|reference-library|chunks\.json|extracted\.json/i);
@@ -274,6 +282,8 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.match(reportHtml, /<h2>Testprotokoll<\/h2>/);
     assert.match(reportHtml, /<h2>Prompt Quality<\/h2>/);
     assert.ok(draft.analysisReport.promptQuality.runCount >= 2);
+    assert.ok(draft.analysisReport.promptQuality.averagePromptQualityScore >= 0);
+    assert.equal((draft.analysisReport.promptQuality.promptContracts || []).some((item) => /day-draft-v1@1\.0\.0/.test(item)), true);
     assert.doesNotMatch(reportHtml, /Originaltext|Reference chunk|Buchseite/i);
     assert.doesNotMatch(reportHtml + JSON.stringify(draft.analysisReport), /OPENAI_API_KEY|s[k]-[A-Za-z0-9_-]{10,}|apiKey|secret/i);
     assert.equal(draft.validation.isValid, true);
@@ -454,6 +464,44 @@ test('content factory quality and ai helpers protect local output and secrets', 
   assert.deepEqual(parseJsonLoose('```json\n{"ok":true}\n```'), { ok: true });
 });
 
+test('prompt precision contracts builder linter and golden tests protect provider prompts', () => {
+  const input = createApprovedTestInput({
+    targetAudience: { ...createApprovedTestInput().targetAudience, ageRange: '16-20', priorKnowledge: 'none', learningLevel: 'intro' },
+    containerProfile: { ...createApprovedTestInput().containerProfile, courseType: 'java' },
+    rawText: 'Originaltext darf nicht bleiben',
+    referenceContext: [{ textPreview: 'Reference chunk', summary: 'safe', sourceRef: 'ref:1' }],
+    apiKey: 'secret'
+  });
+  const prompt = promptBuilder.buildPrompt('generateDayDraft', input);
+  const lint = contractPromptLinter.lintPrompt(prompt);
+  const missingSchema = contractPromptLinter.lintPrompt({ ...prompt, expectedSchema: '', contract: { ...prompt.contract, expectedOutputSchema: '' }, prompt: { ...prompt.prompt, expectedSchema: '' } });
+  const missingAge = contractPromptLinter.lintPrompt(promptBuilder.buildPrompt('generateDayDraft', createApprovedTestInput({ targetAudience: { ...createApprovedTestInput().targetAudience, ageRange: 'unknown' } })));
+  const javaGolden = runGoldenPromptTest('java-beginner');
+  const sqlGolden = runGoldenPromptTest('sql-beginner');
+  const umlGolden = runGoldenPromptTest('uml-drawio');
+  const summary = summarizeGoldenPromptTests();
+
+  contracts.forEach((contract) => {
+    assert.ok(contract.id);
+    assert.ok(contract.version);
+    assert.ok(contract.purpose);
+    assert.ok(contract.expectedOutputSchema);
+  });
+  assert.equal(dayDraftContract.id, 'day-draft-v1');
+  assert.equal(dayDraftContract.mustIncludeRules.some((rule) => /Teilnehmerbereich.*niemals.*Loesungen/i.test(rule)), true);
+  assert.equal(dayDraftContract.artifactRules.some((rule) => /Java Einsteiger.*keine Maven/i.test(rule)), true);
+  assert.equal(prompt.promptId, 'day-draft-v1');
+  assert.equal(prompt.promptVersion, '1.0.0');
+  assert.doesNotMatch(JSON.stringify(prompt.userPayload), /Originaltext darf nicht bleiben|Reference chunk|apiKey|secret|rawText|textPreview/i);
+  assert.equal(lint.status === 'passed' || lint.status === 'warning', true);
+  assert.equal(missingSchema.status, 'failed');
+  assert.equal(missingAge.status, 'warning');
+  assert.equal(javaGolden.status, 'passed');
+  assert.equal(sqlGolden.status, 'passed');
+  assert.equal(umlGolden.status, 'passed');
+  assert.equal(summary.status, 'passed');
+});
+
 test('openai env setup files and loader keep api keys out of repository outputs', () => {
   const repoRoot = path.join(__dirname, '..', '..');
   const gitignore = fs.readFileSync(path.join(repoRoot, '.gitignore'), 'utf8');
@@ -562,6 +610,78 @@ test('openai provider status and fallback never expose api keys', async () => {
   assert.equal(result.aiMeta.fallbackUsed, true);
 });
 
+test('admin ai key store imports txt deletes source and never returns key', async () => {
+  const { dir, appData, service, session, cleanup } = createTempFactory();
+  const fakeKey = `s${'k'}-admin-store-placeholder-not-real-1234567890`;
+  const keyFile = path.join(dir, 'admin-openai-key.txt');
+  const oldKey = process.env.OPENAI_API_KEY;
+  const oldModel = process.env.OPENAI_MODEL;
+  try {
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.OPENAI_MODEL;
+    fs.writeFileSync(keyFile, fakeKey, 'utf8');
+    const imported = service.importOpenAiKeyFromTxt(keyFile, session);
+    const status = service.getAiProviderStatus(session);
+    const store = createAiKeyStoreService({ appData });
+    const keyInfo = store.getOpenAiKeyForServerUse();
+
+    assert.equal(imported.success, true);
+    assert.equal(imported.deletedSourceFile, true);
+    assert.equal(fs.existsSync(keyFile), false);
+    assert.equal(status.providers.openai.configured, true);
+    assert.equal(status.providers.openai.keySource, 'admin-key-store');
+    assert.equal(keyInfo.value, fakeKey);
+    assert.equal(keyInfo.source, 'admin-key-store');
+    assert.doesNotMatch(JSON.stringify(imported) + JSON.stringify(status), new RegExp(fakeKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.doesNotMatch(JSON.stringify(status), /openAiKeyLocal|apiKey|secret/i);
+    assert.ok(fs.existsSync(path.join(dir, 'data', 'secure', 'ai-provider-config.json')));
+
+    service.clearOpenAiKey(session);
+    const missingTest = await store.testOpenAiConnection(session);
+    assert.equal(service.getAiProviderStatus(session).providers.openai.configured, false);
+    assert.equal(missingTest.status, 'warning');
+    assert.equal(missingTest.errorCategory, 'missing-key');
+  } finally {
+    restoreEnv('OPENAI_API_KEY', oldKey);
+    restoreEnv('OPENAI_MODEL', oldModel);
+    cleanup();
+  }
+});
+
+test('openai provider resolves process env before admin key store and admin before dotenv', () => {
+  const { dir, appData, service, session, cleanup } = createTempFactory();
+  const oldKey = process.env.OPENAI_API_KEY;
+  const oldModel = process.env.OPENAI_MODEL;
+  const oldProvider = process.env.AI_PROVIDER;
+  const envKey = `s${'k'}-process-env-placeholder-not-real-1234567890`;
+  const storeKey = `s${'k'}-store-placeholder-not-real-1234567890`;
+  try {
+    fs.writeFileSync(path.join(dir, '.env'), `AI_PROVIDER=openai\nOPENAI_API_KEY=s${'k'}-dotenv-placeholder-not-real-1234567890\nOPENAI_MODEL=dotenv-model\n`, 'utf8');
+    const keyFile = path.join(dir, 'store-key.txt');
+    fs.writeFileSync(keyFile, storeKey, 'utf8');
+    service.importOpenAiKeyFromTxt(keyFile, session);
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.OPENAI_MODEL;
+    delete process.env.AI_PROVIDER;
+
+    const adminProvider = new OpenAIProvider({ projectRoot: dir, aiKeyStore: createAiKeyStoreService({ appData }) });
+    process.env.OPENAI_API_KEY = envKey;
+    process.env.OPENAI_MODEL = 'env-model';
+    const envProvider = new OpenAIProvider({ projectRoot: dir, aiKeyStore: createAiKeyStoreService({ appData }) });
+
+    assert.equal(adminProvider.getStatus().keySource, 'admin-key-store');
+    assert.equal(adminProvider.apiKey, storeKey);
+    assert.equal(envProvider.getStatus().keySource, 'process.env');
+    assert.equal(envProvider.apiKey, envKey);
+    assert.doesNotMatch(JSON.stringify(envProvider.getStatus()), new RegExp(envKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  } finally {
+    restoreEnv('OPENAI_API_KEY', oldKey);
+    restoreEnv('OPENAI_MODEL', oldModel);
+    restoreEnv('AI_PROVIDER', oldProvider);
+    cleanup();
+  }
+});
+
 test('content factory cost estimator and preflight warn on openai cost or missing key', () => {
   const input = createApprovedTestInput({ aiMode: 'openai' });
   const estimate = estimateContentFactoryCost(input, { model: 'gpt-5.4-mini', warningLimitUsd: 0.0001 });
@@ -577,6 +697,26 @@ test('content factory cost estimator and preflight warn on openai cost or missin
   assert.ok(estimate.outputTokens > 0);
   assert.equal(preflight.status, 'yellow');
   assert.ok(preflight.warnings.some((warning) => /kein API-Key|Kosten/.test(warning)));
+});
+
+test('content factory preflight accepts admin key store as configured', () => {
+  const result = runPreflight(createApprovedTestInput({ aiMode: 'openai' }), {
+    aiStatus: {
+      defaultProvider: 'openai',
+      providers: { openai: { configured: true, model: 'gpt-5.4-mini', keySource: 'admin-key-store', connectionTestStatus: 'success' } }
+    }
+  });
+  const failedConnection = runPreflight(createApprovedTestInput({ aiMode: 'openai' }), {
+    aiStatus: {
+      defaultProvider: 'openai',
+      providers: { openai: { configured: true, model: 'gpt-5.4-mini', keySource: 'admin-key-store', connectionTestStatus: 'failed' } }
+    }
+  });
+
+  assert.equal(result.checks.find((check) => check.id === 'ai-openai').status, 'ok');
+  assert.equal(result.warnings.some((warning) => /kein API-Key/.test(warning)), false);
+  assert.equal(failedConnection.status, 'yellow');
+  assert.ok(failedConnection.warnings.some((warning) => /Verbindungstest/.test(warning)));
 });
 
 test('prompt linter blocks unsafe prompts and warns about age range', () => {
@@ -699,6 +839,20 @@ test('content factory artifact generators create safe files and validate blocked
   assert.equal(blocked.errors.some((error) => /solutionOnly/.test(error)), true);
 });
 
+test('generated container validator blocks admin ai key store export', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-secret-export-'));
+  try {
+    const secureDir = path.join(dir, 'secure');
+    fs.mkdirSync(secureDir, { recursive: true });
+    fs.writeFileSync(path.join(secureDir, 'ai-provider-config.json'), '{"provider":"openai"}', 'utf8');
+    const result = validateGeneratedContainer(dir, {});
+    assert.equal(result.isValid, false);
+    assert.equal(result.errors.some((error) => /Secret-\/Key-Datei/.test(error)), true);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('content factory mappings can be manually locked over suggestions', () => {
   const suggested = createMappingSuggestion({ originalFilename: 'aufgabe_tag_03.html' });
   const mapped = applyMapping(suggested, {
@@ -803,8 +957,9 @@ test('content factory ui exposes test protocol open action', () => {
 
   assert.match(ui, /Testprotokoll oeffnen/);
   assert.match(ui, /data-wizard-open="test-protocol"/);
-  assert.match(ui, /KI-Prompt & Quality Gate/);
+  assert.match(ui, /Prompt-Praezision/);
   assert.match(ui, /previewPromptQuality/);
+  assert.match(ui, /runPromptGoldenTests/);
   assert.doesNotMatch(ui, /OPENAI_API_KEY|apiKey|secret/i);
 });
 

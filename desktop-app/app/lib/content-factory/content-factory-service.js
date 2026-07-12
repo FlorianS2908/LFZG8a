@@ -11,6 +11,7 @@ const { validateNoReferenceExport } = require('./reference-library/reference-saf
 const { stageUploadFiles } = require('./upload-staging-service');
 const { parseCoursePlan } = require('./course-plan-parser');
 const { AiOrchestrator } = require('./ai/ai-orchestrator');
+const { createAiKeyStoreService } = require('./ai/ai-key-store-service');
 const { createPlanContainerDraft } = require('./plan-container-draft-service');
 const { validateGeneratedContainer } = require('./generated-container-validator');
 const { createCurriculumPlannerService } = require('./curriculum-planner/curriculum-planner-service');
@@ -19,6 +20,7 @@ const { listPresets, applyPreset } = require('./presets/preset-service');
 const { createCleanupService } = require('./cleanup/cleanup-service');
 const { buildPrompt, runPromptQualityGate } = require('./ai-quality-gate/ai-quality-gate-service');
 const { estimateContentFactoryCost } = require('./ai/cost-estimator');
+const { summarizeGoldenPromptTests } = require('./ai/prompts/golden-tests/golden-test-runner');
 
 function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
@@ -32,7 +34,8 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
     staticContainers: moduleRegistry.getAllModules()
   });
   const referenceLibrary = createReferenceLibraryService({ appData });
-  const aiOrchestrator = new AiOrchestrator({ projectRoot });
+  const aiKeyStore = createAiKeyStoreService({ appData });
+  const aiOrchestrator = new AiOrchestrator({ projectRoot, aiKeyStore });
   const curriculumPlanner = createCurriculumPlannerService({ factoryDir, aiOrchestrator });
   const cleanup = createCleanupService({ factoryDir, storage });
 
@@ -103,12 +106,63 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
 
   function getAiProviderStatus(session) {
     assertAdmin(session);
-    return aiOrchestrator.getStatus();
+    const status = aiOrchestrator.getStatus();
+    const adminStatus = aiKeyStore.getAiProviderSafeStatus();
+    return {
+      ...status,
+      adminKeyStore: adminStatus,
+      providers: {
+        ...status.providers,
+        openai: {
+          ...status.providers.openai,
+          defaultPathAvailable: adminStatus.defaultPathAvailable,
+          defaultPathStatus: adminStatus.defaultPathStatus,
+          connectionTestStatus: adminStatus.connectionTestStatus
+        }
+      }
+    };
   }
 
   async function testOpenAiConnection(session) {
     assertAdmin(session);
-    return aiOrchestrator.testOpenAiConnection();
+    const current = aiOrchestrator.getStatus();
+    const result = current.providers.openai.keySource === 'admin-key-store'
+      ? await aiKeyStore.testOpenAiConnection(session, { timeoutMs: current.timeoutMs })
+      : await aiOrchestrator.testOpenAiConnection();
+    return {
+      status: result.status,
+      provider: result.provider || 'openai',
+      model: result.model || aiOrchestrator.getStatus().providers.openai.model,
+      keySource: result.keySource || aiOrchestrator.getStatus().providers.openai.keySource,
+      errorCategory: result.errorCategory || '',
+      message: result.message || (result.status === 'success' ? 'OpenAI-Verbindung erfolgreich.' : 'OpenAI-Verbindung konnte nicht bestaetigt werden.')
+    };
+  }
+
+  function importOpenAiKeyFromTxt(filePath, session) {
+    assertAdmin(session);
+    const result = aiKeyStore.importOpenAiKeyFromTxt(filePath, session);
+    aiOrchestrator.refreshOpenAiProvider();
+    return result;
+  }
+
+  function importOpenAiKeyFromDefaultPath(session) {
+    assertAdmin(session);
+    return importOpenAiKeyFromTxt(aiKeyStore.defaultImportPath, session);
+  }
+
+  function clearOpenAiKey(session) {
+    assertAdmin(session);
+    const result = aiKeyStore.clearOpenAiKey(session);
+    aiOrchestrator.refreshOpenAiProvider();
+    return result;
+  }
+
+  function updateAiModel(model, session) {
+    assertAdmin(session);
+    const result = aiKeyStore.updateAiModel(model, session);
+    aiOrchestrator.refreshOpenAiProvider();
+    return result;
   }
 
   async function generateDayDraft(input, session) {
@@ -273,16 +327,30 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
       promptId: quality.promptId,
       promptVersion: quality.promptVersion,
       expectedSchema: promptInput.expectedSchema,
+      contract: promptInput.contract,
       provider: String(input.aiMode || 'local').startsWith('openai') ? 'openai' : 'local',
       model: String(input.aiMode || 'local').startsWith('openai') ? aiOrchestrator.getStatus().providers.openai.model || '' : 'LocalHeuristicProvider',
       status: quality.status,
       score: quality.score,
+      evaluation: quality.evaluation,
+      completenessScore: quality.completenessScore,
+      didacticScore: quality.didacticScore,
+      safetyScore: quality.safetyScore,
+      schemaScore: quality.schemaScore,
+      artifactScore: quality.artifactScore,
+      totalScore: quality.totalScore,
+      level: quality.level,
       warnings: quality.warnings,
       errors: quality.errors,
       maySendToProvider: quality.maySendToProvider,
       checks: quality.checks.map((check) => ({ id: check.id, label: check.label, status: check.status, message: check.message })),
       rules: promptInput.prompt.rules
     };
+  }
+
+  function runPromptGoldenTests(session) {
+    assertAdmin(session);
+    return summarizeGoldenPromptTests();
   }
 
   async function runContentFactoryTestDraft(input, session) {
@@ -608,6 +676,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
   return {
     storage,
     referenceLibrary,
+    aiKeyStore,
     getState,
     duplicateContainer,
     createImportBatch,
@@ -655,6 +724,10 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
     parseCoursePlan: parseCoursePlanUpload,
     getAiProviderStatus,
     testOpenAiConnection,
+    importOpenAiKeyFromTxt,
+    importOpenAiKeyFromDefaultPath,
+    clearOpenAiKey,
+    updateAiModel,
     estimateAiCost: (input, session) => {
       assertAdmin(session);
       const aiStatus = aiOrchestrator.getStatus();
@@ -662,6 +735,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
     },
     runPreflight: runContentFactoryPreflight,
     previewPromptQuality,
+    runPromptGoldenTests,
     runContentFactoryTestDraft,
     listPresets: (session) => {
       assertAdmin(session);

@@ -1,0 +1,1 @@
+{ "mustContain": ["maven-project", "Projekt", "optional"], "mustNotContain": ["JUnit Pflicht"] }

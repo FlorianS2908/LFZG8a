@@ -1,0 +1,8 @@
+{
+  "course": { "courseName": "Python Analyse", "courseId": "python-jupyter" },
+  "targetAudience": { "ageRange": "30+", "priorKnowledge": "basic", "learningLevel": "basic", "difficultyMode": "normal", "needsStepByStep": true, "examOrientation": false, "projectOrientation": true },
+  "containerProfile": { "courseType": "jupyter", "artifactMode": "web-and-files" },
+  "artifactSuggestions": [{ "format": "ipynb", "title": "Notebook Aufgabe" }],
+  "day": { "dayNumber": 1, "title": "Datenanalyse", "learningGoals": ["Notebook nutzen"] },
+  "sourceRefs": ["plan:py"]
+}

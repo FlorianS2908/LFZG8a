@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, screen, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
@@ -1125,6 +1125,35 @@ ipcMain.handle('factory:test-openai-connection', () => (
   getContentFactoryService().testOpenAiConnection(requireAdminSession())
 ));
 
+ipcMain.handle('factory:import-openai-key-from-txt', (event, filePath) => (
+  getContentFactoryService().importOpenAiKeyFromTxt(filePath, requireAdminSession())
+));
+
+ipcMain.handle('factory:import-openai-key-from-default-path', () => (
+  getContentFactoryService().importOpenAiKeyFromDefaultPath(requireAdminSession())
+));
+
+ipcMain.handle('factory:select-openai-key-txt', async () => {
+  requireAdminSession();
+  const result = await dialog.showOpenDialog({
+    title: 'OpenAI-Key TXT-Datei auswaehlen',
+    properties: ['openFile'],
+    filters: [{ name: 'Textdateien', extensions: ['txt'] }]
+  });
+  if (result.canceled || !result.filePaths?.[0]) {
+    return { success: false, canceled: true };
+  }
+  return getContentFactoryService().importOpenAiKeyFromTxt(result.filePaths[0], requireAdminSession());
+});
+
+ipcMain.handle('factory:clear-openai-key', () => (
+  getContentFactoryService().clearOpenAiKey(requireAdminSession())
+));
+
+ipcMain.handle('factory:update-ai-model', (event, model) => (
+  getContentFactoryService().updateAiModel(model, requireAdminSession())
+));
+
 ipcMain.handle('factory:estimate-ai-cost', (event, input) => (
   getContentFactoryService().estimateAiCost(input, requireAdminSession())
 ));
@@ -1140,6 +1169,10 @@ ipcMain.handle('factory:run-preflight', (event, input) => (
 
 ipcMain.handle('factory:preview-prompt-quality', (event, input) => (
   getContentFactoryService().previewPromptQuality(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:run-prompt-golden-tests', () => (
+  getContentFactoryService().runPromptGoldenTests(requireAdminSession())
 ));
 
 ipcMain.handle('factory:run-test-draft', async (event, input) => (

@@ -45,6 +45,9 @@ function validateGeneratedContainer(containerDir, course = {}) {
     if (/\.(exe|bat|cmd|ps1)$/i.test(lower)) {
       errors.push(`Ausfuehrbare Datei im Export blockiert: ${relative}`);
     }
+    if (/^secure\/|ai-provider-config\.json|api_key_contentfactory\.txt|openai[_-]?key\.txt|_key\.txt|_secret\.txt/i.test(lower)) {
+      errors.push(`Secret-/Key-Datei im Export blockiert: ${relative}`);
+    }
     if ((lower.startsWith('teilnehmer/') || lower === 'catalog/participant-content.json') && /loesung|lösung|solution/i.test(lower + content)) {
       errors.push(`Teilnehmerbereich enthaelt Loesungshinweis: ${relative}`);
     }
