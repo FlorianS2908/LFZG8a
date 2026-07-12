@@ -342,7 +342,7 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.equal((draft.analysisReport.promptQuality.promptContracts || []).some((item) => /day-draft-v1@1\.0\.0/.test(item)), true);
     assert.doesNotMatch(reportHtml, /Originaltext|Reference chunk|Buchseite/i);
     assert.doesNotMatch(reportHtml + JSON.stringify(draft.analysisReport), /OPENAI_API_KEY|s[k]-[A-Za-z0-9_-]{10,}|apiKey|secret/i);
-    assert.equal(draft.validation.isValid, true);
+    assert.equal(draft.validation.isValid, true, JSON.stringify(draft.validation));
   } finally {
     cleanup();
   }

@@ -470,7 +470,11 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
     solutionOnly: file.solutionOnly === true
   }));
   const preflightSummary = input.preflight ? renderPreflightSummary(input.preflight) : null;
-  const promptQuality = renderPromptQualitySummary(dayResults.map((result) => result.aiMeta).filter(Boolean));
+  const aiRuns = dayResults.map((result) => result.aiMeta).filter(Boolean);
+  const promptQuality = renderPromptQualitySummary(aiRuns);
+  const fallbackUsed = warnings.some((warning) => /Fallback|nicht konfiguriert/i.test(warning))
+    || aiRuns.some((run) => run.fallbackUsed === true || run.provider === 'local')
+    || Number(promptQuality.fallbackCount || 0) > 0;
   const didacticProfile = readJson(path.join(rootDir, 'catalog', 'didactic-profile.json'), {});
   const didacticDecision = readJson(path.join(rootDir, 'catalog', 'didactic-decision.json'), {});
   const didacticQuality = readJson(path.join(rootDir, 'catalog', 'didactic-quality.json'), []);
@@ -509,7 +513,7 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
     recognizedDays: input.coursePlan?.days?.length || 0,
     aiMode: input.aiMode || 'local',
     openAiUsed: (input.aiMode || 'local').startsWith('openai') && !warnings.some((warning) => /OpenAI ist nicht konfiguriert|OpenAI-.*Fallback/i.test(warning)),
-    fallbackUsed: warnings.some((warning) => /Fallback|nicht konfiguriert/i.test(warning)),
+    fallbackUsed,
     testRunStatus: input.testRun ? 'test-run' : 'manual-draft',
     testProtocol: testProtocol ? {
       path: 'reports/testprotokoll.html',
