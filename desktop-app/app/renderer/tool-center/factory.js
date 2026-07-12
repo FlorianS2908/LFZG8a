@@ -1,4 +1,5 @@
 const desktop = window.lfzq8aDesktop;
+const uploadUtils = window.ContentFactoryUploadUtils || {};
 
 const state = {
   containers: [],
@@ -6,6 +7,7 @@ const state = {
   referenceSources: [],
   curriculumDrafts: [],
   presets: [],
+  didacticProfiles: [],
   storageUsage: null,
   targetAreas: [],
   targetAreaLabels: {},
@@ -25,6 +27,7 @@ const state = {
     courseGoal: '',
     expectedOutcome: 'grundlagenkurs',
     didacticStyle: 'guided',
+    didacticProfile: { id: 'explain-demo-practice' },
     curriculumDraft: null,
     approvedCurriculumPlan: null,
     coursePlan: null,
@@ -43,6 +46,9 @@ const state = {
     testRun: null,
     promptQuality: null,
     costEstimate: null,
+    didacticRecommendation: null,
+    didacticPreview: null,
+    didacticManualOpen: false,
     promptRulesVisible: false,
     cleanupReport: null,
     status: ''
@@ -50,17 +56,17 @@ const state = {
 };
 
 const uploadAreas = [
-  ['materials', 'Unterrichtsmaterialien', '.pptx,.pdf,.docx,.md,.html,.ipynb,.zip'],
-  ['tasks', 'Aufgaben', '.html,.md,.pdf,.docx,.ipynb,.json,.zip'],
-  ['solutions', 'Loesungen', '.html,.md,.pdf,.docx,.ipynb,.java,.cs,.sql,.zip'],
-  ['quiz', 'Fragenpools / Quiz', '.json,.xml,.docx,.txt,.zip'],
-  ['project', 'Projektmaterialien', '.zip,.html,.css,.js,.java,.cs,.php,.sql,.png,.jpg,.pdf,.docx'],
-  ['source-code', 'Quellcode', '.html,.css,.js,.ts,.tsx,.jsx,.php,.java,.cs,.py,.zip'],
-  ['database', 'Datenbank / SQL', '.sql,.csv,.zip'],
-  ['assets', 'Assets / Medien', '.png,.jpg,.jpeg,.svg,.webp,.gif,.zip'],
-  ['reference-literature', 'Referenzliteratur / Fachquellen', '.pdf,.epub,.docx,.txt,.md,.html,.zip'],
-  ['other', 'Sonstige Dateien', ''],
-  ['zip-package', 'ZIP-Gesamtpaket', '.zip']
+  ['materials', 'Unterrichtsmaterialien', '.pptx,.pdf,.docx,.md,.html,.ipynb,.zip', 'Folien, Handouts und begleitende Materialien.'],
+  ['tasks', 'Aufgaben', '.html,.md,.pdf,.docx,.ipynb,.json,.zip', 'Arbeitsauftraege und Uebungen.'],
+  ['solutions', 'Loesungen', '.html,.md,.pdf,.docx,.ipynb,.java,.cs,.sql,.zip', 'Nur fuer den Dozentenbereich.'],
+  ['quiz', 'Fragenpools / Quiz', '.json,.xml,.docx,.txt,.zip', 'Quiz, Fragenpools und Testfragen.'],
+  ['project', 'Projektmaterialien', '.zip,.html,.css,.js,.java,.cs,.php,.sql,.png,.jpg,.pdf,.docx', 'Projektvorlagen und Begleitdateien.'],
+  ['source-code', 'Quellcode', '.html,.css,.js,.ts,.tsx,.jsx,.php,.java,.cs,.py,.zip', 'Quellcode wird nie automatisch ausgefuehrt.'],
+  ['database', 'Datenbank / SQL', '.sql,.csv,.zip', 'SQL bleibt Datei und wird nicht gestartet.'],
+  ['assets', 'Assets / Medien', '.png,.jpg,.jpeg,.svg,.webp,.gif,.zip', 'Bilder, Medien und Assets.'],
+  ['reference-literature', 'Referenzliteratur / Fachquellen', '.pdf,.epub,.docx,.txt,.md,.html,.zip', 'Reference-only, kein Export in Kurscontainer.'],
+  ['other', 'Sonstige Dateien', '', 'Alles, was manuell geprueft werden soll.'],
+  ['zip-package', 'ZIP-Gesamtpaket', '.zip', 'ZIP-Gesamtpakete werden sicher gestaged.']
 ];
 
 function $(selector) {
@@ -86,6 +92,53 @@ function formatBytes(value) {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${bytes} B`;
+}
+
+function createDropZoneHtml({ id, title, description, accept, files = [], multiple = true, kind = 'upload' }) {
+  if (uploadUtils.createDropZoneHtml) {
+    return uploadUtils.createDropZoneHtml({ id, title, description, accept, files, multiple, kind });
+  }
+  const totalSize = files.reduce((sum, file) => sum + Number(file.size || 0), 0);
+  const warnings = files.flatMap((file) => file.warnings || []);
+  const blocked = files.filter((file) => file.blocked).length;
+  const inputAttr = kind === 'anchor' ? 'data-wizard-anchor-files' : `data-wizard-upload="${escapeHtml(id)}"`;
+  return `
+    <section class="dropzone-card ${files.length ? 'dropzone-has-files' : ''}" data-dropzone-card="${escapeHtml(id)}">
+      <div class="factory-card-header">
+        <strong>${escapeHtml(title)}</strong>
+        <span class="status-badge">${escapeHtml(files.length)} Datei(en)</span>
+      </div>
+      <p>${escapeHtml(description || 'Dateien auswaehlen oder hier ablegen.')}</p>
+      <label class="dropzone" data-dropzone="${escapeHtml(id)}" tabindex="0" aria-label="${escapeHtml(title)} Uploadzone">
+        <span>Dateien hier ablegen oder durchsuchen</span>
+        <small>${escapeHtml(accept || 'alle Dateitypen')} | ${multiple ? 'Mehrfachupload' : 'Einzeldatei'} | ${formatBytes(totalSize)}</small>
+        <input ${inputAttr} type="file" ${multiple ? 'multiple' : ''} ${accept ? `accept="${escapeHtml(accept)}"` : ''}>
+      </label>
+      ${blocked ? `<p class="status-line status-error">${escapeHtml(blocked)} Datei(en) blockiert.</p>` : ''}
+      ${(warnings || []).slice(0, 3).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
+      ${uploadUtils.renderFileList ? uploadUtils.renderFileList(files, escapeHtml) : renderFileList(files)}
+    </section>
+  `;
+}
+
+function renderFileList(files = []) {
+  if (!files.length) return '<p class="dropzone-empty">Noch keine Dateien ausgewaehlt.</p>';
+  return `<ul class="dropzone-file-list">${files.map((file, index) => `
+    <li class="dropzone-file-chip">
+      <span title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</span>
+      <small>${formatBytes(file.size)}${file.duplicate ? ' | Duplikat' : ''}</small>
+      <button class="secondary-button" type="button" data-dropzone-remove="${escapeHtml(file.uploadArea || 'anchor')}:${index}" aria-label="Datei entfernen">entfernen</button>
+    </li>
+  `).join('')}</ul>`;
+}
+
+function getUploadAreaConfig(area, source = 'picker') {
+  if (area === 'anchor') {
+    const accept = state.wizard.anchorType === 'course-plan' ? '.xlsx,.xlsm' : state.wizard.anchorType === 'book-or-presentation' ? '.pdf,.epub,.pptx,.zip' : '.docx,.txt,.md,.html,.zip';
+    return { id: 'anchor', accept, source };
+  }
+  const found = uploadAreas.find(([id]) => id === area);
+  return { id: area, accept: found?.[2] || '', source };
 }
 
 function showPanel(panelName) {
@@ -198,7 +251,7 @@ function renderPlanWizard() {
   const wizard = state.wizard;
   const gates = getWizardGates();
   const selectedDay = wizard.approvedCurriculumPlan?.days?.find((day) => day.dayNumber === Number(wizard.selectedDayNumber)) || wizard.approvedCurriculumPlan?.days?.[0];
-  const anchorAccept = wizard.anchorType === 'course-plan' ? '.xlsx,.xlsm' : wizard.anchorType === 'book-or-presentation' ? '.pdf,.epub,.pptx' : '.docx,.txt,.md,.html';
+  const anchorAccept = wizard.anchorType === 'course-plan' ? '.xlsx,.xlsm,.zip' : wizard.anchorType === 'book-or-presentation' ? '.pdf,.epub,.pptx,.zip' : '.docx,.txt,.md,.html,.zip';
   root.innerHTML = `
     <article class="tool-card">
       <h2>Plan -> KI/Fallback -> Container</h2>
@@ -226,8 +279,8 @@ function renderPlanWizard() {
           <option value="book-or-presentation" ${wizard.anchorType === 'book-or-presentation' ? 'selected' : ''}>Buch / PDF / EPUB / PowerPoint</option>
           <option value="text-document" ${wizard.anchorType === 'text-document' ? 'selected' : ''}>Textdokument / Word / Markdown / HTML / TXT</option>
         </select></label>
-        <label>Hauptquelle<input data-wizard-anchor-files type="file" multiple accept="${escapeHtml(anchorAccept)}"></label>
       </div>
+      ${createDropZoneHtml({ id: 'anchor', title: 'Thematische Hauptquelle', description: wizard.anchorType === 'course-plan' ? 'Unterrichtsplan, Excel-Dateien oder ZIP hier ablegen.' : wizard.anchorType === 'book-or-presentation' ? 'PDF, EPUB, PowerPoint oder ZIP als Hauptquelle.' : 'Word, Markdown, HTML, TXT oder ZIP als Hauptquelle.', accept: anchorAccept, files: wizard.anchorFiles.map((file) => ({ ...file, uploadArea: 'anchor' })), multiple: true, kind: 'anchor' })}
       <small>${wizard.anchorFiles.length} Hauptquell-Datei(en) ausgewaehlt. Genau ein Anchor-Typ ist aktiv.</small>
       ${wizard.anchorType === 'book-or-presentation' ? `<label>Seiten-/Folienbereiche optional<textarea data-wizard-ranges placeholder="20-45; 80-120">${escapeHtml(wizard.rangesText)}</textarea></label>` : ''}
     </article>
@@ -254,10 +307,12 @@ function renderPlanWizard() {
       <label class="checkline"><input data-wizard-audience-check="examOrientation" type="checkbox" ${wizard.targetAudience.examOrientation ? 'checked' : ''}> Pruefungsorientierung</label>
     </article>
 
+    ${renderDidacticProfileStep(wizard)}
+
     ${renderContainerProfileStep(wizard)}
 
     <article class="tool-card">
-      <h3>5. Analyse starten</h3>
+      <h3>6. Analyse starten</h3>
       <p class="status-line">Die Container-Konfiguration steuert sichere Artefaktvorschlaege. Code, SQL und externe Tools werden nie automatisch ausgefuehrt.</p>
       <button class="primary-button" type="button" data-wizard-analyze ${wizard.anchorFiles.length ? '' : 'disabled'}>Curriculum analysieren</button>
     </article>
@@ -267,9 +322,9 @@ function renderPlanWizard() {
     <article class="tool-card">
       <h3>8. Materialien ergaenzen</h3>
       <div class="factory-grid">
-        ${uploadAreas.map(([area, label, accept]) => {
+        ${uploadAreas.map(([area, label, accept, description]) => {
           const files = wizard.uploadFiles.filter((file) => file.uploadArea === area);
-          return `<div class="factory-card"><strong>${escapeHtml(label)}</strong><small>${files.length} Datei(en), ${formatBytes(files.reduce((sum, file) => sum + Number(file.size || 0), 0))}</small><label class="drop-line">Dateien/ZIPs<input data-wizard-upload="${escapeHtml(area)}" type="file" multiple ${accept ? `accept="${escapeHtml(accept)}"` : ''}></label></div>`;
+          return createDropZoneHtml({ id: area, title: label, description, accept, files, multiple: true, kind: 'upload' });
         }).join('')}
       </div>
       <button class="secondary-button" type="button" data-wizard-import ${wizard.uploadFiles.length ? '' : 'disabled'}>Uploads in Staging importieren</button>
@@ -330,7 +385,7 @@ function renderContainerProfileStep(wizard) {
   const presets = state.presets || [];
   return `
     <article class="tool-card">
-      <h3>4. Container-Konfiguration</h3>
+      <h3>5. Container-Konfiguration</h3>
       <div class="factory-form-grid">
         <label>Preset<select data-wizard-preset><option value="">Kein Preset</option>${presets.map((preset) => `<option value="${escapeHtml(preset.id)}" ${wizard.selectedPresetId === preset.id ? 'selected' : ''}>${escapeHtml(preset.label || preset.id)}</option>`).join('')}</select></label>
         <label>Kurstyp<select data-container-profile="courseType">${types.map((value) => `<option value="${value}" ${profile.courseType === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
@@ -353,6 +408,70 @@ function renderContainerProfileStep(wizard) {
         <button class="secondary-button" type="button" data-profile-preset="jupyter">Jupyter hinzufuegen</button>
       </div>
       ${wizard.curriculumDraft ? renderArtifactSuggestionPreview(wizard) : '<small>Artefakt-Vorschlaege erscheinen nach der Curriculum-Analyse.</small>'}
+    </article>
+  `;
+}
+
+function getSelectedDidacticProfile() {
+  if (state.wizard.didacticProfile?.customized) return state.wizard.didacticProfile;
+  const selectedId = state.wizard.didacticProfile?.id || 'explain-demo-practice';
+  return (state.didacticProfiles || []).find((profile) => profile.id === selectedId)
+    || (state.didacticProfiles || [])[0]
+    || state.wizard.didacticProfile
+    || { id: 'explain-demo-practice', label: 'Erklaeren, Demo, Ueben', lessonFlow: [] };
+}
+
+function renderDidacticProfileStep(wizard) {
+  const profiles = state.didacticProfiles || [];
+  const selected = getSelectedDidacticProfile();
+  const profile = selected || {};
+  const recommendation = wizard.didacticRecommendation;
+  const preview = wizard.didacticPreview;
+  const fit = recommendation?.recommended?.fit;
+  const scoreClass = fit?.level === 'weak' ? 'status-error' : fit?.level === 'usable' ? 'status-warning' : '';
+  const options = {
+    demoStrategy: ['none', 'teacher-demo', 'live-coding', 'error-demo', 'worked-example', 'before-after'],
+    releaseStrategy: ['manual-by-teacher', 'after-quiz', 'after-analysis', 'after-previous-task', 'station-wise'],
+    taskProgression: ['normal-to-hard', 'easy-normal-hard', 'worked-guided-faded-free', 'analysis-correction-transfer', 'stations-easy-to-challenge', 'timed-normal-to-hard', 'project-increment', 'code-along-extension'],
+    supportLevel: ['step-by-step', 'guided', 'coaching', 'self-directed', 'exam-focused', 'high-to-low']
+  };
+  return `
+    <article class="tool-card">
+      <h3>4. Didaktisches Kursprofil</h3>
+      ${fit ? `<p class="status-line ${scoreClass}">Empfohlen: ${escapeHtml(recommendation.recommended.profile?.label || '-')} | Fit Score ${escapeHtml(fit.score)} (${escapeHtml(fit.level)})</p>` : '<p class="status-line">Empfehlung wird nach Kursdaten berechnet.</p>'}
+      <div class="factory-form-grid">
+        <label>Profil<select data-wizard-didactic-profile>
+          ${profiles.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === profile.id ? 'selected' : ''}>${escapeHtml(item.label || item.id)}</option>`).join('')}
+        </select></label>
+        <label>Unterrichtsmodell<input value="${escapeHtml(profile.teachingModel || '-')}" readonly></label>
+        <label>Demo-Strategie<select data-didactic-field="demoStrategy">${options.demoStrategy.map((value) => `<option value="${value}" ${profile.demoStrategy === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+        <label>Freigabe<select data-didactic-field="releaseStrategy">${options.releaseStrategy.map((value) => `<option value="${value}" ${profile.releaseStrategy === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+        <label>Progression<select data-didactic-field="taskProgression">${options.taskProgression.map((value) => `<option value="${value}" ${profile.taskProgression === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+        <label>Support<select data-didactic-field="supportLevel">${options.supportLevel.map((value) => `<option value="${value}" ${profile.supportLevel === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+        <label>Assessment<input data-didactic-field="assessmentMode" value="${escapeHtml(profile.assessmentMode || '')}"></label>
+        <label>Reflexion<input data-didactic-field="reflectionMode" value="${escapeHtml(profile.reflectionMode || '')}"></label>
+        <label>Sozialform<input data-didactic-field="socialForm" value="${escapeHtml(profile.socialForm || '')}"></label>
+      </div>
+      <label class="checkline"><input data-didactic-check="defaultDemoEnabled" type="checkbox" ${profile.defaultDemoEnabled !== false ? 'checked' : ''}> Demos standardmaessig erzeugen</label>
+      <label class="checkline"><input data-didactic-check="defaultParticipantDemoVisible" type="checkbox" ${profile.defaultParticipantDemoVisible === true ? 'checked' : ''}> Demos fuer Teilnehmende sichtbar</label>
+      <div class="validation-box">
+        <strong>${escapeHtml(profile.label || profile.id)}</strong>
+        <p>${escapeHtml(profile.description || '')}</p>
+        <div class="summary-grid">
+          <span>Progression: ${escapeHtml(profile.taskProgression || '-')}</span>
+          <span>Support: ${escapeHtml(profile.supportLevel || '-')}</span>
+          <span>Assessment: ${escapeHtml(profile.assessmentMode || '-')}</span>
+          <span>Reflexion: ${escapeHtml(profile.reflectionMode || '-')}</span>
+        </div>
+        <small>Lesson Flow: ${(profile.lessonFlow || []).map((phase) => escapeHtml(phase)).join(' -> ') || '-'}</small>
+      </div>
+      ${recommendation ? `<div class="validation-box"><strong>Warum empfohlen?</strong>${(recommendation.recommended.fit?.reasons || []).slice(0, 4).map((item) => `<p>${escapeHtml(item)}</p>`).join('')}${(recommendation.warnings || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}<strong>Alternative Profile</strong><ul>${(recommendation.alternatives || []).slice(0, 4).map((item) => `<li>${escapeHtml(item.profile?.label || item.profile?.id)} (${escapeHtml(item.score)}): ${escapeHtml(item.reason)}</li>`).join('')}</ul></div>` : ''}
+      ${preview ? `<div class="validation-box"><strong>Was wird dieses Profil erzeugen?</strong><p>Demo: ${escapeHtml(preview.demoType)} | Assessment: ${escapeHtml(preview.assessment)} | Reflexion: ${escapeHtml(preview.reflection?.mode || '-')}</p><p>Unterricht: ${(preview.expectedDayFlow || []).map((item) => escapeHtml(item.title)).join(' -> ')}</p><p>Aufgaben: ${(preview.taskTypes || []).map((item) => escapeHtml(item)).join(' | ')}</p><p>Freigabe: ${(preview.releasePlan || []).slice(0, 3).map((item) => escapeHtml(item.releaseHint)).join(' | ')}</p>${(preview.risks || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}</div>` : ''}
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-didactic-refresh>Empfehlung neu berechnen</button>
+        <button class="primary-button" type="button" data-didactic-apply-recommendation ${recommendation?.recommended?.profile?.id ? '' : 'disabled'}>Empfehlung uebernehmen</button>
+      </div>
+      <p class="status-line">Das Profil steuert Tagesaufbau, Aufgabenprogression, Demo-Vorschlaege, Dozentenhinweise und Freigabelogik.</p>
     </article>
   `;
 }
@@ -616,9 +735,11 @@ function getWizardGates() {
   const approvedDone = wizard.approvedCurriculumPlan?.status === 'approved';
   const draftDone = Boolean(wizard.dayDraft);
   const containerDone = Boolean(wizard.generatedDraft);
+  const didacticDone = Boolean(getSelectedDidacticProfile()?.id);
   return [
     { label: 'Kursdaten', done: courseDone, active: !courseDone },
     { label: 'Hauptquelle', done: anchorDone, active: courseDone && !anchorDone },
+    { label: 'Didaktik', done: didacticDone, active: courseDone },
     { label: 'Curriculum', done: curriculumDone, active: anchorDone && !curriculumDone },
     { label: 'Freigabe', done: approvedDone, active: curriculumDone && !approvedDone },
     { label: 'Uploads/Referenzen', done: Boolean(wizard.importBatch || wizard.uploadFiles.length || wizard.useReferences), active: approvedDone },
@@ -638,13 +759,20 @@ function bindPlanWizardEvents() {
   }));
   $('[data-wizard-anchor-type]')?.addEventListener('change', (event) => {
     state.wizard.anchorType = event.target.value;
-    state.wizard.anchorFiles = [];
     state.wizard.curriculumDraft = null;
     state.wizard.approvedCurriculumPlan = null;
+    if (state.wizard.anchorFiles.length) {
+      state.wizard.anchorFiles = state.wizard.anchorFiles.map((file) => ({
+        ...file,
+        warnings: [...(file.warnings || []), 'Der Anchor-Typ wurde geaendert. Bitte pruefen Sie die ausgewaehlten Dateien.']
+      }));
+      state.wizard.status = 'Der Anchor-Typ wurde geaendert. Bitte pruefen Sie die ausgewaehlten Dateien.';
+    }
     renderPlanWizard();
   });
   $('[data-wizard-anchor-files]')?.addEventListener('change', (event) => {
-    state.wizard.anchorFiles = Array.from(event.target.files || []).map((file) => ({ name: file.name, path: file.path || '', size: file.size, type: file.type }));
+    handleDropZoneFiles('anchor', event.target.files, 'picker');
+    event.target.value = '';
     renderPlanWizard();
   });
   $('[data-wizard-ranges]')?.addEventListener('input', (event) => {
@@ -668,6 +796,49 @@ function bindPlanWizardEvents() {
   $('[data-wizard-style]')?.addEventListener('change', (event) => {
     state.wizard.didacticStyle = event.target.value;
   });
+  $('[data-wizard-didactic-profile]')?.addEventListener('change', (event) => {
+    state.wizard.didacticProfile = (state.didacticProfiles || []).find((profile) => profile.id === event.target.value) || { id: event.target.value };
+    state.wizard.curriculumDraft = null;
+    state.wizard.approvedCurriculumPlan = null;
+    state.wizard.status = 'Didaktik geaendert. Curriculum bitte neu analysieren.';
+    refreshDidacticRecommendation().then(renderPlanWizard);
+  });
+  $('[data-didactic-refresh]')?.addEventListener('click', () => refreshDidacticRecommendation().then(renderPlanWizard));
+  $('[data-didactic-apply-recommendation]')?.addEventListener('click', () => {
+    const recommended = state.wizard.didacticRecommendation?.recommended?.profile;
+    if (!recommended) return;
+    state.wizard.didacticProfile = { ...recommended };
+    state.wizard.curriculumDraft = null;
+    state.wizard.approvedCurriculumPlan = null;
+    state.wizard.status = 'Empfohlenes didaktisches Profil uebernommen. Curriculum bitte neu pruefen.';
+    refreshDidacticRecommendation().then(renderPlanWizard);
+  });
+  $all('[data-didactic-field]').forEach((field) => field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', () => {
+    const base = getSelectedDidacticProfile();
+    state.wizard.didacticProfile = {
+      ...base,
+      [field.dataset.didacticField]: field.value,
+      customized: true,
+      baseProfileId: base.baseProfileId || base.id
+    };
+    state.wizard.curriculumDraft = null;
+    state.wizard.approvedCurriculumPlan = null;
+    state.wizard.status = 'Didaktisches Profil angepasst. Curriculum bitte neu pruefen.';
+    refreshDidacticRecommendation().then(renderPlanWizard);
+  }));
+  $all('[data-didactic-check]').forEach((field) => field.addEventListener('change', () => {
+    const base = getSelectedDidacticProfile();
+    state.wizard.didacticProfile = {
+      ...base,
+      [field.dataset.didacticCheck]: field.checked,
+      customized: true,
+      baseProfileId: base.baseProfileId || base.id
+    };
+    state.wizard.curriculumDraft = null;
+    state.wizard.approvedCurriculumPlan = null;
+    state.wizard.status = 'Didaktisches Profil angepasst. Curriculum bitte neu pruefen.';
+    refreshDidacticRecommendation().then(renderPlanWizard);
+  }));
   $all('[data-container-profile]').forEach((field) => field.addEventListener('change', () => {
     state.wizard.containerProfile[field.dataset.containerProfile] = field.value;
     renderPlanWizard();
@@ -714,17 +885,11 @@ function bindPlanWizardEvents() {
   $('[data-wizard-plan]')?.addEventListener('change', parseWizardPlan);
   $('[data-wizard-sheet]')?.addEventListener('change', parseWizardPlanSheet);
   $all('[data-wizard-upload]').forEach((input) => input.addEventListener('change', () => {
-    const area = input.dataset.wizardUpload;
-    Array.from(input.files || []).forEach((file) => state.wizard.uploadFiles.push({
-      name: file.name,
-      path: file.path || '',
-      size: file.size,
-      type: file.type,
-      uploadArea: area
-    }));
+    handleDropZoneFiles(input.dataset.wizardUpload, input.files, 'picker');
     input.value = '';
     renderPlanWizard();
   }));
+  bindDropZoneEvents();
   $('[data-wizard-import]')?.addEventListener('click', importWizardUploads);
   $('[data-wizard-references]')?.addEventListener('change', (event) => {
     state.wizard.useReferences = event.target.checked;
@@ -782,6 +947,71 @@ function bindPlanWizardEvents() {
   }));
 }
 
+function bindDropZoneEvents() {
+  $all('[data-dropzone]').forEach((zone) => {
+    zone.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        zone.querySelector('input[type="file"]')?.click();
+      }
+    });
+    zone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      zone.classList.add('dropzone-is-dragover');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dropzone-is-dragover'));
+    zone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      zone.classList.remove('dropzone-is-dragover');
+      handleDropZoneFiles(zone.dataset.dropzone, event.dataTransfer?.files || [], 'drop');
+      renderPlanWizard();
+    });
+  });
+  $all('[data-dropzone-remove]').forEach((button) => button.addEventListener('click', () => {
+    const [zoneId, index] = String(button.dataset.dropzoneRemove || '').split(':');
+    removeDropZoneFile(zoneId, Number(index));
+    renderPlanWizard();
+  }));
+}
+
+function handleDropZoneFiles(zoneId, fileList, source = 'picker') {
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  const config = getUploadAreaConfig(zoneId, source);
+  const existing = zoneId === 'anchor'
+    ? state.wizard.anchorFiles.map((file) => ({ ...file, uploadArea: 'anchor' }))
+    : state.wizard.uploadFiles.filter((file) => file.uploadArea === zoneId);
+  const result = uploadUtils.validateUploadSelection
+    ? uploadUtils.validateUploadSelection(files, config, existing)
+    : { files: files.map((file) => ({ name: file.name, path: file.path || '', size: file.size, type: file.type, lastModified: file.lastModified, uploadArea: zoneId, source, warnings: [] })), blockedFiles: [], warnings: [], errors: [] };
+  if (zoneId === 'anchor') {
+    state.wizard.anchorFiles = [
+      ...state.wizard.anchorFiles,
+      ...result.files.map((file) => ({ ...file, uploadArea: undefined }))
+    ];
+  } else {
+    state.wizard.uploadFiles = [...state.wizard.uploadFiles, ...result.files];
+  }
+  const messages = [
+    result.files.length ? `${result.files.length} Datei(en) hinzugefuegt.` : '',
+    result.blockedFiles?.length ? `${result.blockedFiles.length} Datei(en) blockiert.` : '',
+    ...(result.errors || [])
+  ].filter(Boolean);
+  state.wizard.status = messages.join(' ');
+}
+
+function removeDropZoneFile(zoneId, index) {
+  if (zoneId === 'anchor') {
+    state.wizard.anchorFiles = state.wizard.anchorFiles.filter((_, fileIndex) => fileIndex !== Number(index));
+    state.wizard.status = 'Hauptquell-Datei entfernt.';
+    return;
+  }
+  state.wizard.uploadFiles = uploadUtils.removeDropZoneFile
+    ? uploadUtils.removeDropZoneFile(state.wizard.uploadFiles, zoneId, index)
+    : state.wizard.uploadFiles.filter((file, fileIndex) => !(file.uploadArea === zoneId && fileIndex === Number(index)));
+  state.wizard.status = 'Upload-Datei entfernt.';
+}
+
 async function applyWizardPreset() {
   if (!state.wizard.selectedPresetId) return;
   try {
@@ -796,6 +1026,37 @@ async function applyWizardPreset() {
     state.wizard.status = error.message;
   }
   renderPlanWizard();
+}
+
+function buildDidacticRecommendationInput() {
+  return {
+    course: state.wizard.course,
+    duration: state.wizard.duration,
+    targetAudience: state.wizard.targetAudience,
+    courseGoal: state.wizard.courseGoal,
+    expectedOutcome: state.wizard.expectedOutcome,
+    containerProfile: state.wizard.containerProfile,
+    courseType: state.wizard.containerProfile?.courseType,
+    didacticProfile: getSelectedDidacticProfile()
+  };
+}
+
+async function refreshDidacticRecommendation() {
+  if (!desktop?.factory?.recommendDidacticProfiles) return;
+  try {
+    const input = buildDidacticRecommendationInput();
+    state.wizard.didacticRecommendation = await desktop.factory.recommendDidacticProfiles(input);
+    state.wizard.didacticPreview = await desktop.factory.createDidacticPreview({
+      didacticProfile: getSelectedDidacticProfile(),
+      courseType: state.wizard.containerProfile?.courseType,
+      targetAudience: state.wizard.targetAudience,
+      duration: state.wizard.duration,
+      courseGoal: state.wizard.courseGoal || state.wizard.course.courseName
+    });
+  } catch (error) {
+    state.wizard.didacticRecommendation = null;
+    state.wizard.didacticPreview = null;
+  }
 }
 
 async function parseWizardPlan(event) {
@@ -861,6 +1122,7 @@ async function analyzeWizardCurriculum() {
       courseGoal: state.wizard.courseGoal,
       expectedOutcome: state.wizard.expectedOutcome,
       didacticStyle: state.wizard.didacticStyle,
+      didacticProfile: getSelectedDidacticProfile(),
       containerProfile: state.wizard.containerProfile,
       aiMode: state.wizard.aiMode
     });
@@ -1020,6 +1282,7 @@ async function generateWizardDayDraft() {
       useReferences: state.wizard.useReferences,
       targetAudience: state.wizard.targetAudience,
       containerProfile: state.wizard.containerProfile,
+      didacticProfile: getSelectedDidacticProfile(),
       aiMode: state.wizard.aiMode
     });
     state.wizard.dayResults = [
@@ -1045,6 +1308,7 @@ async function generateAllWizardDayDrafts() {
       useReferences: state.wizard.useReferences,
       targetAudience: state.wizard.targetAudience,
       containerProfile: state.wizard.containerProfile,
+      didacticProfile: getSelectedDidacticProfile(),
       aiMode: state.wizard.aiMode
     });
     state.wizard.dayDraft = state.wizard.dayResults[0] || null;
@@ -1068,6 +1332,7 @@ async function reviseWizardDayDraft() {
       correctionPrompt: state.wizard.corrections,
       targetAudience: state.wizard.targetAudience,
       containerProfile: state.wizard.containerProfile,
+      didacticProfile: getSelectedDidacticProfile(),
       aiMode: state.wizard.aiMode
     });
     state.wizard.dayResults = [
@@ -1097,6 +1362,7 @@ async function createWizardDraft() {
       corrections: state.wizard.corrections,
       targetAudience: state.wizard.targetAudience,
       containerProfile: state.wizard.containerProfile,
+      didacticProfile: getSelectedDidacticProfile(),
       dayResults
     });
     state.wizard.status = 'Draft-Container erzeugt.';
@@ -1124,6 +1390,7 @@ function buildWizardTestInput(overrides = {}) {
     corrections: state.wizard.corrections,
     targetAudience: state.wizard.targetAudience,
     containerProfile: state.wizard.containerProfile,
+    didacticProfile: getSelectedDidacticProfile(),
     selectedPresetId: state.wizard.selectedPresetId,
     dayResults,
     ...overrides
@@ -1368,6 +1635,9 @@ async function loadState() {
   state.referenceSources = data.referenceSources || [];
   state.curriculumDrafts = data.curriculumDrafts || [];
   state.presets = data.presets || [];
+  state.didacticProfiles = data.didacticProfiles || [];
+  if (!state.wizard.didacticProfile?.label) state.wizard.didacticProfile = getSelectedDidacticProfile();
+  await refreshDidacticRecommendation();
   state.storageUsage = data.storageUsage || state.storageUsage;
   state.targetAreas = data.targetAreas || [];
   state.targetAreaLabels = data.targetAreaLabels || {};

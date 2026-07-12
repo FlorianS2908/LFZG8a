@@ -7,6 +7,7 @@ function createTestProtocol(input = {}) {
     ...preflightChecks(input),
     ...curriculumChecks(input),
     ...sourceChecks(input),
+    ...didacticChecks(input),
     ...artifactChecks(input),
     ...demoChecks(input),
     ...contentChecks(input),
@@ -141,6 +142,52 @@ function sourceChecks(input) {
     statusCheck('extraction-quality', 'Quellenextraktion', 'Extraktionsqualitaet je Quelle', extraction.every((item) => !item.quality || item.quality.score >= 0.35), `${extraction.length} Quelle(n)`),
     (anchor.ranges || '').length ? pass('ranges-used', 'Quellenextraktion', 'Ranges angewendet', 'Bereichsangaben wurden dokumentiert.') : warn('ranges-used', 'Quellenextraktion', 'Ranges angewendet', 'Keine Bereichsangaben genutzt.'),
     pass('no-raw-source-export', 'Quellenextraktion', 'Keine Rohtexte exportiert', 'Protokoll dokumentiert nur Metadaten und Checks.')
+  ];
+}
+
+function didacticChecks(input) {
+  const profile = input.didacticProfile || input.curriculum?.didacticProfile || {};
+  const decision = input.didacticDecision || {};
+  const fit = decision.fit || {};
+  const recommendation = decision.recommendation || {};
+  const quality = input.didacticQuality || [];
+  const releasePlan = input.releasePlan || [];
+  const dayResults = input.dayResults || [];
+  const teacherRunbooks = input.teacherRunbooks || dayResults.map((day) => day.teacherRunbook).filter(Boolean);
+  const runbookPhases = teacherRunbooks.flatMap((runbook) => runbook.phases || []);
+  const flowEntries = dayResults.flatMap((day) => day.didacticFlow || []);
+  const selectedId = profile.id || '';
+  const recommendedId = recommendation.recommended?.profile?.id || '';
+  const qualityFailed = quality.some((item) => item.status === STATUS.FAILED || item.status === 'failed');
+  const qualityWarnings = quality.some((item) => item.status === STATUS.WARNING || item.status === 'warning');
+  const teacherNotesRequired = profile.requiresTeacherNotes === true;
+  const reflectionRequired = profile.requiresReflection === true;
+  return [
+    statusCheck('didactic-profile-present', 'Didaktik', 'Didaktikprofil vorhanden', Boolean(profile.id && profile.teachingModel), `Profil: ${profile.id || 'fehlt'}`),
+    statusCheck('didactic-fit-score', 'Didaktik', 'Fit Score vorhanden', Number(fit.score || 0) >= 50, `Fit Score: ${fit.score || 0} (${fit.level || 'n/a'})`),
+    selectedId && recommendedId && selectedId !== recommendedId
+      ? warn('didactic-recommended-match', 'Didaktik', 'Profil empfohlen ja/nein', `Gewaehltes Profil ${selectedId} weicht von Empfehlung ${recommendedId} ab.`)
+      : pass('didactic-recommended-match', 'Didaktik', 'Profil empfohlen ja/nein', 'Gewaehltes Profil entspricht der Empfehlung oder keine Abweichung dokumentiert.'),
+    statusCheck('didactic-flow-present', 'Didaktik', 'Lesson Flow vorhanden', Array.isArray(profile.lessonFlow) && profile.lessonFlow.length > 0, (profile.lessonFlow || []).join(' > ') || 'fehlt'),
+    statusCheck('didactic-demo-strategy', 'Didaktik', 'Demo-Strategie dokumentiert', Boolean(profile.demoStrategy), `Demo: ${profile.demoStrategy || 'fehlt'}`),
+    statusCheck('didactic-release-strategy', 'Didaktik', 'Freigabe-Strategie dokumentiert', Boolean(profile.releaseStrategy), `Freigabe: ${profile.releaseStrategy || 'fehlt'}`),
+    statusCheck('didactic-day-flow', 'Didaktik', 'Tagesentwuerfe enthalten Flow', !dayResults.length || dayResults.every((day) => (day.didacticFlow || []).length), `${flowEntries.length} Flow-Eintraege`),
+    statusCheck('didactic-release-plan', 'Didaktik', 'ReleasePlan erzeugt', Array.isArray(releasePlan) && releasePlan.length > 0, `${releasePlan.length} Freigabe-Hinweise`),
+    statusCheck('didactic-release-plan-complete', 'Didaktik', 'ReleasePlan vollstaendig', (releasePlan || []).every((item) => item.id && item.itemType && item.releaseStrategy && Array.isArray(item.visibleForRoles)), 'ReleasePlan Schema geprueft.'),
+    statusCheck('teacher-runbook-present', 'Didaktik', 'teacherRunbook vorhanden', teacherRunbooks.length > 0 && (!dayResults.length || teacherRunbooks.length >= dayResults.length), `${teacherRunbooks.length} Fahrplan/Fahrplaene`),
+    statusCheck('teacher-runbook-phases', 'Didaktik', 'Unterrichtsphasen vollstaendig', runbookPhases.length >= teacherRunbooks.length * 4 && runbookPhases.every((phase) => phase.teacherAction && phase.participantAction), `${runbookPhases.length} Phase(n)`),
+    statusCheck('teacher-runbook-questions', 'Didaktik', 'Moderationsfragen vorhanden', runbookPhases.some((phase) => (phase.moderationQuestions || []).length), 'Moderationsfragen geprueft.'),
+    statusCheck('teacher-runbook-demos', 'Didaktik', 'Demo-Schritte vorhanden', !input.demoTargets?.length || runbookPhases.some((phase) => phase.demoId || /demo/i.test(`${phase.title} ${phase.teacherAction}`)), 'Demo-Bezug geprueft.'),
+    statusCheck('teacher-runbook-releases', 'Didaktik', 'Freigabe-Schritte vorhanden', !releasePlan.length || runbookPhases.some((phase) => (phase.releaseActions || []).length || /freig/i.test(`${phase.title} ${phase.teacherAction}`)), 'Freigabe-Bezug geprueft.'),
+    statusCheck('teacher-runbook-problems', 'Didaktik', 'Typische Fehler vorhanden', runbookPhases.some((phase) => (phase.typicalProblems || []).length), 'Typische Fehler geprueft.'),
+    statusCheck('teacher-runbook-differentiation', 'Didaktik', 'Differenzierung vorhanden', runbookPhases.some((phase) => phase.differentiation?.supportWeak && phase.differentiation?.challengeStrong), 'Differenzierung geprueft.'),
+    statusCheck('teacher-runbook-checkpoints', 'Didaktik', 'Checkpoints vorhanden', runbookPhases.some((phase) => phase.checkpoint), 'Checkpoints geprueft.'),
+    statusCheck('participant-no-teacher-runbook', 'Didaktik', 'Teilnehmerbereich ohne Dozentenhinweise', !JSON.stringify(input.files || []).match(/teilnehmer\/.*(unterrichtsablauf|teacherRunbook|dozenten-fahrplan)/i), 'Teilnehmerdateien geprueft.'),
+    qualityFailed ? fail('didactic-quality-gate', 'Didaktik', 'Didactic Quality Gate', 'Didactic Quality Gate meldet Fehler.') : qualityWarnings ? warn('didactic-quality-gate', 'Didaktik', 'Didactic Quality Gate', 'Didactic Quality Gate meldet Warnungen.') : pass('didactic-quality-gate', 'Didaktik', 'Didactic Quality Gate', 'Didactic Quality Gate bestanden.'),
+    teacherNotesRequired ? statusCheck('didactic-teacher-notes', 'Didaktik', 'Dozentenhinweise vorhanden', dayResults.some((day) => JSON.stringify(day.webvariant?.teacherHtmlSections || []).match(/Didaktisches Konzept|Unterrichtsfluss|Freigabehinweis/i)), 'Dozentenansicht geprueft.') : pass('didactic-teacher-notes', 'Didaktik', 'Dozentenhinweise vorhanden', 'Nicht erforderlich.'),
+    reflectionRequired ? statusCheck('didactic-reflection', 'Didaktik', 'Reflexion vorhanden', dayResults.some((day) => day.reflection || JSON.stringify(day.webvariant || {}).match(/Reflexion|Rueckblick/i)), 'Reflexion geprueft.') : pass('didactic-reflection', 'Didaktik', 'Reflexion vorhanden', 'Nicht erforderlich.'),
+    profile.id === 'guided-coding' ? statusCheck('guided-coding-flow', 'Didaktik', 'Guided Coding Ablauf', (profile.lessonFlow || []).includes('live-coding') && (profile.lessonFlow || []).includes('code-along'), 'Live-Coding und Code-Along geprueft.') : pass('guided-coding-flow', 'Didaktik', 'Guided Coding Ablauf', 'Nicht zutreffend.'),
+    profile.id === 'exam-training' ? statusCheck('exam-training-flow', 'Didaktik', 'Pruefungstraining Ablauf', /rubric|mini-test|quiz|bewertung/i.test(`${profile.assessmentMode || ''} ${JSON.stringify(releasePlan)}`), 'Assessment geprueft.') : pass('exam-training-flow', 'Didaktik', 'Pruefungstraining Ablauf', 'Nicht zutreffend.')
   ];
 }
 

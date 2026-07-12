@@ -4,6 +4,7 @@ Dieses Repository enthaelt die Plattform `ueTool_asSaaS` und den Kurscontainer `
 
 `ueTool_asSaaS` ist die lokale Desktop-Plattform. `HTML/CSS` ist der fachliche Kurscontainer. Die `ContentFactory` ist das Admin-Werkzeug zur Erstellung, Pruefung und Duplizierung von Kurscontainern.
 Die ContentFactory erzeugt optional Demo-Buttons in Dozenten-Webvarianten. Direkter Demo-Launch funktioniert nur in der Electron-App; Standalone-Drafts zeigen sichere Pfad-/Hinweistexte.
+Didaktische Kursprofile steuern Lesson Flow, Demo-Strategie, Aufgabenprogression, Reflexion und Freigabelogik; Details stehen in `docs/CONTENT_FACTORY_DIDACTIC_COURSE_PROFILES.md`.
 
 ## Aktueller Hauptstand
 

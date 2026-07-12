@@ -9,6 +9,7 @@ const { validateCurriculumPlan } = require('./curriculum-plan-validator');
 const { renderCurriculumReport } = require('./curriculum-plan-renderer');
 const { createCurriculumReviewStore } = require('./curriculum-review-store');
 const { assessCurriculumQuality } = require('./curriculum-quality-service');
+const { normalizeDidacticProfile, suggestDidacticProfile } = require('../didactics/didactic-profile-service');
 
 function createCurriculumPlannerService({ factoryDir, aiOrchestrator }) {
   const store = createCurriculumReviewStore(path.join(factoryDir, 'curriculum-drafts'));
@@ -40,6 +41,16 @@ function createCurriculumPlannerService({ factoryDir, aiOrchestrator }) {
     const anchor = input.anchor?.id ? input.anchor : createCurriculumAnchor(input.anchor || input);
     const duration = normalizeDuration(input.duration || {});
     const analyzed = analyzeCurriculumSource(anchor, input);
+    const didacticProfile = input.didacticProfile?.id
+      ? normalizeDidacticProfile(input.didacticProfile)
+      : suggestDidacticProfile({
+        courseType: input.containerProfile?.courseType,
+        targetAudience: input.targetAudience || {},
+        examOrientation: input.targetAudience?.examOrientation,
+        projectOrientation: input.targetAudience?.projectOrientation,
+        courseGoal: input.courseGoal,
+        expectedOutcome: input.expectedOutcome
+      });
     const generated = aiOrchestrator?.generateCurriculumPlan
       ? await aiOrchestrator.generateCurriculumPlan({
         anchor,
@@ -49,6 +60,7 @@ function createCurriculumPlannerService({ factoryDir, aiOrchestrator }) {
         courseGoal: input.courseGoal || '',
         expectedOutcome: input.expectedOutcome || '',
         didacticStyle: input.didacticStyle || 'guided',
+        didacticProfile,
         topics: analyzed.topics
       }, input.aiMode || 'local')
       : null;
@@ -66,6 +78,7 @@ function createCurriculumPlannerService({ factoryDir, aiOrchestrator }) {
       courseGoal: input.courseGoal || '',
       expectedOutcome: input.expectedOutcome || 'grundlagenkurs',
       didacticStyle: input.didacticStyle || 'guided',
+      didacticProfile,
       days: distributed.days,
       unassignedTopics: [],
       extractedSourceOutline: analyzed.outline,
@@ -141,6 +154,7 @@ function createCurriculumPlannerService({ factoryDir, aiOrchestrator }) {
       sourceFiles: draft.anchor?.sourceFiles || [],
       ranges: draft.anchor?.ranges || [],
       targetAudience: draft.targetAudience,
+      didacticProfile: draft.didacticProfile,
       duration: draft.duration,
       recognizedTopics: draft.days.flatMap((day) => day.topics || []).map((topic) => topic.title),
       dayDistribution: draft.days.map((day) => ({ dayNumber: day.dayNumber, estimatedUE: day.estimatedUE, topicCount: day.topics.length })),
@@ -193,6 +207,7 @@ function mergeDraft(draft, patch) {
     ...patch,
     course: { ...draft.course, ...(patch.course || {}) },
     targetAudience: { ...draft.targetAudience, ...(patch.targetAudience || {}) },
+    didacticProfile: patch.didacticProfile ? normalizeDidacticProfile(patch.didacticProfile) : draft.didacticProfile,
     duration: { ...draft.duration, ...(patch.duration || {}) },
     anchor: { ...draft.anchor, ...(patch.anchor || {}) },
     days: patch.days || draft.days

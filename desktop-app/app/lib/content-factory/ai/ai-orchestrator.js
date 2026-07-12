@@ -58,7 +58,7 @@ class AiOrchestrator {
         const normalized = normalizeDayGenerationResult(await this.openai.generateDayDraft(input));
         const validation = validateDayGenerationResult(normalized);
         if (!validation.valid) throw new Error(`Ungueltige KI-Ausgabe: ${validation.errors.join(', ')}`);
-        const outputReview = reviewOutput(normalized, { purpose, targetAudience: input.targetAudience || input.curriculumPlan?.targetAudience || {}, containerProfile: input.containerProfile || {} });
+        const outputReview = reviewOutput(normalized, outputReviewContext(input, purpose));
         if (outputReview.status === 'failed') throw new Error(`Output Review failed: ${outputReview.errors.join(', ')}`);
         normalized.aiMeta = createAiMeta({ provider: 'openai', model: this.openai.model || '', purpose, promptQuality: gate, reviewUsed: requested.includes('review'), schemaValid: true, outputReview });
         normalized.warnings.push(...normalized.aiMeta.warnings);
@@ -136,7 +136,7 @@ class AiOrchestrator {
         const normalized = normalizeDayGenerationResult(await this.openai.reviseDayDraft(input));
         const validation = validateDayGenerationResult(normalized);
         if (!validation.valid) throw new Error(`Ungueltige KI-Revision: ${validation.errors.join(', ')}`);
-        const outputReview = reviewOutput(normalized, { purpose, targetAudience: input.targetAudience || input.curriculumPlan?.targetAudience || {}, containerProfile: input.containerProfile || {} });
+        const outputReview = reviewOutput(normalized, outputReviewContext(input, purpose));
         if (outputReview.status === 'failed') throw new Error(`Output Review failed: ${outputReview.errors.join(', ')}`);
         normalized.aiMeta = createAiMeta({ provider: 'openai', model: this.openai.model || '', purpose, promptQuality: gate, reviewUsed: requested.includes('review'), schemaValid: true, outputReview });
         return normalized;
@@ -171,7 +171,7 @@ class AiOrchestrator {
 
   withAiMeta(result, { provider, purpose, gate, fallbackUsed = false, qualityGateBlockedProvider = false, outputWarning = '', input = {} }) {
     const normalized = normalizeDayGenerationResult(result);
-    const outputReview = reviewOutput(normalized, { purpose, targetAudience: input.targetAudience || input.curriculumPlan?.targetAudience || {}, containerProfile: input.containerProfile || {} });
+    const outputReview = reviewOutput(normalized, outputReviewContext(input, purpose));
     normalized.aiMeta = createAiMeta({ provider, model: provider === 'openai' ? this.openai.model || '' : 'LocalHeuristicProvider', purpose, promptQuality: gate, fallbackUsed, qualityGateBlockedProvider, outputReview, warnings: outputWarning ? [outputWarning] : [] });
     normalized.warnings = Array.from(new Set([...(normalized.warnings || []), outputWarning, ...(normalized.aiMeta.warnings || [])].filter(Boolean)));
     return normalized;
@@ -182,6 +182,15 @@ class AiOrchestrator {
     const aiMeta = createAiMeta({ provider, model: provider === 'openai' ? this.openai.model || '' : 'LocalHeuristicProvider', purpose, promptQuality: gate, fallbackUsed, qualityGateBlockedProvider, outputReview, warnings: outputWarning ? [outputWarning] : [] });
     return { ...result, aiMeta, warnings: Array.from(new Set([...(result.warnings || []), outputWarning, ...(aiMeta.warnings || [])].filter(Boolean))) };
   }
+}
+
+function outputReviewContext(input = {}, purpose) {
+  return {
+    purpose,
+    targetAudience: input.targetAudience || input.curriculumPlan?.targetAudience || {},
+    containerProfile: input.containerProfile || {},
+    didacticProfile: input.didacticProfile || input.curriculumPlan?.didacticProfile || {}
+  };
 }
 
 module.exports = {

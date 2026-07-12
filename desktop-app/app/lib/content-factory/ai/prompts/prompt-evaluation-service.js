@@ -9,7 +9,7 @@ function evaluatePrompt(promptInput = {}, lintResult = null) {
   };
   const scores = {
     completenessScore: scoreFor(['prompt', 'purpose', 'schema', 'target', 'course']),
-    didacticScore: scoreFor(['age', 'prior', 'learning', 'difficulty']),
+    didacticScore: scoreFor(['age', 'prior', 'learning', 'difficulty', 'didactic', 'lesson', 'teaching', 'support', 'progression']),
     safetyScore: scoreFor(['secret', 'reference', 'exe', 'sql', 'solution']),
     schemaScore: scoreFor(['schema', 'json']),
     artifactScore: scoreFor(['course-type', 'java', 'sql', 'exe'])

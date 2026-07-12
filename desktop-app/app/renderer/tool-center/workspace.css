@@ -700,6 +700,85 @@ textarea {
   gap: 10px;
 }
 
+.dropzone-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(15, 32, 51, .08);
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 92px;
+  padding: 14px;
+  color: var(--text);
+  background: var(--panel-soft);
+  border: 1px dashed #8fb2d8;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+.dropzone input {
+  display: none;
+}
+
+.dropzone:focus-visible,
+.dropzone-is-dragover {
+  border-color: var(--brand);
+  background: #eef6ff;
+  box-shadow: 0 0 0 3px rgba(11, 111, 189, .16);
+}
+
+.dropzone-has-files .dropzone {
+  border-style: solid;
+}
+
+.dropzone-file-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dropzone-file-chip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.dropzone-file-chip span {
+  overflow-wrap: anywhere;
+}
+
+.dropzone-file-chip em {
+  grid-column: 1 / -1;
+  color: #9a6700;
+  font-style: normal;
+}
+
+.dropzone-warning {
+  background: #fff8e5;
+  border-color: #f4d17c;
+}
+
+.dropzone-empty {
+  margin: 0;
+  color: var(--muted);
+}
+
 .factory-meta {
   display: grid;
   gap: 6px;

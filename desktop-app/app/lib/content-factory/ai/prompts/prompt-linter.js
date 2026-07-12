@@ -7,6 +7,7 @@ function lintPrompt(promptInput = {}) {
   const payload = promptInput.userPayload || promptInput.input || {};
   const targetAudience = payload.targetAudience || prompt.targetAudience || promptInput.targetAudience || {};
   const containerProfile = payload.containerProfile || prompt.containerProfile || promptInput.containerProfile || {};
+  const didacticProfile = payload.didacticProfile || prompt.didacticProfile || promptInput.didacticProfile || {};
   const serialized = JSON.stringify(promptInput);
   const safetySerialized = JSON.stringify({
     userPayload: promptInput.userPayload,
@@ -26,6 +27,7 @@ function lintPrompt(promptInput = {}) {
   required(checks, 'difficulty-mode', 'difficultyMode vorhanden', Boolean(targetAudience.difficultyMode));
   required(checks, 'container-profile', 'containerProfile vorhanden', Boolean(containerProfile && Object.keys(containerProfile).length));
   required(checks, 'course-type', 'courseType vorhanden', Boolean(containerProfile.courseType));
+  didacticProfileChecks(checks, didacticProfile, containerProfile, targetAudience, serialized);
   required(checks, 'solution-protection', 'Loesungsschutz erwaehnt', /Teilnehmer.*keine.*Loesung|Loesungen.*Dozent|solutions.*Dozent|solutions.*teacher/i.test(serialized));
   required(checks, 'sql-no-auto', 'SQL-Autoausfuehrung ausgeschlossen', /(SQL.*(nie|nicht|niemals).*automatisch|niemals.*SQL.*ausgefuehrt|SQL wird niemals automatisch ausgefuehrt)/i.test(serialized));
   required(checks, 'exe-blocked', 'EXE/BAT/CMD/PS1 ausgeschlossen', /EXE\/BAT\/CMD\/PS1|Keine EXE/i.test(serialized) && !BLOCKED_EXECUTABLES.test(safetySerialized));
@@ -50,6 +52,23 @@ function lintPrompt(promptInput = {}) {
     checks,
     maySendToProvider: errors.length === 0
   };
+}
+
+function didacticProfileChecks(checks, profile, containerProfile, targetAudience, serialized) {
+  required(checks, 'didactic-profile', 'didacticProfile vorhanden', Boolean(profile && Object.keys(profile).length));
+  required(checks, 'teaching-model', 'teachingModel vorhanden', Boolean(profile.teachingModel));
+  required(checks, 'lesson-flow', 'lessonFlow vorhanden', Array.isArray(profile.lessonFlow) && profile.lessonFlow.length > 0);
+  required(checks, 'demo-strategy', 'demoStrategy vorhanden', Boolean(profile.demoStrategy));
+  required(checks, 'release-strategy', 'releaseStrategy vorhanden', Boolean(profile.releaseStrategy));
+  required(checks, 'task-progression', 'taskProgression vorhanden', Boolean(profile.taskProgression));
+  required(checks, 'support-level', 'supportLevel vorhanden', Boolean(profile.supportLevel));
+  if (profile.id === 'project-based') required(checks, 'project-based-fit', 'Projektbezug vorhanden', /Projekt|project/i.test(serialized));
+  if (profile.id === 'exam-training') required(checks, 'exam-training-fit', 'Pruefungsaufgabe/Bewertung vorhanden', /Pruefung|Bewertung|Zeit|Erwartungshorizont/i.test(serialized));
+  if (profile.id === 'worked-example-fading') required(checks, 'worked-example-fit', 'Fading-Unterstuetzung vorhanden', /Muster|gefuehrt|Luecken|frei|Fading/i.test(serialized));
+  if (profile.id === 'problem-first') required(checks, 'problem-first-fit', 'Problemfall vorhanden', /Problem|Fehler|Analyse/i.test(serialized));
+  if (profile.id === 'guided-coding') required(checks, 'guided-coding-fit', 'Code-Demo vorhanden', /Code|Live-Coding|VS Code|vscode/i.test(serialized) || /java|python|html|css|php/i.test(containerProfile.courseType || ''));
+  if (profile.id === 'station-learning') required(checks, 'station-learning-fit', 'Stationenstruktur vorhanden', /Station/i.test(serialized));
+  if (['none', 'basic'].includes(targetAudience.priorKnowledge) && profile.id === 'worked-example-fading') pass(checks, 'beginner-didactic-fit', 'Einsteigerprofil passt.');
 }
 
 function required(checks, id, label, ok, evidence = '') {

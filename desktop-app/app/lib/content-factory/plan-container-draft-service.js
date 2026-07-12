@@ -9,6 +9,13 @@ const { validateGeneratedArtifacts } = require('./container-profile/generated-ar
 const { generateArtifactFiles } = require('./artifact-generators/artifact-generator-service');
 const { inferDemoTargetsForDays } = require('./demo-targets/demo-target-service');
 const { generateDemoArtifacts } = require('./demo-targets/demo-artifact-generator');
+const { normalizeDidacticProfile } = require('./didactics/didactic-profile-service');
+const { buildDidacticFlow, buildReleasePlan } = require('./didactics/lesson-flow-service');
+const { normalizeTeacherRunbook } = require('./ai/output-normalizer');
+const { recommendDidacticProfiles } = require('./didactics/didactic-profile-service');
+const { evaluateDidacticFit } = require('./didactics/didactic-fit-service');
+const { createDidacticPreview } = require('./didactics/didactic-preview-service');
+const { runDidacticQualityGate } = require('./didactics/didactic-quality-gate');
 const { renderPreflightSummary } = require('./preflight/preflight-report-renderer');
 const { createTestProtocol } = require('./test-protocol/test-protocol-service');
 const { renderTestProtocolHtml } = require('./test-protocol/test-protocol-renderer');
@@ -29,7 +36,7 @@ function createPlanContainerDraft(input = {}, options = {}) {
     curriculumPlan: input.approvedCurriculumPlan || input.curriculumPlan,
     targetAudience: input.approvedCurriculumPlan?.targetAudience || input.targetAudience
   });
-  const files = createVirtualFiles({ courseName, courseId, department, containerId, coursePlan: input.coursePlan, dayResults, aiMode: input.aiMode || 'local', references: input.references || [], profileContext });
+  const files = createVirtualFiles({ courseName, courseId, department, containerId, coursePlan: input.coursePlan, dayResults, aiMode: input.aiMode || 'local', references: input.references || [], profileContext, targetAudience: input.targetAudience || input.approvedCurriculumPlan?.targetAudience || input.curriculumPlan?.targetAudience || {}, didacticProfile: input.didacticProfile || input.approvedCurriculumPlan?.didacticProfile || input.curriculumPlan?.didacticProfile });
   files.forEach((file) => writeFile(rootDir, file.path, file.content));
   const namingReport = createNamingReport(files, { courseName, courseId });
   const protocolInput = createProtocolInput({ courseName, containerId, input, dayResults, files, rootDir, profileContext });
@@ -85,6 +92,11 @@ function createProtocolInput({ courseName, containerId, input, dayResults, files
     artifactSuggestions: profileContext.artifactSuggestions,
     artifactTargets: profileContext.artifactTargets,
     demoTargets: readDemoTargetsFromFiles(files),
+    didacticProfile: readJsonFromFiles(files, 'catalog/didactic-profile.json', {}),
+    didacticDecision: readJsonFromFiles(files, 'catalog/didactic-decision.json', {}),
+    didacticQuality: readJsonFromFiles(files, 'catalog/didactic-quality.json', {}),
+    teacherRunbooks: readJsonFromFiles(files, 'catalog/teacher-runbooks.json', []),
+    releasePlan: readJsonFromFiles(files, 'catalog/release-plan.json', []),
     dayResults,
     expectedDayCount: (curriculum.days || input.coursePlan?.days || []).length,
     files,
@@ -95,7 +107,17 @@ function createProtocolInput({ courseName, containerId, input, dayResults, files
   };
 }
 
-function createVirtualFiles({ courseName, courseId, department, containerId, coursePlan, dayResults, aiMode, references, profileContext }) {
+function readJsonFromFiles(files = [], filePath, fallback) {
+  const file = files.find((item) => item.path === filePath);
+  if (!file) return fallback;
+  try {
+    return JSON.parse(file.content);
+  } catch {
+    return fallback;
+  }
+}
+
+function createVirtualFiles({ courseName, courseId, department, containerId, coursePlan, dayResults, aiMode, references, profileContext, targetAudience, didacticProfile: inputDidacticProfile }) {
   const artifactFiles = generateArtifactFiles({
     course: { courseName, courseId, department },
     dayResults,
@@ -103,16 +125,46 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
     artifactTargets: profileContext.artifactTargets,
     artifactSuggestions: profileContext.artifactSuggestions
   });
+  const didacticProfile = normalizeDidacticProfile(inputDidacticProfile || dayResults[0]?.didacticProfile || coursePlan?.didacticProfile);
+  const didacticInput = { coursePlan, targetAudience: targetAudience || coursePlan?.targetAudience || {}, containerProfile: profileContext.containerProfile, didacticProfile, courseType: profileContext.containerProfile?.courseType };
+  const didacticRecommendation = recommendDidacticProfiles(didacticInput);
+  const didacticFit = evaluateDidacticFit(didacticProfile, didacticInput);
+  const didacticPreview = createDidacticPreview({ didacticProfile, courseType: profileContext.containerProfile?.courseType, targetAudience: didacticInput.targetAudience, duration: coursePlan?.duration || {}, courseGoal: coursePlan?.courseTitle || coursePlan?.courseGoal || '' });
+  const didacticFlowByDay = new Map(dayResults.map((result) => [
+    Number(result.dayNumber),
+    result.didacticFlow?.length ? result.didacticFlow : buildDidacticFlow(didacticProfile, result)
+  ]));
+  const releasePlan = buildReleasePlan(didacticProfile, dayResults);
   const demoTargets = inferDemoTargetsForDays({
     dayResults,
     coursePlan,
     containerProfile: profileContext.containerProfile,
+    didacticProfile,
     options: {
-      maxPerDay: Number(profileContext.containerProfile?.demoCountPerDay ?? 1),
-      visibleForParticipants: profileContext.containerProfile?.participantDemos === true
+      maxPerDay: didacticProfile.defaultDemoEnabled === false ? 0 : Number(profileContext.containerProfile?.demoCountPerDay ?? 1),
+      visibleForParticipants: profileContext.containerProfile?.participantDemos === true || didacticProfile.defaultParticipantDemoVisible === true
     }
   });
   const demoFiles = generateDemoArtifacts(demoTargets);
+  const teacherRunbooks = dayResults.map((result) => {
+    const dayNumber = Number(result.dayNumber);
+    return normalizeTeacherRunbook(result.teacherRunbook, {
+      dayNumber,
+      title: result.title,
+      didacticFlow: didacticFlowByDay.get(dayNumber) || [],
+      demos: demoTargets.filter((target) => Number(target.dayNumber) === dayNumber),
+      tasks: result.tasks || [],
+      quiz: result.quiz || [],
+      releasePlan: releasePlan.filter((item) => Number(item.dayNumber) === dayNumber),
+      reflection: result.reflection || {}
+    });
+  });
+  const teacherRunbookByDay = new Map(teacherRunbooks.map((runbook) => [Number(runbook.dayNumber), runbook]));
+  const enrichedDayResults = dayResults.map((result) => ({
+    ...result,
+    teacherRunbook: teacherRunbookByDay.get(Number(result.dayNumber))
+  }));
+  const didacticQuality = enrichedDayResults.map((result) => runDidacticQualityGate(result, { didacticProfile }));
   const artifactMetadata = artifactFiles.map((file) => ({
     path: file.path,
     role: file.role,
@@ -122,20 +174,25 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
     reason: file.metadata?.reason || '',
     targetAudienceImpact: file.metadata?.targetAudienceImpact || ''
   }));
-  const days = dayResults.map((result) => {
+  const days = enrichedDayResults.map((result) => {
     const daySlug = `tag_${String(result.dayNumber).padStart(2, '0')}`;
     const dayArtifacts = artifactMetadata.filter((artifact) => artifact.path.includes(`/${daySlug}/`) || artifact.path.includes(`\\${daySlug}\\`));
     const dayDemos = demoTargets.filter((target) => Number(target.dayNumber) === Number(result.dayNumber));
+    const didacticFlow = didacticFlowByDay.get(Number(result.dayNumber)) || [];
+    const dayReleasePlan = releasePlan.filter((item) => Number(item.dayNumber) === Number(result.dayNumber));
     return {
       dayNumber: result.dayNumber,
       title: result.title,
       teacherWeb: `dozent/${daySlug}/webvariante.html`,
+      teacherRunbook: `dozent/${daySlug}/unterrichtsablauf.html`,
       teacherTasks: `dozent/${daySlug}/aufgaben.html`,
       teacherSolutions: `dozent/${daySlug}/loesungen.html`,
       participantWeb: `teilnehmer/${daySlug}/webvariante.html`,
       participantTasks: `teilnehmer/${daySlug}/aufgaben.html`,
       quiz: `shared/quiz/${daySlug}.json`,
+      didacticFlow,
       demos: dayDemos.map((target) => target.id),
+      releasePlan: dayReleasePlan,
       artifacts: dayArtifacts,
       sourceRefs: result.sourceRefs || [],
       warnings: result.warnings || []
@@ -188,7 +245,12 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
   const files = [
     jsonFile('manifest.json', manifest),
     jsonFile('catalog/days.json', days),
+    jsonFile('catalog/didactic-profile.json', didacticProfile),
+    jsonFile('catalog/didactic-decision.json', { selectedProfile: didacticProfile, recommendation: didacticRecommendation, fit: didacticFit, preview: didacticPreview, customized: didacticProfile.customized === true, baseProfileId: didacticProfile.baseProfileId || didacticProfile.id }),
+    jsonFile('catalog/didactic-quality.json', didacticQuality),
+    jsonFile('catalog/teacher-runbooks.json', teacherRunbooks),
     jsonFile('catalog/demo-targets.json', demoTargets),
+    jsonFile('catalog/release-plan.json', releasePlan),
     jsonFile('catalog/projects.json', []),
     jsonFile('catalog/tools.json', profileContext.toolProfiles),
     jsonFile('catalog/artifacts.json', artifactMetadata),
@@ -197,23 +259,26 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
     jsonFile('platform/adapter.json', adapter),
     jsonFile('platform/route-map.json', days.map((day) => ({ dayNumber: day.dayNumber, route: day.participantWeb }))),
     jsonFile('platform/integration.json', adapter.integration),
-    jsonFile('source-map.json', { generatedFrom: 'content-factory', coursePlan: coursePlan?.sourceFile || '', selectedSheet: coursePlan?.selectedSheet || '', references: references.map(publicReference), aiMode, containerProfile: profileContext.containerProfile }),
+    jsonFile('source-map.json', { generatedFrom: 'content-factory', coursePlan: coursePlan?.sourceFile || '', selectedSheet: coursePlan?.selectedSheet || '', references: references.map(publicReference), aiMode, containerProfile: profileContext.containerProfile, didacticProfile: { id: didacticProfile.id, teachingModel: didacticProfile.teachingModel } }),
     { path: 'README.md', content: `# ${courseName}\n\nStatus: Draft\n\nStandalone: standalone/index.html\n` },
     { path: 'dozent/index.html', content: renderIndex(courseName, days, 'Dozentenansicht') },
     { path: 'teilnehmer/index.html', content: renderIndex(courseName, days, 'Teilnehmer-Vorschau') },
-    { path: 'standalone/index.html', content: renderStandalone(courseName, days, dayResults) },
+    { path: 'standalone/index.html', content: renderStandalone(courseName, days, enrichedDayResults) },
     { path: 'standalone/standalone.js', content: standaloneJs() },
     { path: 'standalone/standalone.css', content: standaloneCss() },
     ...artifactFiles,
     ...demoFiles
   ];
-  dayResults.forEach((result) => {
+  enrichedDayResults.forEach((result) => {
     const daySlug = `tag_${String(result.dayNumber).padStart(2, '0')}`;
     const dayDemos = demoTargets.filter((target) => Number(target.dayNumber) === Number(result.dayNumber));
-    files.push({ path: `dozent/${daySlug}/webvariante.html`, content: renderSections(courseName, result.title, result.webvariant.teacherHtmlSections, true, dayDemos) });
+    const didacticFlow = didacticFlowByDay.get(Number(result.dayNumber)) || [];
+    const dayReleasePlan = releasePlan.filter((item) => Number(item.dayNumber) === Number(result.dayNumber));
+    files.push({ path: `dozent/${daySlug}/webvariante.html`, content: renderSections(courseName, result.title, result.webvariant.teacherHtmlSections, true, dayDemos, didacticFlow, dayReleasePlan, didacticProfile, `unterrichtsablauf.html`) });
+    files.push({ path: `dozent/${daySlug}/unterrichtsablauf.html`, content: renderTeacherRunbook(courseName, result.teacherRunbook, didacticProfile, dayDemos, dayReleasePlan) });
     files.push({ path: `dozent/${daySlug}/aufgaben.html`, content: renderTasks(courseName, result.title, result.tasks) });
     files.push({ path: `dozent/${daySlug}/loesungen.html`, content: renderTasks(courseName, result.title, result.solutions, 'Loesungen') });
-    files.push({ path: `teilnehmer/${daySlug}/webvariante.html`, content: renderSections(courseName, result.title, result.webvariant.participantHtmlSections, false, dayDemos.filter((target) => target.visibleForParticipants === true)) });
+    files.push({ path: `teilnehmer/${daySlug}/webvariante.html`, content: renderSections(courseName, result.title, result.webvariant.participantHtmlSections, false, dayDemos.filter((target) => target.visibleForParticipants === true), didacticFlow, [], didacticProfile) });
     files.push({ path: `teilnehmer/${daySlug}/aufgaben.html`, content: renderTasks(courseName, result.title, result.tasks) });
     files.push(jsonFile(`shared/quiz/${daySlug}.json`, { dayNumber: result.dayNumber, questions: result.quiz }));
     files.push(jsonFile(`reviews/${daySlug}.json`, { dayNumber: result.dayNumber, status: 'draft', warnings: result.warnings, aiAdditions: result.aiAdditions }));
@@ -259,6 +324,7 @@ function renderStandalone(courseName, days, dayResults) {
     solutions: result.solutions || [],
     quiz: result.quiz || [],
     demos: (days.find((day) => Number(day.dayNumber) === Number(result.dayNumber))?.demos || []),
+    teacherRunbook: result.teacherRunbook || null,
     sourceRefs: result.sourceRefs || [],
     warnings: result.warnings || []
   }));
@@ -266,8 +332,39 @@ function renderStandalone(courseName, days, dayResults) {
   return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(courseName)}</title><link rel="stylesheet" href="standalone.css"></head><body><header><p>Standalone-Draft: lokale Testvorschau ohne Plattform-Freigabe. Testprotokoll im Reports-Ordner verfuegbar.</p><h1>${escapeHtml(courseName)}</h1><nav><button type="button" data-role="participant" class="active">Teilnehmer-Vorschau</button><button type="button" data-role="teacher">Dozentenansicht</button></nav></header><main id="app"></main><script>window.CONTENT_FACTORY_DATA=${data};</script><script src="standalone.js"></script></body></html>`;
 }
 
-function renderSections(courseName, title, sections, teacher, demos = []) {
-  return page(`${courseName} - ${title}`, `<p><strong>${teacher ? 'Dozentenansicht' : 'Teilnehmer-Vorschau'}</strong></p>${renderDemoButtons(demos, teacher)}${sections.map((section) => `<section><h2>${escapeHtml(section.title)}</h2>${section.content}</section>`).join('')}`);
+function renderSections(courseName, title, sections, teacher, demos = [], didacticFlow = [], releasePlan = [], didacticProfile = {}, runbookPath = '') {
+  return page(`${courseName} - ${title}`, `<p><strong>${teacher ? 'Dozentenansicht' : 'Teilnehmer-Vorschau'}</strong></p>${teacher && didacticProfile?.label ? `<section class="didactic-profile"><h2>Didaktisches Profil</h2><p>${escapeHtml(didacticProfile.label)} | Demo: ${escapeHtml(didacticProfile.demoStrategy || '-')} | Freigabe: ${escapeHtml(didacticProfile.releaseStrategy || '-')}</p></section>` : ''}${teacher && runbookPath ? `<p><a href="${escapeHtml(runbookPath)}">Dozenten-Fahrplan oeffnen</a></p>` : ''}${renderDidacticFlow(didacticFlow, teacher, didacticProfile)}${renderDemoButtons(demos, teacher)}${teacher && releasePlan.length ? renderReleaseHint(releasePlan) : ''}${sections.map((section) => `<section><h2>${escapeHtml(section.title)}</h2>${section.content}</section>`).join('')}`);
+}
+
+function renderTeacherRunbook(courseName, runbook = {}, didacticProfile = {}, demos = [], releasePlan = []) {
+  const phases = runbook.phases || [];
+  return page(`${courseName} - ${runbook.title || 'Unterrichtsablauf'}`, `
+    <h1>Dozenten-Fahrplan: ${escapeHtml(runbook.title || '')}</h1>
+    <p>Didaktisches Profil: ${escapeHtml(didacticProfile.label || didacticProfile.id || '-')} | Gesamtzeit: ${escapeHtml(runbook.estimatedTotalMinutes || 0)} Minuten</p>
+    <section><h2>Tagesziel</h2><p>${escapeHtml(runbook.title || '')}</p></section>
+    <section><h2>Zeitplan und Phasen</h2>${phases.map((phase) => `
+      <article>
+        <h3>${escapeHtml(phase.title)} (${escapeHtml(phase.estimatedMinutes)} Min.)</h3>
+        <p><strong>Dozent:</strong> ${escapeHtml(phase.teacherAction)}</p>
+        <p><strong>Teilnehmende:</strong> ${escapeHtml(phase.participantAction)}</p>
+        ${phase.moderationQuestions?.length ? `<p><strong>Moderationsfragen:</strong></p>${listHtml(phase.moderationQuestions)}` : ''}
+        ${phase.demoId ? `<p><strong>Demo:</strong> ${escapeHtml(phase.demoId)}</p>` : ''}
+        ${phase.releaseActions?.length ? `<p><strong>Freigabe:</strong></p>${listHtml(phase.releaseActions)}` : ''}
+        ${phase.typicalProblems?.length ? `<p><strong>Typische Fehler:</strong></p>${listHtml(phase.typicalProblems)}` : ''}
+        <p><strong>Differenzierung:</strong> ${escapeHtml(phase.differentiation?.supportWeak || '')} | ${escapeHtml(phase.differentiation?.challengeStrong || '')}</p>
+        <p><strong>Checkpoint:</strong> ${escapeHtml(phase.checkpoint || '')}</p>
+      </article>
+    `).join('')}</section>
+    <section><h2>Demo-Schritte</h2>${listHtml(demos.map((demo) => `${demo.title}: ${demo.filePath}`))}</section>
+    <section><h2>Freigabe-Schritte</h2>${listHtml(releasePlan.map((item) => item.releaseHint || item.title))}</section>
+    <section><h2>Checklisten</h2>
+      <h3>Dozent</h3>${listHtml(runbook.teacherChecklist || [])}
+      <h3>Material</h3>${listHtml(runbook.materialChecklist || [])}
+      <h3>Demo</h3>${listHtml(runbook.demoChecklist || [])}
+      <h3>Assessment</h3>${listHtml(runbook.assessmentChecklist || [])}
+    </section>
+    <section><h2>Fallback</h2><p>${escapeHtml(runbook.fallbackPlan || '')}</p></section>
+  `);
 }
 
 function renderDemoButtons(demos = [], teacher = false) {
@@ -280,12 +377,24 @@ function renderDemoButtons(demos = [], teacher = false) {
   `).join('')}</section>`;
 }
 
+function renderDidacticFlow(flow = [], teacher = false, profile = {}) {
+  if (!flow.length) return '';
+  const visible = teacher ? flow : flow.filter((item) => !/Freigabezentrum|Dozentenhinweis|Dozent/i.test(`${item.title} ${item.teacherAction}`));
+  return `<section class="didactic-flow"><h2>Unterrichtsfluss${profile.label ? `: ${escapeHtml(profile.label)}` : ''}</h2><ol>${visible.map((item) => `<li><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(teacher ? item.teacherAction || item.description : item.participantAction || item.description)}</p>${teacher && item.releaseHint ? `<small>${escapeHtml(item.releaseHint)}</small>` : ''}</li>`).join('')}</ol></section>`;
+}
+
+function renderReleaseHint(releasePlan = []) {
+  const hints = Array.from(new Set(releasePlan.map((item) => item.releaseHint).filter(Boolean)));
+  return hints.length ? `<section class="release-plan"><h2>Freigabehinweis</h2><ul>${hints.map((hint) => `<li>${escapeHtml(hint)}</li>`).join('')}</ul></section>` : '';
+}
+
 function renderTasks(courseName, title, tasks, heading = 'Aufgaben') {
   return page(`${courseName} - ${title} - ${heading}`, `<h1>${escapeHtml(heading)}</h1><ul>${tasks.map((task) => `<li><strong>${escapeHtml(task.title)}</strong><p>${escapeHtml(task.text)}</p></li>`).join('')}</ul>`);
 }
 
 function renderIndex(courseName, days, label) {
-  return page(`${courseName} - ${label}`, `<h1>${escapeHtml(label)}</h1><ul>${days.map((day) => `<li>Tag ${day.dayNumber}: ${escapeHtml(day.title)}</li>`).join('')}</ul>`);
+  const teacher = /Dozent/i.test(label);
+  return page(`${courseName} - ${label}`, `<h1>${escapeHtml(label)}</h1><ul>${days.map((day) => `<li>Tag ${day.dayNumber}: ${escapeHtml(day.title)}${teacher && day.teacherRunbook ? ` - <a href="../${escapeHtml(day.teacherRunbook)}">Unterrichtsablauf</a>` : ''}</li>`).join('')}</ul>`);
 }
 
 function page(title, body) {
@@ -311,8 +420,12 @@ function standaloneJs() {
       const demoNotice = role === 'teacher' && (result.demos || []).length
         ? '<div class="panel teacher-only"><h3>Demo-Dateien</h3><p>Direktes Oeffnen ist nur in der Electron-App verfuegbar. Demo-Dateien liegen im Containerordner und sind in catalog/demo-targets.json dokumentiert.</p></div>'
         : '';
+      const runbookNotice = role === 'teacher' && result.teacherRunbook
+        ? '<div class="panel teacher-only"><h3>Dozenten-Fahrplan</h3><p>' + escapeHtml((result.teacherRunbook.phases || []).map((phase) => phase.title).join(' > ')) + '</p></div>'
+        : '';
       return '<section class="day"><h2>Tag ' + escapeHtml(result.dayNumber) + ': ' + escapeHtml(result.title) + '</h2>'
         + demoNotice
+        + runbookNotice
         + renderSections(sections)
         + '<div class="grid"><div class="panel"><h3>Aufgaben</h3>' + renderList(result.tasks, (task) => '<li><strong>' + escapeHtml(task.title) + '</strong><br>' + escapeHtml(task.text) + '</li>') + '</div>'
         + '<div class="panel"><h3>Quiz</h3>' + renderList(result.quiz, (quiz) => '<li>' + escapeHtml(quiz.text) + '</li>') + '</div></div>'
@@ -358,6 +471,12 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
   }));
   const preflightSummary = input.preflight ? renderPreflightSummary(input.preflight) : null;
   const promptQuality = renderPromptQualitySummary(dayResults.map((result) => result.aiMeta).filter(Boolean));
+  const didacticProfile = readJson(path.join(rootDir, 'catalog', 'didactic-profile.json'), {});
+  const didacticDecision = readJson(path.join(rootDir, 'catalog', 'didactic-decision.json'), {});
+  const didacticQuality = readJson(path.join(rootDir, 'catalog', 'didactic-quality.json'), []);
+  const releasePlan = readJson(path.join(rootDir, 'catalog', 'release-plan.json'), []);
+  const teacherRunbooks = readJson(path.join(rootDir, 'catalog', 'teacher-runbooks.json'), []);
+  const teacherRunbookSummary = summarizeTeacherRunbooks(teacherRunbooks, readJson(path.join(rootDir, 'catalog', 'demo-targets.json'), []), releasePlan);
   return {
     courseName,
     courseId,
@@ -399,6 +518,24 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
       summary: testProtocol.summary
     } : null,
     promptQuality,
+    didacticProfile,
+    didacticDecision,
+    didacticQuality,
+    teacherRunbooks: teacherRunbookSummary,
+    didacticFitScore: didacticDecision.fit?.score || 0,
+    recommendedDidacticProfile: didacticDecision.recommendation?.recommended?.profile || {},
+    didacticAlternatives: didacticDecision.recommendation?.alternatives || [],
+    didacticDecisionWarnings: didacticDecision.recommendation?.warnings || [],
+    teachingModel: didacticProfile.teachingModel || '',
+    lessonFlow: didacticProfile.lessonFlow || [],
+    demoStrategy: didacticProfile.demoStrategy || '',
+    releaseStrategy: didacticProfile.releaseStrategy || '',
+    taskProgression: didacticProfile.taskProgression || '',
+    supportLevel: didacticProfile.supportLevel || '',
+    assessmentMode: didacticProfile.assessmentMode || '',
+    reflectionMode: didacticProfile.reflectionMode || '',
+    didacticWarnings: [],
+    releasePlan,
     aiConfig: input.aiConfig || {},
     costEstimate: input.costEstimate || null,
     aiRunCount: promptQuality.runCount,
@@ -463,6 +600,8 @@ function renderReportHtml(report) {
       <section class="card"><h2>Preflight & Testlauf</h2><p>Status: <strong>${escapeHtml(report.preflight?.status || 'nicht ausgefuehrt')}</strong> | Score: ${escapeHtml(report.preflight?.score ?? '-')} | Modus: ${escapeHtml(report.testRunStatus)}</p><p>Preset: ${escapeHtml(report.preset || 'kein Preset')}</p><p>Ready for Review: ${report.readyForReview ? 'ja' : 'nein'}</p>${listHtml([...(report.preflight?.errors || []), ...(report.preflight?.warnings || []), ...(report.cleanupHints || [])])}</section>
       <section class="card"><h2>Testprotokoll</h2><p>Status: <strong>${escapeHtml(report.testProtocol?.overallStatus || 'fehlt')}</strong></p><p>Pfad: ${escapeHtml(report.testProtocol?.path || '-')}</p><p>Passed: ${escapeHtml(report.testProtocol?.summary?.passed || 0)} | Warnings: ${escapeHtml(report.testProtocol?.summary?.warnings || 0)} | Failed: ${escapeHtml(report.testProtocol?.summary?.failed || 0)} | Manuell: ${escapeHtml(report.testProtocol?.summary?.manualChecks || 0)}</p></section>
       <section class="card"><h2>Prompt Quality</h2><p>KI-Laeufe: ${escapeHtml(report.promptQuality?.runCount || 0)} | Fallbacks: ${escapeHtml(report.promptQuality?.fallbackCount || 0)} | Gate blockiert: ${escapeHtml(report.promptQuality?.blockedCount || 0)}</p><p>Prompt Score: ${escapeHtml(report.promptQuality?.averagePromptQualityScore || 0)} | Output Review: ${escapeHtml(report.promptQuality?.averageOutputReviewScore || 0)}</p><p>Prompt Contracts: ${escapeHtml((report.promptQuality?.promptContracts || []).join(', ') || '-')}</p><p>Templates: ${escapeHtml((report.promptQuality?.promptTemplates || []).join(', ') || '-')}</p>${listHtml(report.promptQuality?.warnings || [])}</section>
+      <section class="card"><h2>Didaktik</h2><h3>Didaktische Entscheidung</h3><p><strong>Gewaehltes Profil:</strong> ${escapeHtml(report.didacticProfile?.label || report.teachingModel || '-')} (${escapeHtml(report.didacticProfile?.id || '-')})</p><p><strong>Empfohlen:</strong> ${escapeHtml(report.recommendedDidacticProfile?.label || '-')} | Fit Score: ${escapeHtml(report.didacticFitScore || 0)}</p><p>Teaching Model: ${escapeHtml(report.teachingModel)} | Demo: ${escapeHtml(report.demoStrategy)} | Release: ${escapeHtml(report.releaseStrategy)}</p><p>Progression: ${escapeHtml(report.taskProgression)} | Support: ${escapeHtml(report.supportLevel)} | Assessment: ${escapeHtml(report.assessmentMode)} | Reflexion: ${escapeHtml(report.reflectionMode)}</p><p>LessonFlow: ${escapeHtml((report.lessonFlow || []).join(' > ') || '-')}</p><p><strong>Auswirkungen:</strong> Webvariante folgt dem LessonFlow, Demos folgen ${escapeHtml(report.demoStrategy)}, Aufgaben folgen ${escapeHtml(report.taskProgression)}, Freigaben folgen ${escapeHtml(report.releaseStrategy)}, Quiz/Assessment folgt ${escapeHtml(report.assessmentMode)}, Reflexion folgt ${escapeHtml(report.reflectionMode)}.</p>${listHtml([...(report.didacticDecisionWarnings || []), ...(report.didacticQuality || []).flatMap((item) => item.warnings || []).slice(0, 5)])}<p><strong>Alternative Profile:</strong> ${(report.didacticAlternatives || []).slice(0, 3).map((item) => `${escapeHtml(item.profile?.label || item.profile?.id || '')} (${escapeHtml(item.score)})`).join(' | ') || '-'}</p></section>
+      <section class="card"><h2>Dozenten-Fahrplan</h2><p>Anzahl: ${escapeHtml(report.teacherRunbooks?.count || 0)} | Phasen: ${escapeHtml(report.teacherRunbooks?.phaseCount || 0)} | Minuten: ${escapeHtml(report.teacherRunbooks?.estimatedTotalMinutes || 0)}</p><p>Demo-Verknuepfungen: ${escapeHtml(report.teacherRunbooks?.demoLinkCount || 0)} | Freigaben: ${escapeHtml(report.teacherRunbooks?.releaseLinkCount || 0)}</p><p>Typische Fehler: ${report.teacherRunbooks?.hasTypicalProblems ? 'ja' : 'nein'} | Differenzierung: ${report.teacherRunbooks?.hasDifferentiation ? 'ja' : 'nein'} | Checkpoints: ${report.teacherRunbooks?.hasCheckpoints ? 'ja' : 'nein'}</p>${tableHtml(['Tag','Phasen','Minuten','Warnungen'], (report.teacherRunbooks?.days || []).map((day) => [day.dayNumber, day.phaseCount, day.estimatedTotalMinutes, (day.warnings || []).join(' | ')]))}</section>
       <section class="card"><h2>KI-Konfiguration & Kosten</h2><p>AI_PROVIDER: ${escapeHtml(report.aiConfig?.aiProvider || report.aiMode)} | OpenAI configured: ${report.aiConfig?.openAiConfigured ? 'ja' : 'nein'} | Modell: ${escapeHtml(report.aiConfig?.openAiModel || '-')} | keySource: ${escapeHtml(report.aiConfig?.keySource || 'missing')}</p><p>Geschaetzte Kosten: ${escapeHtml(report.costEstimate?.estimatedCostUsd ?? 0)} USD | Limit: ${escapeHtml(report.costEstimate?.warningLimitUsd ?? '-')} USD</p></section>
       <section class="card"><h2>Quality</h2><p><strong>${escapeHtml(report.curriculumQuality.score)}</strong>/100 (${escapeHtml(report.curriculumQuality.level)})</p>${listHtml(report.curriculumQuality.recommendations || [])}</section>
       <section class="card"><h2>Quellen & Extraktion</h2>${tableHtml(['Quelle','Titel','Qualitaet','Warnungen'], (report.extractionStatus || []).map((item) => [item.sourceRef, item.title, item.quality ? `${item.quality.level} (${Math.round(item.quality.score * 100)}%)` : '-', (item.warnings || []).join(' | ')]))}</section>
@@ -496,6 +635,38 @@ function publicReference(ref) {
     pageNumber: ref.pageNumber || null,
     summary: ref.generatedSummary || ref.summary || '',
     sourceRef: ref.sourceRef || ''
+  };
+}
+
+function summarizeTeacherRunbooks(runbooks = [], demos = [], releasePlan = []) {
+  const days = (runbooks || []).map((runbook) => {
+    const phases = runbook.phases || [];
+    const warnings = [];
+    if (!phases.length) warnings.push('Keine Phasen vorhanden.');
+    if (!phases.some((phase) => (phase.typicalProblems || []).length)) warnings.push('Typische Fehler fehlen.');
+    if (!phases.some((phase) => phase.differentiation?.supportWeak && phase.differentiation?.challengeStrong)) warnings.push('Differenzierung fehlt.');
+    if (!phases.some((phase) => phase.checkpoint)) warnings.push('Checkpoints fehlen.');
+    return {
+      dayNumber: runbook.dayNumber,
+      title: runbook.title,
+      phaseCount: phases.length,
+      estimatedTotalMinutes: runbook.estimatedTotalMinutes || phases.reduce((sum, phase) => sum + Number(phase.estimatedMinutes || 0), 0),
+      demoLinkCount: phases.filter((phase) => phase.demoId).length,
+      releaseLinkCount: phases.reduce((sum, phase) => sum + (phase.releaseActions || []).length, 0),
+      warnings
+    };
+  });
+  const allPhases = runbooks.flatMap((runbook) => runbook.phases || []);
+  return {
+    count: runbooks.length,
+    phaseCount: allPhases.length,
+    estimatedTotalMinutes: days.reduce((sum, day) => sum + Number(day.estimatedTotalMinutes || 0), 0),
+    demoLinkCount: allPhases.filter((phase) => phase.demoId).length || demos.length,
+    releaseLinkCount: allPhases.reduce((sum, phase) => sum + (phase.releaseActions || []).length, 0) || releasePlan.length,
+    hasTypicalProblems: allPhases.some((phase) => (phase.typicalProblems || []).length),
+    hasDifferentiation: allPhases.some((phase) => phase.differentiation?.supportWeak && phase.differentiation?.challengeStrong),
+    hasCheckpoints: allPhases.some((phase) => phase.checkpoint),
+    days
   };
 }
 

@@ -28,11 +28,16 @@ const { validateGeneratedContainer } = require('../app/lib/content-factory/gener
 const { inferDemoTargetsForDays } = require('../app/lib/content-factory/demo-targets/demo-target-service');
 const { generateDemoArtifacts } = require('../app/lib/content-factory/demo-targets/demo-artifact-generator');
 const { openDemoTarget } = require('../app/lib/demo-launcher/demo-launcher-service');
+const { listDidacticProfiles, getDidacticProfile, suggestDidacticProfile, recommendDidacticProfiles } = require('../app/lib/content-factory/didactics/didactic-profile-service');
+const { evaluateDidacticFit } = require('../app/lib/content-factory/didactics/didactic-fit-service');
+const { createDidacticPreview } = require('../app/lib/content-factory/didactics/didactic-preview-service');
+const { runDidacticQualityGate } = require('../app/lib/content-factory/didactics/didactic-quality-gate');
 const { contracts } = require('../app/lib/content-factory/ai/prompts/contracts');
 const { dayDraftContract } = require('../app/lib/content-factory/ai/prompts/contracts/day-draft-contract');
 const promptBuilder = require('../app/lib/content-factory/ai/prompts/prompt-builder');
 const contractPromptLinter = require('../app/lib/content-factory/ai/prompts/prompt-linter');
 const { runGoldenPromptTest, summarizeGoldenPromptTests } = require('../app/lib/content-factory/ai/prompts/golden-tests/golden-test-runner');
+const { createDropZoneHtml, validateUploadSelection, addFilesToUploadState, removeUploadFile, removeDropZoneFile, renderFileList } = require('../app/renderer/tool-center/factory-upload-utils');
 
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
@@ -116,6 +121,33 @@ test('content factory detects file types target areas and day numbers', () => {
   assert.equal(detectFileKind('material.pdf'), 'document');
   assert.equal(extractDayNumber('LFZQ8a_tag_10_Webvariante.html'), 10);
   assert.equal(extractDayNumber('day01_task.html'), 1);
+});
+
+test('content factory upload dropzone utils validate multi file selections safely', () => {
+  const existing = [{ name: 'material.pdf', size: 12, lastModified: 1, uploadArea: 'materials' }];
+  const selection = validateUploadSelection([
+    { name: 'material.pdf', path: 'fixtures/material.pdf', size: 12, type: 'application/pdf', lastModified: 1 },
+    { name: 'fragen.xml', path: 'fixtures/fragen.xml', size: 120, type: 'text/xml', lastModified: 2 },
+    { name: 'start.cmd', path: 'fixtures/start.cmd', size: 10, type: 'text/plain', lastModified: 3 }
+  ], { id: 'quiz', accept: '.json,.xml,.docx,.txt,.zip', source: 'drop' }, existing);
+  const combined = [...existing, ...selection.files];
+  const removed = removeDropZoneFile(combined, 'quiz', 0);
+  const added = addFilesToUploadState(existing, [{ name: 'neu.zip', path: 'fixtures/neu.zip', size: 99, type: 'application/zip', lastModified: 4 }], { id: 'materials', accept: '.pdf,.zip', source: 'picker' });
+  const removedById = removeUploadFile([{ id: 'keep' }, { id: 'remove' }], 'remove');
+  const html = renderFileList(selection.files, (value) => String(value));
+  const dropzoneHtml = createDropZoneHtml({ id: 'materials', title: 'Materialien', accept: '.pdf,.zip', files: added.files, multiple: true });
+
+  assert.equal(selection.files.length, 2);
+  assert.equal(selection.blockedFiles.length, 1);
+  assert.equal(selection.files[0].duplicate, true);
+  assert.equal(selection.files.every((file) => file.uploadArea === 'quiz'), true);
+  assert.equal(added.files.length, 2);
+  assert.equal(removedById.length, 1);
+  assert.equal(removed.some((file) => file.name === 'material.pdf' && file.uploadArea === 'quiz'), false);
+  assert.match(html, /dropzone-file-list/);
+  assert.match(html, /data-dropzone-remove="quiz:0"/);
+  assert.match(dropzoneHtml, /multiple/);
+  assert.match(dropzoneHtml, /data-dropzone="materials"/);
 });
 
 test('content factory extracts safe source outlines from office epub text and pdf fallbacks', () => {
@@ -241,6 +273,8 @@ test('content factory productive MVP creates draft with runtime modes and standa
     const testProtocolHtml = fs.readFileSync(path.join(draft.storagePath, 'reports', 'testprotokoll.html'), 'utf8');
     const artifacts = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'artifacts.json'), 'utf8'));
     const demoTargets = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'demo-targets.json'), 'utf8'));
+    const didacticProfile = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'didactic-profile.json'), 'utf8'));
+    const releasePlan = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'release-plan.json'), 'utf8'));
     const days = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'days.json'), 'utf8'));
 
     assert.equal(draftDay.warnings.some((warning) => /OpenAI ist nicht konfiguriert|Quality Gate|Fallback/.test(warning)), true);
@@ -256,13 +290,21 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.equal(fs.existsSync(path.join(draft.storagePath, 'teilnehmer', 'tag_02', 'webvariante.html')), true);
     assert.equal(artifacts.some((artifact) => artifact.path.endsWith('pom.xml')), true);
     assert.ok(demoTargets.length >= 1);
+    assert.equal(didacticProfile.id, 'worked-example-fading');
+    assert.ok(Array.isArray(didacticProfile.lessonFlow));
+    assert.ok(releasePlan.length >= 1);
+    assert.ok(days[0].didacticFlow.length >= 1);
+    assert.ok(days[0].releasePlan.length >= 1);
     assert.equal(days[0].demos.includes(demoTargets[0].id), true);
     assert.equal(fs.existsSync(path.join(draft.storagePath, demoTargets[0].filePath)), true);
     assert.match(fs.readFileSync(path.join(draft.storagePath, 'dozent', 'tag_01', 'webvariante.html'), 'utf8'), /class="demo-open-button"/);
     assert.doesNotMatch(participantWeb, /demo-open-button/);
     assert.equal(JSON.stringify(participantContent).includes(demoTargets[0].id), false);
     assert.equal(testProtocol.checks.some((check) => check.group === 'Demos'), true);
+    assert.equal(testProtocol.checks.some((check) => check.group === 'Didaktik'), true);
     assert.equal(draft.analysisReport.demoTargets.length, demoTargets.length);
+    assert.equal(draft.analysisReport.didacticProfile.id, 'worked-example-fading');
+    assert.equal(draft.analysisReport.releasePlan.length, releasePlan.length);
     assert.equal(artifacts.some((artifact) => artifact.solutionOnly === true && artifact.path.startsWith('dozent/')), true);
     assert.equal(fs.existsSync(path.join(draft.storagePath, artifacts.find((artifact) => artifact.path.endsWith('pom.xml')).path)), true);
     assert.doesNotMatch(participantWeb, /Loesung|solution/i);
@@ -294,6 +336,7 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.match(reportHtml, /<h2>Quality<\/h2>/);
     assert.match(reportHtml, /<h2>Testprotokoll<\/h2>/);
     assert.match(reportHtml, /<h2>Prompt Quality<\/h2>/);
+    assert.match(reportHtml, /<h2>Didaktik<\/h2>/);
     assert.ok(draft.analysisReport.promptQuality.runCount >= 2);
     assert.ok(draft.analysisReport.promptQuality.averagePromptQualityScore >= 0);
     assert.equal((draft.analysisReport.promptQuality.promptContracts || []).some((item) => /day-draft-v1@1\.0\.0/.test(item)), true);
@@ -513,6 +556,121 @@ test('prompt precision contracts builder linter and golden tests protect provide
   assert.equal(sqlGolden.status, 'passed');
   assert.equal(umlGolden.status, 'passed');
   assert.equal(summary.status, 'passed');
+});
+
+test('content factory didactic profiles provide presets suggestions and prompt metadata', () => {
+  const profiles = listDidacticProfiles();
+  const guidedCoding = getDidacticProfile('guided-coding');
+  const exam = suggestDidacticProfile({ targetAudience: { examOrientation: true } });
+  const project = suggestDidacticProfile({ targetAudience: { projectOrientation: true } });
+  const beginner = suggestDidacticProfile({ targetAudience: { priorKnowledge: 'none' } });
+  const prompt = promptBuilder.buildPrompt('generateDayDraft', createApprovedTestInput({ didacticProfile: guidedCoding }));
+  const lint = contractPromptLinter.lintPrompt(prompt);
+
+  assert.equal(profiles.length, 8);
+  assert.equal(profiles.every((profile) => profile.id && profile.teachingModel && profile.lessonFlow.length), true);
+  assert.equal(guidedCoding.demoStrategy, 'live-coding');
+  assert.equal(exam.id, 'exam-training');
+  assert.equal(project.id, 'project-based');
+  assert.equal(beginner.id, 'worked-example-fading');
+  assert.equal(prompt.prompt.didacticProfile.id, 'guided-coding');
+  assert.equal(prompt.userPayload.didacticProfile.id, 'guided-coding');
+  assert.equal(prompt.developerRules.didacticProfileSignals.id, 'guided-coding');
+  assert.equal(lint.status === 'passed' || lint.status === 'warning', true);
+});
+
+test('content factory didactic matrix validates all profiles recommendations and containers', async () => {
+  const { service, session, cleanup } = createTempFactory();
+  const provider = new LocalHeuristicProvider();
+  const cases = [
+    ['explain-demo-practice', 'html-css', { priorKnowledge: 'basic', ageRange: '16-20', needsStepByStep: true }, 'HTML CSS Einstieg'],
+    ['problem-first', 'java', { priorKnowledge: 'intermediate' }, 'Java Debugging Fehleranalyse'],
+    ['project-based', 'html-css', { priorKnowledge: 'intermediate', projectOrientation: true }, 'HTML CSS Projekt'],
+    ['worked-example-fading', 'java', { priorKnowledge: 'none', ageRange: '16-20', needsStepByStep: true }, 'Java Einsteiger'],
+    ['exam-training', 'sql', { priorKnowledge: 'basic', examOrientation: true }, 'SQL Pruefung'],
+    ['station-learning', 'theory', { priorKnowledge: 'basic', ageRange: 'mixed' }, 'Heterogene Gruppe Stationen'],
+    ['flipped-classroom', 'theory', { priorKnowledge: 'intermediate' }, 'Wiederholung Vorbereitung'],
+    ['guided-coding', 'python', { priorKnowledge: 'basic', needsStepByStep: true }, 'Python Java Guided Coding']
+  ];
+
+  try {
+    for (const [profileId, courseType, audiencePatch, goal] of cases) {
+      const profile = getDidacticProfile(profileId);
+      const targetAudience = { ...createApprovedTestInput().targetAudience, ...audiencePatch };
+      const containerProfile = { ...createApprovedTestInput().containerProfile, courseType, artifactMode: 'web-and-files' };
+      const input = createApprovedTestInput({ targetAudience, containerProfile, didacticProfile: profile, courseGoal: goal });
+      input.approvedCurriculumPlan = { ...input.approvedCurriculumPlan, targetAudience, didacticProfile: profile, courseGoal: goal };
+      input.curriculumPlan = input.approvedCurriculumPlan;
+      const fit = evaluateDidacticFit(profile, input);
+      const recommendation = recommendDidacticProfiles(input);
+      const preview = createDidacticPreview({ didacticProfile: profile, courseType, targetAudience, courseGoal: goal });
+      const prompt = promptBuilder.buildPrompt('generateDayDraft', input);
+      const promptLint = contractPromptLinter.lintPrompt(prompt);
+      const dayDraft = await provider.generateDayDraft({ ...input, day: input.coursePlan.days[0], dayNumber: 1, title: goal });
+      const qualityGate = runDidacticQualityGate(dayDraft, { didacticProfile: profile });
+      const draft = service.createPlanContainerDraft({
+        ...input,
+        course: { courseName: `Matrix ${profileId}`, courseId: `matrix-${profileId}`, department: 'FIAE' },
+        coursePlan: { ...input.coursePlan, courseTitle: `Matrix ${profileId}`, courseId: `matrix-${profileId}` },
+        approvedCurriculumPlan: { ...input.approvedCurriculumPlan, didacticProfile: profile, targetAudience },
+        dayResults: [dayDraft],
+        aiMode: 'local'
+      }, session);
+      const protocol = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'reports', 'testprotokoll.json'), 'utf8'));
+      const participantContent = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'participant-content.json'), 'utf8'));
+      const teacherRunbooks = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'teacher-runbooks.json'), 'utf8'));
+      const days = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'days.json'), 'utf8'));
+      const runbookHtml = fs.readFileSync(path.join(draft.storagePath, 'dozent', 'tag_01', 'unterrichtsablauf.html'), 'utf8');
+      const runbook = teacherRunbooks[0];
+      const phases = runbook.phases || [];
+
+      assert.equal(profile.id, profileId);
+      assert.ok(dayDraft.teacherRunbook, `${profileId} teacherRunbook`);
+      assert.ok(phases.length >= 4, `${profileId} teacherRunbook phases`);
+      assert.equal(phases.every((phase) => phase.teacherAction && phase.participantAction), true);
+      assert.equal(phases.some((phase) => (phase.moderationQuestions || []).length), true);
+      assert.equal(phases.some((phase) => (phase.typicalProblems || []).length), true);
+      assert.equal(phases.some((phase) => phase.differentiation?.supportWeak && phase.differentiation?.challengeStrong), true);
+      assert.equal(phases.some((phase) => phase.checkpoint), true);
+      assert.equal(dayDraft.tasks.every((task) => task.releaseHint), true);
+      assert.match(runbookHtml, /Dozenten-Fahrplan/);
+      assert.ok(fit.score >= 50, `${profileId} fit score`);
+      assert.ok(recommendation.recommended.profile.id);
+      assert.ok((recommendation.alternatives || []).length >= 1);
+      assert.equal((preview.expectedDayFlow || []).length >= 1, true);
+      assert.ok(['passed', 'warning'].includes(promptLint.status), `${profileId} prompt lint ${promptLint.status}`);
+      assert.ok(['passed', 'warning'].includes(qualityGate.status), `${profileId} quality gate ${qualityGate.status}`);
+      assert.equal(protocol.checks.some((check) => check.id === 'didactic-fit-score'), true);
+      assert.equal(protocol.checks.some((check) => check.id === 'didactic-quality-gate'), true);
+      assert.equal(protocol.checks.some((check) => check.id === 'teacher-runbook-present'), true);
+      assert.equal(days[0].teacherRunbook, 'dozent/tag_01/unterrichtsablauf.html');
+      assert.doesNotMatch(JSON.stringify(participantContent), /Loesung|solution|Dozentenhinweis/i);
+      assert.doesNotMatch(JSON.stringify(participantContent), /unterrichtsablauf|teacherRunbook|Dozenten-Fahrplan/i);
+    }
+
+    const competingJava = recommendDidacticProfiles(createApprovedTestInput({
+      targetAudience: { ...createApprovedTestInput().targetAudience, priorKnowledge: 'none', projectOrientation: true },
+      containerProfile: { ...createApprovedTestInput().containerProfile, courseType: 'java' },
+      courseGoal: 'Java Projekt Einstieg'
+    }));
+    const competingSql = recommendDidacticProfiles(createApprovedTestInput({
+      targetAudience: { ...createApprovedTestInput().targetAudience, priorKnowledge: 'none', examOrientation: true },
+      containerProfile: { ...createApprovedTestInput().containerProfile, courseType: 'sql' },
+      courseGoal: 'SQL Pruefung Einstieg'
+    }));
+    const competingHtml = recommendDidacticProfiles(createApprovedTestInput({
+      targetAudience: { ...createApprovedTestInput().targetAudience, priorKnowledge: 'basic', projectOrientation: true },
+      containerProfile: { ...createApprovedTestInput().containerProfile, courseType: 'html-css' },
+      courseGoal: 'HTML CSS Projekt Einstieg'
+    }));
+
+    assert.ok(['worked-example-fading', 'guided-coding', 'project-based'].includes(competingJava.recommended.profile.id));
+    assert.equal(competingJava.alternatives.some((item) => ['project-based', 'guided-coding', 'worked-example-fading'].includes(item.profile.id)), true);
+    assert.equal(competingSql.recommended.profile.id, 'exam-training');
+    assert.equal(competingHtml.alternatives.some((item) => item.profile.id === 'project-based' || item.profile.id === 'worked-example-fading'), true);
+  } finally {
+    cleanup();
+  }
 });
 
 test('openai env setup files and loader keep api keys out of repository outputs', () => {
@@ -1054,6 +1212,7 @@ function createApprovedTestInput(patch = {}) {
     status: 'approved',
     course,
     targetAudience,
+    didacticProfile: getDidacticProfile('guided-coding'),
     quality: { score: 82, level: 'good', recommendations: [] },
     days: [{
       dayNumber: 1,
@@ -1099,6 +1258,7 @@ function createApprovedTestInput(patch = {}) {
     aiMode: 'local',
     useReferences: false,
     referenceUsage: { exportReferences: false },
+    didacticProfile: getDidacticProfile('guided-coding'),
     containerProfile: {
       courseType: 'java',
       artifactMode: 'web-and-files',
