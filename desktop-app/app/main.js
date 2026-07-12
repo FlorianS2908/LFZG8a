@@ -120,7 +120,8 @@ function getDokuToolService() {
 function getContentFactoryService() {
   if (!contentFactoryService) {
     contentFactoryService = createContentFactoryService({
-      appData: getAppData()
+      appData: getAppData(),
+      projectRoot
     });
   }
   return contentFactoryService;

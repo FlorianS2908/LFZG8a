@@ -459,7 +459,7 @@ function renderAiSettings(wizard) {
       ${test ? `<p class="status-line ${test.status === 'failed' ? 'status-error' : test.status === 'warning' ? 'status-warning' : ''}">Testanfrage: ${escapeHtml(test.status)} - ${escapeHtml(test.message)}</p>` : ''}
       <div class="button-row">
         <button class="secondary-button" type="button" data-ai-status-check>KI-Status pruefen</button>
-        <button class="secondary-button" type="button" data-ai-test-request>Testanfrage senden</button>
+        <button class="secondary-button" type="button" data-ai-test-request>OpenAI-Testanfrage senden</button>
         <button class="secondary-button" type="button" data-ai-setup-guide>Setup-Anleitung oeffnen</button>
       </div>
     </article>

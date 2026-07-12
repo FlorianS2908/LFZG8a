@@ -10,4 +10,10 @@ desktop-app/node_modules/
 *.pem
 *.p12
 secrets.json
+openai_key.txt
 openai-key.txt
+api_key_ContentFactory.txt
+*_key.txt
+*_secret.txt
+Secrets/
+secrets/

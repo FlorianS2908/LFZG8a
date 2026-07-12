@@ -2,10 +2,9 @@ const fs = require('fs');
 const path = require('path');
 
 function loadAppEnv(projectRoot = process.cwd()) {
-  const dotenvPath = path.join(projectRoot, '.env');
-  const dotenv = fs.existsSync(dotenvPath) ? parseEnvFile(fs.readFileSync(dotenvPath, 'utf8')) : {};
+  const dotenv = loadDotEnvFile(projectRoot);
   const read = (key, fallback = '') => {
-    if (process.env[key] !== undefined && process.env[key] !== '') return { value: process.env[key], source: 'env' };
+    if (process.env[key] !== undefined && process.env[key] !== '') return { value: process.env[key], source: 'process.env' };
     if (dotenv[key] !== undefined && dotenv[key] !== '') return { value: dotenv[key], source: 'dotenv' };
     return { value: fallback, source: 'missing' };
   };
@@ -20,6 +19,7 @@ function loadAppEnv(projectRoot = process.cwd()) {
     aiProvider: normalizeProvider(provider.value),
     openAiConfigured: Boolean(apiKey.value),
     openAiModel: model.value || 'gpt-5.4-mini',
+    openAiKeySource: apiKey.value ? apiKey.source : 'missing',
     timeoutMs: numberOr(timeout.value, 30000),
     maxPromptChars: numberOr(maxPrompt.value, 40000),
     costWarningUsd: numberOr(costWarning.value, 1),
@@ -29,12 +29,23 @@ function loadAppEnv(projectRoot = process.cwd()) {
 }
 
 function applyAppEnv(projectRoot = process.cwd()) {
-  const dotenvPath = path.join(projectRoot, '.env');
-  const dotenv = fs.existsSync(dotenvPath) ? parseEnvFile(fs.readFileSync(dotenvPath, 'utf8')) : {};
+  const dotenv = loadDotEnvFile(projectRoot);
   Object.entries(dotenv).forEach(([key, value]) => {
-    if (process.env[key] === undefined || process.env[key] === '') process.env[key] = value;
+    if ((process.env[key] === undefined || process.env[key] === '') && key !== 'OPENAI_API_KEY') process.env[key] = value;
   });
   return loadAppEnv(projectRoot);
+}
+
+function loadDotEnvFile(projectRoot = process.cwd()) {
+  const dotenvPath = path.join(projectRoot, '.env');
+  return fs.existsSync(dotenvPath) ? parseEnvFile(fs.readFileSync(dotenvPath, 'utf8')) : {};
+}
+
+function getOpenAiApiKey(projectRoot = process.cwd()) {
+  if (process.env.OPENAI_API_KEY) return { value: process.env.OPENAI_API_KEY, source: 'process.env' };
+  const dotenv = loadDotEnvFile(projectRoot);
+  if (dotenv.OPENAI_API_KEY) return { value: dotenv.OPENAI_API_KEY, source: 'dotenv' };
+  return { value: '', source: 'missing' };
 }
 
 function parseEnvFile(content = '') {
@@ -65,5 +76,7 @@ function numberOr(value, fallback) {
 module.exports = {
   loadAppEnv,
   applyAppEnv,
+  loadDotEnvFile,
+  getOpenAiApiKey,
   parseEnvFile
 };

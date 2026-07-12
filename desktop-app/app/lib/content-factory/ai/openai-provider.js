@@ -1,12 +1,16 @@
 const https = require('https');
+const { getOpenAiApiKey } = require('../../env/env-loader');
 
 class OpenAIProvider {
   constructor(options = {}) {
     this.name = 'openai';
-    this.apiKey = options.apiKey || process.env.OPENAI_API_KEY || '';
+    const keyInfo = Object.prototype.hasOwnProperty.call(options, 'apiKey')
+      ? { value: options.apiKey || '', source: options.keySource || 'process.env' }
+      : getOpenAiApiKey(options.projectRoot || process.cwd());
+    this.apiKey = keyInfo.value || '';
     this.model = options.model || process.env.OPENAI_MODEL || 'gpt-5.4-mini';
     this.timeoutMs = Number(options.timeoutMs || process.env.OPENAI_TIMEOUT_MS || 30000);
-    this.keySource = options.keySource || (this.apiKey ? 'env' : 'missing');
+    this.keySource = this.apiKey ? keyInfo.source : 'missing';
   }
 
   isConfigured() {

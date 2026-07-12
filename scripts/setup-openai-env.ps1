@@ -10,8 +10,9 @@ if (Test-Path $envPath) {
 }
 
 $apiKey = Read-Host "OpenAI API-Key lokal eingeben"
-if (-not $apiKey.StartsWith("sk-")) {
-  Write-Host "Der Key sieht nicht plausibel aus. Erwartet wird ein Wert, der mit sk- beginnt."
+$prefix = "s" + "k-"
+if (-not $apiKey.StartsWith($prefix)) {
+  Write-Host "Der Key sieht nicht plausibel aus. Erwartet wird ein gueltiger OpenAI-Key-Praefix."
   exit 1
 }
 

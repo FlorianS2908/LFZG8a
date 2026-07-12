@@ -24,7 +24,7 @@ function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
 }
 
-function createContentFactoryService({ appData }) {
+function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
   const factoryDir = path.join(appData.dataDir, 'content-factory');
   const batchesPath = path.join(factoryDir, 'import-batches.json');
   const storage = createContainerStorageService({
@@ -32,7 +32,7 @@ function createContentFactoryService({ appData }) {
     staticContainers: moduleRegistry.getAllModules()
   });
   const referenceLibrary = createReferenceLibraryService({ appData });
-  const aiOrchestrator = new AiOrchestrator();
+  const aiOrchestrator = new AiOrchestrator({ projectRoot });
   const curriculumPlanner = createCurriculumPlannerService({ factoryDir, aiOrchestrator });
   const cleanup = createCleanupService({ factoryDir, storage });
 

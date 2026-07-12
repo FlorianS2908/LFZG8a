@@ -9,12 +9,14 @@ const { loadAppEnv } = require('../../env/env-loader');
 class AiOrchestrator {
   constructor(options = {}) {
     this.env = options.env || loadAppEnv(options.projectRoot || process.cwd());
+    this.projectRoot = options.projectRoot || process.cwd();
     this.local = options.localProvider || new LocalHeuristicProvider();
     this.openai = options.openaiProvider || new OpenAIProvider({
       ...(options.openai || {}),
       model: options.openai?.model || this.env.openAiModel,
       timeoutMs: options.openai?.timeoutMs || this.env.timeoutMs,
-      keySource: this.env.keySource
+      keySource: this.env.openAiKeySource || this.env.keySource,
+      projectRoot: this.projectRoot
     });
   }
 
@@ -26,7 +28,7 @@ class AiOrchestrator {
       costWarningUsd: this.env.costWarningUsd,
       providers: {
         local: { configured: true },
-        openai: this.openai.getStatus ? this.openai.getStatus() : { provider: 'openai', configured: this.openai.isConfigured(), model: this.openai.model || '', keySource: this.openai.isConfigured() ? 'env' : 'missing' }
+        openai: this.openai.getStatus ? this.openai.getStatus() : { provider: 'openai', configured: this.openai.isConfigured(), model: this.openai.model || '', keySource: this.openai.isConfigured() ? 'process.env' : 'missing' }
       }
     };
   }

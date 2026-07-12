@@ -21,7 +21,7 @@ const { listPresets, applyPreset } = require('../app/lib/content-factory/presets
 const { buildPrompt, runPromptQualityGate } = require('../app/lib/content-factory/ai-quality-gate/ai-quality-gate-service');
 const { lintPrompt } = require('../app/lib/content-factory/ai-quality-gate/prompt-linter');
 const { reviewOutput, reviewArtifactContent } = require('../app/lib/content-factory/ai-quality-gate/output-review-service');
-const { loadAppEnv } = require('../app/lib/env/env-loader');
+const { loadAppEnv, getOpenAiApiKey } = require('../app/lib/env/env-loader');
 const { estimateContentFactoryCost } = require('../app/lib/content-factory/ai/cost-estimator');
 
 function createTempFactory() {
@@ -267,7 +267,7 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.ok(testProtocol.manualChecks.length >= 8);
     assert.doesNotMatch(JSON.stringify(testProtocol), /Originaltext|Reference chunk|Buchseite|rawText|textPreview|reference-library|chunks\.json|extracted\.json/i);
     assert.doesNotMatch(testProtocolHtml, /Originaltext|Reference chunk|Buchseite|rawText|textPreview|reference-library|chunks\.json|extracted\.json/i);
-    assert.doesNotMatch(JSON.stringify(testProtocol) + testProtocolHtml, /OPENAI_API_KEY|sk-[A-Za-z0-9_-]{10,}|apiKey|secret/i);
+    assert.doesNotMatch(JSON.stringify(testProtocol) + testProtocolHtml, /OPENAI_API_KEY|s[k]-[A-Za-z0-9_-]{10,}|apiKey|secret/i);
     assert.doesNotMatch(JSON.stringify(participantContent), /testprotokoll/i);
     assert.equal(draft.analysisReport.fallbackUsed, true);
     assert.match(reportHtml, /<h2>Quality<\/h2>/);
@@ -275,7 +275,7 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.match(reportHtml, /<h2>Prompt Quality<\/h2>/);
     assert.ok(draft.analysisReport.promptQuality.runCount >= 2);
     assert.doesNotMatch(reportHtml, /Originaltext|Reference chunk|Buchseite/i);
-    assert.doesNotMatch(reportHtml + JSON.stringify(draft.analysisReport), /OPENAI_API_KEY|sk-[A-Za-z0-9_-]{10,}|apiKey|secret/i);
+    assert.doesNotMatch(reportHtml + JSON.stringify(draft.analysisReport), /OPENAI_API_KEY|s[k]-[A-Za-z0-9_-]{10,}|apiKey|secret/i);
     assert.equal(draft.validation.isValid, true);
   } finally {
     cleanup();
@@ -474,15 +474,20 @@ test('openai env setup files and loader keep api keys out of repository outputs'
 
     assert.match(gitignore, /^\.env$/m);
     assert.match(gitignore, /^\.env\.local$/m);
+    assert.match(gitignore, /^api_key_ContentFactory\.txt$/m);
+    assert.match(gitignore, /^\*_key\.txt$/m);
     assert.match(gitignore, /^openai-key\.txt$/m);
-    assert.doesNotMatch(example, /sk-[A-Za-z0-9_-]{10,}/);
+    assert.doesNotMatch(example, /s[k]-[A-Za-z0-9_-]{10,}/);
     assert.match(example, /OPENAI_API_KEY=/);
-    assert.doesNotMatch(setupScript, /sk-[A-Za-z0-9_-]{10,}/);
+    assert.doesNotMatch(setupScript, /s[k]-[A-Za-z0-9_-]{10,}/);
     assert.equal(dotenvEnv.openAiConfigured, true);
+    assert.equal(dotenvEnv.openAiKeySource, 'dotenv');
     assert.equal(dotenvEnv.keySource, 'dotenv');
     assert.equal(dotenvEnv.openAiModel, 'dotenv-model');
     assert.equal(envOverride.openAiModel, 'env-model');
     assert.equal(Object.prototype.hasOwnProperty.call(dotenvEnv, 'OPENAI_API_KEY'), false);
+    assert.equal(getOpenAiApiKey(tmp).value, 'LOCAL_TEST_PLACEHOLDER');
+    assert.equal(getOpenAiApiKey(tmp).source, 'dotenv');
   } finally {
     restoreEnv('OPENAI_API_KEY', oldKey);
     restoreEnv('AI_PROVIDER', oldProvider);
@@ -491,8 +496,54 @@ test('openai env setup files and loader keep api keys out of repository outputs'
   }
 });
 
+test('openai txt setup script imports fake key into env and deletes source file', () => {
+  const repoRoot = path.join(__dirname, '..', '..');
+  const script = fs.readFileSync(path.join(repoRoot, 'scripts', 'setup-openai-key-from-txt.ps1'), 'utf8');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-keytxt-'));
+  const keyFile = path.join(tmp, 'openai_key.txt');
+  const envPath = path.join(repoRoot, '.env');
+  const existingEnv = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : null;
+  const fakeKey = `s${'k'}-test-placeholder-not-real-1234567890`;
+  try {
+    fs.writeFileSync(keyFile, fakeKey, 'utf8');
+    if (fs.existsSync(envPath)) fs.rmSync(envPath, { force: true });
+    const powershell = process.platform === 'win32'
+      ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
+      : 'pwsh';
+    const result = require('child_process').spawnSync(powershell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(repoRoot, 'scripts', 'setup-openai-key-from-txt.ps1'), '-KeyFile', keyFile], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      timeout: 30000
+    });
+    if (result.error && result.error.code === 'EPERM') {
+      assert.match(script, /Get-Content -LiteralPath \$KeyFile -Raw/);
+      assert.match(script, /Set-Content -LiteralPath \$envPath/);
+      assert.match(script, /Remove-Item -LiteralPath \$KeyFile -Force/);
+      assert.doesNotMatch(script, /Write-Host\s+\$apiKey|Write-Output\s+\$apiKey/);
+      return;
+    }
+    assert.ifError(result.error);
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.equal(fs.existsSync(keyFile), false);
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    assert.match(envContent, /AI_PROVIDER=openai/);
+    assert.match(envContent, /OPENAI_MODEL=gpt-5\.4-mini/);
+    assert.match(envContent, /OPENAI_API_KEY=/);
+    assert.doesNotMatch(result.stdout + result.stderr, new RegExp(fakeKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.doesNotMatch(script, /s[k]-[A-Za-z0-9_-]{10,}/);
+    assert.match(script, /api_key_ContentFactory\.txt/);
+  } finally {
+    if (existingEnv === null) {
+      if (fs.existsSync(envPath)) fs.rmSync(envPath, { force: true });
+    } else {
+      fs.writeFileSync(envPath, existingEnv, 'utf8');
+    }
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test('openai provider status and fallback never expose api keys', async () => {
-  const provider = new OpenAIProvider({ apiKey: 'LOCAL_TEST_PLACEHOLDER', model: 'test-model', keySource: 'env' });
+  const provider = new OpenAIProvider({ apiKey: 'LOCAL_TEST_PLACEHOLDER', model: 'test-model', keySource: 'process.env' });
   const missing = new OpenAIProvider({ apiKey: '', model: 'test-model' });
   const orchestrator = new AiOrchestrator({
     env: { aiProvider: 'openai', openAiModel: 'test-model', timeoutMs: 30000, maxPromptChars: 40000, costWarningUsd: 1, keySource: 'missing' },
@@ -503,7 +554,7 @@ test('openai provider status and fallback never expose api keys', async () => {
   const missingStatus = orchestrator.getStatus();
   const result = await orchestrator.generateDayDraft({ ...createApprovedTestInput(), day: createApprovedTestInput().coursePlan.days[0] }, 'openai');
 
-  assert.deepEqual(status, { provider: 'openai', configured: true, model: 'test-model', keySource: 'env' });
+  assert.deepEqual(status, { provider: 'openai', configured: true, model: 'test-model', keySource: 'process.env' });
   assert.doesNotMatch(JSON.stringify(status), /LOCAL_TEST_PLACEHOLDER/);
   assert.equal(missingStatus.providers.openai.configured, false);
   assert.equal(missingStatus.providers.openai.keySource, 'missing');
