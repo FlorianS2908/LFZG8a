@@ -7,6 +7,7 @@ function createTestProtocol(input = {}) {
     ...preflightChecks(input),
     ...curriculumChecks(input),
     ...sourceChecks(input),
+    ...didacticChecks(input),
     ...artifactChecks(input),
     ...demoChecks(input),
     ...contentChecks(input),
@@ -141,6 +142,27 @@ function sourceChecks(input) {
     statusCheck('extraction-quality', 'Quellenextraktion', 'Extraktionsqualitaet je Quelle', extraction.every((item) => !item.quality || item.quality.score >= 0.35), `${extraction.length} Quelle(n)`),
     (anchor.ranges || '').length ? pass('ranges-used', 'Quellenextraktion', 'Ranges angewendet', 'Bereichsangaben wurden dokumentiert.') : warn('ranges-used', 'Quellenextraktion', 'Ranges angewendet', 'Keine Bereichsangaben genutzt.'),
     pass('no-raw-source-export', 'Quellenextraktion', 'Keine Rohtexte exportiert', 'Protokoll dokumentiert nur Metadaten und Checks.')
+  ];
+}
+
+function didacticChecks(input) {
+  const profile = input.didacticProfile || input.curriculum?.didacticProfile || {};
+  const releasePlan = input.releasePlan || [];
+  const dayResults = input.dayResults || [];
+  const flowEntries = dayResults.flatMap((day) => day.didacticFlow || []);
+  const teacherNotesRequired = profile.requiresTeacherNotes === true;
+  const reflectionRequired = profile.requiresReflection === true;
+  return [
+    statusCheck('didactic-profile-present', 'Didaktik', 'Didaktikprofil vorhanden', Boolean(profile.id && profile.teachingModel), `Profil: ${profile.id || 'fehlt'}`),
+    statusCheck('didactic-flow-present', 'Didaktik', 'Lesson Flow vorhanden', Array.isArray(profile.lessonFlow) && profile.lessonFlow.length > 0, (profile.lessonFlow || []).join(' > ') || 'fehlt'),
+    statusCheck('didactic-demo-strategy', 'Didaktik', 'Demo-Strategie dokumentiert', Boolean(profile.demoStrategy), `Demo: ${profile.demoStrategy || 'fehlt'}`),
+    statusCheck('didactic-release-strategy', 'Didaktik', 'Freigabe-Strategie dokumentiert', Boolean(profile.releaseStrategy), `Freigabe: ${profile.releaseStrategy || 'fehlt'}`),
+    statusCheck('didactic-day-flow', 'Didaktik', 'Tagesentwuerfe enthalten Flow', !dayResults.length || dayResults.every((day) => (day.didacticFlow || []).length), `${flowEntries.length} Flow-Eintraege`),
+    statusCheck('didactic-release-plan', 'Didaktik', 'ReleasePlan erzeugt', Array.isArray(releasePlan) && releasePlan.length > 0, `${releasePlan.length} Freigabe-Hinweise`),
+    teacherNotesRequired ? statusCheck('didactic-teacher-notes', 'Didaktik', 'Dozentenhinweise vorhanden', dayResults.some((day) => JSON.stringify(day.webvariant?.teacherHtmlSections || []).match(/Didaktisches Konzept|Unterrichtsfluss|Freigabehinweis/i)), 'Dozentenansicht geprueft.') : pass('didactic-teacher-notes', 'Didaktik', 'Dozentenhinweise vorhanden', 'Nicht erforderlich.'),
+    reflectionRequired ? statusCheck('didactic-reflection', 'Didaktik', 'Reflexion vorhanden', dayResults.some((day) => day.reflection || JSON.stringify(day.webvariant || {}).match(/Reflexion|Rueckblick/i)), 'Reflexion geprueft.') : pass('didactic-reflection', 'Didaktik', 'Reflexion vorhanden', 'Nicht erforderlich.'),
+    profile.id === 'guided-coding' ? statusCheck('guided-coding-flow', 'Didaktik', 'Guided Coding Ablauf', (profile.lessonFlow || []).includes('live-coding') && (profile.lessonFlow || []).includes('code-along'), 'Live-Coding und Code-Along geprueft.') : pass('guided-coding-flow', 'Didaktik', 'Guided Coding Ablauf', 'Nicht zutreffend.'),
+    profile.id === 'exam-training' ? statusCheck('exam-training-flow', 'Didaktik', 'Pruefungstraining Ablauf', /rubric|mini-test|quiz|bewertung/i.test(`${profile.assessmentMode || ''} ${JSON.stringify(releasePlan)}`), 'Assessment geprueft.') : pass('exam-training-flow', 'Didaktik', 'Pruefungstraining Ablauf', 'Nicht zutreffend.')
   ];
 }
 

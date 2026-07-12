@@ -1,5 +1,7 @@
 const { normalizeDayGenerationResult } = require('./output-normalizer');
 const { decideArtifactSuggestions, describeAgeRange } = require('../container-profile/audience-artifact-decision-service');
+const { normalizeDidacticProfile } = require('../didactics/didactic-profile-service');
+const { buildDidacticFlow, buildReleasePlan } = require('../didactics/lesson-flow-service');
 
 class LocalHeuristicProvider {
   constructor() {
@@ -14,6 +16,7 @@ class LocalHeuristicProvider {
     const day = input.day || {};
     const targetAudience = input.targetAudience || input.curriculumPlan?.targetAudience || {};
     const ageProfile = describeAgeRange(targetAudience.ageRange);
+    const didacticProfile = normalizeDidacticProfile(input.didacticProfile || input.curriculumPlan?.didacticProfile);
     const dayNumber = Number(input.dayNumber || day.dayNumber || 1);
     const title = input.title || day.title || `Tag ${dayNumber}`;
     const goals = day.learningGoals?.length ? day.learningGoals : [`${mainTopic(day, title)} verstehen und anwenden.`];
@@ -22,13 +25,16 @@ class LocalHeuristicProvider {
     const warnings = [];
     if (!input.materials?.length) warnings.push('Kein Zusatzmaterial fuer diesen Tag erkannt. Entwurf basiert auf Unterrichtsplan und Referenzmetadaten.');
 
-    const tasks = createTasks(blocks, dayNumber, sourceRefs, targetAudience);
+    const didacticFlow = buildDidacticFlow(didacticProfile, { ...day, title });
+    const tasks = createTasks(blocks, dayNumber, sourceRefs, targetAudience, didacticProfile);
     const solutions = createSolutions(tasks, blocks, dayNumber, sourceRefs, targetAudience);
     const quiz = createQuiz(blocks, dayNumber, sourceRefs, targetAudience);
     const artifacts = createArtifactPlan(day, dayNumber, input.containerProfile, targetAudience, input);
-    const demos = createDemoSuggestions(day, blocks, input.containerProfile);
-    const teacherSections = createTeacherSections({ title, goals, blocks, tasks, solutions, quiz, sourceRefs, warnings, targetAudience, ageProfile });
-    const participantSections = createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRefs, targetAudience, ageProfile });
+    const demos = createDemoSuggestions(day, blocks, input.containerProfile, didacticProfile);
+    const releasePlan = buildReleasePlan(didacticProfile, [{ dayNumber, tasks, quiz }]);
+    const reflection = createReflection(didacticProfile, title);
+    const teacherSections = createTeacherSections({ title, goals, blocks, tasks, solutions, quiz, sourceRefs, warnings, targetAudience, ageProfile, didacticProfile, didacticFlow, releasePlan, reflection });
+    const participantSections = createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRefs, targetAudience, ageProfile, didacticProfile, didacticFlow, reflection });
 
     return normalizeDayGenerationResult({
       dayNumber,
@@ -43,6 +49,9 @@ class LocalHeuristicProvider {
       quiz,
       artifacts,
       demos,
+      didacticFlow,
+      releasePlan,
+      reflection,
       sourceRefs,
       warnings,
       aiAdditions: input.referenceContext?.length ? ['Referenzmetadaten wurden als Kontext beruecksichtigt.'] : []
@@ -72,8 +81,18 @@ class LocalHeuristicProvider {
   }
 }
 
-function createDemoSuggestions(day, blocks, containerProfile = {}) {
+function createDemoSuggestions(day, blocks, containerProfile = {}, didacticProfile = {}) {
+  if (didacticProfile.defaultDemoEnabled === false || didacticProfile.demoStrategy === 'none') return [];
   const text = [day.title, day.mainTopic, containerProfile.courseType, ...blocks.map((block) => block.topic)].join(' ');
+  if (didacticProfile.demoStrategy === 'error-demo') {
+    return [{ title: 'Demo: Fehlerbild analysieren', tool: 'vscode', description: 'Fehlerhafte Ausgangsdatei fuer Problem-First-Analyse. Keine Loesung enthalten.', suggestedFileName: 'demo_01_code/Main.java', buttonLabel: 'Fehler-Demo oeffnen' }];
+  }
+  if (didacticProfile.demoStrategy === 'worked-example') {
+    return [{ title: 'Demo: Musterbeispiel betrachten', tool: 'vscode', description: 'Kurzes Musterbeispiel als Einstieg, danach Fading-Aufgaben.', suggestedFileName: 'demo_01_code/Main.java', buttonLabel: 'Musterbeispiel oeffnen' }];
+  }
+  if (didacticProfile.demoStrategy === 'live-coding') {
+    return [{ title: 'Demo: Live-Coding starten', tool: 'vscode', description: 'Schrittweise Code-Demo zum Mitmachen.', suggestedFileName: /python|jupyter/i.test(text) ? 'demo_01_code/main.py' : 'demo_01_code/Main.java', buttonLabel: 'Live-Coding in VS Code oeffnen' }];
+  }
   if (/\b(sql|datenbank|abfrage|select|join|phpmyadmin)\b/i.test(text)) {
     return [{ title: 'Demo: SQL-Datei lesen', tool: 'sql', description: 'Dozenten-Demo zum Lesen einer SQL-Datei ohne Ausfuehrung.', suggestedFileName: 'demo_01_abfrage.sql', buttonLabel: 'SQL-Demo oeffnen' }];
   }
@@ -137,21 +156,24 @@ function normalizeBlocks(day, title) {
     }));
 }
 
-function createTeacherSections({ title, goals, blocks, tasks, solutions, quiz, sourceRefs, warnings, targetAudience, ageProfile }) {
+function createTeacherSections({ title, goals, blocks, tasks, solutions, quiz, sourceRefs, warnings, targetAudience, ageProfile, didacticProfile, didacticFlow, releasePlan, reflection }) {
   return [
+    section('Unterrichtsfluss', renderFlow(didacticFlow), sourceRefs),
+    section('Didaktisches Konzept', paragraph(`${didacticProfile.label}: ${didacticProfile.description}`), sourceRefs),
     section('Einstieg und Motivation', paragraph(`${teacherIntro(title, ageProfile)} Sammeln Sie Vorwissen und klaeren Sie, wozu das Thema gebraucht wird.`), sourceRefs),
     section('Lernziele', list(goals), sourceRefs),
     section('Vorwissen aktivieren', list(blocks.map((block) => `Begriff oder Erfahrung zu ${block.topic} abfragen und sichtbar sichern.`)), sourceRefs),
     section('Themenabschnitte', blocks.map((block) => `<p><strong>${escapeHtml(block.topic)}</strong><br>${escapeHtml(block.teacherTask)}</p>`).join(''), sourceRefs),
     section('Beispiel und Demo', list(blocks.map((block) => `Zeigen Sie ein kleines Beispiel zu ${block.topic} und markieren Sie typische Stolperstellen.`)), sourceRefs),
+    section('Freigabehinweis', list(releasePlan.map((item) => item.releaseHint || 'Nach der Demo Aufgabe ueber Freigabezentrum freigeben.')), sourceRefs),
     section('Arbeitsphase', list(tasks.map((task) => `${task.title}: ${task.text}`)), sourceRefs),
-    section('Reflexion und Sicherung', paragraph(`Lassen Sie Ergebnisse vergleichen, Fachbegriffe korrigieren und offene Fragen notieren. ${ageProfile.group === 'adult' ? 'Verbinden Sie die Ergebnisse mit Arbeitssituationen der Teilnehmenden.' : ''} ${targetAudience.examOrientation ? 'Schliessen Sie mit einer pruefungsnahen Kurzfrage ab.' : ''}`), sourceRefs),
+    section('Reflexion und Sicherung', list(reflection.questions.length ? reflection.questions : [`Lassen Sie Ergebnisse vergleichen, Fachbegriffe korrigieren und offene Fragen notieren. ${ageProfile.group === 'adult' ? 'Verbinden Sie die Ergebnisse mit Arbeitssituationen der Teilnehmenden.' : ''} ${targetAudience.examOrientation ? 'Schliessen Sie mit einer pruefungsnahen Kurzfrage ab.' : ''}`]), sourceRefs),
     section('Zusammenfassung und Ausblick', paragraph(`Sichern Sie die wichtigsten Erkenntnisse zu ${title} und leiten Sie zum naechsten Kurstag ueber.`), sourceRefs),
     section('Dozentenhinweise', list([...(warnings.length ? warnings : ['Fachliche Endpruefung empfohlen.']), `Quizfragen: ${quiz.length}`, `Erwartungshorizonte: ${solutions.length}`]), sourceRefs)
   ];
 }
 
-function createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRefs, targetAudience, ageProfile }) {
+function createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRefs, targetAudience, ageProfile, didacticProfile, didacticFlow, reflection }) {
   const stepHint = targetAudience.priorKnowledge === 'none' || targetAudience.needsStepByStep
     ? 'Arbeiten Sie Schritt fuer Schritt und notieren Sie Rueckfragen.'
     : 'Begruenden Sie Ihre Entscheidungen fachlich.';
@@ -161,35 +183,50 @@ function createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRe
       ? 'Uebertragen Sie das Ergebnis auf eine berufliche Situation.'
       : '';
   return [
+    section('Lernweg', renderParticipantFlow(didacticFlow), sourceRefs),
     section('Einstieg', paragraph(`Heute geht es um ${title}. Ziel ist, die Begriffe einzuordnen und an einem Beispiel anzuwenden.`), sourceRefs),
     section('Lernziele', list(goals), sourceRefs),
     section('Vorwissen', list(blocks.map((block) => `Was wissen Sie bereits zu ${block.topic}? Notieren Sie ein Beispiel.`)), sourceRefs),
     section('Themenueberblick', list(blocks.map((block) => block.topic)), sourceRefs),
     section('Beispiel und Demo', paragraph(`Folgen Sie der Demo aufmerksam und markieren Sie die Schritte, die Sie spaeter selbst anwenden koennen.`), sourceRefs),
     section('Arbeitsphase', list(tasks.map((task) => `${task.title}: ${task.text} ${stepHint} ${ageHint}`)), sourceRefs),
-    section('Reflexion', paragraph('Vergleichen Sie Ihr Vorgehen mit einer anderen Person und halten Sie zwei Erkenntnisse fest.'), sourceRefs),
+    section('Reflexion', list(reflection.questions.length ? reflection.questions : ['Vergleichen Sie Ihr Vorgehen mit einer anderen Person und halten Sie zwei Erkenntnisse fest.']), sourceRefs),
     section('Zusammenfassung und Ausblick', paragraph(`Fassen Sie die wichtigsten Punkte zu ${title} in eigenen Worten zusammen.`), sourceRefs),
     section('Quiz-Vorbereitung', list(quiz.slice(0, 3).map((item) => item.text)), sourceRefs)
   ];
 }
 
-function createTasks(blocks, dayNumber, sourceRefs, targetAudience) {
-  const levels = targetAudience.difficultyMode === 'easy-normal-hard'
+function createTasks(blocks, dayNumber, sourceRefs, targetAudience, didacticProfile = {}) {
+  const profileLevels = levelsForDidacticProfile(didacticProfile);
+  const levels = profileLevels.length ? profileLevels : targetAudience.difficultyMode === 'easy-normal-hard'
     ? ['leicht', 'mittel', 'schwer']
     : targetAudience.difficultyMode === 'normal-and-hard'
       ? ['mittel', 'schwer']
       : ['mittel'];
   return blocks.flatMap((block, blockIndex) => levels.map((level, levelIndex) => ({
     id: `task-${dayNumber}-${blockIndex + 1}-${levelIndex + 1}`,
-    title: `${capitalize(level)}e Aufgabe: ${block.topic}`,
-    text: taskInstruction(block.topic, level, targetAudience),
+    title: taskTitle(block.topic, level, didacticProfile),
+    text: taskInstruction(block.topic, level, targetAudience, didacticProfile),
     difficulty: level,
     sourceRefs,
     aiGenerated: false
   })));
 }
 
-function taskInstruction(topic, level, targetAudience) {
+function taskInstruction(topic, level, targetAudience, didacticProfile = {}) {
+  if (didacticProfile.id === 'problem-first') return `Analysieren Sie den Problemfall zu "${topic}", finden Sie die Ursache, korrigieren Sie den Ansatz und begruenden Sie Ihre Diagnose.`;
+  if (didacticProfile.id === 'project-based') return `Erweitern Sie den Projektbaustein zu "${topic}", dokumentieren Sie den Fortschritt und markieren Sie offene Risiken.`;
+  if (didacticProfile.id === 'exam-training') return `Bearbeiten Sie "${topic}" als Zeitaufgabe in 15 Minuten. Dokumentieren Sie Bewertungskriterien, typische Fehler und Ihr Ergebnis.`;
+  if (didacticProfile.id === 'station-learning') return `Bearbeiten Sie die Station zu "${topic}" und fuehren Sie danach den Selbstcheck durch.`;
+  if (didacticProfile.id === 'guided-coding') return level === 'erweiterung'
+    ? `Erweitern Sie die Live-Coding-Demo zu "${topic}" um eine kleine Zusatzfunktion.`
+    : `Coden Sie den Schritt zu "${topic}" mit und kommentieren Sie jede wichtige Zeile kurz.`;
+  if (didacticProfile.id === 'worked-example-fading') {
+    if (level === 'muster') return `Lesen Sie das Musterbeispiel zu "${topic}" und markieren Sie die Schluesselschritte.`;
+    if (level === 'gefuehrt') return `Bearbeiten Sie die gefuehrte Aufgabe zu "${topic}" mit Hilfeschritten.`;
+    if (level === 'luecke') return `Ergaenzen Sie die fehlenden Schritte zu "${topic}" und begruenden Sie Ihre Auswahl.`;
+    return `Loesen Sie eine freie Aufgabe zu "${topic}" eigenstaendig.`;
+  }
   const ageProfile = describeAgeRange(targetAudience.ageRange);
   if (level === 'leicht') {
     return ageProfile.group === 'young'
@@ -207,6 +244,46 @@ function taskInstruction(topic, level, targetAudience) {
   return targetAudience.examOrientation
     ? `Bearbeiten Sie eine pruefungsnahe Situation zu "${topic}" in 15 Minuten und dokumentieren Sie Vorgehen, Ergebnis und Begruendung.`
     : `Erstellen Sie ein nachvollziehbares Beispiel zu "${topic}" und dokumentieren Sie Ihr Vorgehen in Stichpunkten.`;
+}
+
+function levelsForDidacticProfile(profile = {}) {
+  if (profile.id === 'worked-example-fading') return ['muster', 'gefuehrt', 'luecke', 'frei'];
+  if (profile.id === 'station-learning') return ['grundlagen', 'anwendung', 'transfer', 'challenge'];
+  if (profile.id === 'guided-coding') return ['mitmachen', 'zwischenaufgabe', 'erweiterung'];
+  if (profile.id === 'exam-training') return ['zeitaufgabe', 'auswertung', 'mini-test'];
+  if (profile.id === 'problem-first') return ['analyse', 'korrektur', 'systematisierung'];
+  if (profile.id === 'project-based') return ['projektbaustein', 'fortschrittscheck'];
+  return [];
+}
+
+function taskTitle(topic, level, profile = {}) {
+  if (profile.id === 'worked-example-fading') return `${capitalize(level)}: ${topic}`;
+  if (profile.id === 'station-learning') return `Station ${capitalize(level)}: ${topic}`;
+  if (profile.id === 'guided-coding') return `Guided Coding ${capitalize(level)}: ${topic}`;
+  if (profile.id === 'exam-training') return `Pruefungstraining ${capitalize(level)}: ${topic}`;
+  if (profile.id === 'problem-first') return `Problem-First ${capitalize(level)}: ${topic}`;
+  if (profile.id === 'project-based') return `Projekt ${capitalize(level)}: ${topic}`;
+  return `${capitalize(level)}e Aufgabe: ${topic}`;
+}
+
+function createReflection(profile = {}, title) {
+  const base = profile.reflectionMode || 'end-of-day';
+  return {
+    mode: base,
+    questions: [
+      `Was war im Ablauf "${profile.label || 'Didaktisches Profil'}" fuer ${title} der wichtigste Schritt?`,
+      'Welche Frage ist offen geblieben?',
+      profile.assessmentMode ? `Wie sicher fuehlen Sie sich im Assessment-Modus ${profile.assessmentMode}?` : 'Was nehmen Sie fuer die naechste Aufgabe mit?'
+    ]
+  };
+}
+
+function renderFlow(flow = []) {
+  return `<ol>${flow.map((item) => `<li><strong>${escapeHtml(item.title)}</strong>: ${escapeHtml(item.teacherAction)} ${escapeHtml(item.releaseHint || '')}</li>`).join('')}</ol>`;
+}
+
+function renderParticipantFlow(flow = []) {
+  return `<ol>${flow.filter((item) => !/Dozent|Freigabezentrum/i.test(item.title + item.teacherAction)).map((item) => `<li><strong>${escapeHtml(item.title)}</strong>: ${escapeHtml(item.participantAction)}</li>`).join('')}</ol>`;
 }
 
 function teacherIntro(title, ageProfile) {

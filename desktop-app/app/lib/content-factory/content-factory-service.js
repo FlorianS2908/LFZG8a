@@ -21,6 +21,7 @@ const { createCleanupService } = require('./cleanup/cleanup-service');
 const { buildPrompt, runPromptQualityGate } = require('./ai-quality-gate/ai-quality-gate-service');
 const { estimateContentFactoryCost } = require('./ai/cost-estimator');
 const { summarizeGoldenPromptTests } = require('./ai/prompts/golden-tests/golden-test-runner');
+const { listDidacticProfiles, applyDidacticProfile, suggestDidacticProfile } = require('./didactics/didactic-profile-service');
 
 function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
@@ -87,6 +88,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
       referenceSources: referenceLibrary.listReferenceSources(),
       curriculumDrafts: curriculumPlanner.listCurriculumDrafts(),
       presets: listPresets(),
+      didacticProfiles: listDidacticProfiles(),
       storageUsage: cleanup.listStorageUsage(),
       targetAreas,
       targetAreaLabels
@@ -191,6 +193,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
       targetAudience: curriculumPlan.targetAudience || input.targetAudience,
       difficultyMode: curriculumPlan.targetAudience?.difficultyMode,
       didacticStyle: curriculumPlan.didacticStyle,
+      didacticProfile: input.didacticProfile || curriculumPlan.didacticProfile,
       expectedOutcome: curriculumPlan.expectedOutcome,
       referenceContext
     }, input.aiMode || 'local');
@@ -226,6 +229,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
           dayNumber: day.dayNumber,
           title: day.title,
           curriculumPlan,
+          didacticProfile: input.didacticProfile || curriculumPlan.didacticProfile,
           referenceContext
         }, input.aiMode || 'local');
         result.progress = `Tag ${day.dayNumber}/${curriculumPlan.days.length} erzeugt`;
@@ -238,6 +242,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
           dayNumber: day.dayNumber,
           title: day.title,
           curriculumPlan,
+          didacticProfile: input.didacticProfile || curriculumPlan.didacticProfile,
           referenceContext: []
         }, 'local');
         fallback.warnings.push(`Fallback fuer Tag ${day.dayNumber}: ${error.message}`);
@@ -256,7 +261,8 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
     }
     return aiOrchestrator.reviseDayDraft({
       ...input,
-      curriculumPlan
+      curriculumPlan,
+      didacticProfile: input.didacticProfile || curriculumPlan.didacticProfile
     }, input.aiMode || 'local');
   }
 
@@ -740,6 +746,18 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
     listPresets: (session) => {
       assertAdmin(session);
       return listPresets();
+    },
+    listDidacticProfiles: (session) => {
+      assertAdmin(session);
+      return listDidacticProfiles();
+    },
+    applyDidacticProfile: (id, input, session) => {
+      assertAdmin(session);
+      return applyDidacticProfile(id, input);
+    },
+    suggestDidacticProfile: (input, session) => {
+      assertAdmin(session);
+      return suggestDidacticProfile(input);
     },
     applyPreset: (id, input, session) => {
       assertAdmin(session);

@@ -5,19 +5,24 @@ function inferDemoTargetsForDays(input = {}) {
   const dayResults = input.dayResults || [];
   const coursePlanDays = input.coursePlan?.days || [];
   const options = input.options || {};
+  const didacticProfile = input.didacticProfile || {};
   const maxPerDay = Math.max(0, Math.min(3, Number(options.maxPerDay ?? input.maxPerDay ?? 1)));
+  if (didacticProfile.defaultDemoEnabled === false || didacticProfile.demoStrategy === 'none') return [];
   if (!maxPerDay) return [];
   return dayResults.flatMap((result) => {
     const planDay = coursePlanDays.find((day) => Number(day.dayNumber) === Number(result.dayNumber)) || {};
     const explicit = normalizeExplicitDemos(result.demos || [], result);
-    const inferred = inferForDay(result, planDay, input.containerProfile || {});
+    const inferred = inferForDay(result, planDay, input.containerProfile || {}, didacticProfile);
     return [...explicit, ...inferred].slice(0, maxPerDay).map((target, index) => normalizeTarget(target, result, index, options));
   });
 }
 
-function inferForDay(result = {}, planDay = {}, profile = {}) {
+function inferForDay(result = {}, planDay = {}, profile = {}, didacticProfile = {}) {
   const text = collectTopicText(result, planDay, profile);
   const lower = text.toLowerCase();
+  if (didacticProfile.demoStrategy === 'error-demo') return [codeDemo(result, lower, profile, 'Fehler-Demo oeffnen', 'Demo: Fehlerbild analysieren')];
+  if (didacticProfile.demoStrategy === 'worked-example') return [codeDemo(result, lower, profile, 'Musterbeispiel oeffnen', 'Demo: Musterbeispiel betrachten')];
+  if (didacticProfile.demoStrategy === 'live-coding') return [codeDemo(result, lower, profile, 'Live-Coding in VS Code oeffnen', 'Demo: Live-Coding')];
   if (/\b(sql|datenbank|datenbanken|abfrage|select|join|phpmyadmin)\b/i.test(text)) return [sqlDemo(result)];
   if (/\b(erm|uml|pap|diagramm|ablauf|modellierung)\b/i.test(text)) return [drawioDemo(result)];
   if (/\b(html|css|layout|flexbox|grid|responsive)\b/i.test(text)) return [htmlDemo(result)];
@@ -88,11 +93,11 @@ function wordDemo(result) {
   return { tool: 'word', title: 'Demo: Beispieltext markieren', fileName: 'demo_01_text.rtf', buttonLabel: 'Demo in Word oeffnen', description: `Text-Demo zu ${result.title || 'diesem Thema'}.` };
 }
 
-function codeDemo(result, lower, profile) {
+function codeDemo(result, lower, profile, buttonLabel = 'Demo in VS Code oeffnen', title = 'Demo: Code lesen') {
   if (/python|jupyter/.test(lower) || /python|jupyter/.test(profile.courseType || '')) {
-    return { tool: 'vscode', title: 'Demo: Python-Code lesen', fileName: 'demo_01_code/main.py', buttonLabel: 'Demo in VS Code oeffnen' };
+    return { tool: 'vscode', title, fileName: 'demo_01_code/main.py', buttonLabel };
   }
-  return { tool: 'vscode', title: 'Demo: Code lesen', fileName: 'demo_01_code/Main.java', buttonLabel: 'Demo in VS Code oeffnen' };
+  return { tool: 'vscode', title, fileName: 'demo_01_code/Main.java', buttonLabel };
 }
 
 function sqlDemo() {

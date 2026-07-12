@@ -6,6 +6,7 @@ const state = {
   referenceSources: [],
   curriculumDrafts: [],
   presets: [],
+  didacticProfiles: [],
   storageUsage: null,
   targetAreas: [],
   targetAreaLabels: {},
@@ -25,6 +26,7 @@ const state = {
     courseGoal: '',
     expectedOutcome: 'grundlagenkurs',
     didacticStyle: 'guided',
+    didacticProfile: { id: 'explain-demo-practice' },
     curriculumDraft: null,
     approvedCurriculumPlan: null,
     coursePlan: null,
@@ -254,10 +256,12 @@ function renderPlanWizard() {
       <label class="checkline"><input data-wizard-audience-check="examOrientation" type="checkbox" ${wizard.targetAudience.examOrientation ? 'checked' : ''}> Pruefungsorientierung</label>
     </article>
 
+    ${renderDidacticProfileStep(wizard)}
+
     ${renderContainerProfileStep(wizard)}
 
     <article class="tool-card">
-      <h3>5. Analyse starten</h3>
+      <h3>6. Analyse starten</h3>
       <p class="status-line">Die Container-Konfiguration steuert sichere Artefaktvorschlaege. Code, SQL und externe Tools werden nie automatisch ausgefuehrt.</p>
       <button class="primary-button" type="button" data-wizard-analyze ${wizard.anchorFiles.length ? '' : 'disabled'}>Curriculum analysieren</button>
     </article>
@@ -330,7 +334,7 @@ function renderContainerProfileStep(wizard) {
   const presets = state.presets || [];
   return `
     <article class="tool-card">
-      <h3>4. Container-Konfiguration</h3>
+      <h3>5. Container-Konfiguration</h3>
       <div class="factory-form-grid">
         <label>Preset<select data-wizard-preset><option value="">Kein Preset</option>${presets.map((preset) => `<option value="${escapeHtml(preset.id)}" ${wizard.selectedPresetId === preset.id ? 'selected' : ''}>${escapeHtml(preset.label || preset.id)}</option>`).join('')}</select></label>
         <label>Kurstyp<select data-container-profile="courseType">${types.map((value) => `<option value="${value}" ${profile.courseType === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
@@ -353,6 +357,45 @@ function renderContainerProfileStep(wizard) {
         <button class="secondary-button" type="button" data-profile-preset="jupyter">Jupyter hinzufuegen</button>
       </div>
       ${wizard.curriculumDraft ? renderArtifactSuggestionPreview(wizard) : '<small>Artefakt-Vorschlaege erscheinen nach der Curriculum-Analyse.</small>'}
+    </article>
+  `;
+}
+
+function getSelectedDidacticProfile() {
+  const selectedId = state.wizard.didacticProfile?.id || 'explain-demo-practice';
+  return (state.didacticProfiles || []).find((profile) => profile.id === selectedId)
+    || (state.didacticProfiles || [])[0]
+    || state.wizard.didacticProfile
+    || { id: 'explain-demo-practice', label: 'Erklaeren, Demo, Ueben', lessonFlow: [] };
+}
+
+function renderDidacticProfileStep(wizard) {
+  const profiles = state.didacticProfiles || [];
+  const selected = getSelectedDidacticProfile();
+  const profile = selected || {};
+  return `
+    <article class="tool-card">
+      <h3>4. Didaktisches Kursprofil</h3>
+      <div class="factory-form-grid">
+        <label>Profil<select data-wizard-didactic-profile>
+          ${profiles.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === profile.id ? 'selected' : ''}>${escapeHtml(item.label || item.id)}</option>`).join('')}
+        </select></label>
+        <label>Unterrichtsmodell<input value="${escapeHtml(profile.teachingModel || '-')}" readonly></label>
+        <label>Demo-Strategie<input value="${escapeHtml(profile.demoStrategy || '-')}" readonly></label>
+        <label>Freigabe<input value="${escapeHtml(profile.releaseStrategy || '-')}" readonly></label>
+      </div>
+      <div class="validation-box">
+        <strong>${escapeHtml(profile.label || profile.id)}</strong>
+        <p>${escapeHtml(profile.description || '')}</p>
+        <div class="summary-grid">
+          <span>Progression: ${escapeHtml(profile.taskProgression || '-')}</span>
+          <span>Support: ${escapeHtml(profile.supportLevel || '-')}</span>
+          <span>Assessment: ${escapeHtml(profile.assessmentMode || '-')}</span>
+          <span>Reflexion: ${escapeHtml(profile.reflectionMode || '-')}</span>
+        </div>
+        <small>Lesson Flow: ${(profile.lessonFlow || []).map((phase) => escapeHtml(phase)).join(' -> ') || '-'}</small>
+      </div>
+      <p class="status-line">Das Profil steuert Tagesaufbau, Aufgabenprogression, Demo-Vorschlaege, Dozentenhinweise und Freigabelogik.</p>
     </article>
   `;
 }
@@ -616,9 +659,11 @@ function getWizardGates() {
   const approvedDone = wizard.approvedCurriculumPlan?.status === 'approved';
   const draftDone = Boolean(wizard.dayDraft);
   const containerDone = Boolean(wizard.generatedDraft);
+  const didacticDone = Boolean(getSelectedDidacticProfile()?.id);
   return [
     { label: 'Kursdaten', done: courseDone, active: !courseDone },
     { label: 'Hauptquelle', done: anchorDone, active: courseDone && !anchorDone },
+    { label: 'Didaktik', done: didacticDone, active: courseDone },
     { label: 'Curriculum', done: curriculumDone, active: anchorDone && !curriculumDone },
     { label: 'Freigabe', done: approvedDone, active: curriculumDone && !approvedDone },
     { label: 'Uploads/Referenzen', done: Boolean(wizard.importBatch || wizard.uploadFiles.length || wizard.useReferences), active: approvedDone },
@@ -667,6 +712,13 @@ function bindPlanWizardEvents() {
   });
   $('[data-wizard-style]')?.addEventListener('change', (event) => {
     state.wizard.didacticStyle = event.target.value;
+  });
+  $('[data-wizard-didactic-profile]')?.addEventListener('change', (event) => {
+    state.wizard.didacticProfile = (state.didacticProfiles || []).find((profile) => profile.id === event.target.value) || { id: event.target.value };
+    state.wizard.curriculumDraft = null;
+    state.wizard.approvedCurriculumPlan = null;
+    state.wizard.status = 'Didaktik geaendert. Curriculum bitte neu analysieren.';
+    renderPlanWizard();
   });
   $all('[data-container-profile]').forEach((field) => field.addEventListener('change', () => {
     state.wizard.containerProfile[field.dataset.containerProfile] = field.value;
@@ -861,6 +913,7 @@ async function analyzeWizardCurriculum() {
       courseGoal: state.wizard.courseGoal,
       expectedOutcome: state.wizard.expectedOutcome,
       didacticStyle: state.wizard.didacticStyle,
+      didacticProfile: getSelectedDidacticProfile(),
       containerProfile: state.wizard.containerProfile,
       aiMode: state.wizard.aiMode
     });
@@ -1020,6 +1073,7 @@ async function generateWizardDayDraft() {
       useReferences: state.wizard.useReferences,
       targetAudience: state.wizard.targetAudience,
       containerProfile: state.wizard.containerProfile,
+      didacticProfile: getSelectedDidacticProfile(),
       aiMode: state.wizard.aiMode
     });
     state.wizard.dayResults = [
@@ -1045,6 +1099,7 @@ async function generateAllWizardDayDrafts() {
       useReferences: state.wizard.useReferences,
       targetAudience: state.wizard.targetAudience,
       containerProfile: state.wizard.containerProfile,
+      didacticProfile: getSelectedDidacticProfile(),
       aiMode: state.wizard.aiMode
     });
     state.wizard.dayDraft = state.wizard.dayResults[0] || null;
@@ -1068,6 +1123,7 @@ async function reviseWizardDayDraft() {
       correctionPrompt: state.wizard.corrections,
       targetAudience: state.wizard.targetAudience,
       containerProfile: state.wizard.containerProfile,
+      didacticProfile: getSelectedDidacticProfile(),
       aiMode: state.wizard.aiMode
     });
     state.wizard.dayResults = [
@@ -1097,6 +1153,7 @@ async function createWizardDraft() {
       corrections: state.wizard.corrections,
       targetAudience: state.wizard.targetAudience,
       containerProfile: state.wizard.containerProfile,
+      didacticProfile: getSelectedDidacticProfile(),
       dayResults
     });
     state.wizard.status = 'Draft-Container erzeugt.';
@@ -1124,6 +1181,7 @@ function buildWizardTestInput(overrides = {}) {
     corrections: state.wizard.corrections,
     targetAudience: state.wizard.targetAudience,
     containerProfile: state.wizard.containerProfile,
+    didacticProfile: getSelectedDidacticProfile(),
     selectedPresetId: state.wizard.selectedPresetId,
     dayResults,
     ...overrides
@@ -1368,6 +1426,8 @@ async function loadState() {
   state.referenceSources = data.referenceSources || [];
   state.curriculumDrafts = data.curriculumDrafts || [];
   state.presets = data.presets || [];
+  state.didacticProfiles = data.didacticProfiles || [];
+  if (!state.wizard.didacticProfile?.label) state.wizard.didacticProfile = getSelectedDidacticProfile();
   state.storageUsage = data.storageUsage || state.storageUsage;
   state.targetAreas = data.targetAreas || [];
   state.targetAreaLabels = data.targetAreaLabels || {};

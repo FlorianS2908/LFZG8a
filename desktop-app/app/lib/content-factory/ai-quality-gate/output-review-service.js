@@ -9,6 +9,7 @@ function reviewDayGenerationResult(result = {}, context = {}) {
   const serializedParticipant = JSON.stringify([result.webvariant?.participantHtmlSections || [], result.tasks || []]);
   const serialized = JSON.stringify(result || {});
   const profile = context.containerProfile || {};
+  const didacticProfile = context.didacticProfile || result.didacticProfile || {};
   const audience = context.targetAudience || {};
   if (/loesung|l.sung|solution/i.test(serializedParticipant)) errors.push('Teilnehmerbereich enthaelt Loesungshinweise.');
   if (!(result.solutions || []).length) warnings.push('Dozentenloesungen fehlen oder sind leer.');
@@ -16,6 +17,8 @@ function reviewDayGenerationResult(result = {}, context = {}) {
   if (JSON.stringify(result.tasks || []).match(/Aufgabe noch ergaenzen|TODO fachlich|Platzhalter/i)) warnings.push('Aufgaben enthalten Platzhalter.');
   if (!(result.quiz || []).length) warnings.push('Quizfragen fehlen.');
   if (!(result.sourceRefs || []).length) warnings.push('sourceRefs fehlen.');
+  if (didacticProfile.id && !(result.didacticFlow || []).length) warnings.push('didacticFlow fehlt trotz Didaktikprofil.');
+  if (didacticProfile.requiresReflection === true && !result.reflection && !/Reflexion|Rueckblick|Debrief/i.test(serialized)) warnings.push('Reflexion fehlt trotz Didaktikprofil.');
   if (!ageConsidered(result, audience)) warnings.push('ageRange wurde im Output nicht sichtbar beruecksichtigt.');
   if (serialized.match(/Originaltext|Reference chunk|Buchseite|rawText|textPreview|OPENAI_API_KEY|apiKey|secret|token/i)) errors.push('Output enthaelt Rohtext-/Referenzchunk- oder Secret-Hinweise.');
   if ((result.artifacts || []).some((item) => /\.(exe|bat|cmd|ps1)$/i.test(item.path || item.title || ''))) errors.push('Output enthaelt ausfuehrbare Artefakte.');
@@ -28,6 +31,9 @@ function reviewDayGenerationResult(result = {}, context = {}) {
   if (['none', 'basic'].includes(audience.priorKnowledge) && /pom\.xml|maven-project|java-maven/i.test(serialized)) warnings.push('Java Einsteiger/Maven-Konflikt im Output.');
   if (profile.courseType === 'sql' && /drop\s+database|auto.*run|automatisch.*ausfuehr/i.test(serialized)) errors.push('SQL Output wirkt wie automatische Ausfuehrung.');
   if (profile.courseType === 'uml-pap' && !/draw\.io|drawio|\.drawio|mxfile/i.test(serialized)) warnings.push('Draw.io Artefakt fehlt oder ist nicht plausibel sichtbar.');
+  if (didacticProfile.id === 'guided-coding' && !/Live-Coding|Code-Along|Micro-Task|code-along/i.test(serialized)) warnings.push('Guided-Coding-Profil ist im Output nicht sichtbar umgesetzt.');
+  if (didacticProfile.id === 'exam-training' && !/Zeitaufgabe|Mini-Test|Bewertung|Pruefung/i.test(serialized)) warnings.push('Pruefungstraining ist im Output nicht sichtbar umgesetzt.');
+  if (didacticProfile.id === 'problem-first' && !/Problemfall|Hypothese|Fehleranalyse|Ursache/i.test(serialized)) warnings.push('Problem-first-Profil ist im Output nicht sichtbar umgesetzt.');
   (result.artifacts || []).forEach((artifact) => {
     const targetPath = artifact.path || artifact.targetPath || '';
     if (/\.drawio$/i.test(targetPath) && artifact.content && !/^<mxfile[\s>]/.test(String(artifact.content).trim())) errors.push('Draw.io Artefakt ist nicht plausibel.');

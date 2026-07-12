@@ -28,6 +28,7 @@ const { validateGeneratedContainer } = require('../app/lib/content-factory/gener
 const { inferDemoTargetsForDays } = require('../app/lib/content-factory/demo-targets/demo-target-service');
 const { generateDemoArtifacts } = require('../app/lib/content-factory/demo-targets/demo-artifact-generator');
 const { openDemoTarget } = require('../app/lib/demo-launcher/demo-launcher-service');
+const { listDidacticProfiles, getDidacticProfile, suggestDidacticProfile } = require('../app/lib/content-factory/didactics/didactic-profile-service');
 const { contracts } = require('../app/lib/content-factory/ai/prompts/contracts');
 const { dayDraftContract } = require('../app/lib/content-factory/ai/prompts/contracts/day-draft-contract');
 const promptBuilder = require('../app/lib/content-factory/ai/prompts/prompt-builder');
@@ -241,6 +242,8 @@ test('content factory productive MVP creates draft with runtime modes and standa
     const testProtocolHtml = fs.readFileSync(path.join(draft.storagePath, 'reports', 'testprotokoll.html'), 'utf8');
     const artifacts = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'artifacts.json'), 'utf8'));
     const demoTargets = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'demo-targets.json'), 'utf8'));
+    const didacticProfile = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'didactic-profile.json'), 'utf8'));
+    const releasePlan = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'release-plan.json'), 'utf8'));
     const days = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'days.json'), 'utf8'));
 
     assert.equal(draftDay.warnings.some((warning) => /OpenAI ist nicht konfiguriert|Quality Gate|Fallback/.test(warning)), true);
@@ -256,13 +259,21 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.equal(fs.existsSync(path.join(draft.storagePath, 'teilnehmer', 'tag_02', 'webvariante.html')), true);
     assert.equal(artifacts.some((artifact) => artifact.path.endsWith('pom.xml')), true);
     assert.ok(demoTargets.length >= 1);
+    assert.equal(didacticProfile.id, 'worked-example-fading');
+    assert.ok(Array.isArray(didacticProfile.lessonFlow));
+    assert.ok(releasePlan.length >= 1);
+    assert.ok(days[0].didacticFlow.length >= 1);
+    assert.ok(days[0].releasePlan.length >= 1);
     assert.equal(days[0].demos.includes(demoTargets[0].id), true);
     assert.equal(fs.existsSync(path.join(draft.storagePath, demoTargets[0].filePath)), true);
     assert.match(fs.readFileSync(path.join(draft.storagePath, 'dozent', 'tag_01', 'webvariante.html'), 'utf8'), /class="demo-open-button"/);
     assert.doesNotMatch(participantWeb, /demo-open-button/);
     assert.equal(JSON.stringify(participantContent).includes(demoTargets[0].id), false);
     assert.equal(testProtocol.checks.some((check) => check.group === 'Demos'), true);
+    assert.equal(testProtocol.checks.some((check) => check.group === 'Didaktik'), true);
     assert.equal(draft.analysisReport.demoTargets.length, demoTargets.length);
+    assert.equal(draft.analysisReport.didacticProfile.id, 'worked-example-fading');
+    assert.equal(draft.analysisReport.releasePlan.length, releasePlan.length);
     assert.equal(artifacts.some((artifact) => artifact.solutionOnly === true && artifact.path.startsWith('dozent/')), true);
     assert.equal(fs.existsSync(path.join(draft.storagePath, artifacts.find((artifact) => artifact.path.endsWith('pom.xml')).path)), true);
     assert.doesNotMatch(participantWeb, /Loesung|solution/i);
@@ -294,6 +305,7 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.match(reportHtml, /<h2>Quality<\/h2>/);
     assert.match(reportHtml, /<h2>Testprotokoll<\/h2>/);
     assert.match(reportHtml, /<h2>Prompt Quality<\/h2>/);
+    assert.match(reportHtml, /<h2>Didaktik<\/h2>/);
     assert.ok(draft.analysisReport.promptQuality.runCount >= 2);
     assert.ok(draft.analysisReport.promptQuality.averagePromptQualityScore >= 0);
     assert.equal((draft.analysisReport.promptQuality.promptContracts || []).some((item) => /day-draft-v1@1\.0\.0/.test(item)), true);
@@ -513,6 +525,27 @@ test('prompt precision contracts builder linter and golden tests protect provide
   assert.equal(sqlGolden.status, 'passed');
   assert.equal(umlGolden.status, 'passed');
   assert.equal(summary.status, 'passed');
+});
+
+test('content factory didactic profiles provide presets suggestions and prompt metadata', () => {
+  const profiles = listDidacticProfiles();
+  const guidedCoding = getDidacticProfile('guided-coding');
+  const exam = suggestDidacticProfile({ targetAudience: { examOrientation: true } });
+  const project = suggestDidacticProfile({ targetAudience: { projectOrientation: true } });
+  const beginner = suggestDidacticProfile({ targetAudience: { priorKnowledge: 'none' } });
+  const prompt = promptBuilder.buildPrompt('generateDayDraft', createApprovedTestInput({ didacticProfile: guidedCoding }));
+  const lint = contractPromptLinter.lintPrompt(prompt);
+
+  assert.equal(profiles.length, 8);
+  assert.equal(profiles.every((profile) => profile.id && profile.teachingModel && profile.lessonFlow.length), true);
+  assert.equal(guidedCoding.demoStrategy, 'live-coding');
+  assert.equal(exam.id, 'exam-training');
+  assert.equal(project.id, 'project-based');
+  assert.equal(beginner.id, 'worked-example-fading');
+  assert.equal(prompt.prompt.didacticProfile.id, 'guided-coding');
+  assert.equal(prompt.userPayload.didacticProfile.id, 'guided-coding');
+  assert.equal(prompt.developerRules.didacticProfileSignals.id, 'guided-coding');
+  assert.equal(lint.status === 'passed' || lint.status === 'warning', true);
 });
 
 test('openai env setup files and loader keep api keys out of repository outputs', () => {
@@ -1054,6 +1087,7 @@ function createApprovedTestInput(patch = {}) {
     status: 'approved',
     course,
     targetAudience,
+    didacticProfile: getDidacticProfile('guided-coding'),
     quality: { score: 82, level: 'good', recommendations: [] },
     days: [{
       dayNumber: 1,
@@ -1099,6 +1133,7 @@ function createApprovedTestInput(patch = {}) {
     aiMode: 'local',
     useReferences: false,
     referenceUsage: { exportReferences: false },
+    didacticProfile: getDidacticProfile('guided-coding'),
     containerProfile: {
       courseType: 'java',
       artifactMode: 'web-and-files',

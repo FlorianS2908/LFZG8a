@@ -15,6 +15,9 @@ function normalizeDayGenerationResult(input = {}) {
     quiz: normalizeQuiz(input.quiz, sourceRefs),
     artifacts: normalizeArtifacts(input.artifacts, sourceRefs),
     demos: normalizeDemos(input.demos, sourceRefs),
+    didacticFlow: normalizeDidacticFlow(input.didacticFlow),
+    releasePlan: normalizeReleasePlan(input.releasePlan),
+    reflection: normalizeReflection(input.reflection),
     projectContext: input.projectContext || '',
     sourceRefs,
     warnings: input.warnings || [],
@@ -58,6 +61,33 @@ function normalizeDemos(items = [], sourceRefs = []) {
     visibleForParticipants: item.visibleForParticipants === true,
     sourceRefs: item.sourceRefs?.length ? item.sourceRefs : sourceRefs
   }));
+}
+
+function normalizeDidacticFlow(items = []) {
+  return (items || []).map((item, index) => ({
+    phase: item.phase || `phase-${index + 1}`,
+    title: item.title || item.phase || `Phase ${index + 1}`,
+    description: item.description || '',
+    teacherAction: item.teacherAction || '',
+    participantAction: item.participantAction || '',
+    releaseHint: item.releaseHint || ''
+  }));
+}
+
+function normalizeReleasePlan(items = []) {
+  return (items || []).map((item, index) => ({
+    itemType: item.itemType || 'task',
+    itemId: item.itemId || `release-item-${index + 1}`,
+    releaseStrategy: item.releaseStrategy || 'manual-by-teacher',
+    releaseHint: item.releaseHint || ''
+  }));
+}
+
+function normalizeReflection(reflection = {}) {
+  return {
+    mode: reflection.mode || '',
+    questions: Array.isArray(reflection.questions) ? reflection.questions.map(String) : []
+  };
 }
 
 function normalizeSections(items = [], sourceRefs = []) {
@@ -122,5 +152,8 @@ module.exports = {
   stripParticipantSolutions,
   normalizeCorrect,
   normalizeArtifacts,
-  normalizeDemos
+  normalizeDemos,
+  normalizeDidacticFlow,
+  normalizeReleasePlan,
+  normalizeReflection
 };

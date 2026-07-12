@@ -6,6 +6,7 @@ function lintPrompt(input = {}) {
   const prompt = input.prompt || {};
   const targetAudience = input.targetAudience || prompt.targetAudience || {};
   const containerProfile = input.containerProfile || prompt.containerProfile || {};
+  const didacticProfile = input.didacticProfile || prompt.didacticProfile || input.userPayload?.didacticProfile || {};
   const serialized = JSON.stringify(input);
   const safetySerialized = JSON.stringify({
     userPayload: input.userPayload,
@@ -23,6 +24,10 @@ function lintPrompt(input = {}) {
   warnIf(checks, 'age-range', 'ageRange vorhanden', !(targetAudience.ageRange && !['unknown', ''].includes(String(targetAudience.ageRange).toLowerCase())), 'ageRange fehlt oder ist unknown.');
   required(checks, 'container-profile', 'containerProfile vorhanden', Boolean(containerProfile && Object.keys(containerProfile).length));
   required(checks, 'course-type', 'courseType vorhanden', Boolean(containerProfile.courseType));
+  required(checks, 'didactic-profile', 'didacticProfile vorhanden', Boolean(didacticProfile && Object.keys(didacticProfile).length));
+  required(checks, 'lesson-flow', 'lessonFlow vorhanden', Array.isArray(didacticProfile.lessonFlow) && didacticProfile.lessonFlow.length > 0);
+  required(checks, 'demo-strategy', 'demoStrategy vorhanden', Boolean(didacticProfile.demoStrategy));
+  required(checks, 'release-strategy', 'releaseStrategy vorhanden', Boolean(didacticProfile.releaseStrategy));
   required(checks, 'json-only', 'Output JSON-only definiert', /json/i.test(serialized) && /ausschliesslich|only/i.test(serialized));
 
   didactic(checks, targetAudience, serialized);

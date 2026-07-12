@@ -1,4 +1,5 @@
 const { getPromptContract } = require('./contracts');
+const { normalizeDidacticProfile } = require('../../didactics/didactic-profile-service');
 
 const maxStringLength = 1000;
 const blockedKeyPattern = /apiKey|secret|token|OPENAI|rawText|originalText|original|chunk|chunks|textPreview/i;
@@ -7,6 +8,7 @@ const blockedPathPattern = /reference-library|chunks\.json|extracted\.json/i;
 function buildPrompt(purpose, input = {}) {
   const contract = getPromptContract(purpose);
   const payload = buildUserPayload(contract, input);
+  const didacticProfile = payload.didacticProfile || normalizeDidacticProfile(input.didacticProfile || input.curriculumPlan?.didacticProfile);
   return {
     purpose,
     promptId: contract.id,
@@ -31,6 +33,7 @@ function buildPrompt(purpose, input = {}) {
       course: payload.course || {},
       targetAudience: payload.targetAudience || {},
       containerProfile: payload.containerProfile || {},
+      didacticProfile,
       day: payload.day || {},
       payloadKeys: Object.keys(payload || {}),
       expectedOutput: contract.expectedOutputSchema,
@@ -63,7 +66,8 @@ function buildDeveloperRules(contract, input = {}) {
     artifactRules: contract.artifactRules,
     qualityRubric: contract.qualityRubric,
     targetAudienceSignals: sanitizePromptPayload(input.targetAudience || input.curriculumPlan?.targetAudience || {}),
-    containerProfileSignals: sanitizePromptPayload(input.containerProfile || {})
+    containerProfileSignals: sanitizePromptPayload(input.containerProfile || {}),
+    didacticProfileSignals: sanitizePromptPayload(normalizeDidacticProfile(input.didacticProfile || input.curriculumPlan?.didacticProfile))
   };
 }
 
@@ -79,6 +83,7 @@ function buildUserPayload(contract, input = {}) {
     learningGoals: sanitized.learningGoals || sanitized.day?.learningGoals || sanitized.curriculumPlan?.learningGoals || [],
     targetAudience: sanitized.targetAudience || sanitized.curriculumPlan?.targetAudience || {},
     containerProfile: sanitized.containerProfile || {},
+    didacticProfile: normalizeDidacticProfile(sanitized.didacticProfile || sanitized.curriculumPlan?.didacticProfile),
     artifactSuggestions: sanitized.artifactSuggestions || [],
     sourceRefs: sanitized.sourceRefs || sanitized.day?.sourceRefs || [],
     input: sanitized

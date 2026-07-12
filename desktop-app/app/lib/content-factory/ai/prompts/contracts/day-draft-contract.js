@@ -3,14 +3,15 @@ const dayDraftContract = {
   version: '1.0.0',
   purpose: 'generateDayDraft',
   description: 'Erzeugt einen sicheren Tagesentwurf fuer ContentFactory-Container.',
-  requiredInputs: ['course', 'day', 'learningGoals', 'targetAudience', 'containerProfile', 'artifactSuggestions', 'sourceRefs'],
+  requiredInputs: ['course', 'day', 'learningGoals', 'targetAudience', 'ageRange', 'priorKnowledge', 'learningLevel', 'difficultyMode', 'needsStepByStep', 'examOrientation', 'projectOrientation', 'containerProfile', 'didacticProfile', 'artifactSuggestions', 'sourceRefs'],
   expectedOutputSchema: 'DayGenerationResult',
   mustIncludeRules: [
     'Output ausschliesslich als valides JSON.',
-    'dayNumber, title, webvariant.teacherHtmlSections, webvariant.participantHtmlSections, tasks, solutions, quiz, artifacts, optionale demos, sourceRefs, warnings und aiMeta liefern.',
+    'dayNumber, title, webvariant.teacherHtmlSections, webvariant.participantHtmlSections, tasks, solutions, quiz, artifacts, didacticFlow, releasePlan, reflection, optionale demos, sourceRefs, warnings und aiMeta liefern.',
     'Teilnehmerbereich enthaelt niemals Loesungen.',
     'Loesungen ausschliesslich in solutions und Dozentenbereich.',
-    'Webvariante erklaert das Thema und kann einen kurzen Demo-Vorschlag fuer den Dozenten enthalten.'
+    'Webvariante erklaert das Thema und kann einen kurzen Demo-Vorschlag fuer den Dozenten enthalten.',
+    'didacticProfile.lessonFlow, demoStrategy, releaseStrategy, taskProgression, supportLevel, assessmentMode und reflectionMode muessen erkennbar umgesetzt werden.'
   ],
   mustNotIncludeRules: [
     'Keine Originalbuchtexte uebernehmen.',
@@ -23,7 +24,12 @@ const dayDraftContract = {
   didacticRules: [
     'ageRange, priorKnowledge, learningLevel, difficultyMode, needsStepByStep, examOrientation und projectOrientation beachten.',
     'Einsteiger erhalten einfache Sprache und kleinere Schritte.',
-    'Fortgeschrittene erhalten Transferaufgaben und optionale Erweiterungen.'
+    'Fortgeschrittene erhalten Transferaufgaben und optionale Erweiterungen.',
+    'Das gewaehlte didacticProfile steuert Reihenfolge, Sozialform, Aufgabenprogression und Reflexion.',
+    'worked-example-fading startet mit Musterbeispiel und reduziert Hilfe schrittweise.',
+    'problem-first startet mit Problemfall, Hypothesen und Fehleranalyse.',
+    'exam-training enthaelt Zeitaufgabe, Auswertung und Mini-Test.',
+    'guided-coding enthaelt Live-Coding, Code-Along und Micro-Task.'
   ],
   safetyRules: [
     'Teilnehmerartefakte duerfen keine Loesungshinweise enthalten.',
