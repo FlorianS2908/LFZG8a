@@ -8,6 +8,7 @@ function createTestProtocol(input = {}) {
     ...curriculumChecks(input),
     ...sourceChecks(input),
     ...artifactChecks(input),
+    ...demoChecks(input),
     ...contentChecks(input),
     ...exportChecks(input),
     ...securityChecks(input)
@@ -164,6 +165,25 @@ function artifactChecks(input) {
     hasDrawio ? pass('drawio-created', 'Artefakte', 'Draw.io erzeugt', 'Draw.io-Artefakt vorhanden.') : warn('drawio-created', 'Artefakte', 'Draw.io erzeugt', 'Kein Draw.io-Artefakt erzeugt.'),
     pass('dia-pap-safe', 'Artefakte', 'Dia/PAPDesigner sicher behandelt', 'Keine ausfuehrbaren Diagrammtools werden exportiert.'),
     statusCheck('no-exe-artifacts', 'Artefakte', 'Keine EXE exportiert', !targets.some((target) => /\.(exe|bat|cmd|ps1)$/i.test(target.targetPath || '')), 'Artefaktpfade geprueft.')
+  ];
+}
+
+function demoChecks(input) {
+  const demoTargets = input.demoTargets || [];
+  const demoFiles = files(input.rootDir).map((file) => file.replace(/\\/g, '/'));
+  const hasTargets = demoTargets.length > 0;
+  const safeExtensions = demoTargets.every((target) => !/\.(exe|bat|cmd|ps1|msi|vbs|js)$/i.test(target.filePath || ''));
+  const filesExist = demoTargets.every((target) => target.filePath && demoFiles.some((file) => file.endsWith(String(target.filePath).replace(/\\/g, '/'))));
+  const safeToolMapping = demoTargets.every((target) => ['excel', 'word', 'vscode', 'browser', 'drawio', 'jupyter', 'sql', 'default'].includes(target.tool));
+  const teacherOnlySafe = demoTargets.every((target) => target.visibleForParticipants === true || /^dozent\//i.test(target.filePath || ''));
+  const noAutoRun = demoTargets.every((target) => target.safety?.allowAutoRun !== true && target.safety?.requiresUserClick !== false);
+  return [
+    hasTargets ? pass('demo-targets-present', 'Demos', 'DemoTargets vorhanden', `${demoTargets.length} DemoTarget(s) vorhanden.`) : warn('demo-targets-present', 'Demos', 'DemoTargets vorhanden', 'Keine DemoTargets erzeugt.'),
+    statusCheck('demo-files-present', 'Demos', 'Demo-Dateien vorhanden', !hasTargets || filesExist, 'Demo-Dateipfade geprueft.'),
+    statusCheck('demo-tool-mapping', 'Demos', 'Tool-Mapping plausibel', !hasTargets || safeToolMapping, 'Demo-Tools geprueft.'),
+    statusCheck('demo-safe-extensions', 'Demos', 'Sichere Dateiendungen', !hasTargets || safeExtensions, 'Demo-Dateiendungen geprueft.'),
+    statusCheck('demo-teacher-only', 'Demos', 'Dozent-only korrekt', !hasTargets || teacherOnlySafe, 'Teilnehmerfreigabe geprueft.'),
+    statusCheck('demo-no-auto-run', 'Demos', 'Kein Auto-Run', !hasTargets || noAutoRun, 'Demos erfordern bewussten Klick.')
   ];
 }
 

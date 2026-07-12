@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { detectLegacyNames } = require('./naming/legacy-name-detector');
+const { validateDemoTarget } = require('./demo-targets/demo-target-validator');
 
 function validateGeneratedContainer(containerDir, course = {}) {
   const errors = [];
@@ -23,6 +24,7 @@ function validateGeneratedContainer(containerDir, course = {}) {
   }
   const days = readJson(path.join(containerDir, 'catalog', 'days.json'), []);
   const participant = readJson(path.join(containerDir, 'catalog', 'participant-content.json'), []);
+  const demoTargets = readJson(path.join(containerDir, 'catalog', 'demo-targets.json'), []);
   days.forEach((day) => ['teacherWeb', 'teacherTasks', 'teacherSolutions', 'participantWeb', 'participantTasks'].forEach((key) => {
     if (day[key] && !fs.existsSync(path.join(containerDir, day[key]))) errors.push(`Pfad aus days.json fehlt: ${day[key]}`);
   }));
@@ -33,6 +35,7 @@ function validateGeneratedContainer(containerDir, course = {}) {
   (participant || []).forEach((entry) => (entry.artifacts || []).forEach((artifactPath) => {
     if (/^dozent\//i.test(artifactPath) || /loesung|lösung|solution/i.test(artifactPath)) errors.push(`participant-content referenziert geschuetztes Artefakt: ${artifactPath}`);
   }));
+  validateDemoCatalog({ containerDir, days, participant, demoTargets, errors, warnings });
   if (/testprotokoll/i.test(JSON.stringify(participant))) {
     errors.push('Testprotokoll darf nicht im Teilnehmerkatalog verlinkt sein.');
   }
@@ -112,6 +115,31 @@ function readJson(filePath, fallback) {
 
 function readText(filePath) {
   try { return fs.readFileSync(filePath, 'utf8'); } catch { return ''; }
+}
+
+function validateDemoCatalog({ containerDir, days, participant, demoTargets, errors, warnings }) {
+  const demoCatalogPath = path.join(containerDir, 'catalog', 'demo-targets.json');
+  if (fs.existsSync(demoCatalogPath) && !Array.isArray(demoTargets)) {
+    errors.push('catalog/demo-targets.json ist nicht korrekt strukturiert.');
+    return;
+  }
+  const targets = Array.isArray(demoTargets) ? demoTargets : [];
+  const demoById = new Map(targets.map((target) => [target.id, target]));
+  targets.forEach((target) => {
+    const result = validateDemoTarget(target, containerDir);
+    errors.push(...result.errors);
+    warnings.push(...result.warnings);
+  });
+  (days || []).forEach((day) => (day.demos || []).forEach((demoId) => {
+    if (!demoById.has(demoId)) errors.push(`days.json referenziert fehlendes DemoTarget: ${demoId}`);
+  }));
+  (participant || []).forEach((entry) => (entry.demos || []).forEach((demoId) => {
+    const target = demoById.get(demoId);
+    if (!target) errors.push(`participant-content referenziert fehlendes DemoTarget: ${demoId}`);
+    else if (target.visibleForParticipants !== true || target.role === 'teacher' || /^dozent\//i.test(target.filePath || '')) {
+      errors.push(`participant-content enthaelt teacher-only Demo: ${demoId}`);
+    }
+  }));
 }
 
 module.exports = {

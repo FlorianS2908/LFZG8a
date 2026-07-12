@@ -104,6 +104,11 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
     removeReferenceSource: (referenceId) => ipcRenderer.invoke('factory:remove-reference-source', referenceId),
     getReferenceSafetyReport: (referenceId) => ipcRenderer.invoke('factory:get-reference-safety-report', referenceId)
   },
+  demo: {
+    openTarget: (demoId, containerId) => ipcRenderer.invoke('demo:open-target', demoId, containerId),
+    listTargets: (containerId, dayNumber) => ipcRenderer.invoke('demo:list-targets-for-day', containerId, dayNumber),
+    getTarget: (containerId, demoId) => ipcRenderer.invoke('demo:get-target', containerId, demoId)
+  },
   releaseCenter: {
     getState: () => ipcRenderer.invoke('release-center:get-state'),
     saveAssignments: (userId, moduleIds) => ipcRenderer.invoke('release-center:save-assignments', userId, moduleIds),
@@ -135,6 +140,14 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
   }
 });
 
+contextBridge.exposeInMainWorld('ueTool', {
+  demo: {
+    openTarget: (demoId, containerId) => ipcRenderer.invoke('demo:open-target', demoId, containerId),
+    listTargets: (containerId, dayNumber) => ipcRenderer.invoke('demo:list-targets-for-day', containerId, dayNumber),
+    getTarget: (containerId, demoId) => ipcRenderer.invoke('demo:get-target', containerId, demoId)
+  }
+});
+
 window.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', (event) => {
     const link = event.target.closest && event.target.closest('a.teacher-open');
@@ -159,5 +172,20 @@ window.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       window.alert(`VS Code konnte nicht gestartet werden: ${error.message}`);
     }
+  });
+
+  document.addEventListener('click', async (event) => {
+    const button = event.target.closest && event.target.closest('.demo-open-button[data-demo-id]');
+    if (!button || !window.lfzq8aDesktop?.demo) {
+      return;
+    }
+    const containerId = button.dataset.containerId || window.CONTENT_FACTORY_CONTAINER_ID || '';
+    if (!containerId) {
+      button.insertAdjacentHTML('afterend', '<p class="demo-launch-status">Direktes Oeffnen ist nur in der Electron-App mit Container-Kontext verfuegbar.</p>');
+      return;
+    }
+    event.preventDefault();
+    const result = await window.lfzq8aDesktop.demo.openTarget(button.dataset.demoId, containerId);
+    button.insertAdjacentHTML('afterend', `<p class="demo-launch-status">${String(result.message || 'Demo geprueft.').replace(/</g, '&lt;')}</p>`);
   });
 });

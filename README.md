@@ -3,6 +3,7 @@
 Dieses Repository enthaelt die Plattform `ueTool_asSaaS` und den Kurscontainer `HTML/CSS`.
 
 `ueTool_asSaaS` ist die lokale Desktop-Plattform. `HTML/CSS` ist der fachliche Kurscontainer. Die `ContentFactory` ist das Admin-Werkzeug zur Erstellung, Pruefung und Duplizierung von Kurscontainern.
+Die ContentFactory erzeugt optional Demo-Buttons in Dozenten-Webvarianten. Direkter Demo-Launch funktioniert nur in der Electron-App; Standalone-Drafts zeigen sichere Pfad-/Hinweistexte.
 
 ## Aktueller Hauptstand
 
@@ -65,7 +66,7 @@ Standardkonten:
 - Dozent: `dozent@dozent.de` / `$$Klaus2908$$`
 - Teilnehmer: `tn@tn.de` / `$$Klaus2908$$`
 
-Der aktuelle Hauptstand liegt auf `main`. Fruehere Neustruktur-/SaaS-Branches bleiben nur als Referenz erhalten.
+Der aktuelle Hauptstand liegt auf `main`. Fruehere Neustruktur-/SaaS-Branches bleiben nur als Referenz erhalten. DSGVO-/Datenschutz-Zweige werden separat geprueft.
 
 ## Kurzueberblick
 

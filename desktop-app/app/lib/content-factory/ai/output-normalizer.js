@@ -14,6 +14,7 @@ function normalizeDayGenerationResult(input = {}) {
     solutions: normalizeItems(input.solutions, sourceRefs),
     quiz: normalizeQuiz(input.quiz, sourceRefs),
     artifacts: normalizeArtifacts(input.artifacts, sourceRefs),
+    demos: normalizeDemos(input.demos, sourceRefs),
     projectContext: input.projectContext || '',
     sourceRefs,
     warnings: input.warnings || [],
@@ -43,6 +44,19 @@ function normalizeArtifacts(items = [], sourceRefs = []) {
     targetAudienceImpact: item.targetAudienceImpact || '',
     sourceRefs: item.sourceRefs?.length ? item.sourceRefs : sourceRefs,
     warnings: item.warnings || []
+  }));
+}
+
+function normalizeDemos(items = [], sourceRefs = []) {
+  return (items || []).map((item, index) => ({
+    id: item.id || `demo-${index + 1}`,
+    title: item.title || `Demo ${index + 1}`,
+    tool: item.tool || 'default',
+    description: item.description || 'Kurze Dozenten-Demo zum Thema.',
+    suggestedFileName: item.suggestedFileName || item.fileName || '',
+    buttonLabel: item.buttonLabel || 'Demo oeffnen',
+    visibleForParticipants: item.visibleForParticipants === true,
+    sourceRefs: item.sourceRefs?.length ? item.sourceRefs : sourceRefs
   }));
 }
 
@@ -107,5 +121,6 @@ module.exports = {
   normalizeDayGenerationResult,
   stripParticipantSolutions,
   normalizeCorrect,
-  normalizeArtifacts
+  normalizeArtifacts,
+  normalizeDemos
 };

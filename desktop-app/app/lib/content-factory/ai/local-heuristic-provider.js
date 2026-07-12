@@ -26,6 +26,7 @@ class LocalHeuristicProvider {
     const solutions = createSolutions(tasks, blocks, dayNumber, sourceRefs, targetAudience);
     const quiz = createQuiz(blocks, dayNumber, sourceRefs, targetAudience);
     const artifacts = createArtifactPlan(day, dayNumber, input.containerProfile, targetAudience, input);
+    const demos = createDemoSuggestions(day, blocks, input.containerProfile);
     const teacherSections = createTeacherSections({ title, goals, blocks, tasks, solutions, quiz, sourceRefs, warnings, targetAudience, ageProfile });
     const participantSections = createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRefs, targetAudience, ageProfile });
 
@@ -41,6 +42,7 @@ class LocalHeuristicProvider {
       solutions,
       quiz,
       artifacts,
+      demos,
       sourceRefs,
       warnings,
       aiAdditions: input.referenceContext?.length ? ['Referenzmetadaten wurden als Kontext beruecksichtigt.'] : []
@@ -68,6 +70,26 @@ class LocalHeuristicProvider {
       ]
     };
   }
+}
+
+function createDemoSuggestions(day, blocks, containerProfile = {}) {
+  const text = [day.title, day.mainTopic, containerProfile.courseType, ...blocks.map((block) => block.topic)].join(' ');
+  if (/\b(sql|datenbank|abfrage|select|join|phpmyadmin)\b/i.test(text)) {
+    return [{ title: 'Demo: SQL-Datei lesen', tool: 'sql', description: 'Dozenten-Demo zum Lesen einer SQL-Datei ohne Ausfuehrung.', suggestedFileName: 'demo_01_abfrage.sql', buttonLabel: 'SQL-Demo oeffnen' }];
+  }
+  if (/\b(erm|uml|pap|diagramm|ablauf|modellierung)\b/i.test(text)) {
+    return [{ title: 'Demo: Diagramm betrachten', tool: 'drawio', description: 'Dozenten-Demo mit einer kleinen Draw.io-Skizze.', suggestedFileName: 'demo_01_diagramm.drawio', buttonLabel: 'Diagramm-Demo oeffnen' }];
+  }
+  if (/\b(html|css|layout|flexbox|grid|responsive)\b/i.test(text)) {
+    return [{ title: 'Demo: Live-Vorschau', tool: 'browser', description: 'Dozenten-Demo mit einer kurzen HTML/CSS-Vorschau.', suggestedFileName: 'demo_01_html_css/demo.html', buttonLabel: 'Live-Demo oeffnen' }];
+  }
+  if (/\b(tabelle|datenanalyse|csv|excel|berechnung|filter|pivot|auswertung)\b/i.test(text)) {
+    return [{ title: 'Demo: Tabelle filtern', tool: 'excel', description: 'Dozenten-Demo mit einer kleinen CSV-Tabelle.', suggestedFileName: 'demo_01_tabelle.csv', buttonLabel: 'Demo in Excel oeffnen' }];
+  }
+  if (/\b(java|python|javascript|php|code|funktion|klasse|methode|kontrollstruktur)\b/i.test(text)) {
+    return [{ title: 'Demo: Code lesen', tool: 'vscode', description: 'Dozenten-Demo mit einem kurzen Codebeispiel.', suggestedFileName: /python|jupyter/i.test(text) ? 'demo_01_code/main.py' : 'demo_01_code/Main.java', buttonLabel: 'Demo in VS Code oeffnen' }];
+  }
+  return [{ title: 'Demo: Beispieltext markieren', tool: 'word', description: 'Dozenten-Demo mit einem kurzen Beispieltext.', suggestedFileName: 'demo_01_text.rtf', buttonLabel: 'Demo in Word oeffnen' }];
 }
 
 function createArtifactPlan(day, dayNumber, containerProfile, targetAudience, input) {

@@ -19,6 +19,12 @@ function reviewDayGenerationResult(result = {}, context = {}) {
   if (!ageConsidered(result, audience)) warnings.push('ageRange wurde im Output nicht sichtbar beruecksichtigt.');
   if (serialized.match(/Originaltext|Reference chunk|Buchseite|rawText|textPreview|OPENAI_API_KEY|apiKey|secret|token/i)) errors.push('Output enthaelt Rohtext-/Referenzchunk- oder Secret-Hinweise.');
   if ((result.artifacts || []).some((item) => /\.(exe|bat|cmd|ps1)$/i.test(item.path || item.title || ''))) errors.push('Output enthaelt ausfuehrbare Artefakte.');
+  (result.demos || []).forEach((demo) => {
+    const demoText = JSON.stringify(demo);
+    if (/\.(exe|bat|cmd|ps1|msi|vbs|js)/i.test(demo.suggestedFileName || demo.fileName || demoText)) errors.push('Demo enthaelt unsichere Dateiendung.');
+    if (demo.visibleForParticipants === true && /loesung|lösung|solution|erwartungshorizont/i.test(demoText)) errors.push('Teilnehmer-Demo enthaelt Loesungshinweise.');
+    if (demo.tool === 'sql' && /auto.*run|automatisch.*ausfuehr|exec|drop\s+database/i.test(demoText)) errors.push('SQL-Demo wirkt wie automatische Ausfuehrung.');
+  });
   if (['none', 'basic'].includes(audience.priorKnowledge) && /pom\.xml|maven-project|java-maven/i.test(serialized)) warnings.push('Java Einsteiger/Maven-Konflikt im Output.');
   if (profile.courseType === 'sql' && /drop\s+database|auto.*run|automatisch.*ausfuehr/i.test(serialized)) errors.push('SQL Output wirkt wie automatische Ausfuehrung.');
   if (profile.courseType === 'uml-pap' && !/draw\.io|drawio|\.drawio|mxfile/i.test(serialized)) warnings.push('Draw.io Artefakt fehlt oder ist nicht plausibel sichtbar.');

@@ -15,7 +15,7 @@ const {
 
 const appDir = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(appDir, '..');
-const checkDataDir = path.join(os.tmpdir(), 'uetool-assass-workflow-check');
+const checkDataDir = path.join(os.tmpdir(), 'uetool-as-saas-workflow-check');
 let passed = 0;
 let failed = 0;
 

@@ -10,6 +10,7 @@ const { courseCatalog } = require('./lib/course-catalog');
 const { createDokuToolService } = require('./lib/dokutool-service');
 const { moduleRegistry } = require('./lib/modules/module-registry');
 const { createContentFactoryService } = require('./lib/content-factory/content-factory-service');
+const { openDemoTarget } = require('./lib/demo-launcher/demo-launcher-service');
 const { createCourseManagementService } = require('./lib/course-management/course-management-service');
 const { getAdminTool, listAdminTools } = require('./lib/admin-tools/admin-tool-registry');
 const { getGuide } = require('./lib/admin-tools/admin-tool-guide-service');
@@ -1237,6 +1238,42 @@ ipcMain.handle('factory:open-generated-draft', (event, containerId, target = 'st
         : path.join(draft.storagePath, 'standalone', 'index.html');
   if (target === 'folder') return shell.openPath(targetPath);
   return shell.openPath(targetPath);
+});
+
+function getGeneratedDraft(containerId) {
+  const draft = getContentFactoryService().storage.listGeneratedContainers().find((entry) => entry.id === containerId || entry.manifest?.id === containerId);
+  if (!draft?.storagePath) throw new Error('Draft-Container wurde nicht gefunden.');
+  return draft;
+}
+
+function readDemoTargetsForContainer(containerId) {
+  const draft = getGeneratedDraft(containerId);
+  const filePath = path.join(draft.storagePath, 'catalog', 'demo-targets.json');
+  try {
+    return { draft, demoTargets: JSON.parse(fs.readFileSync(filePath, 'utf8')) };
+  } catch {
+    return { draft, demoTargets: [] };
+  }
+}
+
+ipcMain.handle('demo:list-targets-for-day', (event, containerId, dayNumber) => {
+  requireAdminSession();
+  const { demoTargets } = readDemoTargetsForContainer(containerId);
+  return demoTargets.filter((target) => Number(target.dayNumber) === Number(dayNumber));
+});
+
+ipcMain.handle('demo:get-target', (event, containerId, demoId) => {
+  requireAdminSession();
+  const { demoTargets } = readDemoTargetsForContainer(containerId);
+  return demoTargets.find((target) => target.id === demoId) || null;
+});
+
+ipcMain.handle('demo:open-target', (event, demoId, containerId) => {
+  requireAdminSession();
+  const { draft, demoTargets } = readDemoTargetsForContainer(containerId);
+  const target = demoTargets.find((item) => item.id === demoId);
+  if (!target) return { success: false, errorCategory: 'not-found', message: 'DemoTarget wurde nicht gefunden.' };
+  return openDemoTarget(target, draft.storagePath, { shell });
 });
 
 ipcMain.handle('factory:update-mapping', (event, batchId, fileId, mapping) => (

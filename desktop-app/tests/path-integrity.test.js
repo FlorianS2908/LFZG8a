@@ -252,6 +252,7 @@ test('desktop packaging uses the Ploglan app icon and creates Windows shortcuts'
   const iconPng = path.join(repoRoot, 'desktop-app', 'app', 'assets', 'icons', 'app-icon.png');
   const iconIco = path.join(repoRoot, 'desktop-app', 'app', 'assets', 'icons', 'app-icon.ico');
 
+  assert.equal(packageJson.name, 'uetool-as-saas');
   assert.equal(packageJson.productName, 'ueTool_asSaaS');
   assert.equal(packageJson.build.productName, 'ueTool_asSaaS');
   assert.equal(packageJson.build.win.icon, 'app/assets/icons/app-icon.ico');
@@ -262,6 +263,26 @@ test('desktop packaging uses the Ploglan app icon and creates Windows shortcuts'
   assert.equal(fs.existsSync(iconIco), true);
   assert.equal(fs.statSync(iconPng).size > 0, true);
   assert.equal(fs.statSync(iconIco).size > 0, true);
+});
+
+test('post merge cleanup keeps main naming and removes obsolete tracked artifacts', () => {
+  const readme = fs.readFileSync(path.join(repoRoot, 'README.md'), 'utf8');
+  const trackedForbidden = [
+    'desktop-app_ANALYSE.zip',
+    'LF_ZQ8a_ANALYSE.zip',
+    'dozent.zip'
+  ];
+
+  assert.doesNotMatch(readme, /Der aktuelle Neustruktur-Arbeitsstand liegt/);
+  assert.match(readme, /Der aktuelle Hauptstand liegt auf `main`/);
+  assert.match(readme, /Demo-Buttons/);
+  trackedForbidden.forEach((filePath) => {
+    assert.equal(fs.existsSync(path.join(repoRoot, filePath)), false, filePath);
+  });
+  assert.equal(fs.existsSync(path.join(repoRoot, 'DemoExe.cmd')), true);
+  assert.equal(fs.existsSync(path.join(repoRoot, 'WorkflowCheck.cmd')), true);
+  assert.equal(fs.existsSync(path.join(repoRoot, '.env')), false);
+  assert.equal(fs.existsSync(path.join(repoRoot, 'api_key_ContentFactory.txt')), false);
 });
 
 test('module registry exposes the transformed HTML CSS learning container', () => {

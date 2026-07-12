@@ -7,6 +7,8 @@ const { validateGeneratedContainer } = require('./generated-container-validator'
 const { buildContainerProfile } = require('./container-profile/container-profile-service');
 const { validateGeneratedArtifacts } = require('./container-profile/generated-artifact-validator');
 const { generateArtifactFiles } = require('./artifact-generators/artifact-generator-service');
+const { inferDemoTargetsForDays } = require('./demo-targets/demo-target-service');
+const { generateDemoArtifacts } = require('./demo-targets/demo-artifact-generator');
 const { renderPreflightSummary } = require('./preflight/preflight-report-renderer');
 const { createTestProtocol } = require('./test-protocol/test-protocol-service');
 const { renderTestProtocolHtml } = require('./test-protocol/test-protocol-renderer');
@@ -82,6 +84,7 @@ function createProtocolInput({ courseName, containerId, input, dayResults, files
     containerProfile: profileContext.containerProfile,
     artifactSuggestions: profileContext.artifactSuggestions,
     artifactTargets: profileContext.artifactTargets,
+    demoTargets: readDemoTargetsFromFiles(files),
     dayResults,
     expectedDayCount: (curriculum.days || input.coursePlan?.days || []).length,
     files,
@@ -100,6 +103,16 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
     artifactTargets: profileContext.artifactTargets,
     artifactSuggestions: profileContext.artifactSuggestions
   });
+  const demoTargets = inferDemoTargetsForDays({
+    dayResults,
+    coursePlan,
+    containerProfile: profileContext.containerProfile,
+    options: {
+      maxPerDay: Number(profileContext.containerProfile?.demoCountPerDay ?? 1),
+      visibleForParticipants: profileContext.containerProfile?.participantDemos === true
+    }
+  });
+  const demoFiles = generateDemoArtifacts(demoTargets);
   const artifactMetadata = artifactFiles.map((file) => ({
     path: file.path,
     role: file.role,
@@ -112,6 +125,7 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
   const days = dayResults.map((result) => {
     const daySlug = `tag_${String(result.dayNumber).padStart(2, '0')}`;
     const dayArtifacts = artifactMetadata.filter((artifact) => artifact.path.includes(`/${daySlug}/`) || artifact.path.includes(`\\${daySlug}\\`));
+    const dayDemos = demoTargets.filter((target) => Number(target.dayNumber) === Number(result.dayNumber));
     return {
       dayNumber: result.dayNumber,
       title: result.title,
@@ -121,6 +135,7 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
       participantWeb: `teilnehmer/${daySlug}/webvariante.html`,
       participantTasks: `teilnehmer/${daySlug}/aufgaben.html`,
       quiz: `shared/quiz/${daySlug}.json`,
+      demos: dayDemos.map((target) => target.id),
       artifacts: dayArtifacts,
       sourceRefs: result.sourceRefs || [],
       warnings: result.warnings || []
@@ -132,6 +147,7 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
     web: day.participantWeb,
     tasks: day.participantTasks,
     quiz: day.quiz,
+    demos: demoTargets.filter((target) => Number(target.dayNumber) === Number(day.dayNumber) && target.visibleForParticipants === true).map((target) => target.id),
     artifacts: (day.artifacts || []).filter((artifact) => artifact.role !== 'teacher' && !artifact.solutionOnly).map((artifact) => artifact.path)
   }));
   const releaseKeys = days.map((day) => `${courseId}-tag-${String(day.dayNumber).padStart(2, '0')}`);
@@ -172,6 +188,7 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
   const files = [
     jsonFile('manifest.json', manifest),
     jsonFile('catalog/days.json', days),
+    jsonFile('catalog/demo-targets.json', demoTargets),
     jsonFile('catalog/projects.json', []),
     jsonFile('catalog/tools.json', profileContext.toolProfiles),
     jsonFile('catalog/artifacts.json', artifactMetadata),
@@ -187,14 +204,16 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
     { path: 'standalone/index.html', content: renderStandalone(courseName, days, dayResults) },
     { path: 'standalone/standalone.js', content: standaloneJs() },
     { path: 'standalone/standalone.css', content: standaloneCss() },
-    ...artifactFiles
+    ...artifactFiles,
+    ...demoFiles
   ];
   dayResults.forEach((result) => {
     const daySlug = `tag_${String(result.dayNumber).padStart(2, '0')}`;
-    files.push({ path: `dozent/${daySlug}/webvariante.html`, content: renderSections(courseName, result.title, result.webvariant.teacherHtmlSections, true) });
+    const dayDemos = demoTargets.filter((target) => Number(target.dayNumber) === Number(result.dayNumber));
+    files.push({ path: `dozent/${daySlug}/webvariante.html`, content: renderSections(courseName, result.title, result.webvariant.teacherHtmlSections, true, dayDemos) });
     files.push({ path: `dozent/${daySlug}/aufgaben.html`, content: renderTasks(courseName, result.title, result.tasks) });
     files.push({ path: `dozent/${daySlug}/loesungen.html`, content: renderTasks(courseName, result.title, result.solutions, 'Loesungen') });
-    files.push({ path: `teilnehmer/${daySlug}/webvariante.html`, content: renderSections(courseName, result.title, result.webvariant.participantHtmlSections, false) });
+    files.push({ path: `teilnehmer/${daySlug}/webvariante.html`, content: renderSections(courseName, result.title, result.webvariant.participantHtmlSections, false, dayDemos.filter((target) => target.visibleForParticipants === true)) });
     files.push({ path: `teilnehmer/${daySlug}/aufgaben.html`, content: renderTasks(courseName, result.title, result.tasks) });
     files.push(jsonFile(`shared/quiz/${daySlug}.json`, { dayNumber: result.dayNumber, questions: result.quiz }));
     files.push(jsonFile(`reviews/${daySlug}.json`, { dayNumber: result.dayNumber, status: 'draft', warnings: result.warnings, aiAdditions: result.aiAdditions }));
@@ -239,6 +258,7 @@ function renderStandalone(courseName, days, dayResults) {
     tasks: result.tasks || [],
     solutions: result.solutions || [],
     quiz: result.quiz || [],
+    demos: (days.find((day) => Number(day.dayNumber) === Number(result.dayNumber))?.demos || []),
     sourceRefs: result.sourceRefs || [],
     warnings: result.warnings || []
   }));
@@ -246,8 +266,18 @@ function renderStandalone(courseName, days, dayResults) {
   return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(courseName)}</title><link rel="stylesheet" href="standalone.css"></head><body><header><p>Standalone-Draft: lokale Testvorschau ohne Plattform-Freigabe. Testprotokoll im Reports-Ordner verfuegbar.</p><h1>${escapeHtml(courseName)}</h1><nav><button type="button" data-role="participant" class="active">Teilnehmer-Vorschau</button><button type="button" data-role="teacher">Dozentenansicht</button></nav></header><main id="app"></main><script>window.CONTENT_FACTORY_DATA=${data};</script><script src="standalone.js"></script></body></html>`;
 }
 
-function renderSections(courseName, title, sections, teacher) {
-  return page(`${courseName} - ${title}`, `<p><strong>${teacher ? 'Dozentenansicht' : 'Teilnehmer-Vorschau'}</strong></p>${sections.map((section) => `<section><h2>${escapeHtml(section.title)}</h2>${section.content}</section>`).join('')}`);
+function renderSections(courseName, title, sections, teacher, demos = []) {
+  return page(`${courseName} - ${title}`, `<p><strong>${teacher ? 'Dozentenansicht' : 'Teilnehmer-Vorschau'}</strong></p>${renderDemoButtons(demos, teacher)}${sections.map((section) => `<section><h2>${escapeHtml(section.title)}</h2>${section.content}</section>`).join('')}`);
+}
+
+function renderDemoButtons(demos = [], teacher = false) {
+  if (!demos.length) return '';
+  return `<section class="demo-panel"><h2>Demo-Dateien</h2>${demos.map((demo) => `
+    <button type="button" class="demo-open-button" data-demo-id="${escapeHtml(demo.id)}" data-demo-path="${escapeHtml(demo.filePath)}" data-demo-tool="${escapeHtml(demo.tool)}">
+      ${escapeHtml(demo.buttonLabel || 'Demo oeffnen')}
+    </button>
+    <p class="demo-hint">${escapeHtml(teacher ? demo.description : 'Diese Demo wurde explizit fuer Teilnehmer freigegeben.')}</p>
+  `).join('')}</section>`;
 }
 
 function renderTasks(courseName, title, tasks, heading = 'Aufgaben') {
@@ -278,7 +308,11 @@ function standaloneJs() {
     document.body.classList.toggle('teacher', role === 'teacher');
     app.innerHTML = data.dayResults.map((result) => {
       const sections = role === 'teacher' ? result.webvariant.teacherHtmlSections : result.webvariant.participantHtmlSections;
+      const demoNotice = role === 'teacher' && (result.demos || []).length
+        ? '<div class="panel teacher-only"><h3>Demo-Dateien</h3><p>Direktes Oeffnen ist nur in der Electron-App verfuegbar. Demo-Dateien liegen im Containerordner und sind in catalog/demo-targets.json dokumentiert.</p></div>'
+        : '';
       return '<section class="day"><h2>Tag ' + escapeHtml(result.dayNumber) + ': ' + escapeHtml(result.title) + '</h2>'
+        + demoNotice
         + renderSections(sections)
         + '<div class="grid"><div class="panel"><h3>Aufgaben</h3>' + renderList(result.tasks, (task) => '<li><strong>' + escapeHtml(task.title) + '</strong><br>' + escapeHtml(task.text) + '</li>') + '</div>'
         + '<div class="panel"><h3>Quiz</h3>' + renderList(result.quiz, (quiz) => '<li>' + escapeHtml(quiz.text) + '</li>') + '</div></div>'
@@ -386,6 +420,7 @@ function createAnalysisReport({ courseName, courseId, department, input, dayResu
     artifactSuggestions: profileContext.artifactSuggestions,
     artifactTargets: profileContext.artifactTargets,
     generatedArtifacts,
+    demoTargets: readJson(path.join(rootDir, 'catalog', 'demo-targets.json'), []),
     participantArtifacts: generatedArtifacts.filter((item) => item.role !== 'teacher' && !item.solutionOnly),
     teacherArtifacts: generatedArtifacts.filter((item) => item.role === 'teacher' || item.solutionOnly),
     toolProfiles: profileContext.toolProfiles,
@@ -435,6 +470,7 @@ function renderReportHtml(report) {
       <section class="card"><h2>Content</h2><p>Aufgaben: ${escapeHtml(report.taskCount)} | Loesungen: ${escapeHtml(report.solutionCount)} | Quizfragen: ${escapeHtml(report.quizCount)}</p></section>
       <section class="card"><h2>Container-Konfiguration</h2><p>Kurstyp: ${escapeHtml(report.containerProfile?.courseType)} | Modus: ${escapeHtml(report.containerProfile?.artifactMode)}</p><p>Tools: ${escapeHtml((report.toolProfiles || []).map((tool) => tool.name).join(', ') || 'keine')}</p></section>
       <section class="card"><h2>Artefakte</h2>${tableHtml(['Artefakt','Rolle','Format','Grund'], (report.generatedArtifacts || []).map((item) => [item.artifact, item.role, item.format, item.reason]))}</section>
+      <section class="card"><h2>Demo-Dateien</h2>${tableHtml(['Demo','Tool','Datei','Teilnehmer'], (report.demoTargets || []).map((item) => [item.title, item.tool, item.filePath, item.visibleForParticipants ? 'ja' : 'nein']))}</section>
       <section class="card"><h2>Export-Schutz</h2><p class="${report.exportSafetyReport?.isValid ? 'ok' : 'error'}">${report.exportSafetyReport?.isValid ? 'Bestanden' : 'Pruefen'}</p>${listHtml([...(report.exportSafetyReport?.errors || []), ...(report.exportSafetyReport?.warnings || [])])}</section>
       <section class="card"><h2>Warnungen</h2>${listHtml(report.warnings || [])}</section>
       <section class="card"><h2>Naechste Schritte</h2>${listHtml(report.nextRecommendedSteps || [])}</section>
@@ -465,6 +501,12 @@ function publicReference(ref) {
 
 function jsonFile(filePath, value) {
   return { path: filePath, content: JSON.stringify(value, null, 2) };
+}
+
+function readDemoTargetsFromFiles(files = []) {
+  const demoFile = files.find((file) => file.path === 'catalog/demo-targets.json');
+  if (!demoFile) return [];
+  try { return JSON.parse(demoFile.content); } catch { return []; }
 }
 
 function writeFile(rootDir, relativePath, content) {

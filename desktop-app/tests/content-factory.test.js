@@ -25,6 +25,9 @@ const { reviewOutput, reviewArtifactContent } = require('../app/lib/content-fact
 const { loadAppEnv, getOpenAiApiKey } = require('../app/lib/env/env-loader');
 const { estimateContentFactoryCost } = require('../app/lib/content-factory/ai/cost-estimator');
 const { validateGeneratedContainer } = require('../app/lib/content-factory/generated-container-validator');
+const { inferDemoTargetsForDays } = require('../app/lib/content-factory/demo-targets/demo-target-service');
+const { generateDemoArtifacts } = require('../app/lib/content-factory/demo-targets/demo-artifact-generator');
+const { openDemoTarget } = require('../app/lib/demo-launcher/demo-launcher-service');
 const { contracts } = require('../app/lib/content-factory/ai/prompts/contracts');
 const { dayDraftContract } = require('../app/lib/content-factory/ai/prompts/contracts/day-draft-contract');
 const promptBuilder = require('../app/lib/content-factory/ai/prompts/prompt-builder');
@@ -237,6 +240,8 @@ test('content factory productive MVP creates draft with runtime modes and standa
     const testProtocol = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'reports', 'testprotokoll.json'), 'utf8'));
     const testProtocolHtml = fs.readFileSync(path.join(draft.storagePath, 'reports', 'testprotokoll.html'), 'utf8');
     const artifacts = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'artifacts.json'), 'utf8'));
+    const demoTargets = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'demo-targets.json'), 'utf8'));
+    const days = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'days.json'), 'utf8'));
 
     assert.equal(draftDay.warnings.some((warning) => /OpenAI ist nicht konfiguriert|Quality Gate|Fallback/.test(warning)), true);
     assert.equal(allDays.length, 2);
@@ -250,6 +255,14 @@ test('content factory productive MVP creates draft with runtime modes and standa
     assert.equal(fs.existsSync(path.join(draft.storagePath, 'platform', 'adapter.json')), true);
     assert.equal(fs.existsSync(path.join(draft.storagePath, 'teilnehmer', 'tag_02', 'webvariante.html')), true);
     assert.equal(artifacts.some((artifact) => artifact.path.endsWith('pom.xml')), true);
+    assert.ok(demoTargets.length >= 1);
+    assert.equal(days[0].demos.includes(demoTargets[0].id), true);
+    assert.equal(fs.existsSync(path.join(draft.storagePath, demoTargets[0].filePath)), true);
+    assert.match(fs.readFileSync(path.join(draft.storagePath, 'dozent', 'tag_01', 'webvariante.html'), 'utf8'), /class="demo-open-button"/);
+    assert.doesNotMatch(participantWeb, /demo-open-button/);
+    assert.equal(JSON.stringify(participantContent).includes(demoTargets[0].id), false);
+    assert.equal(testProtocol.checks.some((check) => check.group === 'Demos'), true);
+    assert.equal(draft.analysisReport.demoTargets.length, demoTargets.length);
     assert.equal(artifacts.some((artifact) => artifact.solutionOnly === true && artifact.path.startsWith('dozent/')), true);
     assert.equal(fs.existsSync(path.join(draft.storagePath, artifacts.find((artifact) => artifact.path.endsWith('pom.xml')).path)), true);
     assert.doesNotMatch(participantWeb, /Loesung|solution/i);
@@ -837,6 +850,56 @@ test('content factory artifact generators create safe files and validate blocked
   assert.equal(blocked.isValid, false);
   assert.equal(blocked.errors.some((error) => /Ausfuehrbare Datei/.test(error)), true);
   assert.equal(blocked.errors.some((error) => /solutionOnly/.test(error)), true);
+});
+
+test('demo target service maps topics to safe demo targets and artifacts', () => {
+  const base = (title, profile = {}) => inferDemoTargetsForDays({
+    dayResults: [{ dayNumber: 1, title, tasks: [{ title, text: title }], webvariant: { teacherHtmlSections: [] } }],
+    coursePlan: { days: [{ dayNumber: 1, title, mainTopic: title }] },
+    containerProfile: profile
+  })[0];
+  const excel = base('Excel Tabelle filtern');
+  const word = base('Bericht und Dokumentation schreiben');
+  const java = base('Java Klasse und Methode');
+  const sql = base('SQL SELECT Abfrage');
+  const drawio = base('ERM Diagramm modellieren');
+  const artifacts = generateDemoArtifacts([excel, word, java, sql, drawio]);
+
+  assert.equal(excel.tool, 'excel');
+  assert.match(excel.filePath, /\.csv$/);
+  assert.equal(word.tool, 'word');
+  assert.match(word.filePath, /\.rtf$/);
+  assert.equal(java.tool, 'vscode');
+  assert.match(java.filePath, /Main\.java$/);
+  assert.equal(sql.tool, 'sql');
+  assert.equal(sql.safety.allowAutoRun, false);
+  assert.match(artifacts.find((file) => file.path === sql.filePath).content, /nicht automatisch ausgefuehrt/);
+  assert.equal(drawio.tool, 'drawio');
+  assert.match(drawio.filePath, /\.drawio$/);
+});
+
+test('demo launcher blocks unsafe paths and opens safe files through shell mock', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-demo-launcher-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'demo.csv'), 'Name;Wert\nA;1\n', 'utf8');
+    fs.writeFileSync(path.join(dir, 'demo.sql'), '-- Diese Datei ist eine Demo und wird nicht automatisch ausgefuehrt.\nSELECT 1;\n', 'utf8');
+    const opened = [];
+    const shellMock = { openPath: async (target) => { opened.push(target); return ''; } };
+    const csv = await openDemoTarget({ tool: 'excel', filePath: 'demo.csv' }, dir, { shell: shellMock });
+    const sql = await openDemoTarget({ tool: 'sql', filePath: 'demo.sql' }, dir, { shell: shellMock });
+    const outside = await openDemoTarget({ tool: 'excel', filePath: '../secret.csv' }, dir, { shell: shellMock });
+    const blocked = await openDemoTarget({ tool: 'default', filePath: 'demo.cmd' }, dir, { shell: shellMock });
+
+    assert.equal(csv.success, true);
+    assert.equal(sql.success, true);
+    assert.equal(opened.length, 2);
+    assert.equal(outside.success, false);
+    assert.equal(outside.errorCategory, 'outside-container');
+    assert.equal(blocked.success, false);
+    assert.equal(blocked.errorCategory, 'blocked-extension');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('generated container validator blocks admin ai key store export', () => {

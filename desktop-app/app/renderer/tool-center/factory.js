@@ -574,6 +574,7 @@ function renderGeneratedDraft(draft) {
         <div><dt>Testprotokoll</dt><dd>${escapeHtml(draft.testProtocol?.overallStatus || draft.analysisReport?.testProtocol?.overallStatus || 'offen')}</dd></div>
       </dl>
       ${renderTestProtocolSummary(draft.testProtocol || draft.analysisReport?.testProtocol)}
+      ${renderDemoSummary(draft)}
       <div class="button-row">
         <button class="secondary-button" type="button" data-wizard-open="standalone">Standalone oeffnen</button>
         <button class="secondary-button" type="button" data-wizard-open="folder">Ordner oeffnen</button>
@@ -581,6 +582,23 @@ function renderGeneratedDraft(draft) {
         <button class="secondary-button" type="button" data-wizard-open="test-protocol">Testprotokoll oeffnen</button>
       </div>
     </div>
+  `;
+}
+
+function renderDemoSummary(draft) {
+  const demos = draft.analysisReport?.demoTargets || [];
+  if (!demos.length) return '<p class="status-line">Demo-Dateien: keine erzeugt.</p>';
+  return `
+    <section class="mapping-list">
+      <strong>Demo-Dateien</strong>
+      ${demos.map((demo) => `
+        <article class="mapping-item">
+          <span>${escapeHtml(demo.title)}</span>
+          <small>${escapeHtml(demo.tool)} | ${escapeHtml(demo.filePath)} | Teilnehmer: ${demo.visibleForParticipants ? 'ja' : 'nein'}</small>
+          <button class="secondary-button" type="button" data-demo-test="${escapeHtml(demo.id)}">Demo testen</button>
+        </article>
+      `).join('')}
+    </section>
   `;
 }
 
@@ -756,6 +774,12 @@ function bindPlanWizardEvents() {
   $('[data-wizard-delete-last-test]')?.addEventListener('click', deleteLastWizardTestDraft);
   $('[data-wizard-clear-staging]')?.addEventListener('click', clearWizardStaging);
   $all('[data-wizard-open]').forEach((button) => button.addEventListener('click', () => desktop.factory.openGeneratedDraft(state.wizard.generatedDraft.containerId, button.dataset.wizardOpen)));
+  $all('[data-demo-test]').forEach((button) => button.addEventListener('click', async () => {
+    if (!state.wizard.generatedDraft?.containerId || !desktop.demo?.openTarget) return;
+    const result = await desktop.demo.openTarget(button.dataset.demoTest, state.wizard.generatedDraft.containerId);
+    state.wizard.status = result.message || 'Demo geprueft.';
+    renderPlanWizard();
+  }));
 }
 
 async function applyWizardPreset() {

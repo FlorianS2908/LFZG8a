@@ -7,16 +7,18 @@ const dayDraftContract = {
   expectedOutputSchema: 'DayGenerationResult',
   mustIncludeRules: [
     'Output ausschliesslich als valides JSON.',
-    'dayNumber, title, webvariant.teacherHtmlSections, webvariant.participantHtmlSections, tasks, solutions, quiz, artifacts, sourceRefs, warnings und aiMeta liefern.',
+    'dayNumber, title, webvariant.teacherHtmlSections, webvariant.participantHtmlSections, tasks, solutions, quiz, artifacts, optionale demos, sourceRefs, warnings und aiMeta liefern.',
     'Teilnehmerbereich enthaelt niemals Loesungen.',
-    'Loesungen ausschliesslich in solutions und Dozentenbereich.'
+    'Loesungen ausschliesslich in solutions und Dozentenbereich.',
+    'Webvariante erklaert das Thema und kann einen kurzen Demo-Vorschlag fuer den Dozenten enthalten.'
   ],
   mustNotIncludeRules: [
     'Keine Originalbuchtexte uebernehmen.',
     'Keine Referenzchunks oder textPreview uebernehmen.',
     'Keine API-Keys, Tokens oder Secrets verwenden.',
     'Keine EXE/BAT/CMD/PS1 erzeugen.',
-    'Keine SQL-Autoausfuehrung erzeugen.'
+    'Keine SQL-Autoausfuehrung erzeugen.',
+    'Demo-Vorschlaege duerfen keine vollstaendige Aufgabenloesung enthalten.'
   ],
   didacticRules: [
     'ageRange, priorKnowledge, learningLevel, difficultyMode, needsStepByStep, examOrientation und projectOrientation beachten.',
@@ -32,7 +34,8 @@ const dayDraftContract = {
     'Java Einsteiger erhalten keine Maven-Struktur, ausser explizit erzwungen.',
     'SQL wird niemals automatisch ausgefuehrt.',
     'Draw.io ist primaeres Diagrammformat.',
-    'Jupyter Notebooks muessen valides ipynb JSON sein.'
+    'Jupyter Notebooks muessen valides ipynb JSON sein.',
+    'Demos sind standardmaessig fuer Dozenten gedacht und bleiben von Aufgabenfreigaben getrennt.'
   ],
   qualityRubric: [
     'Konkrete Aufgaben statt Platzhalter.',
