@@ -1,5 +1,6 @@
 const { buildContainerProfile } = require('../container-profile/container-profile-service');
 const { checkOk, statusFromChecks, scoreFromChecks } = require('./preflight-rules');
+const { evaluateDidacticFit } = require('../didactics/didactic-fit-service');
 
 function runPreflight(input = {}, options = {}) {
   const course = input.course || {};
@@ -14,6 +15,7 @@ function runPreflight(input = {}, options = {}) {
   });
   const suggestions = input.artifactSuggestions?.length ? input.artifactSuggestions : profileContext.artifactSuggestions;
   const targets = profileContext.artifactTargets;
+  const didacticFit = evaluateDidacticFit(input.didacticProfile || curriculum.didacticProfile || {}, { ...input, targetAudience, containerProfile: profileContext.containerProfile });
   const referencePaths = [
     ...(input.uploads || []),
     ...(input.materials || []),
@@ -34,6 +36,7 @@ function runPreflight(input = {}, options = {}) {
     checkOk('difficulty-mode', 'Schwierigkeitsmodus', Boolean(targetAudience.difficultyMode), 'difficultyMode fehlt.'),
     checkOk('education-context', 'Bildungskontext', Boolean(targetAudience.educationContext || 'umschulung'), 'educationContext fehlt.', 'warning'),
     checkOk('course-type', 'Kurstyp', Boolean(profileContext.containerProfile.courseType), 'courseType fehlt.'),
+    checkOk('didactic-fit', 'Didaktik Fit Score', didacticFit.score >= 50, `Didaktik Fit Score ${didacticFit.score} (${didacticFit.level}) liegt unter 50 und muss manuell bestaetigt werden.`, 'warning'),
     checkOk('artifact-mode', 'Artefaktmodus', Boolean(profileContext.containerProfile.artifactMode), 'artifactMode fehlt.'),
     checkOk('java-beginner-no-maven', 'Java Einsteiger ohne Maven', !(profileContext.containerProfile.courseType === 'java-maven' && ['none', 'basic'].includes(targetAudience.priorKnowledge)), 'Java-Maven ist fuer Einsteiger nicht als Default geeignet.', 'warning'),
     checkOk('sql-no-auto-db', 'SQL ohne automatische DB-Aktion', profileContext.containerProfile.allowDatabaseActions !== true, 'Automatische Datenbankaktionen sind aktiviert.', 'error'),
@@ -57,7 +60,8 @@ function runPreflight(input = {}, options = {}) {
     warnings,
     recommendations: createRecommendations(checks),
     checks,
-    profileContext
+    profileContext,
+    didacticFit
   };
 }
 

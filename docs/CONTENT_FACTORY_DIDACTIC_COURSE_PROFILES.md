@@ -45,3 +45,32 @@ Didaktische Profile aendern keine bestehenden Sicherheitsregeln:
 ## Tests
 
 `desktop-app/tests/content-factory.test.js` prueft Profil-Presets, automatische Vorschlaege, Prompt-Metadaten, Draft-Katalogdateien, Analysebericht und Testprotokoll.
+
+## Dozenten-Fahrplan
+
+Jeder Tagesentwurf enthaelt ein `teacherRunbook`. Der Fahrplan ist dozent-only und wird im Container als `catalog/teacher-runbooks.json` sowie pro Tag als `dozent/tag_XX/unterrichtsablauf.html` abgelegt.
+
+Der Fahrplan beschreibt:
+
+- Tagesphasen mit Zeitansatz.
+- Konkrete Aktion des Dozenten und erwartete Aktion der Teilnehmenden.
+- Moderationsfragen je Phase.
+- Demo-Schritte und Demo-Referenzen.
+- Freigabe-Schritte passend zur Release-Strategie.
+- Typische Fehler.
+- Differenzierung fuer schwaechere und staerkere Teilnehmende.
+- Checkpoints, Reflexion und Fallback, falls Demo oder Tool nicht funktioniert.
+
+Teilnehmerkatalog und Teilnehmerseiten duerfen keinen Link auf `unterrichtsablauf.html`, keinen `teacherRunbook`-Eintrag und keine Dozentenhinweise enthalten.
+
+## Gute Ergebnisse sicherstellen
+
+Die ContentFactory nutzt mehrere Pruefpunkte:
+
+- Fit Score: bewertet, ob Kursziel, Zielgruppe, Kurstyp und Profil zusammenpassen.
+- Didactic Quality Gate: prueft LessonFlow, ReleasePlan, Demos, Aufgabenprogression, Loesungsschutz und teacherRunbook.
+- Testprotokoll: dokumentiert Fahrplan, Moderationsfragen, Demo-/Freigabe-Schritte, typische Fehler, Differenzierung und Checkpoints.
+- Analysebericht: zeigt Profilwahl, Fit Score, Alternativen, Quality-Gate-Warnungen und Fahrplan-Status.
+- Manuelle Pruefung: Dozent prueft fachliche Richtigkeit, Timing, Freigaben und ob Demos tatsaechlich zur Lerngruppe passen.
+
+Profilwahl sollte begruendet werden. Weicht die Auswahl von der Empfehlung ab, dokumentiert der Analysebericht die Abweichung und die wichtigsten Alternativen.

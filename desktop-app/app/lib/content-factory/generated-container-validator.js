@@ -27,9 +27,13 @@ function validateGeneratedContainer(containerDir, course = {}) {
   const demoTargets = readJson(path.join(containerDir, 'catalog', 'demo-targets.json'), []);
   const didacticProfile = readJson(path.join(containerDir, 'catalog', 'didactic-profile.json'), {});
   const releasePlan = readJson(path.join(containerDir, 'catalog', 'release-plan.json'), []);
+  const teacherRunbooks = readJson(path.join(containerDir, 'catalog', 'teacher-runbooks.json'), []);
   days.forEach((day) => ['teacherWeb', 'teacherTasks', 'teacherSolutions', 'participantWeb', 'participantTasks'].forEach((key) => {
     if (day[key] && !fs.existsSync(path.join(containerDir, day[key]))) errors.push(`Pfad aus days.json fehlt: ${day[key]}`);
   }));
+  days.forEach((day) => {
+    if (day.teacherRunbook && !fs.existsSync(path.join(containerDir, day.teacherRunbook))) errors.push(`Pfad aus days.json fehlt: ${day.teacherRunbook}`);
+  });
   days.forEach((day) => (day.artifacts || []).forEach((artifact) => {
     if (artifact.path && !fs.existsSync(path.join(containerDir, artifact.path))) errors.push(`Artefakt fehlt: ${artifact.path}`);
     if (artifact.solutionOnly && /^teilnehmer\//i.test(artifact.path || '')) errors.push(`solutionOnly Artefakt im Teilnehmerbereich: ${artifact.path}`);
@@ -43,7 +47,7 @@ function validateGeneratedContainer(containerDir, course = {}) {
   }
   const releaseKeys = readJson(path.join(containerDir, 'catalog', 'release-keys.json'), []);
   if (new Set(releaseKeys).size !== releaseKeys.length) errors.push('ReleaseKeys sind nicht eindeutig.');
-  validateDidacticCatalog({ containerDir, days, participant, didacticProfile, releasePlan, demoTargets, errors, warnings });
+  validateDidacticCatalog({ containerDir, days, participant, didacticProfile, releasePlan, demoTargets, teacherRunbooks, errors, warnings });
   walkFiles(containerDir).forEach((filePath) => {
     const relative = path.relative(containerDir, filePath).replace(/\\/g, '/');
     const lower = relative.toLowerCase();
@@ -104,20 +108,29 @@ function validateGeneratedContainer(containerDir, course = {}) {
   return { isValid: errors.length === 0, errors, warnings };
 }
 
-function validateDidacticCatalog({ days, participant, didacticProfile, releasePlan, demoTargets, errors, warnings }) {
+function validateDidacticCatalog({ days, participant, didacticProfile, releasePlan, demoTargets, teacherRunbooks, errors, warnings }) {
   if (!didacticProfile.id || !didacticProfile.teachingModel) errors.push('catalog/didactic-profile.json fehlt oder ist unvollstaendig.');
   if (!Array.isArray(didacticProfile.lessonFlow) || !didacticProfile.lessonFlow.length) errors.push('DidacticProfile lessonFlow fehlt.');
   if (!Array.isArray(releasePlan)) errors.push('catalog/release-plan.json ist nicht korrekt strukturiert.');
   (days || []).forEach((day) => {
     if (!Array.isArray(day.didacticFlow) || !day.didacticFlow.length) errors.push(`days.json Tag ${day.dayNumber} ohne didacticFlow.`);
     if (!Array.isArray(day.releasePlan)) errors.push(`days.json Tag ${day.dayNumber} ohne releasePlan.`);
+    if (!day.teacherRunbook) errors.push(`days.json Tag ${day.dayNumber} ohne teacherRunbook.`);
+  });
+  if (!Array.isArray(teacherRunbooks) || !teacherRunbooks.length) errors.push('catalog/teacher-runbooks.json fehlt oder ist leer.');
+  (teacherRunbooks || []).forEach((runbook) => {
+    const phases = runbook.phases || [];
+    if (!phases.length) errors.push(`teacherRunbook Tag ${runbook.dayNumber || '?'} ohne Phasen.`);
+    if (phases.some((phase) => !phase.teacherAction || !phase.participantAction)) errors.push(`teacherRunbook Tag ${runbook.dayNumber || '?'} mit unvollstaendiger Phase.`);
+    if (!phases.some((phase) => (phase.typicalProblems || []).length)) warnings.push(`teacherRunbook Tag ${runbook.dayNumber || '?'} ohne typische Fehler.`);
+    if (!phases.some((phase) => phase.differentiation?.supportWeak && phase.differentiation?.challengeStrong)) warnings.push(`teacherRunbook Tag ${runbook.dayNumber || '?'} ohne Differenzierung.`);
   });
   if (didacticProfile.id === 'problem-first' && !didacticProfile.lessonFlow.includes('problem-case')) errors.push('problem-first enthaelt keine Problemphase.');
   if (didacticProfile.id === 'exam-training' && !/rubric|test|quiz|bewertung|assessment/i.test(`${didacticProfile.assessmentMode} ${JSON.stringify(releasePlan)}`)) errors.push('exam-training enthaelt keine Assessment-/Bewertungslogik.');
   if (didacticProfile.id === 'worked-example-fading' && !/worked|guided|faded|free|luecke|frei/i.test(`${didacticProfile.taskProgression} ${didacticProfile.lessonFlow.join(' ')}`)) errors.push('worked-example-fading enthaelt keine Progression.');
   if (didacticProfile.id === 'project-based' && didacticProfile.projectMode !== true) errors.push('project-based enthaelt keinen Projektmodus.');
   const participantText = JSON.stringify(participant || []);
-  if (/Dozentenhinweis|Freigabezentrum|Erwartungshorizont/i.test(participantText)) errors.push('Teilnehmerbereich enthaelt Dozentenhinweise.');
+  if (/Dozentenhinweis|Freigabezentrum|Erwartungshorizont|teacherRunbook|unterrichtsablauf|Dozenten-Fahrplan/i.test(participantText)) errors.push('Teilnehmerbereich enthaelt Dozentenhinweise.');
   if (didacticProfile.demoStrategy === 'none' && (demoTargets || []).length) warnings.push('DemoTargets vorhanden, obwohl demoStrategy none ist.');
 }
 

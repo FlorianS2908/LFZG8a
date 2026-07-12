@@ -1,3 +1,5 @@
+const { runDidacticQualityGate } = require('../didactics/didactic-quality-gate');
+
 function reviewOutput(output = {}, context = {}) {
   if (context.purpose === 'generateArtifactContent') return reviewArtifactContent(output, context);
   return reviewDayGenerationResult(output, context);
@@ -9,7 +11,8 @@ function reviewDayGenerationResult(result = {}, context = {}) {
   const serializedParticipant = JSON.stringify([result.webvariant?.participantHtmlSections || [], result.tasks || []]);
   const serialized = JSON.stringify(result || {});
   const profile = context.containerProfile || {};
-  const didacticProfile = context.didacticProfile || result.didacticProfile || {};
+  const hasExplicitDidacticProfile = Boolean(context.didacticProfile?.id || result.didacticProfile?.id);
+  const didacticProfile = hasExplicitDidacticProfile ? (context.didacticProfile || result.didacticProfile || {}) : {};
   const audience = context.targetAudience || {};
   if (/loesung|l.sung|solution/i.test(serializedParticipant)) errors.push('Teilnehmerbereich enthaelt Loesungshinweise.');
   if (!(result.solutions || []).length) warnings.push('Dozentenloesungen fehlen oder sind leer.');
@@ -34,6 +37,11 @@ function reviewDayGenerationResult(result = {}, context = {}) {
   if (didacticProfile.id === 'guided-coding' && !/Live-Coding|Code-Along|Micro-Task|code-along/i.test(serialized)) warnings.push('Guided-Coding-Profil ist im Output nicht sichtbar umgesetzt.');
   if (didacticProfile.id === 'exam-training' && !/Zeitaufgabe|Mini-Test|Bewertung|Pruefung/i.test(serialized)) warnings.push('Pruefungstraining ist im Output nicht sichtbar umgesetzt.');
   if (didacticProfile.id === 'problem-first' && !/Problemfall|Hypothese|Fehleranalyse|Ursache/i.test(serialized)) warnings.push('Problem-first-Profil ist im Output nicht sichtbar umgesetzt.');
+  const didacticGate = hasExplicitDidacticProfile ? runDidacticQualityGate(result, { didacticProfile }) : null;
+  if (didacticGate) {
+    errors.push(...didacticGate.errors);
+    warnings.push(...didacticGate.warnings);
+  }
   (result.artifacts || []).forEach((artifact) => {
     const targetPath = artifact.path || artifact.targetPath || '';
     if (/\.drawio$/i.test(targetPath) && artifact.content && !/^<mxfile[\s>]/.test(String(artifact.content).trim())) errors.push('Draw.io Artefakt ist nicht plausibel.');
@@ -47,7 +55,8 @@ function reviewDayGenerationResult(result = {}, context = {}) {
     score: Math.max(0, 100 - errors.length * 25 - warnings.length * 8),
     errors,
     warnings,
-    recommendations: [...errors, ...warnings]
+    recommendations: [...errors, ...warnings, ...(didacticGate?.recommendations || [])],
+    didacticQualityGate: didacticGate
   };
 }
 

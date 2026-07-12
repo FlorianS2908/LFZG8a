@@ -31,8 +31,9 @@ class LocalHeuristicProvider {
     const quiz = createQuiz(blocks, dayNumber, sourceRefs, targetAudience);
     const artifacts = createArtifactPlan(day, dayNumber, input.containerProfile, targetAudience, input);
     const demos = createDemoSuggestions(day, blocks, input.containerProfile, didacticProfile);
-    const releasePlan = buildReleasePlan(didacticProfile, [{ dayNumber, tasks, quiz }]);
+    const releasePlan = buildReleasePlan(didacticProfile, [{ dayNumber, tasks, quiz, demos }]);
     const reflection = createReflection(didacticProfile, title);
+    const teacherRunbook = createTeacherRunbook({ dayNumber, title, goals, blocks, tasks, quiz, demos, didacticProfile, didacticFlow, releasePlan, reflection, targetAudience });
     const teacherSections = createTeacherSections({ title, goals, blocks, tasks, solutions, quiz, sourceRefs, warnings, targetAudience, ageProfile, didacticProfile, didacticFlow, releasePlan, reflection });
     const participantSections = createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRefs, targetAudience, ageProfile, didacticProfile, didacticFlow, reflection });
 
@@ -52,6 +53,7 @@ class LocalHeuristicProvider {
       didacticFlow,
       releasePlan,
       reflection,
+      teacherRunbook,
       sourceRefs,
       warnings,
       aiAdditions: input.referenceContext?.length ? ['Referenzmetadaten wurden als Kontext beruecksichtigt.'] : []
@@ -85,13 +87,13 @@ function createDemoSuggestions(day, blocks, containerProfile = {}, didacticProfi
   if (didacticProfile.defaultDemoEnabled === false || didacticProfile.demoStrategy === 'none') return [];
   const text = [day.title, day.mainTopic, containerProfile.courseType, ...blocks.map((block) => block.topic)].join(' ');
   if (didacticProfile.demoStrategy === 'error-demo') {
-    return [{ title: 'Demo: Fehlerbild analysieren', tool: 'vscode', description: 'Fehlerhafte Ausgangsdatei fuer Problem-First-Analyse. Keine Loesung enthalten.', suggestedFileName: 'demo_01_code/Main.java', buttonLabel: 'Fehler-Demo oeffnen' }];
+    return [{ title: 'Demo: Fehlerbild analysieren', tool: 'vscode', description: 'Fehlerhafte Ausgangsdatei fuer Problem-First-Analyse. Keine Loesung enthalten.', suggestedFileName: 'demo_01_code/Main.java', buttonLabel: 'Fehler-Demo oeffnen', phaseRef: 'error-demo', demoStrategy: didacticProfile.demoStrategy, teacherOnly: true }];
   }
   if (didacticProfile.demoStrategy === 'worked-example') {
-    return [{ title: 'Demo: Musterbeispiel betrachten', tool: 'vscode', description: 'Kurzes Musterbeispiel als Einstieg, danach Fading-Aufgaben.', suggestedFileName: 'demo_01_code/Main.java', buttonLabel: 'Musterbeispiel oeffnen' }];
+    return [{ title: 'Demo: Musterbeispiel betrachten', tool: 'vscode', description: 'Kurzes Musterbeispiel als Einstieg, danach Fading-Aufgaben.', suggestedFileName: 'demo_01_code/Main.java', buttonLabel: 'Musterbeispiel oeffnen', phaseRef: 'worked-example', demoStrategy: didacticProfile.demoStrategy, teacherOnly: true }];
   }
   if (didacticProfile.demoStrategy === 'live-coding') {
-    return [{ title: 'Demo: Live-Coding starten', tool: 'vscode', description: 'Schrittweise Code-Demo zum Mitmachen.', suggestedFileName: /python|jupyter/i.test(text) ? 'demo_01_code/main.py' : 'demo_01_code/Main.java', buttonLabel: 'Live-Coding in VS Code oeffnen' }];
+    return [{ title: 'Demo: Live-Coding starten', tool: 'vscode', description: 'Schrittweise Code-Demo zum Mitmachen.', suggestedFileName: /python|jupyter/i.test(text) ? 'demo_01_code/main.py' : 'demo_01_code/Main.java', buttonLabel: 'Live-Coding in VS Code oeffnen', phaseRef: 'live-coding', demoStrategy: didacticProfile.demoStrategy, teacherOnly: true }];
   }
   if (/\b(sql|datenbank|abfrage|select|join|phpmyadmin)\b/i.test(text)) {
     return [{ title: 'Demo: SQL-Datei lesen', tool: 'sql', description: 'Dozenten-Demo zum Lesen einer SQL-Datei ohne Ausfuehrung.', suggestedFileName: 'demo_01_abfrage.sql', buttonLabel: 'SQL-Demo oeffnen' }];
@@ -198,6 +200,7 @@ function createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRe
 
 function createTasks(blocks, dayNumber, sourceRefs, targetAudience, didacticProfile = {}) {
   const profileLevels = levelsForDidacticProfile(didacticProfile);
+  const phases = didacticProfile.lessonFlow || [];
   const levels = profileLevels.length ? profileLevels : targetAudience.difficultyMode === 'easy-normal-hard'
     ? ['leicht', 'mittel', 'schwer']
     : targetAudience.difficultyMode === 'normal-and-hard'
@@ -208,9 +211,57 @@ function createTasks(blocks, dayNumber, sourceRefs, targetAudience, didacticProf
     title: taskTitle(block.topic, level, didacticProfile),
     text: taskInstruction(block.topic, level, targetAudience, didacticProfile),
     difficulty: level,
+    phaseRef: phaseForTask(didacticProfile, level, phases, levelIndex),
+    progressionLevel: level,
+    socialForm: didacticProfile.socialForm || 'individual-or-pair',
+    estimatedMinutes: estimatedMinutesForTask(didacticProfile, level),
+    releaseHint: releaseHintForTask(didacticProfile, level),
+    assessmentCriteria: assessmentCriteriaForTask(didacticProfile, level),
     sourceRefs,
     aiGenerated: false
   })));
+}
+
+function phaseForTask(profile = {}, level, phases = [], index = 0) {
+  const byLevel = {
+    muster: 'worked-example',
+    gefuehrt: 'guided-task',
+    luecke: 'completion-task',
+    frei: 'free-task',
+    zeitaufgabe: 'timed-task',
+    auswertung: 'evaluation',
+    'mini-test': 'mini-test',
+    analyse: 'analysis',
+    korrektur: 'correction-task',
+    systematisierung: 'systematization',
+    projektbaustein: 'project-task',
+    fortschrittscheck: 'progress-check',
+    mitmachen: 'code-along',
+    zwischenaufgabe: 'micro-task',
+    erweiterung: 'extension-task'
+  };
+  return byLevel[level] || phases.find((phase) => /task|practice|station|coding|test/.test(phase)) || phases[index] || '';
+}
+
+function estimatedMinutesForTask(profile = {}, level) {
+  if (profile.id === 'exam-training' || level === 'zeitaufgabe') return 15;
+  if (profile.id === 'worked-example-fading' && level === 'muster') return 10;
+  if (profile.id === 'station-learning') return 20;
+  return 25;
+}
+
+function releaseHintForTask(profile = {}, level) {
+  if (profile.releaseStrategy === 'after-previous-task') return `Nach Abschluss der vorherigen Aufgabe freigeben (${level}).`;
+  if (profile.releaseStrategy === 'station-wise') return `Station ${level} einzeln freigeben.`;
+  if (profile.releaseStrategy === 'after-quiz') return 'Nach Quiz-/Checkphase freigeben.';
+  return 'Manuell durch Dozent freigeben.';
+}
+
+function assessmentCriteriaForTask(profile = {}, level) {
+  if (profile.id === 'exam-training') return ['Zeit eingehalten', 'Bewertungskriterien sichtbar', 'Typische Fehler vermieden'];
+  if (profile.id === 'guided-coding') return ['Code laeuft konzeptionell', 'Schritte kommentiert', 'Code-Review vorbereitet'];
+  if (profile.id === 'worked-example-fading') return ['Hilfen passend genutzt', 'Abnehmende Hilfe dokumentiert', 'Freier Schritt nachvollziehbar'];
+  return ['Fachlich korrekt', 'Vorgehen nachvollziehbar'];
 }
 
 function taskInstruction(topic, level, targetAudience, didacticProfile = {}) {
@@ -274,8 +325,155 @@ function createReflection(profile = {}, title) {
       `Was war im Ablauf "${profile.label || 'Didaktisches Profil'}" fuer ${title} der wichtigste Schritt?`,
       'Welche Frage ist offen geblieben?',
       profile.assessmentMode ? `Wie sicher fuehlen Sie sich im Assessment-Modus ${profile.assessmentMode}?` : 'Was nehmen Sie fuer die naechste Aufgabe mit?'
+    ],
+    expectedEvidence: ['kurzer Reflexionssatz', 'offene Frage', profile.assessmentMode ? `Selbsteinschaetzung zu ${profile.assessmentMode}` : 'naechster Lernschritt']
+  };
+}
+
+function createTeacherRunbook({ dayNumber, title, goals, blocks, tasks, quiz, demos, didacticProfile, didacticFlow, releasePlan, reflection, targetAudience }) {
+  const templates = teacherRunbookTemplates(didacticProfile.id);
+  const phases = templates.map((template, index) => {
+    const flow = didacticFlow[index] || didacticFlow.find((item) => item.phase === template.phase) || {};
+    const demo = demos[index] || demos.find((item) => item.phaseRef === template.phase);
+    const releases = releasePlan.filter((item) => item.phase === template.phase || (!item.phase && /freig|aufgabe|task|station|quiz/i.test(template.title)));
+    const task = tasks[index] || tasks.find((item) => item.phaseRef === template.phase);
+    const topic = blocks[index % Math.max(1, blocks.length)]?.topic || title;
+    return {
+      phase: template.phase,
+      title: template.title,
+      estimatedMinutes: template.minutes,
+      teacherAction: flow.teacherAction || template.teacherAction(topic, didacticProfile),
+      participantAction: flow.participantAction || template.participantAction(topic, targetAudience),
+      moderationQuestions: [
+        template.question(topic),
+        goals?.[0] ? `Wie zahlt dieser Schritt auf das Lernziel "${goals[0]}" ein?` : `Was ist der naechste pruefbare Schritt zu ${topic}?`
+      ],
+      demoId: demo?.id || '',
+      releaseActions: releases.length
+        ? releases.map((item) => item.releaseHint || item.title)
+        : (task?.releaseHint ? [task.releaseHint] : []),
+      checkpoint: template.checkpoint(topic, quiz),
+      typicalProblems: typicalProblemsFor(didacticProfile, topic),
+      differentiation: {
+        supportWeak: supportWeakFor(didacticProfile, topic),
+        challengeStrong: challengeStrongFor(didacticProfile, topic)
+      }
+    };
+  });
+  return {
+    dayNumber,
+    title,
+    estimatedTotalMinutes: phases.reduce((sum, phase) => sum + phase.estimatedMinutes, 0),
+    phases,
+    teacherChecklist: [
+      `${didacticProfile.label || 'Didaktisches Profil'} sichtbar im Ablauf halten.`,
+      'Teilnehmerbereich vor Start auf Loesungsfreiheit pruefen.',
+      'Freigaben vor Arbeitsphasen vorbereiten.'
+    ],
+    materialChecklist: ['Webvariante', 'Aufgaben', 'Quiz', ...(tasks.length ? ['Aufgabenprogression'] : [])],
+    demoChecklist: demos.length ? demos.map((demo) => `${demo.title}: ${demo.buttonLabel || 'oeffnen'} testen`) : ['Keine Demo vorgesehen oder Demo bewusst deaktiviert.'],
+    releaseChecklist: releasePlan.length ? releasePlan.map((item) => item.releaseHint || item.title) : ['Freigabe manuell im passenden Moment setzen.'],
+    assessmentChecklist: ['Checkpoint dokumentieren', ...(reflection.questions || []).slice(0, 2), `${quiz.length} Quizfrage(n) fuer Abschluss pruefen`],
+    fallbackPlan: 'Falls Demo oder Tool nicht funktioniert: Demo als Screenshot, Codeauszug oder Tafelbild ersetzen, Aufgabe manuell freigeben und Ergebnis im Plenum sichern.'
+  };
+}
+
+function teacherRunbookTemplates(profileId) {
+  const action = (verb) => (topic) => `${verb} zu "${topic}" moderieren und Ziel transparent machen.`;
+  const participant = (verb) => (topic) => `${verb} zu "${topic}" bearbeiten und Ergebnis kurz notieren.`;
+  const question = (prefix) => (topic) => `${prefix} bei "${topic}"?`;
+  const checkpoint = (label) => (topic, quiz) => quiz?.length ? `${label}: Quizimpuls oder Stichprobe zu ${topic}.` : `${label}: Ergebnis zu ${topic} im Plenum pruefen.`;
+  const base = {
+    'explain-demo-practice': [
+      ['activation', 'Einstieg', 10, 'Einstieg', 'Vorwissen aktivieren', 'Was wissen wir schon', 'Startcheck'],
+      ['explanation', 'Erklaerung', 25, 'Erklaerung', 'Kernbegriffe sichern', 'Welche Begriffe sind zentral', 'Begriffscheck'],
+      ['demo', 'Demo', 25, 'Demo', 'Demo beobachten', 'Welche Schritte sind sichtbar', 'Demo-Check'],
+      ['guided-practice', 'gefuehrte Uebung', 45, 'Uebung', 'Schrittweise ueben', 'Wo brauchen wir Hilfen', 'Uebungscheck'],
+      ['release-task', 'Aufgabe freigeben', 50, 'Aufgabe', 'Aufgabe bearbeiten', 'Was ist das erwartete Ergebnis', 'Aufgabencheck'],
+      ['reflection', 'Sicherung/Reflexion', 20, 'Sicherung', 'Erkenntnisse notieren', 'Was nehmen wir mit', 'Reflexion']
+    ],
+    'problem-first': [
+      ['problem', 'Problem zeigen', 10, 'Problemfall', 'Problem erfassen', 'Was wirkt fehlerhaft', 'Problemverstaendnis'],
+      ['hypothesis', 'Hypothesen sammeln', 15, 'Hypothesen', 'Vermutungen formulieren', 'Welche Ursache ist plausibel', 'Hypothesencheck'],
+      ['error-demo', 'Fehler-Demo oeffnen', 20, 'Fehler-Demo', 'Fehler beobachten', 'Welche Spur ist relevant', 'Demo-Check'],
+      ['analysis', 'Analyse', 40, 'Analyse', 'Ursache belegen', 'Welche Evidenz haben wir', 'Analysecheck'],
+      ['correction-task', 'Korrekturaufgabe freigeben', 45, 'Korrektur', 'Korrektur bearbeiten', 'Was wurde geaendert', 'Korrekturcheck'],
+      ['systematization', 'Systematisierung', 20, 'Regel ableiten', 'Regel sichern', 'Welche Regel gilt kuenftig', 'Systemcheck']
+    ],
+    'project-based': [
+      ['project-goal', 'Projektziel zeigen', 10, 'Projektziel', 'Ziel verstehen', 'Welches Ergebnis entsteht', 'Zielcheck'],
+      ['daily-increment', 'Tagesbaustein erklaeren', 20, 'Baustein', 'Baustein planen', 'Was ist heute lieferbar', 'Plancheck'],
+      ['mini-feature-demo', 'Demo als Mini-Feature', 25, 'Mini-Feature', 'Demo analysieren', 'Was laesst sich uebernehmen', 'Demo-Check'],
+      ['project-task', 'Projektaufgabe freigeben', 70, 'Projektaufgabe', 'Projektbaustein bauen', 'Welche Akzeptanzkriterien gelten', 'Projektcheck'],
+      ['progress-check', 'Fortschritt pruefen', 20, 'Fortschritt', 'Stand zeigen', 'Was ist offen', 'Review'],
+      ['project-log', 'Projektlog/Reflexion', 15, 'Projektlog', 'Log schreiben', 'Was ist der naechste Schritt', 'Reflexion']
+    ],
+    'worked-example-fading': [
+      ['worked-example', 'Musterbeispiel zeigen', 20, 'Musterbeispiel', 'Schluesselschritte markieren', 'Welche Schritte sind vorgegeben', 'Mustercheck'],
+      ['guided-task', 'gefuehrte Aufgabe', 35, 'Gefuehrte Aufgabe', 'Mit Hilfen bearbeiten', 'Welche Hilfe wird gebraucht', 'Hilfencheck'],
+      ['completion-task', 'Lueckenaufgabe', 35, 'Lueckenaufgabe', 'Fehlende Schritte ergaenzen', 'Welche Luecke ist kritisch', 'Lueckencheck'],
+      ['free-task', 'freie Aufgabe', 45, 'Freie Aufgabe', 'Eigenstaendig loesen', 'Welche Strategie wurde gewaehlt', 'Transfercheck'],
+      ['reflection', 'Reflexion', 15, 'Fading reflektieren', 'Hilfen bewerten', 'Welche Hilfe kann wegfallen', 'Reflexion']
+    ],
+    'exam-training': [
+      ['exam-impulse', 'Pruefungsimpuls', 10, 'Pruefungsimpuls', 'Anforderung lesen', 'Was wird bewertet', 'Anforderungscheck'],
+      ['sample-case', 'Musterfall', 20, 'Musterfall', 'Bewertung nachvollziehen', 'Welche Punkte zaehlen', 'Mustercheck'],
+      ['timed-task', 'Zeitaufgabe', 35, 'Zeitaufgabe', 'Unter Zeit bearbeiten', 'Wie teilen wir Zeit ein', 'Zeitcheck'],
+      ['evaluation', 'Auswertung', 25, 'Auswertung', 'Ergebnis vergleichen', 'Wo fehlen Punkte', 'Bewertungscheck'],
+      ['mini-test', 'Mini-Test', 15, 'Mini-Test', 'Quiz bearbeiten', 'Welche Frage bleibt offen', 'Mini-Test'],
+      ['typical-errors', 'typische Fehler', 15, 'Fehlerbild', 'Fehler notieren', 'Welcher Fehler ist vermeidbar', 'Fehlercheck']
+    ],
+    'station-learning': [
+      ['station-intro', 'Stationen erklaeren', 10, 'Stationen', 'Stationen planen', 'Welche Reihenfolge passt', 'Startcheck'],
+      ['station-1', 'Station 1 Grundlagen', 25, 'Grundlagen', 'Grundlagen sichern', 'Was ist Basiswissen', 'Stationscheck'],
+      ['station-2', 'Station 2 Anwendung', 30, 'Anwendung', 'Anwenden', 'Welche Anwendung passt', 'Anwendungscheck'],
+      ['station-3', 'Station 3 Transfer', 30, 'Transfer', 'Transfer bearbeiten', 'Was ist anders', 'Transfercheck'],
+      ['station-4', 'Station 4 Challenge', 25, 'Challenge', 'Challenge waehlen', 'Welche Zusatzfrage lohnt sich', 'Challengecheck'],
+      ['self-check', 'Selbstcheck', 15, 'Selbstcheck', 'Selbstcheck ausfuellen', 'Was ist noch unsicher', 'Selbstcheck']
+    ],
+    'flipped-classroom': [
+      ['preparation-check', 'Vorbereitung pruefen', 10, 'Vorbereitung', 'Vorbereitung belegen', 'Was wurde vorbereitet', 'Vorbereitungscheck'],
+      ['entry-quiz', 'Einstiegsquiz', 15, 'Einstiegsquiz', 'Quiz bearbeiten', 'Welche Luecke ist sichtbar', 'Quizcheck'],
+      ['practice-phase', 'Praxisphase', 60, 'Praxis', 'Anwenden', 'Wo braucht es Klaerung', 'Praxischeck'],
+      ['debriefing', 'Debriefing', 25, 'Debriefing', 'Ergebnisse diskutieren', 'Welche Strategie war wirksam', 'Debrief'],
+      ['reflection', 'Reflexion', 15, 'Reflexion', 'Transfer notieren', 'Was wird wiederholt', 'Reflexion']
+    ],
+    'guided-coding': [
+      ['live-coding', 'Live-Coding vorbereiten', 10, 'Live-Coding', 'Setup pruefen', 'Was brauchen wir zum Start', 'Setupcheck'],
+      ['code-along', 'Code-Along', 40, 'Code-Along', 'Mitcoden', 'Welche Zeile ist entscheidend', 'Codecheck'],
+      ['micro-task', 'Microtask', 25, 'Microtask', 'Kleine Aufgabe loesen', 'Was ist die kleinste Aenderung', 'Microcheck'],
+      ['extension-task', 'Erweiterungsaufgabe', 35, 'Erweiterung', 'Erweitern', 'Welche Variante ist sinnvoll', 'Erweiterungscheck'],
+      ['code-review', 'Code-Review', 20, 'Review', 'Code reflektieren', 'Was ist lesbar und wartbar', 'Review']
     ]
   };
+  return (base[profileId] || base['explain-demo-practice']).map(([phase, title, minutes, teacherVerb, participantVerb, questionText, checkpointText]) => ({
+    phase,
+    title,
+    minutes,
+    teacherAction: action(teacherVerb),
+    participantAction: participant(participantVerb),
+    question: question(questionText),
+    checkpoint: checkpoint(checkpointText)
+  }));
+}
+
+function typicalProblemsFor(profile = {}, topic) {
+  if (profile.id === 'exam-training') return ['Aufgabenstellung wird zu schnell gelesen', 'Bewertungskriterien werden nicht genutzt', 'Zeit wird falsch eingeteilt'];
+  if (profile.id === 'problem-first') return ['Symptom und Ursache werden verwechselt', 'Hypothesen werden nicht belegt', 'Korrektur wird nicht getestet'];
+  if (profile.id === 'guided-coding') return ['Code wird abgeschrieben statt verstanden', 'Zwischenschritte werden nicht getestet', 'Fehlermeldungen werden ignoriert'];
+  return [`${topic} wird zu abstrakt beschrieben`, 'Zwischenschritte werden uebersprungen', 'Ergebnis wird nicht begruendet'];
+}
+
+function supportWeakFor(profile = {}, topic) {
+  if (profile.id === 'worked-example-fading') return 'Musterbeispiel erneut zeigen und nur eine Luecke gleichzeitig bearbeiten lassen.';
+  if (profile.id === 'guided-coding') return 'Code-Along verlangsamen, Zwischenstand bereitstellen und Fehlermeldung gemeinsam lesen.';
+  return `Zu ${topic} ein Mini-Beispiel vormachen und die Aufgabe in kleinere Schritte teilen.`;
+}
+
+function challengeStrongFor(profile = {}, topic) {
+  if (profile.id === 'project-based') return 'Akzeptanzkriterium erweitern und technische Entscheidung begruenden lassen.';
+  if (profile.id === 'exam-training') return 'Zusatzpunkt ueber Bewertungsraster begruenden und typische Fehler selbst formulieren lassen.';
+  return `Transferfrage zu ${topic} mit Begruendung oder Gegenbeispiel stellen.`;
 }
 
 function renderFlow(flow = []) {

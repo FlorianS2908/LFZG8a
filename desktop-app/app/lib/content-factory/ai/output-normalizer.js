@@ -18,6 +18,16 @@ function normalizeDayGenerationResult(input = {}) {
     didacticFlow: normalizeDidacticFlow(input.didacticFlow),
     releasePlan: normalizeReleasePlan(input.releasePlan),
     reflection: normalizeReflection(input.reflection),
+    teacherRunbook: normalizeTeacherRunbook(input.teacherRunbook, {
+      dayNumber,
+      title,
+      didacticFlow: input.didacticFlow,
+      demos: input.demos,
+      tasks: input.tasks,
+      quiz: input.quiz,
+      releasePlan: input.releasePlan,
+      reflection: input.reflection
+    }),
     projectContext: input.projectContext || '',
     sourceRefs,
     warnings: input.warnings || [],
@@ -29,6 +39,9 @@ function normalizeDayGenerationResult(input = {}) {
   }));
   if (JSON.stringify(input.webvariant?.participantHtmlSections || input.tasks || '').match(/loesung|lösung|solution/i)) {
     normalized.warnings = [...normalized.warnings, 'Loesungshinweise wurden aus Teilnehmerinhalten entfernt.'];
+  }
+  if (!input.teacherRunbook) {
+    normalized.warnings = [...normalized.warnings, 'teacherRunbook wurde aus didacticFlow abgeleitet.'];
   }
   return normalized;
 }
@@ -58,6 +71,9 @@ function normalizeDemos(items = [], sourceRefs = []) {
     description: item.description || 'Kurze Dozenten-Demo zum Thema.',
     suggestedFileName: item.suggestedFileName || item.fileName || '',
     buttonLabel: item.buttonLabel || 'Demo oeffnen',
+    phaseRef: item.phaseRef || '',
+    demoStrategy: item.demoStrategy || '',
+    teacherOnly: item.teacherOnly === true || item.visibleForParticipants !== true,
     visibleForParticipants: item.visibleForParticipants === true,
     sourceRefs: item.sourceRefs?.length ? item.sourceRefs : sourceRefs
   }));
@@ -76,18 +92,97 @@ function normalizeDidacticFlow(items = []) {
 
 function normalizeReleasePlan(items = []) {
   return (items || []).map((item, index) => ({
+    id: item.id || `release-item-${index + 1}`,
+    dayNumber: Number(item.dayNumber || 1),
+    phase: item.phase || '',
+    title: item.title || item.itemId || `Freigabe ${index + 1}`,
     itemType: item.itemType || 'task',
     itemId: item.itemId || `release-item-${index + 1}`,
     releaseStrategy: item.releaseStrategy || 'manual-by-teacher',
-    releaseHint: item.releaseHint || ''
+    defaultReleased: item.defaultReleased === true,
+    dependsOn: Array.isArray(item.dependsOn) ? item.dependsOn.map(String) : [],
+    releaseHint: item.releaseHint || '',
+    visibleForRoles: Array.isArray(item.visibleForRoles) && item.visibleForRoles.length ? item.visibleForRoles.map(String) : ['teacher'],
+    participantVisibleAfterRelease: item.participantVisibleAfterRelease !== false
   }));
 }
 
 function normalizeReflection(reflection = {}) {
   return {
     mode: reflection.mode || '',
-    questions: Array.isArray(reflection.questions) ? reflection.questions.map(String) : []
+    questions: Array.isArray(reflection.questions) ? reflection.questions.map(String) : [],
+    expectedEvidence: Array.isArray(reflection.expectedEvidence) ? reflection.expectedEvidence.map(String) : []
   };
+}
+
+function normalizeTeacherRunbook(runbook = {}, context = {}) {
+  const dayNumber = Number(runbook.dayNumber || context.dayNumber || 1);
+  const title = runbook.title || context.title || `Tag ${dayNumber}`;
+  const phases = Array.isArray(runbook.phases) && runbook.phases.length
+    ? runbook.phases
+    : deriveTeacherRunbookPhases(context);
+  const normalizedPhases = phases.map((phase, index) => ({
+    phase: phase.phase || `phase-${index + 1}`,
+    title: phase.title || phase.phase || `Phase ${index + 1}`,
+    estimatedMinutes: Number(phase.estimatedMinutes || 15),
+    teacherAction: phase.teacherAction || 'Dozent fuehrt die Phase an und klaert offene Fragen.',
+    participantAction: phase.participantAction || 'Teilnehmende bearbeiten den naechsten Lernschritt.',
+    moderationQuestions: Array.isArray(phase.moderationQuestions) ? phase.moderationQuestions.map(String) : [],
+    demoId: phase.demoId || '',
+    releaseActions: Array.isArray(phase.releaseActions) ? phase.releaseActions.map(String) : [],
+    checkpoint: phase.checkpoint || '',
+    typicalProblems: Array.isArray(phase.typicalProblems) ? phase.typicalProblems.map(String) : [],
+    differentiation: {
+      supportWeak: phase.differentiation?.supportWeak || 'Schrittfolge sichtbar machen und ein Beispiel gemeinsam starten.',
+      challengeStrong: phase.differentiation?.challengeStrong || 'Transferfrage oder Erweiterungsaufgabe geben.'
+    }
+  }));
+  return {
+    dayNumber,
+    title,
+    estimatedTotalMinutes: Number(runbook.estimatedTotalMinutes || normalizedPhases.reduce((sum, phase) => sum + Number(phase.estimatedMinutes || 0), 0) || 360),
+    phases: normalizedPhases,
+    teacherChecklist: Array.isArray(runbook.teacherChecklist) ? runbook.teacherChecklist.map(String) : ['Lernziel sichtbar machen', 'Freigaben pruefen', 'Ergebnisse sichern'],
+    materialChecklist: Array.isArray(runbook.materialChecklist) ? runbook.materialChecklist.map(String) : ['Webvariante', 'Aufgaben', 'Quiz'],
+    demoChecklist: Array.isArray(runbook.demoChecklist) ? runbook.demoChecklist.map(String) : (context.demos || []).map((demo) => demo.title || demo.id || 'Demo pruefen'),
+    releaseChecklist: Array.isArray(runbook.releaseChecklist) ? runbook.releaseChecklist.map(String) : (context.releasePlan || []).map((item) => item.releaseHint || item.title || 'Freigabe pruefen'),
+    assessmentChecklist: Array.isArray(runbook.assessmentChecklist) ? runbook.assessmentChecklist.map(String) : ['Quiz auswerten', 'Aufgabenstichprobe pruefen'],
+    fallbackPlan: runbook.fallbackPlan || 'Falls Demo oder Tool nicht funktioniert: Beispiel als Screenshot oder Codeauszug zeigen und Aufgaben manuell freigeben.'
+  };
+}
+
+function deriveTeacherRunbookPhases(context = {}) {
+  const flow = normalizeDidacticFlow(context.didacticFlow || []);
+  const demos = normalizeDemos(context.demos || []);
+  const releasePlan = normalizeReleasePlan(context.releasePlan || []);
+  const tasks = normalizeItems(context.tasks || []);
+  const quiz = normalizeQuiz(context.quiz || []);
+  const phases = flow.length ? flow : [
+    { phase: 'activation', title: 'Einstieg', teacherAction: 'Vorwissen aktivieren.', participantAction: 'Vorwissen nennen.' },
+    { phase: 'practice', title: 'Arbeitsphase', teacherAction: 'Aufgabe freigeben und begleiten.', participantAction: 'Aufgabe bearbeiten.' },
+    { phase: 'reflection', title: 'Sicherung', teacherAction: 'Ergebnisse sichern.', participantAction: 'Ergebnisse reflektieren.' }
+  ];
+  return phases.map((item, index) => {
+    const demo = demos[index] || demos.find((candidate) => candidate.phaseRef === item.phase);
+    const releases = releasePlan.filter((release) => !release.phase || release.phase === item.phase);
+    const task = tasks[index] || tasks.find((candidate) => candidate.phaseRef === item.phase);
+    return {
+      phase: item.phase,
+      title: item.title,
+      estimatedMinutes: task?.estimatedMinutes || 20,
+      teacherAction: item.teacherAction || item.description || 'Phase moderieren.',
+      participantAction: item.participantAction || 'Aktiv mitarbeiten und Ergebnis notieren.',
+      moderationQuestions: [`Woran erkennen wir, dass ${context.title || 'das Thema'} verstanden wurde?`],
+      demoId: demo?.id || '',
+      releaseActions: releases.map((release) => release.releaseHint || release.title).filter(Boolean),
+      checkpoint: quiz.length ? 'Kurzer Quiz- oder Ergebnischeck.' : 'Stichprobe im Plenum sichern.',
+      typicalProblems: ['Begriffe werden verwechselt', 'Schritte werden zu schnell uebersprungen'],
+      differentiation: {
+        supportWeak: 'Teilaufgabe vormachen und Hilfekarte anbieten.',
+        challengeStrong: 'Zusatzfrage mit Transfer oder Begruendung stellen.'
+      }
+    };
+  });
 }
 
 function normalizeSections(items = [], sourceRefs = []) {
@@ -106,6 +201,12 @@ function normalizeItems(items = [], sourceRefs = []) {
     title: item.title || `Eintrag ${index + 1}`,
     text: item.text || item.content || '',
     difficulty: item.difficulty || 'mittel',
+    phaseRef: item.phaseRef || '',
+    progressionLevel: item.progressionLevel || '',
+    socialForm: item.socialForm || '',
+    estimatedMinutes: Number(item.estimatedMinutes || 0),
+    releaseHint: item.releaseHint || '',
+    assessmentCriteria: Array.isArray(item.assessmentCriteria) ? item.assessmentCriteria.map(String) : [],
     sourceRefs: item.sourceRefs?.length ? item.sourceRefs : sourceRefs,
     aiGenerated: item.aiGenerated === true
   }));
@@ -155,5 +256,6 @@ module.exports = {
   normalizeDemos,
   normalizeDidacticFlow,
   normalizeReleasePlan,
-  normalizeReflection
+  normalizeReflection,
+  normalizeTeacherRunbook
 };

@@ -21,7 +21,9 @@ const { createCleanupService } = require('./cleanup/cleanup-service');
 const { buildPrompt, runPromptQualityGate } = require('./ai-quality-gate/ai-quality-gate-service');
 const { estimateContentFactoryCost } = require('./ai/cost-estimator');
 const { summarizeGoldenPromptTests } = require('./ai/prompts/golden-tests/golden-test-runner');
-const { listDidacticProfiles, applyDidacticProfile, suggestDidacticProfile } = require('./didactics/didactic-profile-service');
+const { listDidacticProfiles, applyDidacticProfile, suggestDidacticProfile, recommendDidacticProfiles } = require('./didactics/didactic-profile-service');
+const { evaluateDidacticFit, evaluateAllDidacticFits } = require('./didactics/didactic-fit-service');
+const { createDidacticPreview } = require('./didactics/didactic-preview-service');
 
 function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
@@ -758,6 +760,22 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
     suggestDidacticProfile: (input, session) => {
       assertAdmin(session);
       return suggestDidacticProfile(input);
+    },
+    recommendDidacticProfiles: (input, session) => {
+      assertAdmin(session);
+      return recommendDidacticProfiles(input);
+    },
+    evaluateDidacticFit: (profile, input, session) => {
+      assertAdmin(session);
+      return evaluateDidacticFit(profile, input);
+    },
+    evaluateAllDidacticFits: (input, session) => {
+      assertAdmin(session);
+      return evaluateAllDidacticFits(input);
+    },
+    createDidacticPreview: (input, session) => {
+      assertAdmin(session);
+      return createDidacticPreview(input);
     },
     applyPreset: (id, input, session) => {
       assertAdmin(session);

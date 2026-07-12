@@ -28,12 +28,16 @@ const { validateGeneratedContainer } = require('../app/lib/content-factory/gener
 const { inferDemoTargetsForDays } = require('../app/lib/content-factory/demo-targets/demo-target-service');
 const { generateDemoArtifacts } = require('../app/lib/content-factory/demo-targets/demo-artifact-generator');
 const { openDemoTarget } = require('../app/lib/demo-launcher/demo-launcher-service');
-const { listDidacticProfiles, getDidacticProfile, suggestDidacticProfile } = require('../app/lib/content-factory/didactics/didactic-profile-service');
+const { listDidacticProfiles, getDidacticProfile, suggestDidacticProfile, recommendDidacticProfiles } = require('../app/lib/content-factory/didactics/didactic-profile-service');
+const { evaluateDidacticFit } = require('../app/lib/content-factory/didactics/didactic-fit-service');
+const { createDidacticPreview } = require('../app/lib/content-factory/didactics/didactic-preview-service');
+const { runDidacticQualityGate } = require('../app/lib/content-factory/didactics/didactic-quality-gate');
 const { contracts } = require('../app/lib/content-factory/ai/prompts/contracts');
 const { dayDraftContract } = require('../app/lib/content-factory/ai/prompts/contracts/day-draft-contract');
 const promptBuilder = require('../app/lib/content-factory/ai/prompts/prompt-builder');
 const contractPromptLinter = require('../app/lib/content-factory/ai/prompts/prompt-linter');
 const { runGoldenPromptTest, summarizeGoldenPromptTests } = require('../app/lib/content-factory/ai/prompts/golden-tests/golden-test-runner');
+const { validateUploadSelection, removeDropZoneFile, renderFileList } = require('../app/renderer/tool-center/factory-upload-utils');
 
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
@@ -117,6 +121,26 @@ test('content factory detects file types target areas and day numbers', () => {
   assert.equal(detectFileKind('material.pdf'), 'document');
   assert.equal(extractDayNumber('LFZQ8a_tag_10_Webvariante.html'), 10);
   assert.equal(extractDayNumber('day01_task.html'), 1);
+});
+
+test('content factory upload dropzone utils validate multi file selections safely', () => {
+  const existing = [{ name: 'material.pdf', size: 12, lastModified: 1, uploadArea: 'materials' }];
+  const selection = validateUploadSelection([
+    { name: 'material.pdf', path: 'fixtures/material.pdf', size: 12, type: 'application/pdf', lastModified: 1 },
+    { name: 'fragen.xml', path: 'fixtures/fragen.xml', size: 120, type: 'text/xml', lastModified: 2 },
+    { name: 'start.cmd', path: 'fixtures/start.cmd', size: 10, type: 'text/plain', lastModified: 3 }
+  ], { id: 'quiz', accept: '.json,.xml,.docx,.txt,.zip', source: 'drop' }, existing);
+  const combined = [...existing, ...selection.files];
+  const removed = removeDropZoneFile(combined, 'quiz', 0);
+  const html = renderFileList(selection.files, (value) => String(value));
+
+  assert.equal(selection.files.length, 2);
+  assert.equal(selection.blockedFiles.length, 1);
+  assert.equal(selection.files[0].duplicate, true);
+  assert.equal(selection.files.every((file) => file.uploadArea === 'quiz'), true);
+  assert.equal(removed.some((file) => file.name === 'material.pdf' && file.uploadArea === 'quiz'), false);
+  assert.match(html, /dropzone-file-list/);
+  assert.match(html, /data-dropzone-remove="quiz:0"/);
 });
 
 test('content factory extracts safe source outlines from office epub text and pdf fallbacks', () => {
@@ -546,6 +570,100 @@ test('content factory didactic profiles provide presets suggestions and prompt m
   assert.equal(prompt.userPayload.didacticProfile.id, 'guided-coding');
   assert.equal(prompt.developerRules.didacticProfileSignals.id, 'guided-coding');
   assert.equal(lint.status === 'passed' || lint.status === 'warning', true);
+});
+
+test('content factory didactic matrix validates all profiles recommendations and containers', async () => {
+  const { service, session, cleanup } = createTempFactory();
+  const provider = new LocalHeuristicProvider();
+  const cases = [
+    ['explain-demo-practice', 'html-css', { priorKnowledge: 'basic', ageRange: '16-20', needsStepByStep: true }, 'HTML CSS Einstieg'],
+    ['problem-first', 'java', { priorKnowledge: 'intermediate' }, 'Java Debugging Fehleranalyse'],
+    ['project-based', 'html-css', { priorKnowledge: 'intermediate', projectOrientation: true }, 'HTML CSS Projekt'],
+    ['worked-example-fading', 'java', { priorKnowledge: 'none', ageRange: '16-20', needsStepByStep: true }, 'Java Einsteiger'],
+    ['exam-training', 'sql', { priorKnowledge: 'basic', examOrientation: true }, 'SQL Pruefung'],
+    ['station-learning', 'theory', { priorKnowledge: 'basic', ageRange: 'mixed' }, 'Heterogene Gruppe Stationen'],
+    ['flipped-classroom', 'theory', { priorKnowledge: 'intermediate' }, 'Wiederholung Vorbereitung'],
+    ['guided-coding', 'python', { priorKnowledge: 'basic', needsStepByStep: true }, 'Python Java Guided Coding']
+  ];
+
+  try {
+    for (const [profileId, courseType, audiencePatch, goal] of cases) {
+      const profile = getDidacticProfile(profileId);
+      const targetAudience = { ...createApprovedTestInput().targetAudience, ...audiencePatch };
+      const containerProfile = { ...createApprovedTestInput().containerProfile, courseType, artifactMode: 'web-and-files' };
+      const input = createApprovedTestInput({ targetAudience, containerProfile, didacticProfile: profile, courseGoal: goal });
+      input.approvedCurriculumPlan = { ...input.approvedCurriculumPlan, targetAudience, didacticProfile: profile, courseGoal: goal };
+      input.curriculumPlan = input.approvedCurriculumPlan;
+      const fit = evaluateDidacticFit(profile, input);
+      const recommendation = recommendDidacticProfiles(input);
+      const preview = createDidacticPreview({ didacticProfile: profile, courseType, targetAudience, courseGoal: goal });
+      const prompt = promptBuilder.buildPrompt('generateDayDraft', input);
+      const promptLint = contractPromptLinter.lintPrompt(prompt);
+      const dayDraft = await provider.generateDayDraft({ ...input, day: input.coursePlan.days[0], dayNumber: 1, title: goal });
+      const qualityGate = runDidacticQualityGate(dayDraft, { didacticProfile: profile });
+      const draft = service.createPlanContainerDraft({
+        ...input,
+        course: { courseName: `Matrix ${profileId}`, courseId: `matrix-${profileId}`, department: 'FIAE' },
+        coursePlan: { ...input.coursePlan, courseTitle: `Matrix ${profileId}`, courseId: `matrix-${profileId}` },
+        approvedCurriculumPlan: { ...input.approvedCurriculumPlan, didacticProfile: profile, targetAudience },
+        dayResults: [dayDraft],
+        aiMode: 'local'
+      }, session);
+      const protocol = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'reports', 'testprotokoll.json'), 'utf8'));
+      const participantContent = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'participant-content.json'), 'utf8'));
+      const teacherRunbooks = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'teacher-runbooks.json'), 'utf8'));
+      const days = JSON.parse(fs.readFileSync(path.join(draft.storagePath, 'catalog', 'days.json'), 'utf8'));
+      const runbookHtml = fs.readFileSync(path.join(draft.storagePath, 'dozent', 'tag_01', 'unterrichtsablauf.html'), 'utf8');
+      const runbook = teacherRunbooks[0];
+      const phases = runbook.phases || [];
+
+      assert.equal(profile.id, profileId);
+      assert.ok(dayDraft.teacherRunbook, `${profileId} teacherRunbook`);
+      assert.ok(phases.length >= 4, `${profileId} teacherRunbook phases`);
+      assert.equal(phases.every((phase) => phase.teacherAction && phase.participantAction), true);
+      assert.equal(phases.some((phase) => (phase.moderationQuestions || []).length), true);
+      assert.equal(phases.some((phase) => (phase.typicalProblems || []).length), true);
+      assert.equal(phases.some((phase) => phase.differentiation?.supportWeak && phase.differentiation?.challengeStrong), true);
+      assert.equal(phases.some((phase) => phase.checkpoint), true);
+      assert.equal(dayDraft.tasks.every((task) => task.releaseHint), true);
+      assert.match(runbookHtml, /Dozenten-Fahrplan/);
+      assert.ok(fit.score >= 50, `${profileId} fit score`);
+      assert.ok(recommendation.recommended.profile.id);
+      assert.ok((recommendation.alternatives || []).length >= 1);
+      assert.equal((preview.expectedDayFlow || []).length >= 1, true);
+      assert.ok(['passed', 'warning'].includes(promptLint.status), `${profileId} prompt lint ${promptLint.status}`);
+      assert.ok(['passed', 'warning'].includes(qualityGate.status), `${profileId} quality gate ${qualityGate.status}`);
+      assert.equal(protocol.checks.some((check) => check.id === 'didactic-fit-score'), true);
+      assert.equal(protocol.checks.some((check) => check.id === 'didactic-quality-gate'), true);
+      assert.equal(protocol.checks.some((check) => check.id === 'teacher-runbook-present'), true);
+      assert.equal(days[0].teacherRunbook, 'dozent/tag_01/unterrichtsablauf.html');
+      assert.doesNotMatch(JSON.stringify(participantContent), /Loesung|solution|Dozentenhinweis/i);
+      assert.doesNotMatch(JSON.stringify(participantContent), /unterrichtsablauf|teacherRunbook|Dozenten-Fahrplan/i);
+    }
+
+    const competingJava = recommendDidacticProfiles(createApprovedTestInput({
+      targetAudience: { ...createApprovedTestInput().targetAudience, priorKnowledge: 'none', projectOrientation: true },
+      containerProfile: { ...createApprovedTestInput().containerProfile, courseType: 'java' },
+      courseGoal: 'Java Projekt Einstieg'
+    }));
+    const competingSql = recommendDidacticProfiles(createApprovedTestInput({
+      targetAudience: { ...createApprovedTestInput().targetAudience, priorKnowledge: 'none', examOrientation: true },
+      containerProfile: { ...createApprovedTestInput().containerProfile, courseType: 'sql' },
+      courseGoal: 'SQL Pruefung Einstieg'
+    }));
+    const competingHtml = recommendDidacticProfiles(createApprovedTestInput({
+      targetAudience: { ...createApprovedTestInput().targetAudience, priorKnowledge: 'basic', projectOrientation: true },
+      containerProfile: { ...createApprovedTestInput().containerProfile, courseType: 'html-css' },
+      courseGoal: 'HTML CSS Projekt Einstieg'
+    }));
+
+    assert.ok(['worked-example-fading', 'guided-coding', 'project-based'].includes(competingJava.recommended.profile.id));
+    assert.equal(competingJava.alternatives.some((item) => ['project-based', 'guided-coding', 'worked-example-fading'].includes(item.profile.id)), true);
+    assert.equal(competingSql.recommended.profile.id, 'exam-training');
+    assert.equal(competingHtml.alternatives.some((item) => item.profile.id === 'project-based' || item.profile.id === 'worked-example-fading'), true);
+  } finally {
+    cleanup();
+  }
 });
 
 test('openai env setup files and loader keep api keys out of repository outputs', () => {

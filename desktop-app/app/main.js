@@ -1188,6 +1188,22 @@ ipcMain.handle('factory:apply-preset', (event, id, input) => (
   getContentFactoryService().applyPreset(id, input, requireAdminSession())
 ));
 
+ipcMain.handle('factory:recommend-didactic-profiles', (event, input) => (
+  getContentFactoryService().recommendDidacticProfiles(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:evaluate-didactic-fit', (event, profile, input) => (
+  getContentFactoryService().evaluateDidacticFit(profile, input, requireAdminSession())
+));
+
+ipcMain.handle('factory:evaluate-all-didactic-fits', (event, input) => (
+  getContentFactoryService().evaluateAllDidacticFits(input, requireAdminSession())
+));
+
+ipcMain.handle('factory:create-didactic-preview', (event, input) => (
+  getContentFactoryService().createDidacticPreview(input, requireAdminSession())
+));
+
 ipcMain.handle('factory:delete-generated-draft', (event, containerId) => (
   getContentFactoryService().deleteGeneratedDraft(containerId, requireAdminSession())
 ));

@@ -53,21 +53,50 @@ function buildDidacticFlow(profile = {}, day = {}) {
 function buildReleasePlan(profile = {}, dayResults = []) {
   return dayResults.flatMap((day) => {
     const dayNumber = Number(day.dayNumber || 1);
-    const taskItems = (day.tasks || []).map((task) => ({
+    const phases = profile.lessonFlow || [];
+    const taskItems = (day.tasks || []).map((task, index) => ({
+      id: `release-tag${String(dayNumber).padStart(2, '0')}-task${String(index + 1).padStart(2, '0')}`,
+      title: task.title || `Aufgabe ${index + 1}`,
+      phase: task.phaseRef || phases[Math.min(index, Math.max(0, phases.length - 1))] || 'guided-practice',
       itemType: 'task',
       itemId: task.id,
       dayNumber,
       releaseStrategy: profile.releaseStrategy || 'manual-by-teacher',
-      releaseHint: releaseHint(profile)
+      defaultReleased: false,
+      dependsOn: index > 0 && profile.releaseStrategy === 'after-previous-task' ? [`release-tag${String(dayNumber).padStart(2, '0')}-task${String(index).padStart(2, '0')}`] : [],
+      releaseHint: task.releaseHint || releaseHint(profile),
+      visibleForRoles: ['teacher'],
+      participantVisibleAfterRelease: true
     }));
-    const quizItems = (day.quiz || []).slice(0, 1).map((quiz) => ({
+    const quizItems = (day.quiz || []).slice(0, 1).map((quiz, index) => ({
+      id: `release-tag${String(dayNumber).padStart(2, '0')}-quiz${String(index + 1).padStart(2, '0')}`,
+      title: quiz.text || quiz.title || 'Quiz',
+      phase: profile.id === 'exam-training' ? 'mini-test' : 'reflection',
       itemType: 'quiz',
       itemId: quiz.id,
       dayNumber,
       releaseStrategy: profile.id === 'exam-training' ? 'after-quiz' : profile.releaseStrategy || 'manual-by-teacher',
-      releaseHint: profile.id === 'exam-training' ? 'Nach Pruefungsimpuls nutzen.' : 'Quiz passend zum Unterrichtsfluss einsetzen.'
+      defaultReleased: false,
+      dependsOn: [],
+      releaseHint: profile.id === 'exam-training' ? 'Nach Pruefungsimpuls nutzen.' : 'Quiz passend zum Unterrichtsfluss einsetzen.',
+      visibleForRoles: ['teacher'],
+      participantVisibleAfterRelease: true
     }));
-    return [...taskItems, ...quizItems];
+    const demoItems = (day.demos || []).map((demo, index) => ({
+      id: `release-tag${String(dayNumber).padStart(2, '0')}-demo${String(index + 1).padStart(2, '0')}`,
+      title: demo.title || `Demo ${index + 1}`,
+      phase: demo.phaseRef || 'demo',
+      itemType: 'demo',
+      itemId: demo.id,
+      dayNumber,
+      releaseStrategy: profile.releaseStrategy || 'manual-by-teacher',
+      defaultReleased: demo.visibleForParticipants === true,
+      dependsOn: [],
+      releaseHint: 'Demo nur freigeben, wenn sie keine Loesung enthaelt.',
+      visibleForRoles: demo.visibleForParticipants === true ? ['teacher', 'participant'] : ['teacher'],
+      participantVisibleAfterRelease: demo.visibleForParticipants === true
+    }));
+    return [...taskItems, ...quizItems, ...demoItems];
   });
 }
 
