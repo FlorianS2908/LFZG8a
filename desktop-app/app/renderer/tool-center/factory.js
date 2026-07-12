@@ -95,6 +95,9 @@ function formatBytes(value) {
 }
 
 function createDropZoneHtml({ id, title, description, accept, files = [], multiple = true, kind = 'upload' }) {
+  if (uploadUtils.createDropZoneHtml) {
+    return uploadUtils.createDropZoneHtml({ id, title, description, accept, files, multiple, kind });
+  }
   const totalSize = files.reduce((sum, file) => sum + Number(file.size || 0), 0);
   const warnings = files.flatMap((file) => file.warnings || []);
   const blocked = files.filter((file) => file.blocked).length;

@@ -37,7 +37,7 @@ const { dayDraftContract } = require('../app/lib/content-factory/ai/prompts/cont
 const promptBuilder = require('../app/lib/content-factory/ai/prompts/prompt-builder');
 const contractPromptLinter = require('../app/lib/content-factory/ai/prompts/prompt-linter');
 const { runGoldenPromptTest, summarizeGoldenPromptTests } = require('../app/lib/content-factory/ai/prompts/golden-tests/golden-test-runner');
-const { validateUploadSelection, removeDropZoneFile, renderFileList } = require('../app/renderer/tool-center/factory-upload-utils');
+const { createDropZoneHtml, validateUploadSelection, addFilesToUploadState, removeUploadFile, removeDropZoneFile, renderFileList } = require('../app/renderer/tool-center/factory-upload-utils');
 
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
@@ -132,15 +132,22 @@ test('content factory upload dropzone utils validate multi file selections safel
   ], { id: 'quiz', accept: '.json,.xml,.docx,.txt,.zip', source: 'drop' }, existing);
   const combined = [...existing, ...selection.files];
   const removed = removeDropZoneFile(combined, 'quiz', 0);
+  const added = addFilesToUploadState(existing, [{ name: 'neu.zip', path: 'fixtures/neu.zip', size: 99, type: 'application/zip', lastModified: 4 }], { id: 'materials', accept: '.pdf,.zip', source: 'picker' });
+  const removedById = removeUploadFile([{ id: 'keep' }, { id: 'remove' }], 'remove');
   const html = renderFileList(selection.files, (value) => String(value));
+  const dropzoneHtml = createDropZoneHtml({ id: 'materials', title: 'Materialien', accept: '.pdf,.zip', files: added.files, multiple: true });
 
   assert.equal(selection.files.length, 2);
   assert.equal(selection.blockedFiles.length, 1);
   assert.equal(selection.files[0].duplicate, true);
   assert.equal(selection.files.every((file) => file.uploadArea === 'quiz'), true);
+  assert.equal(added.files.length, 2);
+  assert.equal(removedById.length, 1);
   assert.equal(removed.some((file) => file.name === 'material.pdf' && file.uploadArea === 'quiz'), false);
   assert.match(html, /dropzone-file-list/);
   assert.match(html, /data-dropzone-remove="quiz:0"/);
+  assert.match(dropzoneHtml, /multiple/);
+  assert.match(dropzoneHtml, /data-dropzone="materials"/);
 });
 
 test('content factory extracts safe source outlines from office epub text and pdf fallbacks', () => {

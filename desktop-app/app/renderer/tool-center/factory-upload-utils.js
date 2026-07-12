@@ -22,6 +22,37 @@
     ].join(':');
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function isDuplicateUpload(file, existingFiles = []) {
+    return existingFiles.some((item) => fileKey(item) === fileKey(file));
+  }
+
+  function normalizeUploadFile(file, uploadArea, source = 'picker', validation = {}) {
+    return {
+      id: validation.id || `${uploadArea}-${fileKey(file)}`,
+      name: file.name || '',
+      path: file.path || '',
+      size: Number(file.size || 0),
+      type: file.type || '',
+      lastModified: Number(file.lastModified || 0),
+      uploadArea,
+      source,
+      warnings: validation.warnings || [],
+      errors: validation.errors || [],
+      duplicate: validation.duplicate === true,
+      blocked: validation.blocked === true,
+      referenceOnly: uploadArea === 'reference-literature'
+    };
+  }
+
   function validateDropZoneFile(file, accept = '', existingFiles = []) {
     const extension = extensionOf(file.name);
     const accepted = normalizeAccept(accept);
@@ -34,7 +65,7 @@
     }
     if (Number(file.size || 0) <= 0) warnings.push('Datei ist leer oder Groesse unbekannt.');
     if (Number(file.size || 0) > LARGE_FILE_BYTES) warnings.push('Grosse Datei: bitte Speicherverbrauch und Inhalt pruefen.');
-    const duplicate = existingFiles.some((item) => fileKey(item) === fileKey(file));
+    const duplicate = isDuplicateUpload(file, existingFiles);
     if (duplicate) warnings.push('Duplikat erkannt.');
     return {
       accepted: !dangerous,
@@ -51,20 +82,7 @@
     const allExisting = [...existingFiles];
     Array.from(files || []).forEach((file) => {
       const validation = validateDropZoneFile(file, areaConfig.accept || '', allExisting);
-      const normalized = {
-        name: file.name || '',
-        path: file.path || '',
-        size: Number(file.size || 0),
-        type: file.type || '',
-        lastModified: Number(file.lastModified || 0),
-        uploadArea: areaConfig.id || areaConfig.uploadArea || '',
-        source: areaConfig.source || 'picker',
-        warnings: validation.warnings,
-        errors: validation.errors,
-        duplicate: validation.duplicate,
-        blocked: validation.blocked,
-        referenceOnly: areaConfig.id === 'reference-literature'
-      };
+      const normalized = normalizeUploadFile(file, areaConfig.id || areaConfig.uploadArea || '', areaConfig.source || 'picker', validation);
       if (validation.accepted) {
         acceptedFiles.push(normalized);
         allExisting.push(normalized);
@@ -80,6 +98,17 @@
     };
   }
 
+  function addFilesToUploadState(existingFiles = [], newFiles = [], areaConfig = {}) {
+    const result = validateUploadSelection(newFiles, areaConfig, existingFiles);
+    return {
+      files: [...existingFiles, ...result.files],
+      addedFiles: result.files,
+      blockedFiles: result.blockedFiles,
+      warnings: result.warnings,
+      errors: result.errors
+    };
+  }
+
   function removeDropZoneFile(files = [], zoneId, fileIndex) {
     let currentIndex = -1;
     return files.filter((file) => {
@@ -87,6 +116,42 @@
       currentIndex += 1;
       return currentIndex !== Number(fileIndex);
     });
+  }
+
+  function removeUploadFile(files = [], indexOrId) {
+    if (typeof indexOrId === 'number') return files.filter((_, index) => index !== indexOrId);
+    return files.filter((file) => file.id !== indexOrId);
+  }
+
+  function formatUploadWarnings(file = {}) {
+    return [
+      ...(file.warnings || []),
+      ...(file.errors || []),
+      file.duplicate ? 'Duplikat erkannt.' : '',
+      file.blocked ? 'Datei ist blockiert und wird nicht uebernommen.' : '',
+      file.referenceOnly ? 'Referenzliteratur bleibt local-only.' : ''
+    ].filter(Boolean);
+  }
+
+  function createDropZoneHtml(config = {}) {
+    const files = config.files || [];
+    const totalSize = files.reduce((sum, file) => sum + Number(file.size || 0), 0);
+    const inputAttr = config.kind === 'anchor' ? 'data-wizard-anchor-files' : `data-wizard-upload="${escapeHtml(config.id)}"`;
+    return `
+      <section class="dropzone-card ${files.length ? 'dropzone-has-files' : ''}" data-dropzone-card="${escapeHtml(config.id)}">
+        <div class="factory-card-header">
+          <strong>${escapeHtml(config.title || config.id)}</strong>
+          <span class="status-badge">${escapeHtml(files.length)} Datei(en)</span>
+        </div>
+        ${config.description ? `<p>${escapeHtml(config.description)}</p>` : ''}
+        <label class="dropzone" data-dropzone="${escapeHtml(config.id)}" tabindex="0" aria-label="${escapeHtml(config.title || config.id)} Uploadzone">
+          <span>Dateien hier ablegen oder durchsuchen</span>
+          <small>${escapeHtml(config.accept || 'alle Dateitypen')} | ${config.multiple === false ? 'Einzeldatei' : 'Mehrfachupload'} | ${formatBytes(totalSize)}</small>
+          <input ${inputAttr} type="file" ${config.multiple === false ? '' : 'multiple'} ${config.accept ? `accept="${escapeHtml(config.accept)}"` : ''}>
+        </label>
+        ${renderFileList(files, escapeHtml)}
+      </section>
+    `;
   }
 
   function renderFileList(files = [], escapeHtml = (value) => String(value ?? '')) {
@@ -112,9 +177,15 @@
 
   const api = {
     DANGEROUS_EXTENSIONS,
+    createDropZoneHtml,
+    normalizeUploadFile,
     validateDropZoneFile,
     validateUploadSelection,
+    addFilesToUploadState,
+    removeUploadFile,
     removeDropZoneFile,
+    isDuplicateUpload,
+    formatUploadWarnings,
     renderFileList,
     normalizeAccept,
     fileKey,
