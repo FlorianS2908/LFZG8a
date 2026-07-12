@@ -28,25 +28,26 @@
         <button class="workspace-track-tab" type="button" data-factory-tab="plan-wizard">Plan -> KI/Fallback -> Container</button>
         <button class="workspace-track-tab" type="button" data-factory-tab="overview">Uebersicht</button>
         <button class="workspace-track-tab" type="button" data-factory-tab="duplicate">Duplizieren</button>
-        <button class="workspace-track-tab" type="button" data-factory-tab="import">Rohdaten</button>
-        <button class="workspace-track-tab" type="button" data-factory-tab="references">Referenzbibliothek</button>
+        <button class="workspace-track-tab" type="button" data-factory-tab="import" title="Direkter Rohdatenimport ist ein Expertenbereich. Fuer neue Kurscontainer bitte den Plan-Wizard verwenden.">Rohdaten / Experte</button>
+        <button class="workspace-track-tab" type="button" data-factory-tab="references">Referenzbibliothek <small>Optional</small></button>
         <button class="workspace-track-tab" type="button" data-factory-tab="batches">Import-Batches</button>
       </nav>
+      <p class="status-line" data-factory-status></p>
 
       <section class="factory-panel is-active" data-factory-panel="home">
         <div class="tool-grid">
+          <button class="tool-tile" type="button" data-open-factory-section="plan-wizard">
+            <span class="tool-visual">CE</span>
+            <span class="tool-copy">
+              <strong>Neuen Kurscontainer erstellen</strong>
+              <small>Unterrichtsplan, PowerPoint oder Materialien analysieren und daraus einen Kurscontainer erzeugen</small>
+            </span>
+          </button>
           <button class="tool-tile" type="button" data-open-factory-section="duplicate">
             <span class="tool-visual">CD</span>
             <span class="tool-copy">
-              <strong>Container Duplizierung</strong>
+              <strong>Bestehenden Container duplizieren</strong>
               <small>Bestehende Unterrichtscontainer als Draft kopieren</small>
-            </span>
-          </button>
-          <button class="tool-tile" type="button" data-open-factory-section="import">
-            <span class="tool-visual">CE</span>
-            <span class="tool-copy">
-              <strong>Container Erstellung</strong>
-              <small>Rohdaten importieren, mappen und als Draft erzeugen</small>
             </span>
           </button>
           <button class="tool-tile" type="button" data-open-factory-section="references">
@@ -56,7 +57,15 @@
               <small>Eigene lizenzierte Quellen lokal indexieren, nicht exportieren</small>
             </span>
           </button>
+          <button class="tool-tile" type="button" data-open-factory-section="batches">
+            <span class="tool-visual">IB</span>
+            <span class="tool-copy">
+              <strong>Import-Batches pruefen</strong>
+              <small>Vorhandene Staging-Imports validieren und Zuordnungen korrigieren</small>
+            </span>
+          </button>
         </div>
+        <label class="checkline"><input type="checkbox" data-expert-mode> Expertenmodus fuer Rohdaten / Experte aktivieren</label>
       </section>
 
       <section class="factory-panel" data-factory-panel="plan-wizard">
@@ -94,11 +103,16 @@
 
       <section class="factory-panel" data-factory-panel="import">
         <article class="tool-card">
-          <h2>Rohdaten importieren</h2>
+          <h2>Rohdaten / Experte</h2>
+          <p class="status-line status-warning">Fuer normale Kurscontainer bitte den Plan-Wizard verwenden. Dieser Bereich ist fuer direkte Dateiimporte und Mapping-Korrekturen.</p>
           <div class="factory-form-grid">
             <label>Batch-Name<input data-import-name placeholder="Import Webkurs Tag 1"></label>
-            <label>Dateien<input data-import-files type="file" multiple></label>
           </div>
+          <label class="dropzone" data-raw-import-dropzone tabindex="0" aria-label="Rohdaten Uploadzone">
+            <span>Dateien hier ablegen oder durchsuchen</span>
+            <small>Mehrfachupload und ZIP-Dateien fuer Expertenimport</small>
+            <input data-import-files type="file" multiple>
+          </label>
           <button class="primary-button" type="button" data-run-import>In Staging importieren</button>
           <p class="status-line" data-import-status></p>
         </article>

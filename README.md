@@ -67,6 +67,23 @@ ContentFactoryMainStart.cmd
 Hinweis:
 Alle alten Lab-, Demo- und Workflow-CMD-Starter wurden entfernt. Die ContentFactory wird zentral ueber `ContentFactoryMainStart.cmd` gestartet.
 
+## ContentFactory Workflow
+
+1. Start
+2. Neuen Kurscontainer erstellen
+3. Kursdaten
+4. Hauptquelle hochladen: Unterrichtsplan, PowerPoint, PDF, EPUB oder Textdokument
+5. Curriculum analysieren
+6. Curriculum pruefen und freigeben
+7. Didaktik und Containerprofil pruefen
+8. Materialien ergaenzen
+9. KI/Fallback waehlen
+10. Tagesentwuerfe erzeugen
+11. Preflight/Testlauf
+12. Draft erzeugen
+
+Der Rohdatenbereich ist ein Expertenbereich und nicht der Standardweg fuer neue Kurscontainer.
+
 Standardkonten:
 
 - Admin: `admin@admin.de` / `$$Klaus2908$$`

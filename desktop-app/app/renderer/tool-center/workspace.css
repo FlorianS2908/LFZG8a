@@ -271,6 +271,17 @@ main {
   border-color: var(--text);
 }
 
+.workspace-track-tab.is-locked,
+.tool-tile.is-locked {
+  opacity: .52;
+  cursor: not-allowed;
+}
+
+.workspace-track-tab small {
+  margin-left: 4px;
+  font-size: .72rem;
+}
+
 .workspace-track-panel {
   display: none;
 }
@@ -801,6 +812,63 @@ textarea {
 }
 
 .factory-form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.wizard-stepper,
+.wizard-source-options,
+.summary-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.wizard-stepper {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.wizard-step,
+.source-option {
+  display: grid;
+  gap: 4px;
+  min-height: 72px;
+  padding: 10px;
+  text-align: left;
+  color: var(--text);
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.wizard-step.is-active,
+.source-option.is-active {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(11, 104, 183, .12);
+}
+
+.wizard-step.is-done {
+  border-color: rgba(40, 164, 107, .55);
+  background: #eefaf5;
+}
+
+.wizard-step.is-locked {
+  opacity: .48;
+  cursor: not-allowed;
+}
+
+.wizard-step small,
+.source-option small {
+  color: var(--muted);
+}
+
+.wizard-source-options {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.source-option input {
+  width: auto;
+}
+
+.summary-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 

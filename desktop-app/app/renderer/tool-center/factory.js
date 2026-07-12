@@ -12,6 +12,7 @@ const state = {
   targetAreas: [],
   targetAreaLabels: {},
   selectedBatchId: '',
+  rawImportFiles: [],
   aiStatus: null,
   aiTestResult: null,
   aiImportResult: null,
@@ -51,7 +52,10 @@ const state = {
     didacticManualOpen: false,
     promptRulesVisible: false,
     cleanupReport: null,
-    status: ''
+    status: '',
+    activeStep: 'course',
+    expertMode: false,
+    skippedSteps: {}
   }
 };
 
@@ -67,6 +71,20 @@ const uploadAreas = [
   ['reference-literature', 'Referenzliteratur / Fachquellen', '.pdf,.epub,.docx,.txt,.md,.html,.zip', 'Reference-only, kein Export in Kurscontainer.'],
   ['other', 'Sonstige Dateien', '', 'Alles, was manuell geprueft werden soll.'],
   ['zip-package', 'ZIP-Gesamtpaket', '.zip', 'ZIP-Gesamtpakete werden sicher gestaged.']
+];
+
+const planWizardSteps = [
+  { id: 'course', label: 'Kursdaten' },
+  { id: 'anchor', label: 'Hauptquelle' },
+  { id: 'durationAudience', label: 'Dauer & Zielgruppe' },
+  { id: 'didactics', label: 'Didaktik' },
+  { id: 'containerProfile', label: 'Container' },
+  { id: 'analysis', label: 'Analyse' },
+  { id: 'curriculumReview', label: 'Curriculum pruefen' },
+  { id: 'materials', label: 'Materialien', optional: true },
+  { id: 'aiMode', label: 'KI/Fallback' },
+  { id: 'generation', label: 'Tagesentwuerfe' },
+  { id: 'preflight', label: 'Testlauf' }
 ];
 
 function $(selector) {
@@ -141,9 +159,68 @@ function getUploadAreaConfig(area, source = 'picker') {
   return { id: area, accept: found?.[2] || '', source };
 }
 
+function setFactoryStatus(message, cssClass = '') {
+  const target = $('[data-factory-status]');
+  if (!target) return;
+  target.textContent = message || '';
+  target.className = `status-line ${cssClass}`.trim();
+}
+
+function getFactoryTabGates() {
+  const hasContainers = state.containers.length > 0;
+  const hasBatches = state.importBatches.length > 0;
+  const expertReady = Boolean(
+    state.wizard.course.courseName
+    || state.wizard.anchorFiles.length
+    || state.wizard.expertMode
+  );
+  return {
+    home: { active: true },
+    'plan-wizard': { active: true },
+    overview: { active: hasContainers, message: 'Bitte zuerst einen Container erzeugen oder vorhandene Container laden.' },
+    duplicate: { active: hasContainers, message: 'Duplizieren ist aktiv, sobald mindestens ein Container vorhanden ist.' },
+    import: { active: expertReady, message: 'Bitte zuerst den Plan-Wizard abschliessen oder den Expertenmodus aktivieren.' },
+    references: { active: true, optional: true },
+    batches: { active: hasBatches, message: 'Import-Batches sind aktiv, sobald ein Batch vorhanden ist.' }
+  };
+}
+
+function renderFactoryNavigationGates(activePanel = '') {
+  const gates = getFactoryTabGates();
+  $all('[data-factory-tab]').forEach((button) => {
+    const gate = gates[button.dataset.factoryTab] || { active: true };
+    button.classList.toggle('is-locked', !gate.active);
+    button.toggleAttribute('aria-disabled', !gate.active);
+    if (gate.optional) button.dataset.optional = 'true';
+    if (!gate.active && gate.message) button.title = gate.message;
+    button.classList.toggle('is-active', button.dataset.factoryTab === activePanel);
+  });
+  $all('[data-open-factory-section]').forEach((button) => {
+    const gate = gates[button.dataset.openFactorySection] || { active: true };
+    button.disabled = !gate.active;
+    button.classList.toggle('is-locked', !gate.active);
+    button.title = !gate.active && gate.message ? gate.message : '';
+  });
+  const expertToggle = $('[data-expert-mode]');
+  if (expertToggle) expertToggle.checked = Boolean(state.wizard.expertMode);
+}
+
 function showPanel(panelName) {
+  const gates = getFactoryTabGates();
+  const gate = gates[panelName] || { active: true };
+  const current = $('[data-factory-panel].is-active')?.dataset.factoryPanel || 'home';
+  if (!gate.active) {
+    const message = gate.message || 'Bitte zuerst den Plan-Wizard abschliessen.';
+    state.wizard.status = message;
+    setFactoryStatus(message, 'status-warning');
+    renderFactoryNavigationGates(current);
+    if (current === 'plan-wizard') renderPlanWizard();
+    return;
+  }
   $all('[data-factory-tab]').forEach((button) => button.classList.toggle('is-active', button.dataset.factoryTab === panelName));
   $all('[data-factory-panel]').forEach((panel) => panel.classList.toggle('is-active', panel.dataset.factoryPanel === panelName));
+  setFactoryStatus('');
+  renderFactoryNavigationGates(panelName);
 }
 
 function renderValidation(target, validation) {
@@ -249,20 +326,75 @@ function renderPlanWizard() {
   const root = $('[data-plan-wizard]');
   if (!root) return;
   const wizard = state.wizard;
-  const gates = getWizardGates();
-  const selectedDay = wizard.approvedCurriculumPlan?.days?.find((day) => day.dayNumber === Number(wizard.selectedDayNumber)) || wizard.approvedCurriculumPlan?.days?.[0];
-  const anchorAccept = wizard.anchorType === 'course-plan' ? '.xlsx,.xlsm,.zip' : wizard.anchorType === 'book-or-presentation' ? '.pdf,.epub,.pptx,.zip' : '.docx,.txt,.md,.html,.zip';
+  const gates = getPlanWizardStepGates();
+  const activeGate = gates.find((gate) => gate.id === wizard.activeStep && gate.active) || gates.find((gate) => gate.active) || gates[0];
+  wizard.activeStep = activeGate.id;
+  const currentIndex = gates.findIndex((gate) => gate.id === wizard.activeStep);
+  const previousGate = [...gates].slice(0, currentIndex).reverse().find((gate) => gate.active);
+  const nextGate = gates.slice(currentIndex + 1).find((gate) => gate.active);
   root.innerHTML = `
     <article class="tool-card">
       <h2>Plan -> KI/Fallback -> Container</h2>
-      <div class="factory-meta wizard-steps">
-        ${gates.map((gate) => `<div><dt>${escapeHtml(gate.label)}</dt><dd>${gate.done ? 'erfuellt' : gate.active ? 'aktiv' : 'gesperrt'}</dd></div>`).join('')}
+      <p class="status-line">Gefuehrter Workflow fuer neue Kurscontainer. Rohdaten / Experte bleibt fuer direkte Dateiimporte und Mapping-Korrekturen reserviert.</p>
+      <div class="wizard-stepper" data-plan-stepper>
+        ${gates.map((gate) => `
+          <button class="wizard-step ${gate.id === wizard.activeStep ? 'is-active' : ''} ${gate.done ? 'is-done' : ''} ${gate.active ? '' : 'is-locked'}" type="button" data-plan-step="${escapeHtml(gate.id)}" ${gate.active ? '' : 'disabled'} title="${escapeHtml(gate.active ? gate.label : gate.missing)}">
+            <span>${escapeHtml(gate.label)}</span>
+            <small>${gate.done ? 'erfuellt' : gate.active ? 'aktiv' : 'gesperrt'}</small>
+          </button>
+        `).join('')}
       </div>
       ${wizard.status ? `<p class="status-line">${escapeHtml(wizard.status)}</p>` : ''}
     </article>
 
-    <article class="tool-card">
-      <h3>1. Kursdaten</h3>
+    ${renderCurrentPlanWizardStep(wizard, activeGate)}
+
+    <article class="tool-card wizard-controls">
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-wizard-prev ${previousGate ? '' : 'disabled'}>Zurueck</button>
+        ${activeGate.optional ? '<button class="secondary-button" type="button" data-wizard-skip-step>Schritt ueberspringen</button>' : ''}
+        <button class="primary-button" type="button" data-wizard-next ${nextGate ? '' : 'disabled'}>Weiter</button>
+      </div>
+      <small>${nextGate ? `Naechster Schritt: ${escapeHtml(nextGate.label)}` : 'Alle freigegebenen Schritte sind erreicht.'}</small>
+    </article>
+  `;
+  bindPlanWizardEvents();
+  renderFactoryNavigationGates($('[data-factory-panel].is-active')?.dataset.factoryPanel || 'plan-wizard');
+}
+
+function renderCurrentPlanWizardStep(wizard, gate) {
+  switch (gate.id) {
+    case 'course':
+      return renderCourseStep(wizard);
+    case 'anchor':
+      return renderAnchorStep(wizard);
+    case 'durationAudience':
+      return renderDurationAudienceStep(wizard);
+    case 'didactics':
+      return renderDidacticProfileStep(wizard);
+    case 'containerProfile':
+      return renderContainerProfileStep(wizard);
+    case 'analysis':
+      return renderAnalysisStep(wizard);
+    case 'curriculumReview':
+      return wizard.curriculumDraft ? renderCurriculumReview(wizard.curriculumDraft) : '<article class="tool-card"><h3>Curriculum pruefen</h3><p class="status-line status-warning">Noch kein Curriculum vorhanden.</p></article>';
+    case 'materials':
+      return renderMaterialsStep(wizard);
+    case 'aiMode':
+      return renderAiModeStep(wizard);
+    case 'generation':
+      return renderGenerationStep(wizard);
+    case 'preflight':
+      return renderPreflightTestRun(wizard);
+    default:
+      return renderCourseStep(wizard);
+  }
+}
+
+function renderCourseStep(wizard) {
+  return `
+    <article class="tool-card" data-plan-step-content="course">
+      <h3>Kursdaten</h3>
       <div class="factory-form-grid">
         <label>Kursname<input data-wizard-course="courseName" value="${escapeHtml(wizard.course.courseName)}" placeholder="Kursname"></label>
         <label>Kurs-ID<input data-wizard-course="courseId" value="${escapeHtml(wizard.course.courseId)}" placeholder="kurs-id"></label>
@@ -270,23 +402,43 @@ function renderPlanWizard() {
       </div>
       <label>Beschreibung<textarea data-wizard-course="description">${escapeHtml(wizard.course.description)}</textarea></label>
     </article>
+  `;
+}
 
-    <article class="tool-card">
-      <h3>2. Thematische Hauptquelle waehlen</h3>
-      <div class="factory-form-grid">
-        <label>Curriculum Anchor<select data-wizard-anchor-type>
-          <option value="course-plan" ${wizard.anchorType === 'course-plan' ? 'selected' : ''}>Unterrichtsplan Upload</option>
-          <option value="book-or-presentation" ${wizard.anchorType === 'book-or-presentation' ? 'selected' : ''}>Buch / PDF / EPUB / PowerPoint</option>
-          <option value="text-document" ${wizard.anchorType === 'text-document' ? 'selected' : ''}>Textdokument / Word / Markdown / HTML / TXT</option>
-        </select></label>
+function renderAnchorStep(wizard) {
+  const anchorAccept = wizard.anchorType === 'course-plan' ? '.xlsx,.xlsm,.zip' : wizard.anchorType === 'book-or-presentation' ? '.pdf,.epub,.pptx,.zip' : '.docx,.txt,.md,.html,.zip';
+  const options = [
+    ['course-plan', 'Unterrichtsplan Upload', '.xlsx, .xlsm, .zip'],
+    ['book-or-presentation', 'Buch / PDF / EPUB / PowerPoint', '.pdf, .epub, .pptx, .zip'],
+    ['text-document', 'Textdokument / Word / Markdown / HTML / TXT', '.docx, .txt, .md, .html, .zip']
+  ];
+  return `
+    <article class="tool-card" data-plan-step-content="anchor">
+      <h3>Hauptquelle</h3>
+      <p class="status-line">Die Hauptquelle bestimmt die Themenstruktur. Daraus wird das Curriculum erzeugt.</p>
+      <div class="wizard-source-options">
+        ${options.map(([value, label, formats]) => `
+          <label class="source-option ${wizard.anchorType === value ? 'is-active' : ''}">
+            <input type="radio" name="wizard-anchor-type" data-wizard-anchor-type-radio value="${value}" ${wizard.anchorType === value ? 'checked' : ''}>
+            <strong>${escapeHtml(label)}</strong>
+            <small>${escapeHtml(formats)}</small>
+          </label>
+        `).join('')}
       </div>
+      <label>Quellentyp<select data-wizard-anchor-type>
+        ${options.map(([value, label]) => `<option value="${value}" ${wizard.anchorType === value ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('')}
+      </select></label>
       ${createDropZoneHtml({ id: 'anchor', title: 'Thematische Hauptquelle', description: wizard.anchorType === 'course-plan' ? 'Unterrichtsplan, Excel-Dateien oder ZIP hier ablegen.' : wizard.anchorType === 'book-or-presentation' ? 'PDF, EPUB, PowerPoint oder ZIP als Hauptquelle.' : 'Word, Markdown, HTML, TXT oder ZIP als Hauptquelle.', accept: anchorAccept, files: wizard.anchorFiles.map((file) => ({ ...file, uploadArea: 'anchor' })), multiple: true, kind: 'anchor' })}
-      <small>${wizard.anchorFiles.length} Hauptquell-Datei(en) ausgewaehlt. Genau ein Anchor-Typ ist aktiv.</small>
+      <small>${wizard.anchorFiles.length} Hauptquell-Datei(en) ausgewaehlt. Unterrichtsplan, PowerPoint, PDF, EPUB, Word, Markdown, HTML, TXT und ZIP werden unterstuetzt.</small>
       ${wizard.anchorType === 'book-or-presentation' ? `<label>Seiten-/Folienbereiche optional<textarea data-wizard-ranges placeholder="20-45; 80-120">${escapeHtml(wizard.rangesText)}</textarea></label>` : ''}
     </article>
+  `;
+}
 
-    <article class="tool-card">
-      <h3>3. Dauer, Zielgruppe & Kursziel</h3>
+function renderDurationAudienceStep(wizard) {
+  return `
+    <article class="tool-card" data-plan-step-content="durationAudience">
+      <h3>Dauer & Zielgruppe</h3>
       <div class="factory-form-grid">
         <label>Dauermodus<select data-wizard-duration="durationMode"><option value="days" ${wizard.duration.durationMode === 'days' ? 'selected' : ''}>Tage</option><option value="hours" ${wizard.duration.durationMode === 'hours' ? 'selected' : ''}>Stunden</option><option value="ue" ${wizard.duration.durationMode === 'ue' ? 'selected' : ''}>UE</option></select></label>
         <label>Tage<input data-wizard-duration="numberOfDays" type="number" min="1" value="${escapeHtml(wizard.duration.numberOfDays)}"></label>
@@ -306,21 +458,26 @@ function renderPlanWizard() {
       <label class="checkline"><input data-wizard-audience-check="projectOrientation" type="checkbox" ${wizard.targetAudience.projectOrientation ? 'checked' : ''}> Projektorientierung</label>
       <label class="checkline"><input data-wizard-audience-check="examOrientation" type="checkbox" ${wizard.targetAudience.examOrientation ? 'checked' : ''}> Pruefungsorientierung</label>
     </article>
+  `;
+}
 
-    ${renderDidacticProfileStep(wizard)}
-
-    ${renderContainerProfileStep(wizard)}
-
-    <article class="tool-card">
-      <h3>6. Analyse starten</h3>
+function renderAnalysisStep(wizard) {
+  return `
+    <article class="tool-card" data-plan-step-content="analysis">
+      <h3>Analyse</h3>
+      <p class="status-line">Die Hauptquelle wird in ein Curriculum mit Tagen, Themen, Lernzielen und Quellenreferenzen uebersetzt.</p>
       <p class="status-line">Die Container-Konfiguration steuert sichere Artefaktvorschlaege. Code, SQL und externe Tools werden nie automatisch ausgefuehrt.</p>
       <button class="primary-button" type="button" data-wizard-analyze ${wizard.anchorFiles.length ? '' : 'disabled'}>Curriculum analysieren</button>
+      ${!wizard.anchorFiles.length ? '<p class="status-line status-warning">Analyse ist erst aktiv, wenn eine Hauptquelle vorhanden ist.</p>' : ''}
     </article>
+  `;
+}
 
-    ${wizard.curriculumDraft ? renderCurriculumReview(wizard.curriculumDraft) : ''}
-
-    <article class="tool-card">
-      <h3>8. Materialien ergaenzen</h3>
+function renderMaterialsStep(wizard) {
+  return `
+    <article class="tool-card" data-plan-step-content="materials">
+      <h3>Materialien</h3>
+      <p class="status-line">Optional: Ergaenze Aufgaben, Loesungen, Quiz, Projektdateien, Quellcode, SQL, Assets oder sonstige Dateien. ZIPs werden sicher gestaged.</p>
       <div class="factory-grid">
         ${uploadAreas.map(([area, label, accept, description]) => {
           const files = wizard.uploadFiles.filter((file) => file.uploadArea === area);
@@ -330,26 +487,45 @@ function renderPlanWizard() {
       <button class="secondary-button" type="button" data-wizard-import ${wizard.uploadFiles.length ? '' : 'disabled'}>Uploads in Staging importieren</button>
       ${wizard.importBatch ? `<p class="status-line">Import-Batch: ${escapeHtml(wizard.importBatch.id)} (${wizard.importBatch.files.length} Datei(en))</p>` : ''}
     </article>
+  `;
+}
 
-    <article class="tool-card">
-      <h3>9. Referenzen & KI-Modus</h3>
-      <label class="checkline"><input data-wizard-references type="checkbox" ${wizard.useReferences ? 'checked' : ''}> Lokale Referenzbibliothek fuer Kontext verwenden</label>
+function renderAiModeStep(wizard) {
+  return `
+    <article class="tool-card" data-plan-step-content="aiMode">
+      <h3>KI/Fallback</h3>
       <div class="factory-form-grid">
         <label>KI-Modus<select data-wizard-ai-mode>${['local', 'openai', 'openai-review', 'openai-review-repair'].map((mode) => `<option value="${mode}" ${wizard.aiMode === mode ? 'selected' : ''}>${mode}</option>`).join('')}</select></label>
+      </div>
+      <div class="summary-grid">
+        <span><strong>local</strong>: lokale heuristische Erstellung ohne API-Kosten</span>
+        <span><strong>openai</strong>: OpenAI wird verwendet, wenn API-Key eingerichtet ist</span>
+        <span><strong>openai-review</strong>: OpenAI plus interne Review-Pruefung</span>
+        <span><strong>openai-review-repair</strong>: OpenAI plus Review und Reparaturversuch bei Schemafehlern</span>
+      </div>
+      <div class="summary-grid">
+        <span>OpenAI konfiguriert: ${state.aiStatus?.providers?.openai?.configured ? 'ja' : 'nein'}</span>
+        <span>Fallback aktiv: ja</span>
+        <span>Auswahl: ${escapeHtml(wizard.aiMode || 'local')}</span>
+        <span>Kostenabschaetzung: ${wizard.costEstimate ? `${escapeHtml(wizard.costEstimate.estimatedCostUsd)} USD` : '-'}</span>
+      </div>
+    </article>
+    ${renderAiSettings(wizard)}
+    ${renderPromptQualityGate(wizard)}
+  `;
+}
+
+function renderGenerationStep(wizard) {
+  const selectedDay = wizard.approvedCurriculumPlan?.days?.find((day) => day.dayNumber === Number(wizard.selectedDayNumber)) || wizard.approvedCurriculumPlan?.days?.[0];
+  return `
+    <article class="tool-card" data-plan-step-content="generation">
+      <h3>Tagesentwuerfe</h3>
+      <div class="factory-form-grid">
         <label>Tag<select data-wizard-day>${(wizard.approvedCurriculumPlan?.days || []).map((day) => `<option value="${day.dayNumber}" ${Number(wizard.selectedDayNumber) === day.dayNumber ? 'selected' : ''}>Tag ${day.dayNumber}: ${escapeHtml(day.title)}</option>`).join('')}</select></label>
       </div>
-      <small>Provider: local ${state.aiStatus?.providers?.openai?.configured ? '| OpenAI konfiguriert' : '| OpenAI nicht konfiguriert, Fallback lokal'}</small>
       <button class="primary-button" type="button" data-wizard-generate-all ${selectedDay && wizard.approvedCurriculumPlan?.status === 'approved' ? '' : 'disabled'}>Alle Tage generieren</button>
       <button class="secondary-button" type="button" data-wizard-generate ${selectedDay && wizard.approvedCurriculumPlan?.status === 'approved' ? '' : 'disabled'}>Ausgewaehlten Tag neu generieren</button>
       ${!wizard.approvedCurriculumPlan ? '<p class="status-line status-warning">Tagesentwurf erst nach Curriculum-Freigabe moeglich.</p>' : ''}
-    </article>
-
-    ${renderAiSettings(wizard)}
-
-    ${renderPromptQualityGate(wizard)}
-
-    <article class="tool-card">
-      <h3>10-12. Tagesentwurf, Korrektur & Draft</h3>
       ${wizard.dayResults.length ? `<p class="status-line">${wizard.dayResults.length} Tagesentwurf/Tagesentwuerfe erzeugt.</p>` : ''}
       ${wizard.dayResults.length ? renderDayResultList(wizard.dayResults) : ''}
       ${wizard.dayDraft ? renderDayDraftPreview(wizard.dayDraft) : '<p class="status-line">Noch kein Tagesentwurf erzeugt.</p>'}
@@ -358,10 +534,7 @@ function renderPlanWizard() {
       <button class="primary-button" type="button" data-wizard-create-draft ${wizard.dayResults.length || wizard.dayDraft ? '' : 'disabled'}>Dual-Mode-Container-Draft erzeugen</button>
       ${wizard.generatedDraft ? renderGeneratedDraft(wizard.generatedDraft) : ''}
     </article>
-
-    ${renderPreflightTestRun(wizard)}
   `;
-  bindPlanWizardEvents();
 }
 
 function renderDayDraftPreview(draft) {
@@ -727,13 +900,44 @@ function renderTestProtocolSummary(protocol) {
   return `<p class="status-line">Testprotokoll: ${escapeHtml(protocol.overallStatus || 'offen')} | passed ${escapeHtml(summary.passed || 0)} | warning ${escapeHtml(summary.warnings || 0)} | failed ${escapeHtml(summary.failed || 0)} | manuell ${escapeHtml(summary.manualChecks || 0)}</p>`;
 }
 
+function getPlanWizardStepGates() {
+  const wizard = state.wizard;
+  const courseDone = Boolean(wizard.course.courseName && wizard.course.courseId && wizard.course.department);
+  const anchorDone = Boolean(wizard.anchorFiles.length);
+  const durationDone = Boolean(wizard.targetAudience.priorKnowledge && wizard.targetAudience.learningLevel && wizard.targetAudience.difficultyMode && (wizard.duration.numberOfDays || wizard.duration.totalHours || wizard.duration.totalUE));
+  const didacticDone = Boolean(getSelectedDidacticProfile()?.id || wizard.didacticProfile?.id);
+  const containerProfileDone = Boolean(wizard.containerProfile?.courseType && wizard.containerProfile?.artifactMode);
+  const curriculumDone = Boolean(wizard.curriculumDraft?.days?.length);
+  const approvedDone = wizard.approvedCurriculumPlan?.status === 'approved';
+  const materialsDone = Boolean(wizard.uploadFiles.length || wizard.skippedSteps?.materials);
+  const aiDone = Boolean(wizard.aiMode);
+  const generationDone = Boolean(wizard.dayResults.length || wizard.dayDraft);
+  const preflightDone = Boolean(wizard.preflight || wizard.testRun);
+  const allAnalysisReady = courseDone && anchorDone && durationDone && didacticDone && containerProfileDone;
+  return planWizardSteps.map((step) => {
+    const gate = { ...step, active: false, done: false, missing: '' };
+    if (step.id === 'course') return { ...gate, active: true, done: courseDone, missing: 'Kursname, Kurs-ID und Fachbereich eintragen.' };
+    if (step.id === 'anchor') return { ...gate, active: courseDone, done: anchorDone, missing: 'Bitte zuerst Kursdaten vervollstaendigen.' };
+    if (step.id === 'durationAudience') return { ...gate, active: courseDone, done: durationDone, missing: 'Bitte zuerst Kursdaten vervollstaendigen.' };
+    if (step.id === 'didactics') return { ...gate, active: courseDone && durationDone, done: didacticDone, missing: 'Bitte zuerst Dauer und Zielgruppe pruefen.' };
+    if (step.id === 'containerProfile') return { ...gate, active: didacticDone, done: containerProfileDone, missing: 'Bitte zuerst ein didaktisches Profil auswaehlen.' };
+    if (step.id === 'analysis') return { ...gate, active: allAnalysisReady, done: curriculumDone, missing: 'Bitte Kursdaten, Hauptquelle, Zielgruppe, Didaktik und Containerprofil abschliessen.' };
+    if (step.id === 'curriculumReview') return { ...gate, active: curriculumDone, done: approvedDone, missing: 'Bitte zuerst das Curriculum analysieren.' };
+    if (step.id === 'materials') return { ...gate, active: approvedDone, done: materialsDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
+    if (step.id === 'aiMode') return { ...gate, active: approvedDone, done: aiDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
+    if (step.id === 'generation') return { ...gate, active: approvedDone, done: generationDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
+    if (step.id === 'preflight') return { ...gate, active: generationDone, done: preflightDone, missing: 'Bitte zuerst Tagesentwuerfe erzeugen.' };
+    return gate;
+  });
+}
+
 function getWizardGates() {
   const wizard = state.wizard;
   const courseDone = Boolean(wizard.course.courseName && wizard.course.courseId && wizard.course.department);
   const anchorDone = Boolean(wizard.anchorFiles.length);
   const curriculumDone = Boolean(wizard.curriculumDraft?.days?.length);
   const approvedDone = wizard.approvedCurriculumPlan?.status === 'approved';
-  const draftDone = Boolean(wizard.dayDraft);
+  const draftDone = Boolean(wizard.dayDraft || wizard.dayResults.length);
   const containerDone = Boolean(wizard.generatedDraft);
   const didacticDone = Boolean(getSelectedDidacticProfile()?.id);
   return [
@@ -749,6 +953,25 @@ function getWizardGates() {
 }
 
 function bindPlanWizardEvents() {
+  $all('[data-plan-step]').forEach((button) => button.addEventListener('click', () => {
+    const gates = getPlanWizardStepGates();
+    const gate = gates.find((item) => item.id === button.dataset.planStep);
+    if (!gate?.active) {
+      state.wizard.status = `Dieser Schritt ist noch gesperrt. Bitte zuerst: ${gate?.missing || 'vorherige Schritte abschliessen.'}`;
+      renderPlanWizard();
+      return;
+    }
+    state.wizard.activeStep = gate.id;
+    state.wizard.status = '';
+    renderPlanWizard();
+  }));
+  $('[data-wizard-prev]')?.addEventListener('click', () => moveWizardStep(-1));
+  $('[data-wizard-next]')?.addEventListener('click', () => moveWizardStep(1));
+  $('[data-wizard-skip-step]')?.addEventListener('click', () => {
+    state.wizard.skippedSteps[state.wizard.activeStep] = true;
+    state.wizard.status = 'Optionaler Schritt uebersprungen.';
+    moveWizardStep(1);
+  });
   $all('[data-wizard-course]').forEach((field) => field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', () => {
     state.wizard.course[field.dataset.wizardCourse] = field.value;
     state.wizard.targetAudience.department = state.wizard.course.department || state.wizard.targetAudience.department;
@@ -756,6 +979,12 @@ function bindPlanWizardEvents() {
       state.wizard.course.courseId = field.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     }
     if (field.tagName === 'SELECT') renderPlanWizard();
+  }));
+  $all('[data-wizard-anchor-type-radio]').forEach((field) => field.addEventListener('change', (event) => {
+    state.wizard.anchorType = event.target.value;
+    state.wizard.curriculumDraft = null;
+    state.wizard.approvedCurriculumPlan = null;
+    renderPlanWizard();
   }));
   $('[data-wizard-anchor-type]')?.addEventListener('change', (event) => {
     state.wizard.anchorType = event.target.value;
@@ -897,6 +1126,7 @@ function bindPlanWizardEvents() {
   });
   $('[data-wizard-ai-mode]')?.addEventListener('change', (event) => {
     state.wizard.aiMode = event.target.value;
+    renderPlanWizard();
   });
   $('[data-wizard-day]')?.addEventListener('change', (event) => {
     state.wizard.selectedDayNumber = Number(event.target.value);
@@ -947,6 +1177,21 @@ function bindPlanWizardEvents() {
   }));
 }
 
+function moveWizardStep(direction) {
+  const gates = getPlanWizardStepGates();
+  const currentIndex = gates.findIndex((gate) => gate.id === state.wizard.activeStep);
+  const candidates = direction > 0 ? gates.slice(currentIndex + 1) : gates.slice(0, currentIndex).reverse();
+  const target = candidates.find((gate) => gate.active);
+  if (!target) {
+    state.wizard.status = direction > 0 ? 'Der naechste Schritt ist noch gesperrt.' : 'Du bist bereits am ersten Schritt.';
+    renderPlanWizard();
+    return;
+  }
+  state.wizard.activeStep = target.id;
+  state.wizard.status = '';
+  renderPlanWizard();
+}
+
 function bindDropZoneEvents() {
   $all('[data-dropzone]').forEach((zone) => {
     zone.addEventListener('keydown', (event) => {
@@ -972,6 +1217,34 @@ function bindDropZoneEvents() {
     removeDropZoneFile(zoneId, Number(index));
     renderPlanWizard();
   }));
+}
+
+function bindRawImportDropzone() {
+  const zone = $('[data-raw-import-dropzone]');
+  if (!zone) return;
+  const input = $('[data-import-files]');
+  const status = $('[data-import-status]');
+  zone.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      input?.click();
+    }
+  });
+  zone.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    zone.classList.add('dropzone-is-dragover');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dropzone-is-dragover'));
+  zone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    zone.classList.remove('dropzone-is-dragover');
+    state.rawImportFiles = Array.from(event.dataTransfer?.files || []);
+    if (status) status.textContent = `${state.rawImportFiles.length} Datei(en) fuer Expertenimport vorgemerkt.`;
+  });
+  input?.addEventListener('change', () => {
+    state.rawImportFiles = [];
+    if (status && input.files?.length) status.textContent = `${input.files.length} Datei(en) ausgewaehlt.`;
+  });
 }
 
 function handleDropZoneFiles(zoneId, fileList, source = 'picker') {
@@ -1645,6 +1918,7 @@ async function loadState() {
   renderBatches();
   renderReferences();
   renderPlanWizard();
+  renderFactoryNavigationGates($('[data-factory-panel].is-active')?.dataset.factoryPanel || 'home');
   if (state.selectedBatchId) {
     const batch = state.importBatches.find((item) => item.id === state.selectedBatchId);
     if (batch) renderMapping(batch);
@@ -1737,7 +2011,8 @@ async function duplicateContainer() {
 
 async function importRawFiles() {
   const status = $('[data-import-status]');
-  const files = Array.from($('[data-import-files]').files || []).map((file) => ({
+  const selectedFiles = state.rawImportFiles.length ? state.rawImportFiles : Array.from($('[data-import-files]').files || []);
+  const files = selectedFiles.map((file) => ({
     name: file.name,
     path: file.path || '',
     size: file.size,
@@ -1827,10 +2102,16 @@ async function init() {
   }
   $all('[data-factory-tab]').forEach((button) => button.addEventListener('click', () => showPanel(button.dataset.factoryTab)));
   $all('[data-open-factory-section]').forEach((button) => button.addEventListener('click', () => showPanel(button.dataset.openFactorySection)));
+  $('[data-expert-mode]')?.addEventListener('change', (event) => {
+    state.wizard.expertMode = event.target.checked;
+    renderFactoryNavigationGates($('[data-factory-panel].is-active')?.dataset.factoryPanel || 'home');
+    setFactoryStatus(event.target.checked ? 'Rohdaten / Experte ist aktiviert.' : 'Rohdaten / Experte ist wieder gesperrt.', event.target.checked ? '' : 'status-warning');
+  });
   $('[data-open-landing]').addEventListener('click', () => desktop.openLanding());
   $('[data-refresh]').addEventListener('click', loadState);
   $('[data-run-duplicate]').addEventListener('click', duplicateContainer);
   $('[data-run-import]').addEventListener('click', importRawFiles);
+  bindRawImportDropzone();
   $('[data-import-references]').addEventListener('click', importReferences);
   $('[data-search-references]').addEventListener('click', searchReferences);
   $('[data-validate-batch]').addEventListener('click', validateBatch);

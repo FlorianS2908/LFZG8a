@@ -1184,6 +1184,33 @@ test('content factory ui exposes test protocol open action', () => {
   assert.doesNotMatch(ui, /OPENAI_API_KEY|apiKey|secret/i);
 });
 
+test('content factory navigation opens guided plan wizard before raw imports', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.html'), 'utf8');
+  const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8');
+
+  assert.match(html, /data-open-factory-section="plan-wizard"/);
+  assert.match(html, /Neuen Kurscontainer erstellen/);
+  assert.match(html, /Unterrichtsplan, PowerPoint oder Materialien analysieren/);
+  assert.doesNotMatch(html, /<strong>Container Erstellung<\/strong>[\s\S]*data-open-factory-section="import"/);
+  assert.match(html, /Rohdaten \/ Experte/);
+  assert.match(ui, /getFactoryTabGates/);
+  assert.match(ui, /Bitte zuerst den Plan-Wizard abschliessen/);
+});
+
+test('content factory plan wizard renders gated single steps with source and ai guidance', () => {
+  const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8');
+  const expectedSteps = ['course', 'anchor', 'durationAudience', 'didactics', 'containerProfile', 'analysis', 'curriculumReview', 'materials', 'aiMode', 'generation', 'preflight'];
+
+  expectedSteps.forEach((step) => assert.match(ui, new RegExp(`id: '${step}'`), step));
+  assert.match(ui, /state\.wizard\.activeStep = target\.id/);
+  assert.match(ui, /data-plan-step-content="\$\{escapeHtml\(|data-plan-step-content="anchor"/);
+  assert.match(ui, /data-wizard-analyze \$\{wizard\.anchorFiles\.length \? '' : 'disabled'\}/);
+  ['Unterrichtsplan Upload', 'PowerPoint', 'PDF', 'EPUB', 'Word', 'Markdown', 'HTML', 'TXT', '.zip'].forEach((term) => assert.match(ui, new RegExp(term.replace('.', '\\.')), term));
+  ['local', 'openai', 'openai-review', 'openai-review-repair'].forEach((mode) => assert.match(ui, new RegExp(mode), mode));
+  assert.match(ui, /Schritt ueberspringen/);
+  assert.match(ui, /Dieser Schritt ist noch gesperrt/);
+});
+
 test('content factory requires an admin session', () => {
   const { service, cleanup } = createTempFactory();
 
