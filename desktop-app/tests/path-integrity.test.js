@@ -1377,6 +1377,7 @@ test('deployment packaging scripts and required documentation are present', () =
     'LFZQ8a_Workflow_Uebersicht.html',
     'DemoExe.cmd',
     'AlleViewsTesten.cmd',
+    'ContentFactoryMainStart.cmd',
     'deployment/build-packages.ps1',
     'deployment/common/install-check.ps1',
     'deployment/dozent/Start-LFZQ8a-Dozent.cmd',
@@ -1389,14 +1390,15 @@ test('deployment packaging scripts and required documentation are present', () =
 
   const buildScript = fs.readFileSync(path.join(repoRoot, 'deployment', 'build-packages.ps1'), 'utf8');
   const installScript = fs.readFileSync(path.join(repoRoot, 'deployment', 'common', 'install-check.ps1'), 'utf8');
-  const rootStarterFiles = fs.readdirSync(repoRoot).filter((fileName) => /^(?:DemoExe|AlleViewsTesten)\.cmd$/i.test(fileName)).sort();
+  const rootStarterFiles = fs.readdirSync(repoRoot).filter((fileName) => /^(?:DemoExe|AlleViewsTesten|ContentFactoryMainStart)\.cmd$/i.test(fileName)).sort();
   const demoExeStarter = fs.readFileSync(path.join(repoRoot, 'DemoExe.cmd'), 'utf8');
   const allViewsStarter = fs.readFileSync(path.join(repoRoot, 'AlleViewsTesten.cmd'), 'utf8');
+  const contentFactoryStarter = fs.readFileSync(path.join(repoRoot, 'ContentFactoryMainStart.cmd'), 'utf8');
   const teacherStarter = fs.readFileSync(path.join(repoRoot, 'deployment', 'dozent', 'Start-LFZQ8a-Dozent.cmd'), 'utf8');
   const participantStarter = fs.readFileSync(path.join(repoRoot, 'deployment', 'teilnehmer', 'Start-LFZQ8a-Teilnehmer.cmd'), 'utf8');
   const gitignore = fs.readFileSync(path.join(repoRoot, '.gitignore'), 'utf8');
 
-  assert.deepEqual(rootStarterFiles, ['AlleViewsTesten.cmd', 'DemoExe.cmd']);
+  assert.deepEqual(rootStarterFiles, ['AlleViewsTesten.cmd', 'ContentFactoryMainStart.cmd', 'DemoExe.cmd']);
   assert.match(buildScript, /LFZQ8a-Dozent\.zip/);
   assert.match(buildScript, /LFZQ8a-Teilnehmer\.zip/);
   assert.doesNotMatch(buildScript, /Wizard-Test|Wizard-Test\.cmd/);
@@ -1415,6 +1417,9 @@ test('deployment packaging scripts and required documentation are present', () =
   assert.match(allViewsStarter, /desktop-app\\package\.json/);
   assert.match(allViewsStarter, /install-check\.ps1/);
   assert.match(allViewsStarter, /-Role Dozent -Start -TestAllViews/);
+  assert.match(contentFactoryStarter, /desktop-app\\package\.json/);
+  assert.match(contentFactoryStarter, /branch --show-current/);
+  assert.match(contentFactoryStarter, /--content-factory/);
   assert.match(teacherStarter, /install-check\.ps1/);
   assert.match(teacherStarter, /-Role Dozent -Start/);
   assert.match(teacherStarter, /--check/);
