@@ -51,6 +51,7 @@ const preloadFile = path.join(__dirname, 'preload.js');
 const wizardFile = path.join(__dirname, 'renderer', 'wizard.html');
 const appIconFile = path.join(__dirname, 'assets', 'icons', process.platform === 'win32' ? 'app-icon.ico' : 'app-icon.png');
 const forceWizard = process.argv.includes('--wizard') || process.argv.includes('--wizard-test');
+const forceContentFactory = process.argv.includes('--content-factory');
 const forceTeacherStartview = process.argv.includes('--teacher-startview');
 const forceAllViewsTest = process.argv.includes('--test-all-views');
 const disableHistory = process.argv.includes('--no-history') || process.argv.includes('--wizard-test');
@@ -1577,6 +1578,13 @@ app.whenReady().then(() => {
     });
   } else if (forceWizard) {
     createWizardWindow();
+  } else if (forceContentFactory) {
+    try {
+      loadContentFactoryInMainWindow();
+    } catch (error) {
+      console.error(`ContentFactory konnte nicht direkt geoeffnet werden: ${error.message}`);
+      createLoginWindow();
+    }
   } else {
     createLoginWindow();
   }
@@ -1592,6 +1600,13 @@ app.whenReady().then(() => {
         });
       } else if (forceWizard) {
         createWizardWindow();
+      } else if (forceContentFactory) {
+        try {
+          loadContentFactoryInMainWindow();
+        } catch (error) {
+          console.error(`ContentFactory konnte nicht direkt geoeffnet werden: ${error.message}`);
+          createLoginWindow();
+        }
       } else {
         createLoginWindow();
       }
