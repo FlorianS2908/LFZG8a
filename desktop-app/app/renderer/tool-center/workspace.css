@@ -872,6 +872,172 @@ textarea {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.workflow-shell,
+.workflow-header,
+.workflow-result-card,
+.workflow-help,
+.workflow-checklist {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.workflow-shell {
+  display: grid;
+  gap: 14px;
+}
+
+.workflow-header {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  box-shadow: 0 10px 28px rgba(15, 32, 51, .08);
+}
+
+.workflow-header h2 {
+  margin-bottom: 4px;
+}
+
+.workflow-status-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.workflow-status-strip span,
+.workflow-result-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.workflow-status-badge {
+  justify-self: start;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 900;
+}
+
+.workflow-status-open,
+.workflow-status-active,
+.workflow-status-ready {
+  color: #075191;
+  background: #e9f4ff;
+}
+
+.workflow-status-done {
+  color: #075934;
+  background: #e7f8ef;
+}
+
+.workflow-status-warning {
+  color: #7a4d00;
+  background: #fff5db;
+}
+
+.workflow-status-error {
+  color: #9f1d1d;
+  background: #ffe8e8;
+}
+
+.workflow-stepper {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(138px, 1fr);
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.workflow-step {
+  display: grid;
+  gap: 4px;
+  min-height: 68px;
+  padding: 10px;
+  text-align: left;
+  color: var(--text);
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.workflow-step-active {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(11, 104, 183, .12);
+}
+
+.workflow-step-done {
+  border-color: rgba(40, 164, 107, .55);
+  background: #eefaf5;
+}
+
+.workflow-step-locked {
+  opacity: .48;
+  cursor: not-allowed;
+}
+
+.workflow-step-optional small {
+  color: #7a4d00;
+}
+
+.workflow-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+  gap: 16px;
+  align-items: start;
+}
+
+.workflow-main,
+.workflow-help {
+  display: grid;
+  gap: 12px;
+}
+
+.workflow-help {
+  padding: 16px;
+  background: var(--panel-soft);
+  position: sticky;
+  top: 12px;
+}
+
+.workflow-help section {
+  display: grid;
+  gap: 4px;
+}
+
+.workflow-actionbar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 -8px 20px rgba(15, 32, 51, .08);
+}
+
+.workflow-next-action,
+.workflow-mode-toggle {
+  padding: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(15, 32, 51, .08);
+}
+
+.workflow-mode-toggle {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
 .option-grid {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
@@ -925,6 +1091,15 @@ textarea {
 
   .tool-view.is-active {
     grid-template-columns: 1fr;
+  }
+
+  .workflow-body {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-help,
+  .workflow-actionbar {
+    position: static;
   }
 
   .tool-sidebar {

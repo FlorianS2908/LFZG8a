@@ -1,7 +1,11 @@
 const desktop = window.lfzq8aDesktop;
 const uploadUtils = window.ContentFactoryUploadUtils || {};
+const workflowLayout = window.ContentFactoryWorkflowLayout || {};
+const workflowRegistry = window.ContentFactoryWorkflowRegistry || {};
+const workflowStatus = window.ContentFactoryWorkflowStatus || {};
 
 const state = {
+  uiMode: 'guided',
   containers: [],
   importBatches: [],
   referenceSources: [],
@@ -84,7 +88,8 @@ const planWizardSteps = [
   { id: 'materials', label: 'Materialien', optional: true },
   { id: 'aiMode', label: 'KI/Fallback' },
   { id: 'generation', label: 'Tagesentwuerfe' },
-  { id: 'preflight', label: 'Testlauf' }
+  { id: 'preflight', label: 'Testlauf' },
+  { id: 'containerDraft', label: 'Container-Draft', optional: true }
 ];
 
 function $(selector) {
@@ -169,7 +174,7 @@ function setFactoryStatus(message, cssClass = '') {
 function getFactoryTabGates() {
   const hasContainers = state.containers.length > 0;
   const hasBatches = state.importBatches.length > 0;
-  const expertReady = Boolean(
+  const expertReady = state.uiMode === 'expert' || Boolean(
     state.wizard.course.courseName
     || state.wizard.anchorFiles.length
     || state.wizard.expertMode
@@ -181,7 +186,7 @@ function getFactoryTabGates() {
     duplicate: { active: hasContainers, message: 'Duplizieren ist aktiv, sobald mindestens ein Container vorhanden ist.' },
     import: { active: expertReady, message: 'Bitte zuerst den Plan-Wizard abschliessen oder den Expertenmodus aktivieren.' },
     references: { active: true, optional: true },
-    batches: { active: hasBatches, message: 'Import-Batches sind aktiv, sobald ein Batch vorhanden ist.' }
+    batches: { active: state.uiMode === 'expert' || hasBatches, message: 'Import-Batches sind aktiv, sobald ein Batch vorhanden ist oder der Expertenmodus aktiv ist.' }
   };
 }
 
@@ -202,7 +207,9 @@ function renderFactoryNavigationGates(activePanel = '') {
     button.title = !gate.active && gate.message ? gate.message : '';
   });
   const expertToggle = $('[data-expert-mode]');
-  if (expertToggle) expertToggle.checked = Boolean(state.wizard.expertMode);
+  if (expertToggle) expertToggle.checked = state.uiMode === 'expert' || Boolean(state.wizard.expertMode);
+  const modeToggle = $('[data-ui-mode-toggle]');
+  if (modeToggle) modeToggle.checked = state.uiMode === 'expert';
 }
 
 function showPanel(panelName) {
@@ -221,6 +228,86 @@ function showPanel(panelName) {
   $all('[data-factory-panel]').forEach((panel) => panel.classList.toggle('is-active', panel.dataset.factoryPanel === panelName));
   setFactoryStatus('');
   renderFactoryNavigationGates(panelName);
+}
+
+function getNextRecommendedAction(currentState = state) {
+  const wizard = currentState.wizard;
+  if (!wizard.course.courseName || !wizard.course.courseId || !wizard.course.department) {
+    return {
+      label: 'Kursdaten ausfuellen',
+      description: 'Lege Kursname, Kurs-ID und Fachbereich fest, damit der Container eindeutig angelegt werden kann.',
+      targetPanel: 'plan-wizard',
+      targetStep: 'course',
+      buttonLabel: 'Weiter zu Kursdaten'
+    };
+  }
+  if (!wizard.anchorFiles.length) {
+    return {
+      label: 'Hauptquelle hochladen',
+      description: 'Lade Unterrichtsplan, PowerPoint oder PDF hoch, damit Themen extrahiert werden koennen.',
+      targetPanel: 'plan-wizard',
+      targetStep: 'anchor',
+      buttonLabel: 'Weiter zur Hauptquelle'
+    };
+  }
+  if (!wizard.curriculumDraft) {
+    return {
+      label: 'Curriculum analysieren',
+      description: 'Starte die Analyse, damit aus der Hauptquelle eine Tagesstruktur entsteht.',
+      targetPanel: 'plan-wizard',
+      targetStep: 'analysis',
+      buttonLabel: 'Zur Analyse'
+    };
+  }
+  if (wizard.approvedCurriculumPlan?.status !== 'approved') {
+    return {
+      label: 'Curriculum pruefen',
+      description: 'Pruefe Tagesstruktur, Themen und UE-Verteilung und gib den Plan frei.',
+      targetPanel: 'plan-wizard',
+      targetStep: 'curriculumReview',
+      buttonLabel: 'Curriculum pruefen'
+    };
+  }
+  if (!wizard.dayResults.length && !wizard.dayDraft) {
+    return {
+      label: 'Tagesentwuerfe erzeugen',
+      description: 'Erzeuge Webvarianten, Aufgaben, Loesungen, Quiz, DemoTargets und teacherRunbook.',
+      targetPanel: 'plan-wizard',
+      targetStep: 'generation',
+      buttonLabel: 'Tagesentwuerfe erzeugen'
+    };
+  }
+  if (!wizard.preflight && !wizard.testRun) {
+    return {
+      label: 'Preflight starten',
+      description: 'Pruefe Sicherheit, Qualitaet, Didaktik und Loesungsschutz vor dem Container-Entwurf.',
+      targetPanel: 'plan-wizard',
+      targetStep: 'preflight',
+      buttonLabel: 'Preflight starten'
+    };
+  }
+  return {
+    label: 'Container pruefen oder veroeffentlichen',
+    description: 'Der Entwurf ist bereit fuer Kontrolle, Testprotokoll und spaetere Freigabe.',
+    targetPanel: 'overview',
+    targetStep: '',
+    buttonLabel: 'Container verwalten'
+  };
+}
+
+function renderNextRecommendedAction() {
+  const target = $('[data-next-action]');
+  if (!target) return;
+  const action = getNextRecommendedAction();
+  target.innerHTML = `
+    <strong>Naechster sinnvoller Klick: ${escapeHtml(action.label)}</strong>
+    <p>${escapeHtml(action.description)}</p>
+    <button class="primary-button" type="button" data-next-action-button>${escapeHtml(action.buttonLabel)}</button>
+  `;
+  $('[data-next-action-button]')?.addEventListener('click', () => {
+    if (action.targetStep) state.wizard.activeStep = action.targetStep;
+    showPanel(action.targetPanel);
+  });
 }
 
 function renderValidation(target, validation) {
@@ -322,44 +409,122 @@ function renderReferences() {
   $all('[data-remove-reference]').forEach((button) => button.addEventListener('click', () => removeReference(button.dataset.removeReference)));
 }
 
+function renderWorkflowPanelIntros() {
+  const configs = {
+    home: {
+      workflow: {
+        id: 'content-factory-start',
+        title: 'ContentFactory Start',
+        subtitle: 'Waehle den passenden Weg: gefuehrter Assistent, Verwaltung, Referenzen oder Expertenbereich.',
+        audience: 'Admin / Dozent',
+        difficulty: state.uiMode === 'expert' ? 'expert' : 'gefuehrt',
+        primaryGoal: 'Den naechsten sinnvollen Workflow starten.',
+        result: 'Du landest im passenden Arbeitsbereich.'
+      },
+      help: { id: 'start', goal: 'Starte mit dem Assistenten fuer neue Kurscontainer.', why: 'Rohdaten / Expertenimport ist nicht der Standardweg.', requiredInputs: [], optionalInputs: ['Expertenmodus'], typicalMistakes: ['Rohdaten als ersten Schritt nutzen'], result: 'Naechster Klick ist klar.' }
+    },
+    overview: { workflow: workflowRegistry.getWorkflow?.('manage-containers'), helpId: 'overview' },
+    duplicate: { workflow: workflowRegistry.getWorkflow?.('duplicate-container'), helpId: 'duplicate' },
+    references: { workflow: workflowRegistry.getWorkflow?.('reference-library'), helpId: 'references' },
+    import: { workflow: workflowRegistry.getWorkflow?.('expert-import'), helpId: 'import' },
+    batches: { workflow: workflowRegistry.getWorkflow?.('expert-import'), helpId: 'batches' }
+  };
+  Object.entries(configs).forEach(([panel, config]) => {
+    const target = $(`[data-workflow-intro="${panel}"]`);
+    const workflow = config.workflow;
+    if (!target || !workflow || !workflowLayout.renderWorkflowHeader) return;
+    const step = config.help || (workflow.steps || []).find((item) => item.id === config.helpId) || workflow.steps?.[0] || {};
+    target.innerHTML = `
+      ${workflowLayout.renderWorkflowHeader(workflow, panel === 'import' || panel === 'batches' ? (state.uiMode === 'expert' ? 'active' : 'warning') : 'open')}
+      ${workflowLayout.renderWorkflowStepShell ? workflowLayout.renderWorkflowStepShell({
+        workflow,
+        step,
+        contentHtml: workflowLayout.renderWorkflowResultCard ? workflowLayout.renderWorkflowResultCard({
+          title: 'Was mache ich hier?',
+          result: step.goal || workflow.primaryGoal,
+          warnings: panel === 'import' ? ['Rohdaten / Expertenimport ist ein Expertenbereich und nicht der Standardweg fuer neue Kurscontainer.'] : [],
+          nextAction: getNextRecommendedAction().label
+        }) : '',
+        helpHtml: workflowLayout.renderWorkflowHelp ? workflowLayout.renderWorkflowHelp(step) : '',
+        actionsHtml: ''
+      }) : ''}
+    `;
+  });
+  renderNextRecommendedAction();
+}
+
 function renderPlanWizard() {
   const root = $('[data-plan-wizard]');
   if (!root) return;
   const wizard = state.wizard;
+  const workflow = workflowRegistry.getWorkflow?.('create-course-container') || createFallbackPlanWorkflow();
   const gates = getPlanWizardStepGates();
   const activeGate = gates.find((gate) => gate.id === wizard.activeStep && gate.active) || gates.find((gate) => gate.active) || gates[0];
   wizard.activeStep = activeGate.id;
   const currentIndex = gates.findIndex((gate) => gate.id === wizard.activeStep);
   const previousGate = [...gates].slice(0, currentIndex).reverse().find((gate) => gate.active);
   const nextGate = gates.slice(currentIndex + 1).find((gate) => gate.active);
+  const activeStep = workflow.steps.find((step) => step.id === wizard.activeStep) || workflow.steps[0];
+  const headerStatus = workflowStatus.getWorkflowStatus?.(gates) || 'active';
+  const contentHtml = renderCurrentPlanWizardStep(wizard, activeGate);
   root.innerHTML = `
+    ${workflowLayout.renderWorkflowHeader ? workflowLayout.renderWorkflowHeader(workflow, headerStatus) : ''}
+    ${workflowLayout.renderWorkflowStepper ? workflowLayout.renderWorkflowStepper(workflow, wizard.activeStep, gates) : ''}
     <article class="tool-card">
-      <h2>Plan -> KI/Fallback -> Container</h2>
-      <p class="status-line">Gefuehrter Workflow fuer neue Kurscontainer. Rohdaten / Experte bleibt fuer direkte Dateiimporte und Mapping-Korrekturen reserviert.</p>
-      <div class="wizard-stepper" data-plan-stepper>
-        ${gates.map((gate) => `
-          <button class="wizard-step ${gate.id === wizard.activeStep ? 'is-active' : ''} ${gate.done ? 'is-done' : ''} ${gate.active ? '' : 'is-locked'}" type="button" data-plan-step="${escapeHtml(gate.id)}" ${gate.active ? '' : 'disabled'} title="${escapeHtml(gate.active ? gate.label : gate.missing)}">
-            <span>${escapeHtml(gate.label)}</span>
-            <small>${gate.done ? 'erfuellt' : gate.active ? 'aktiv' : 'gesperrt'}</small>
-          </button>
-        `).join('')}
-      </div>
       ${wizard.status ? `<p class="status-line">${escapeHtml(wizard.status)}</p>` : ''}
     </article>
-
-    ${renderCurrentPlanWizardStep(wizard, activeGate)}
-
-    <article class="tool-card wizard-controls">
-      <div class="button-row">
-        <button class="secondary-button" type="button" data-wizard-prev ${previousGate ? '' : 'disabled'}>Zurueck</button>
-        ${activeGate.optional ? '<button class="secondary-button" type="button" data-wizard-skip-step>Schritt ueberspringen</button>' : ''}
-        <button class="primary-button" type="button" data-wizard-next ${nextGate ? '' : 'disabled'}>Weiter</button>
-      </div>
-      <small>${nextGate ? `Naechster Schritt: ${escapeHtml(nextGate.label)}` : 'Alle freigegebenen Schritte sind erreicht.'}</small>
-    </article>
+    ${workflowLayout.renderWorkflowStepShell
+      ? workflowLayout.renderWorkflowStepShell({
+        workflow,
+        step: activeStep,
+        contentHtml,
+        statusHtml: renderPlanWizardStepStatus(activeGate),
+        actionsHtml: workflowLayout.renderWorkflowActionBar({
+          canBack: Boolean(previousGate),
+          canNext: Boolean(nextGate),
+          canSkip: Boolean(activeGate.optional),
+          canCheck: activeGate.id === 'analysis' || activeGate.id === 'preflight',
+          nextLabel: nextGate ? `Weiter: ${nextGate.label}` : 'Weiter'
+        })
+      })
+      : contentHtml}
   `;
   bindPlanWizardEvents();
   renderFactoryNavigationGates($('[data-factory-panel].is-active')?.dataset.factoryPanel || 'plan-wizard');
+}
+
+function createFallbackPlanWorkflow() {
+  return {
+    id: 'create-course-container',
+    title: 'Neuen Kurscontainer erstellen',
+    subtitle: 'Gefuehrter Assistent fuer Kurscontainer.',
+    audience: 'Admin / Dozent',
+    difficulty: 'gefuehrt',
+    primaryGoal: 'Vom Plan zum Container-Draft.',
+    result: 'Gepruefter Kurscontainer-Entwurf.',
+    steps: planWizardSteps.map((step) => ({
+      ...step,
+      shortLabel: step.label,
+      goal: step.label,
+      why: 'Dieser Schritt fuehrt den Workflow weiter.',
+      requiredInputs: [],
+      optionalInputs: [],
+      typicalMistakes: [],
+      result: 'Naechster Schritt ist vorbereitet.'
+    }))
+  };
+}
+
+function renderPlanWizardStepStatus(gate) {
+  const nextAction = getNextRecommendedAction();
+  return workflowLayout.renderWorkflowResultCard
+    ? workflowLayout.renderWorkflowResultCard({
+      title: gate.done ? 'Schritt erledigt' : gate.active ? 'Aktueller Schritt' : 'Gesperrt',
+      result: gate.done ? 'Die Voraussetzung ist erfuellt.' : gate.active ? 'Bearbeite diesen Schritt und nutze danach Weiter.' : gate.missing,
+      warnings: gate.active || gate.done ? [] : [gate.missing],
+      nextAction: nextAction.label
+    })
+    : '';
 }
 
 function renderCurrentPlanWizardStep(wizard, gate) {
@@ -386,6 +551,8 @@ function renderCurrentPlanWizardStep(wizard, gate) {
       return renderGenerationStep(wizard);
     case 'preflight':
       return renderPreflightTestRun(wizard);
+    case 'containerDraft':
+      return renderContainerDraftStep(wizard);
     default:
       return renderCourseStep(wizard);
   }
@@ -533,6 +700,17 @@ function renderGenerationStep(wizard) {
       <button class="secondary-button" type="button" data-wizard-revise ${wizard.dayDraft ? '' : 'disabled'}>Tagesentwurf mit Korrektur neu erzeugen</button>
       <button class="primary-button" type="button" data-wizard-create-draft ${wizard.dayResults.length || wizard.dayDraft ? '' : 'disabled'}>Dual-Mode-Container-Draft erzeugen</button>
       ${wizard.generatedDraft ? renderGeneratedDraft(wizard.generatedDraft) : ''}
+    </article>
+  `;
+}
+
+function renderContainerDraftStep(wizard) {
+  return `
+    <article class="tool-card" data-plan-step-content="containerDraft">
+      <h3>Container-Draft</h3>
+      <p class="status-line">Draft bedeutet Entwurf eines Kurscontainers. Der Entwurf kann lokal getestet und spaeter veroeffentlicht werden.</p>
+      <button class="primary-button" type="button" data-wizard-create-draft ${wizard.dayResults.length || wizard.dayDraft ? '' : 'disabled'}>Dual-Mode-Container-Draft erzeugen</button>
+      ${wizard.generatedDraft ? renderGeneratedDraft(wizard.generatedDraft) : '<p class="status-line">Noch kein Container-Draft erzeugt.</p>'}
     </article>
   `;
 }
@@ -913,6 +1091,7 @@ function getPlanWizardStepGates() {
   const aiDone = Boolean(wizard.aiMode);
   const generationDone = Boolean(wizard.dayResults.length || wizard.dayDraft);
   const preflightDone = Boolean(wizard.preflight || wizard.testRun);
+  const draftDone = Boolean(wizard.generatedDraft);
   const allAnalysisReady = courseDone && anchorDone && durationDone && didacticDone && containerProfileDone;
   return planWizardSteps.map((step) => {
     const gate = { ...step, active: false, done: false, missing: '' };
@@ -927,6 +1106,7 @@ function getPlanWizardStepGates() {
     if (step.id === 'aiMode') return { ...gate, active: approvedDone, done: aiDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
     if (step.id === 'generation') return { ...gate, active: approvedDone, done: generationDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
     if (step.id === 'preflight') return { ...gate, active: generationDone, done: preflightDone, missing: 'Bitte zuerst Tagesentwuerfe erzeugen.' };
+    if (step.id === 'containerDraft') return { ...gate, active: preflightDone || generationDone, done: draftDone, missing: 'Bitte zuerst Preflight/Testlauf oder Tagesentwurf erzeugen.' };
     return gate;
   });
 }
@@ -1917,6 +2097,7 @@ async function loadState() {
   renderContainers();
   renderBatches();
   renderReferences();
+  renderWorkflowPanelIntros();
   renderPlanWizard();
   renderFactoryNavigationGates($('[data-factory-panel].is-active')?.dataset.factoryPanel || 'home');
   if (state.selectedBatchId) {
@@ -2102,10 +2283,12 @@ async function init() {
   }
   $all('[data-factory-tab]').forEach((button) => button.addEventListener('click', () => showPanel(button.dataset.factoryTab)));
   $all('[data-open-factory-section]').forEach((button) => button.addEventListener('click', () => showPanel(button.dataset.openFactorySection)));
-  $('[data-expert-mode]')?.addEventListener('change', (event) => {
-    state.wizard.expertMode = event.target.checked;
+  $('[data-ui-mode-toggle]')?.addEventListener('change', (event) => {
+    state.uiMode = event.target.checked ? 'expert' : 'guided';
+    state.wizard.expertMode = state.uiMode === 'expert';
+    renderWorkflowPanelIntros();
     renderFactoryNavigationGates($('[data-factory-panel].is-active')?.dataset.factoryPanel || 'home');
-    setFactoryStatus(event.target.checked ? 'Rohdaten / Experte ist aktiviert.' : 'Rohdaten / Experte ist wieder gesperrt.', event.target.checked ? '' : 'status-warning');
+    setFactoryStatus(event.target.checked ? 'Expertenmodus ist aktiviert.' : 'Gefuehrter Modus ist aktiv.', event.target.checked ? '' : 'status-warning');
   });
   $('[data-open-landing]').addEventListener('click', () => desktop.openLanding());
   $('[data-refresh]').addEventListener('click', loadState);

@@ -84,6 +84,8 @@ Alle alten Lab-, Demo- und Workflow-CMD-Starter wurden entfernt. Die ContentFact
 
 Der Rohdatenbereich ist ein Expertenbereich und nicht der Standardweg fuer neue Kurscontainer.
 
+Die ContentFactory nutzt einen gefuehrten Workflow-Modus. Neue Kurscontainer werden ueber den Assistenten erstellt. Rohdaten/Import-Batches sind Expertenbereiche.
+
 Standardkonten:
 
 - Admin: `admin@admin.de` / `$$Klaus2908$$`

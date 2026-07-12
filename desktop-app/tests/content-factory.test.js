@@ -38,6 +38,8 @@ const promptBuilder = require('../app/lib/content-factory/ai/prompts/prompt-buil
 const contractPromptLinter = require('../app/lib/content-factory/ai/prompts/prompt-linter');
 const { runGoldenPromptTest, summarizeGoldenPromptTests } = require('../app/lib/content-factory/ai/prompts/golden-tests/golden-test-runner');
 const { createDropZoneHtml, validateUploadSelection, addFilesToUploadState, removeUploadFile, removeDropZoneFile, renderFileList } = require('../app/renderer/tool-center/factory-upload-utils');
+const workflowRegistry = require('../app/renderer/tool-center/workflow-ui/workflow-registry');
+const workflowLayout = require('../app/renderer/tool-center/workflow-ui/workflow-layout');
 
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
@@ -1190,16 +1192,20 @@ test('content factory navigation opens guided plan wizard before raw imports', (
 
   assert.match(html, /data-open-factory-section="plan-wizard"/);
   assert.match(html, /Neuen Kurscontainer erstellen/);
-  assert.match(html, /Unterrichtsplan, PowerPoint oder Materialien analysieren/);
+  assert.match(html, /Unterrichtsplan, PowerPoint, PDF oder Materialien/);
   assert.doesNotMatch(html, /<strong>Container Erstellung<\/strong>[\s\S]*data-open-factory-section="import"/);
   assert.match(html, /Rohdaten \/ Experte/);
   assert.match(ui, /getFactoryTabGates/);
   assert.match(ui, /Bitte zuerst den Plan-Wizard abschliessen/);
+  assert.match(ui, /uiMode: 'guided'/);
+  assert.match(ui, /getNextRecommendedAction/);
+  assert.match(html, /data-ui-mode-toggle/);
+  assert.match(html, /Expertenbereich/);
 });
 
 test('content factory plan wizard renders gated single steps with source and ai guidance', () => {
   const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8');
-  const expectedSteps = ['course', 'anchor', 'durationAudience', 'didactics', 'containerProfile', 'analysis', 'curriculumReview', 'materials', 'aiMode', 'generation', 'preflight'];
+  const expectedSteps = ['course', 'anchor', 'durationAudience', 'didactics', 'containerProfile', 'analysis', 'curriculumReview', 'materials', 'aiMode', 'generation', 'preflight', 'containerDraft'];
 
   expectedSteps.forEach((step) => assert.match(ui, new RegExp(`id: '${step}'`), step));
   assert.match(ui, /state\.wizard\.activeStep = target\.id/);
@@ -1207,8 +1213,60 @@ test('content factory plan wizard renders gated single steps with source and ai 
   assert.match(ui, /data-wizard-analyze \$\{wizard\.anchorFiles\.length \? '' : 'disabled'\}/);
   ['Unterrichtsplan Upload', 'PowerPoint', 'PDF', 'EPUB', 'Word', 'Markdown', 'HTML', 'TXT', '.zip'].forEach((term) => assert.match(ui, new RegExp(term.replace('.', '\\.')), term));
   ['local', 'openai', 'openai-review', 'openai-review-repair'].forEach((mode) => assert.match(ui, new RegExp(mode), mode));
-  assert.match(ui, /Schritt ueberspringen/);
+  const layout = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'workflow-ui', 'workflow-layout.js'), 'utf8');
+  assert.match(layout, /Schritt ueberspringen/);
   assert.match(ui, /Dieser Schritt ist noch gesperrt/);
+  assert.match(ui, /renderWorkflowStepShell/);
+  assert.match(ui, /renderWorkflowHeader/);
+});
+
+test('content factory workflow registry and layout explain guided workflows', () => {
+  const workflows = workflowRegistry.listWorkflows();
+  const required = ['create-course-container', 'manage-containers', 'duplicate-container', 'reference-library', 'expert-import'];
+  required.forEach((id) => assert.equal(Boolean(workflowRegistry.getWorkflow(id)), true, id));
+  workflows.forEach((workflow) => {
+    assert.ok(workflow.title, workflow.id);
+    assert.ok(workflow.subtitle, workflow.id);
+    assert.ok(workflow.steps.length, workflow.id);
+    workflow.steps.forEach((step) => {
+      assert.ok(step.label, `${workflow.id}:${step.id}`);
+      assert.ok(step.goal, `${workflow.id}:${step.id}`);
+      assert.ok(step.why, `${workflow.id}:${step.id}`);
+      assert.ok(step.result, `${workflow.id}:${step.id}`);
+    });
+  });
+
+  const createWorkflow = workflowRegistry.getWorkflow('create-course-container');
+  const stepper = workflowLayout.renderWorkflowStepper(createWorkflow, 'anchor', [
+    { id: 'course', active: true, done: true },
+    { id: 'anchor', active: true, done: false },
+    { id: 'durationAudience', active: false, done: false, missing: 'Hauptquelle fehlt' }
+  ]);
+  assert.match(stepper, /workflow-step-active/);
+  assert.match(stepper, /workflow-step-done/);
+  assert.match(stepper, /workflow-step-locked/);
+
+  const help = workflowLayout.renderWorkflowHelp(createWorkflow.steps.find((step) => step.id === 'anchor'));
+  assert.match(help, /Kurz erklaert/);
+  assert.match(help, /Warum wichtig/);
+  assert.match(help, /Ergebnis/);
+});
+
+test('content factory guided ux labels explain technical areas', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.html'), 'utf8');
+  const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'workspace.css'), 'utf8');
+  const help = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'workflow-ui', 'workflow-help-content.js'), 'utf8');
+
+  assert.match(html, /Rohdaten \/ Experte/);
+  assert.match(html, /Import-Batches \/ Zuordnungen/);
+  assert.match(html, /Container verwalten/);
+  assert.match(help, /Import-Batch ist ein zwischengespeicherter Dateiimport|zwischengespeicherter Dateiimport/);
+  assert.match(ui, /Draft bedeutet Entwurf eines Kurscontainers/);
+  assert.match(ui, /Preflight schuetzt|Preflight\/Testlauf/);
+  assert.match(css, /workflow-shell/);
+  assert.match(css, /workflow-help/);
+  assert.match(css, /workflow-actionbar/);
 });
 
 test('content factory requires an admin session', () => {

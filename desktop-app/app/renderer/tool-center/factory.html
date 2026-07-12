@@ -25,29 +25,36 @@
     <main class="factory-layout">
       <nav class="workspace-track-tabs" aria-label="Factory Bereiche">
         <button class="workspace-track-tab is-active" type="button" data-factory-tab="home">Start</button>
-        <button class="workspace-track-tab" type="button" data-factory-tab="plan-wizard">Plan -> KI/Fallback -> Container</button>
-        <button class="workspace-track-tab" type="button" data-factory-tab="overview">Uebersicht</button>
-        <button class="workspace-track-tab" type="button" data-factory-tab="duplicate">Duplizieren</button>
+        <button class="workspace-track-tab" type="button" data-factory-tab="plan-wizard">Kurscontainer erstellen</button>
+        <button class="workspace-track-tab" type="button" data-factory-tab="overview">Container verwalten</button>
+        <button class="workspace-track-tab" type="button" data-factory-tab="duplicate">Container duplizieren</button>
         <button class="workspace-track-tab" type="button" data-factory-tab="import" title="Direkter Rohdatenimport ist ein Expertenbereich. Fuer neue Kurscontainer bitte den Plan-Wizard verwenden.">Rohdaten / Experte</button>
         <button class="workspace-track-tab" type="button" data-factory-tab="references">Referenzbibliothek <small>Optional</small></button>
-        <button class="workspace-track-tab" type="button" data-factory-tab="batches">Import-Batches</button>
+        <button class="workspace-track-tab" type="button" data-factory-tab="batches">Import-Batches / Zuordnungen</button>
       </nav>
       <p class="status-line" data-factory-status></p>
 
       <section class="factory-panel is-active" data-factory-panel="home">
+        <div data-workflow-intro="home"></div>
+        <article class="workflow-next-action" data-next-action></article>
+        <div class="workflow-mode-toggle">
+          <span>Gefuehrter Modus</span>
+          <label class="checkline"><input type="checkbox" data-ui-mode-toggle> Expertenmodus</label>
+        </div>
         <div class="tool-grid">
           <button class="tool-tile" type="button" data-open-factory-section="plan-wizard">
             <span class="tool-visual">CE</span>
             <span class="tool-copy">
               <strong>Neuen Kurscontainer erstellen</strong>
-              <small>Unterrichtsplan, PowerPoint oder Materialien analysieren und daraus einen Kurscontainer erzeugen</small>
+              <small>Gefuehrter Assistent: Unterrichtsplan, PowerPoint, PDF oder Materialien hochladen und daraus einen Kurscontainer erzeugen.</small>
+              <em>Assistent starten</em>
             </span>
           </button>
-          <button class="tool-tile" type="button" data-open-factory-section="duplicate">
-            <span class="tool-visual">CD</span>
+          <button class="tool-tile" type="button" data-open-factory-section="overview">
+            <span class="tool-visual">CV</span>
             <span class="tool-copy">
-              <strong>Bestehenden Container duplizieren</strong>
-              <small>Bestehende Unterrichtscontainer als Draft kopieren</small>
+              <strong>Bestehenden Container verwalten</strong>
+              <small>Vorhandene Container pruefen, veroeffentlichen, deaktivieren oder archivieren.</small>
             </span>
           </button>
           <button class="tool-tile" type="button" data-open-factory-section="references">
@@ -57,15 +64,14 @@
               <small>Eigene lizenzierte Quellen lokal indexieren, nicht exportieren</small>
             </span>
           </button>
-          <button class="tool-tile" type="button" data-open-factory-section="batches">
-            <span class="tool-visual">IB</span>
+          <button class="tool-tile" type="button" data-open-factory-section="import">
+            <span class="tool-visual">EX</span>
             <span class="tool-copy">
-              <strong>Import-Batches pruefen</strong>
-              <small>Vorhandene Staging-Imports validieren und Zuordnungen korrigieren</small>
+              <strong>Expertenbereich</strong>
+              <small>Direkter Rohdatenimport, Import-Batches und technische Zuordnung.</small>
             </span>
           </button>
         </div>
-        <label class="checkline"><input type="checkbox" data-expert-mode> Expertenmodus fuer Rohdaten / Experte aktivieren</label>
       </section>
 
       <section class="factory-panel" data-factory-panel="plan-wizard">
@@ -73,10 +79,12 @@
       </section>
 
       <section class="factory-panel" data-factory-panel="overview">
+        <div data-workflow-intro="overview"></div>
         <div class="factory-grid" data-container-list></div>
       </section>
 
       <section class="factory-panel" data-factory-panel="duplicate">
+        <div data-workflow-intro="duplicate"></div>
         <article class="tool-card">
           <h2>Container duplizieren</h2>
           <div class="factory-form-grid">
@@ -102,6 +110,7 @@
       </section>
 
       <section class="factory-panel" data-factory-panel="import">
+        <div data-workflow-intro="import"></div>
         <article class="tool-card">
           <h2>Rohdaten / Experte</h2>
           <p class="status-line status-warning">Fuer normale Kurscontainer bitte den Plan-Wizard verwenden. Dieser Bereich ist fuer direkte Dateiimporte und Mapping-Korrekturen.</p>
@@ -119,6 +128,7 @@
       </section>
 
       <section class="factory-panel" data-factory-panel="references">
+        <div data-workflow-intro="references"></div>
         <article class="tool-card">
           <h2>Referenzliteratur / Fachquellen</h2>
           <p class="status-line">Referenzliteratur wird nur lokal und intern zur Analyse und zur Erstellung eigener Inhalte verwendet. Urheberrechtlich geschuetzte Inhalte werden nicht in Kurscontainer kopiert und nicht an Teilnehmer exportiert.</p>
@@ -147,6 +157,7 @@
       </section>
 
       <section class="factory-panel" data-factory-panel="batches">
+        <div data-workflow-intro="batches"></div>
         <div class="factory-grid" data-batch-list></div>
         <article class="tool-card" data-batch-detail hidden>
           <h2 data-batch-title></h2>
@@ -168,6 +179,12 @@
   </div>
 
   <script src="factory-upload-utils.js"></script>
+  <script src="workflow-ui/workflow-ui-utils.js"></script>
+  <script src="workflow-ui/workflow-help-content.js"></script>
+  <script src="workflow-ui/workflow-registry.js"></script>
+  <script src="workflow-ui/workflow-gates.js"></script>
+  <script src="workflow-ui/workflow-status.js"></script>
+  <script src="workflow-ui/workflow-layout.js"></script>
   <script src="factory.js"></script>
 </body>
 </html>
