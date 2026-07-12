@@ -7,10 +7,10 @@ ContainerFactory und ContentFactory meinen in diesem Projekt dasselbe Lab. Die a
 Nutze im Repo-Root:
 
 ```cmd
-apps\content-factory-lab\StartContentFactoryLab.cmd
+ContentFactoryMainStart.cmd
 ```
 
-oder das bereits erzeugte Paket `dist/ContentFactory-Standalone-Lab.zip`.
+Alle alten Lab-CMD-Starter wurden entfernt. Generierte ZIP-Pakete gehoeren nicht mehr in das Repository.
 
 ## Dual-Mode-Ziel
 

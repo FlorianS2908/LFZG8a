@@ -279,10 +279,20 @@ test('post merge cleanup keeps main naming and removes obsolete tracked artifact
   trackedForbidden.forEach((filePath) => {
     assert.equal(fs.existsSync(path.join(repoRoot, filePath)), false, filePath);
   });
-  assert.equal(fs.existsSync(path.join(repoRoot, 'DemoExe.cmd')), true);
-  assert.equal(fs.existsSync(path.join(repoRoot, 'WorkflowCheck.cmd')), true);
+  assert.equal(fs.existsSync(path.join(repoRoot, 'ContentFactoryMainStart.cmd')), true);
+  ['DemoExe', 'WorkflowCheck'].forEach((starterName) => {
+    assert.equal(fs.existsSync(path.join(repoRoot, `${starterName}.cmd`)), false);
+  });
   assert.equal(fs.existsSync(path.join(repoRoot, '.env')), false);
   assert.equal(fs.existsSync(path.join(repoRoot, 'api_key_ContentFactory.txt')), false);
+});
+
+test('repository contains only ContentFactoryMainStart.cmd as active cmd file', () => {
+  const activeCmdFiles = walkFiles(repoRoot, (filePath) => /\.cmd$/i.test(filePath))
+    .map((filePath) => path.relative(repoRoot, filePath).replace(/\\/g, '/'))
+    .sort();
+
+  assert.deepEqual(activeCmdFiles, ['ContentFactoryMainStart.cmd']);
 });
 
 test('module registry exposes the transformed HTML CSS learning container', () => {
@@ -1375,13 +1385,9 @@ test('deployment packaging scripts and required documentation are present', () =
     'README.md',
     'SOFTWARE.md',
     'LFZQ8a_Workflow_Uebersicht.html',
-    'DemoExe.cmd',
-    'AlleViewsTesten.cmd',
     'ContentFactoryMainStart.cmd',
     'deployment/build-packages.ps1',
-    'deployment/common/install-check.ps1',
-    'deployment/dozent/Start-LFZQ8a-Dozent.cmd',
-    'deployment/teilnehmer/Start-LFZQ8a-Teilnehmer.cmd'
+    'deployment/common/install-check.ps1'
   ];
 
   requiredFiles.forEach((filePath) => {
@@ -1390,18 +1396,14 @@ test('deployment packaging scripts and required documentation are present', () =
 
   const buildScript = fs.readFileSync(path.join(repoRoot, 'deployment', 'build-packages.ps1'), 'utf8');
   const installScript = fs.readFileSync(path.join(repoRoot, 'deployment', 'common', 'install-check.ps1'), 'utf8');
-  const rootStarterFiles = fs.readdirSync(repoRoot).filter((fileName) => /^(?:DemoExe|AlleViewsTesten|ContentFactoryMainStart)\.cmd$/i.test(fileName)).sort();
-  const demoExeStarter = fs.readFileSync(path.join(repoRoot, 'DemoExe.cmd'), 'utf8');
-  const allViewsStarter = fs.readFileSync(path.join(repoRoot, 'AlleViewsTesten.cmd'), 'utf8');
+  const rootStarterFiles = fs.readdirSync(repoRoot).filter((fileName) => /\.cmd$/i.test(fileName)).sort();
   const contentFactoryStarter = fs.readFileSync(path.join(repoRoot, 'ContentFactoryMainStart.cmd'), 'utf8');
-  const teacherStarter = fs.readFileSync(path.join(repoRoot, 'deployment', 'dozent', 'Start-LFZQ8a-Dozent.cmd'), 'utf8');
-  const participantStarter = fs.readFileSync(path.join(repoRoot, 'deployment', 'teilnehmer', 'Start-LFZQ8a-Teilnehmer.cmd'), 'utf8');
   const gitignore = fs.readFileSync(path.join(repoRoot, '.gitignore'), 'utf8');
 
-  assert.deepEqual(rootStarterFiles, ['AlleViewsTesten.cmd', 'ContentFactoryMainStart.cmd', 'DemoExe.cmd']);
+  assert.deepEqual(rootStarterFiles, ['ContentFactoryMainStart.cmd']);
   assert.match(buildScript, /LFZQ8a-Dozent\.zip/);
   assert.match(buildScript, /LFZQ8a-Teilnehmer\.zip/);
-  assert.doesNotMatch(buildScript, /Wizard-Test|Wizard-Test\.cmd/);
+  assert.doesNotMatch(buildScript, /Wizard-Test|Wizard-Test\.cmd|Start-LFZQ8a-Dozent\.cmd|Start-LFZQ8a-Teilnehmer\.cmd/);
   assert.match(buildScript, /Copy-RootDocs/);
   assert.match(installScript, /OpenJS\.NodeJS\.LTS/);
   assert.match(installScript, /Microsoft\.VisualStudioCode/);
@@ -1410,21 +1412,10 @@ test('deployment packaging scripts and required documentation are present', () =
   assert.match(installScript, /--teacher-startview/);
   assert.match(installScript, /TestAllViews/);
   assert.match(installScript, /--test-all-views/);
-  assert.match(demoExeStarter, /desktop-app\\package\.json/);
-  assert.match(demoExeStarter, /install-check\.ps1/);
-  assert.match(demoExeStarter, /-Role Dozent -Start/);
-  assert.doesNotMatch(demoExeStarter, /-TeacherStartviewTest/);
-  assert.match(allViewsStarter, /desktop-app\\package\.json/);
-  assert.match(allViewsStarter, /install-check\.ps1/);
-  assert.match(allViewsStarter, /-Role Dozent -Start -TestAllViews/);
   assert.match(contentFactoryStarter, /desktop-app\\package\.json/);
+  assert.match(contentFactoryStarter, /ContentFactory wird gestartet/);
   assert.match(contentFactoryStarter, /branch --show-current/);
   assert.match(contentFactoryStarter, /--content-factory/);
-  assert.match(teacherStarter, /install-check\.ps1/);
-  assert.match(teacherStarter, /-Role Dozent -Start/);
-  assert.match(teacherStarter, /--check/);
-  assert.match(participantStarter, /-Role Teilnehmer -Start/);
-  assert.match(participantStarter, /--check/);
   assert.match(gitignore, /dist\//);
 
   ['README.md', 'SOFTWARE.md', 'LFZQ8a_Workflow_Uebersicht.html'].forEach((filePath) => {

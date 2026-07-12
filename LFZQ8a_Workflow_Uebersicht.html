@@ -656,9 +656,9 @@
           </article>
         </div>
         <div class="panel">
-          <h3>Root-Teststarter</h3>
-          <p>Im Root-Ordner bleibt fuer den aktuellen Neustruktur-Test nur noch ein Starter. Er wird per Doppelklick ausgefuehrt und oeffnet die reduzierte Kursuebersicht.</p>
-          <div class="command">LFZQ8a-Dozent-Startview-testen.cmd</div>
+          <h3>Root-Starter</h3>
+          <p>Im Root-Ordner bleibt nur noch ein CMD-Starter. Er wird per Doppelklick ausgefuehrt und startet die ContentFactory aus dem Main-Branch.</p>
+          <div class="command">ContentFactoryMainStart.cmd</div>
         </div>
       </section>
 
@@ -689,31 +689,30 @@
       <section id="bereitstellung">
         <div class="section-head">
           <h2>Bereitstellung</h2>
-          <p>Dozenten und Teilnehmer sollen moeglichst nur ein passendes Paket entpacken und per Doppelklick starten.</p>
+          <p>Dozenten und Teilnehmer nutzen die App-Struktur. Alte CMD-Paketstarter wurden entfernt; die ContentFactory wird zentral gestartet.</p>
         </div>
         <div class="grid">
           <article class="card accent-cyan">
             <div class="tag">Dozentenpaket</div>
             <h3>LFZQ8a-Dozent.zip</h3>
-            <p>Enthaelt Electron-App, Dozentenmaterial, Teilnehmermaterial, Loesungen, Tools, Kursserver und Starter.</p>
+            <p>Enthaelt Electron-App, Dozentenmaterial, Teilnehmermaterial, Loesungen, Tools und Kursserver.</p>
           </article>
           <article class="card accent-blue">
             <div class="tag">Teilnehmerpaket</div>
             <h3>LFZQ8a-Teilnehmer.zip</h3>
-            <p>Enthaelt Teilnehmermaterialien, Aufgaben, Tools ohne Dozentenloesungen und einen einfachen Teilnehmerstarter.</p>
+            <p>Enthaelt Teilnehmermaterialien, Aufgaben und Tools ohne Dozentenloesungen.</p>
           </article>
           <article class="card accent-green">
             <div class="tag">Automatik</div>
             <h3>Software-Pruefung</h3>
-            <p>Die Starter nutzen <code>deployment/common/install-check.ps1</code> und installieren fehlende Pflichtsoftware nach Moeglichkeit per <code>winget</code>.</p>
+            <p>Die ContentFactory nutzt <code>desktop-app</code>. Fehlendes Electron wird im zentralen Starter klar gemeldet.</p>
           </article>
         </div>
         <div class="panel">
           <h3>Feste Pfade im Repository</h3>
           <div class="command">deployment/build-packages.ps1</div>
-          <div class="command">deployment/dozent/Start-LFZQ8a-Dozent.cmd</div>
-          <div class="command">deployment/teilnehmer/Start-LFZQ8a-Teilnehmer.cmd</div>
           <div class="command">deployment/common/install-check.ps1</div>
+          <div class="command">ContentFactoryMainStart.cmd</div>
         </div>
         <div class="panel">
           <h3>Pakete bauen</h3>
@@ -944,7 +943,7 @@
         <div class="panel">
           <h3>Konkreter Testablauf</h3>
           <ol>
-            <li>Kursuebersicht per Doppelklick auf <code>LFZQ8a-Dozent-Startview-testen.cmd</code> starten.</li>
+            <li>ContentFactory per Doppelklick auf <code>ContentFactoryMainStart.cmd</code> starten.</li>
             <li>In der Dozentenview den Bereich <strong>Teilnehmer</strong> oeffnen.</li>
             <li>Dort die angezeigte Teilnehmer-Adresse ablesen, zum Beispiel <code>http://localhost:PORT/teilnehmer</code>.</li>
             <li>Diese Adresse in einem normalen Browserfenster oeffnen. Dieses Fenster simuliert den ersten Teilnehmer.</li>

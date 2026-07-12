@@ -39,15 +39,15 @@ Nach der ersten Installation muss `pnpm install` nur erneut ausgefuehrt werden, 
 pnpm start
 ```
 
-## Root-Teststarter
+## Root-Starter
 
-Im Projektordner bleibt aktuell nur die Datei `LFZQ8a-Dozent-Startview-testen.cmd`. Sie kann per Doppelklick gestartet werden.
+Im Projektordner bleibt aktuell nur die Datei `ContentFactoryMainStart.cmd`. Sie kann per Doppelklick gestartet werden.
 
 Der Starter:
 
-- oeffnet die reduzierte Kursuebersicht fuer den aktuellen Neustruktur-Test
-- nutzt die bestehende Installationspruefung
-- startet nicht mehr ueber die alten Root-Starter
+- startet die ContentFactory aus `desktop-app`
+- warnt, wenn der aktuelle Git-Branch nicht `main` ist
+- installiert keine Abhaengigkeiten automatisch und zeigt bei fehlendem Electron einen klaren Hinweis auf `npm install`
 
 ## Pruefung
 

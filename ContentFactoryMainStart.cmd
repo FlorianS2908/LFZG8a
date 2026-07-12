@@ -1,5 +1,6 @@
 @echo off
 setlocal EnableExtensions
+title ContentFactory Main Start
 
 set "ROOT_DIR=%~dp0"
 set "APP_DIR=%ROOT_DIR%desktop-app"
@@ -10,6 +11,7 @@ set "BUNDLED_NODE_DIR=%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\
 set "ELECTRON_EXE="
 
 echo [ContentFactory] Main-Branch Starter
+echo ContentFactory wird gestartet...
 echo [ContentFactory] Projektordner: %ROOT_DIR%
 
 if not exist "%PACKAGE_JSON%" (

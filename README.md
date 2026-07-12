@@ -56,10 +56,16 @@ Die Kursverwaltung trennt:
 
 CourseInstances, Mitglieder, Containerzuordnungen, ReleaseStates, SyncEvents und AuditLog werden ueber Services unter `desktop-app/app/lib/course-management/` verwaltet. In der Entwicklungsvariante wird lokal JSON gespeichert; die Schicht ist fuer zentrale API/DB vorbereitet.
 
-## Start Und Workflow-Check
+## Start der ContentFactory
 
-- `DemoExe.cmd` startet die Anwendung mit Login-Screen.
-- `WorkflowCheck.cmd` prueft den Auth-/Rollen-/Kachel-/Kurssettings-/ContentFactory-Workflow ohne Installation, ohne .exe und ohne Electron-Fenster.
+Windows:
+
+```text
+ContentFactoryMainStart.cmd
+```
+
+Hinweis:
+Alle alten Lab-, Demo- und Workflow-CMD-Starter wurden entfernt. Die ContentFactory wird zentral ueber `ContentFactoryMainStart.cmd` gestartet.
 
 Standardkonten:
 
@@ -85,14 +91,12 @@ Der aktuelle Hauptstand liegt auf `main`. Fruehere Neustruktur-/SaaS-Branches bl
 
 ## Einstieg
 
-- `LFZQ8a-Dozent-Startview-testen.cmd`: einziger Root-Starter fuer den aktuellen Neustruktur-Test; oeffnet direkt die reduzierte Kursuebersicht.
+- `ContentFactoryMainStart.cmd`: zentraler Windows-Starter fuer die ContentFactory aus dem Main-Branch.
 - `desktop-app/app/renderer/course.html`: integrierte Kursoberflaeche der Electron-App.
 - `desktop-app/app/lib/course-catalog.js`: stabile Katalog-Schnittstelle fuer die App.
 - `desktop-app/app/lib/catalog/`: getrennte Inhaltsmodule fuer Tage, Projekte, Tools/Leitfaeden und Teilnehmerinhalte.
 - `deployment/build-packages.ps1`: baut Dozenten- und Teilnehmer-ZIP-Pakete.
 - `deployment/common/install-check.ps1`: gemeinsame Software- und Abhaengigkeitspruefung.
-- `deployment/dozent/Start-LFZQ8a-Dozent.cmd`: Starter fuer das Dozentenpaket.
-- `deployment/teilnehmer/Start-LFZQ8a-Teilnehmer.cmd`: Starter fuer das Teilnehmerpaket.
 - `index.html`: statischer Einstieg fuer den Teilnehmerbereich.
 - `LFZQ8a_Workflow_Uebersicht.html`: standalone Workflow-Dokumentation ohne App-Verlinkung.
 - `SOFTWARE.md`: reine Liste der benoetigten Softwarepakete.
@@ -109,16 +113,12 @@ Die Inhalte sind intern modular getrennt: Kurstage, Projekte, Tools/Leitfaeden u
 - Arbeitsdateien: bleiben echte Ordner, damit sie direkt in Visual Studio Code geoeffnet werden koennen.
 - Loesungen: bleiben nur in der Kursuebersicht sichtbar.
 
-## Start der Kursuebersicht
+## Start der ContentFactory
 
 1. Projektordner oeffnen.
-2. `LFZQ8a-Dozent-Startview-testen.cmd` doppelklicken.
-3. Beim Erststart den Wizard abschliessen.
-4. Im Wizard die Sprache fuer die Dozenten-App und optional abweichend fuer die Teilnehmer-Ansicht waehlen.
-5. Danach oeffnet sich die integrierte Dozentenview.
-6. Wenn `Dozenteninfo auf zweitem Monitor oeffnen` aktiv ist, oeffnet sich zusaetzlich ein zweites Fenster direkt mit den Teilnehmer-Freigaben auf dem ausgewaehlten Monitor.
-7. Im Bereich `Teilnehmer` steht die Teilnehmer-Adresse.
-8. Links oben im Profil-Icon liegen danach Profil, Sprache, Monitorwahl und lokale Testberichte.
+2. `ContentFactoryMainStart.cmd` doppelklicken.
+3. Die ContentFactory startet aus `desktop-app`, sofern Electron installiert ist.
+4. Falls Electron fehlt, im Ordner `desktop-app` einmal `npm install` ausfuehren und den Starter erneut starten.
 
 Das Startskript prueft automatisch:
 
@@ -126,7 +126,7 @@ Das Startskript prueft automatisch:
 - ob Node.js verfuegbar ist,
 - ob App-Abhaengigkeiten installiert sind.
 
-Wenn Node.js fehlt und `winget` vorhanden ist, versucht das Skript Node.js LTS automatisch zu installieren. Danach werden die App-Abhaengigkeiten im Ordner `desktop-app/` ueber `pnpm install` oder alternativ `npm install` installiert.
+Das Startskript installiert keine Software automatisch, loescht keine Daten und fuehrt keinen Pull oder Merge aus.
 
 ## Mehrsprachigkeit
 
@@ -169,8 +169,6 @@ Die festen Bereitstellungspfade liegen unter `deployment/`.
 deployment/
   build-packages.ps1
   common/install-check.ps1
-  dozent/Start-LFZQ8a-Dozent.cmd
-  teilnehmer/Start-LFZQ8a-Teilnehmer.cmd
 ```
 
 ZIP-Pakete werden so gebaut:
@@ -188,12 +186,7 @@ dist/LFZQ8a-Teilnehmer.zip
 
 Das Dozentenpaket enthaelt Electron-App, Dozentenmaterial, Teilnehmermaterial, Loesungen, Tools und den lokalen Kursserver. Das Teilnehmerpaket enthaelt nur Teilnehmermaterialien, Aufgaben, Tools ohne Dozentenloesungen und den Teilnehmerstarter.
 
-Die Starter pruefen beim Start automatisch:
-
-- Visual Studio Code vorhanden? Falls nicht, Installation per `winget`.
-- Node.js LTS vorhanden? Nur im Dozentenpaket erforderlich; falls nicht, Installation per `winget`.
-- Electron/App-Abhaengigkeiten vorhanden? Nur im Dozentenpaket; falls nicht, Installation per `pnpm install` oder `npm install`.
-- Danach wird die passende App- bzw. Teilnehmeransicht gestartet.
+Die frueheren Paket-Starter wurden entfernt. Fuer lokale ContentFactory-Tests bleibt `ContentFactoryMainStart.cmd` der einzige CMD-Starter.
 
 ## Software und Voraussetzungen
 
@@ -230,7 +223,7 @@ Fuer diesen Umbau wurde keine neue Software eingefuehrt. Die integrierte Kursobe
 
 ## Dozenten-Workflow
 
-1. Dozent startet im aktuellen Root-Teststand `LFZQ8a-Dozent-Startview-testen.cmd`.
+1. Dozent startet die ContentFactory im aktuellen Main-Stand ueber `ContentFactoryMainStart.cmd`.
 2. Wizard speichert beim Erststart lokale Einstellungen.
 3. Integrierte Dozentenview oeffnet sich.
 4. Bei aktiver Zweitmonitor-Option oeffnet sich die Freigabe-View automatisch als zweites Fenster.
@@ -258,7 +251,7 @@ Fuer diesen Umbau wurde keine neue Software eingefuehrt. Die integrierte Kursobe
 
 ## Lokaler Testablauf
 
-1. Kursuebersicht per Doppelklick auf `LFZQ8a-Dozent-Startview-testen.cmd` starten.
+1. ContentFactory per Doppelklick auf `ContentFactoryMainStart.cmd` starten.
 2. In der App den Bereich `Teilnehmer` oeffnen.
 3. Teilnehmer-Adresse ablesen, zum Beispiel `http://localhost:PORT/teilnehmer`.
 4. Adresse in einem Browserfenster oeffnen.

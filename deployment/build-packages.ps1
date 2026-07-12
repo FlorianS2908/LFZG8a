@@ -121,7 +121,6 @@ function New-TeacherPackage {
   Copy-ItemSafe -Source (Join-Path $repoRoot 'dozent') -Destination (Join-Path $PackageRoot 'dozent')
   Copy-ItemSafe -Source (Join-Path $repoRoot 'teilnehmer') -Destination (Join-Path $PackageRoot 'teilnehmer')
   Copy-ItemSafe -Source (Join-Path $repoRoot 'index.html') -Destination (Join-Path $PackageRoot 'index.html')
-  Copy-ItemSafe -Source (Join-Path $repoRoot 'deployment\dozent\Start-LFZQ8a-Dozent.cmd') -Destination (Join-Path $PackageRoot 'Start-LFZQ8a-Dozent.cmd')
 }
 
 function New-ParticipantPackage {
@@ -134,7 +133,6 @@ function New-ParticipantPackage {
 
   Copy-ItemSafe -Source (Join-Path $repoRoot 'teilnehmer') -Destination (Join-Path $PackageRoot 'teilnehmer')
   Copy-ItemSafe -Source (Join-Path $repoRoot 'index.html') -Destination (Join-Path $PackageRoot 'index.html')
-  Copy-ItemSafe -Source (Join-Path $repoRoot 'deployment\teilnehmer\Start-LFZQ8a-Teilnehmer.cmd') -Destination (Join-Path $PackageRoot 'Start-LFZQ8a-Teilnehmer.cmd')
 }
 
 $repoRoot = (Resolve-Path (Join-Path (Split-Path -Parent $PSCommandPath) '..')).Path

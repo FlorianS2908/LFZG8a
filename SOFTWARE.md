@@ -2,7 +2,7 @@
 
 `ueTool_asSaaS` ist die Plattform. `HTML/CSS` ist der Kurscontainer. Die `ContentFactory` ist das Admin-Werkzeug fuer Container-Duplizierung und Container-Erstellung.
 
-`DemoExe.cmd` startet die Anwendung. `WorkflowCheck.cmd` prueft den Workflow headless ohne Installation und ohne .exe-Start.
+`ContentFactoryMainStart.cmd` startet die ContentFactory zentral aus dem Main-Branch. Alte Lab-, Demo- und Workflow-CMD-Starter wurden entfernt.
 
 Die Registrierung ist lokal abgesichert: Neue Dozenten und Teilnehmer koennen sich erst registrieren, wenn ein Admin sie ueber `Dozent anlegen` oder `Teilnehmer anlegen` vorgemerkt hat. Das `Freigabezentrum` zeigt registrierte Benutzer und Registrierungsfreigaben und kann pending-Freigaben widerrufen.
 
@@ -26,12 +26,11 @@ Die neue Container-Architektur benoetigt weiterhin keine zusaetzliche Datenbank.
 | pnpm | Schnellere und stabile Dependency-Installation | Das Startskript bevorzugt `pnpm`, faellt aber auf `npm` zurueck |
 | winget | Automatische Node.js-Installation | Nur noetig, wenn Node.js nicht vorhanden ist |
 
-## Automatische Installation durch Starter
+## Zentraler Starter
 
-| Rolle | Starter | Automatisch geprueft | Automatisch installiert, wenn moeglich |
+| Rolle | Starter | Geprueft | Hinweis |
 | --- | --- | --- | --- |
-| Dozent | `Start-LFZQ8a-Dozent.cmd` | VS Code, Node.js LTS, Electron/App-Abhaengigkeiten | VS Code per `winget`, Node.js LTS per `winget`, App-Abhaengigkeiten per `pnpm install` oder `npm install` |
-| Teilnehmer | `Start-LFZQ8a-Teilnehmer.cmd` | VS Code, lokale Teilnehmermaterialien | VS Code per `winget` |
+| ContentFactory | `ContentFactoryMainStart.cmd` | `desktop-app/package.json`, aktueller Git-Branch, lokale oder globale Electron-Installation | Installiert keine Software automatisch und gibt bei fehlendem Electron einen klaren Hinweis auf `cd desktop-app` und `npm install` |
 
 Die gemeinsame Prueflogik liegt fest unter:
 
@@ -54,13 +53,13 @@ dist/LFZQ8a-Teilnehmer.zip
 
 `dist/` ist ein lokaler Build-Ordner und wird nicht versioniert.
 
-## Root-Teststarter
+## Root-Starter
 
-Fuer den aktuellen Branch `codex/startview-neustruktur` bleibt im Root-Ordner nur ein Teststarter. Er installiert keine neue Software und oeffnet nur die reduzierte Kursuebersicht:
+Im Root-Ordner bleibt nur ein CMD-Starter:
 
 | Starter | Zweck |
 | --- | --- |
-| `LFZQ8a-Dozent-Startview-testen.cmd` | Oeffnet `dozent/index_dozent.html` direkt im Standardbrowser |
+| `ContentFactoryMainStart.cmd` | Startet die ContentFactory aus `desktop-app` |
 
 ## Wird aktuell nicht zusaetzlich benoetigt
 
