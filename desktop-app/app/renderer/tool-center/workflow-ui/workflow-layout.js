@@ -50,8 +50,8 @@
           ].filter(Boolean).join(' ');
           return `
             <button class="${classes}" type="button" data-plan-step="${escapeHtml(phaseActive ? activeStep : selectableGate.id)}" ${selectableGate.active ? '' : 'disabled'} ${phaseActive ? 'aria-current="step"' : ''} aria-label="Phase ${phaseIndex + 1}: ${escapeHtml(phase.label)}${phaseDone ? ', abgeschlossen' : phaseActive ? ', aktuell' : selectableGate.active ? '' : `, gesperrt: ${escapeHtml(missing)}`}">
-              <span>${phaseIndex + 1}. ${escapeHtml(phase.label)}</span>
-              <small>${escapeHtml(phaseDone ? '✓ abgeschlossen' : phaseActive ? '● aktuell' : selectableGate.active ? 'offen' : 'gesperrt')}</small>
+              <span class="workflow-step-label">${phaseIndex + 1}. ${escapeHtml(phase.label)}</span>
+              <span class="workflow-step-state">${escapeHtml(phaseDone ? '✓ Erledigt' : phaseActive ? '● Aktiv' : selectableGate.active ? 'Optional' : 'Gesperrt')}</span>
             </button>
           `;
         }).join('')}
