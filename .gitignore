@@ -4,6 +4,8 @@ dist/
 node_modules/
 desktop-app/node_modules/
 .env
+.env.*
+!.env.example
 .env.local
 .env.*.local
 *.key
@@ -13,7 +15,12 @@ secrets.json
 openai_key.txt
 openai-key.txt
 api_key_ContentFactory.txt
+*api_key*.txt
 *_key.txt
 *_secret.txt
+*credential*.json
+*credentials*.json
+ai-provider-config.json
+**/secure/
 Secrets/
 secrets/
