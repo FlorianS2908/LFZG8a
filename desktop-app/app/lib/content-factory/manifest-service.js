@@ -1,4 +1,4 @@
-const { validateModuleManifest } = require('../modules/module-types');
+const { validateManifest } = require('./manifest-validator');
 
 function createSlug(value) {
   return String(value || '')
@@ -38,7 +38,7 @@ function createManifest(options, now = new Date()) {
   const timestamp = now.toISOString();
   const containerType = options.containerType || 'learning-content';
   const category = normalizeCategory(options.category, containerType);
-  return validateModuleManifest({
+  return validateManifest({
     id,
     name: String(options.name || id).trim(),
     displayName: String(options.displayName || options.name || id).trim(),

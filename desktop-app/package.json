@@ -31,7 +31,6 @@
             "app/assets/icons/*",
             "app/lib/json-store.js",
             "app/lib/env/**/*",
-            "app/lib/modules/module-types.js",
             "app/lib/content-factory/**/*",
             "app/renderer/tool-center/factory.html",
             "app/renderer/tool-center/factory.js",
@@ -42,6 +41,13 @@
             "app/renderer/content-factory/**/*",
             "app/renderer/tool-center/assets/ploglan-logo.png",
             "package.json"
+        ],
+        "extraResources": [
+            {
+                "from": "../packages/content-factory-core",
+                "to": "packages/content-factory-core",
+                "filter": ["src/**/*", "README.md", "package.json", "tsconfig.json"]
+            }
         ],
         "win": {
             "icon": "app/assets/icons/app-icon.ico",

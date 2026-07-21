@@ -15,9 +15,8 @@ function createAiKeyStoreService({ appData, configPath } = {}) {
   }
 
   function assertAdmin(session) {
-    const roles = session?.user?.roles || [];
-    if (!session?.authenticated || (!roles.includes('Admin') && !roles.includes('SuperAdmin'))) {
-      throw new Error('Keine Adminrechte fuer KI-Einstellungen.');
+    if (!session?.authenticated || !session?.user) {
+      throw new Error('Keine lokale Berechtigung für KI-Einstellungen.');
     }
   }
 
