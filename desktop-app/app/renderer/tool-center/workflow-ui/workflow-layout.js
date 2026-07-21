@@ -60,6 +60,8 @@
   }
 
   function renderWorkflowHelp(step = {}) {
+    const hasHelp = Boolean(step.goal || step.why || step.result || asList(step.help).length || asList(step.requiredInputs).length || asList(step.optionalInputs).length || asList(step.typicalMistakes).length);
+    if (!hasHelp) return '';
     return `
       <aside class="workflow-help">
         <h3>Hilfe</h3>

@@ -180,6 +180,7 @@ function setFactoryStatus(message, cssClass = '') {
   if (!target) return;
   target.textContent = message || '';
   target.className = `status-line ${cssClass}`.trim();
+  target.hidden = !String(message || '').trim();
 }
 
 function getFactoryTabGates() {
@@ -310,6 +311,22 @@ function getNextRecommendedAction(currentState = state) {
 function renderNextRecommendedAction() {
   const target = $('[data-next-action]');
   if (!target) return;
+  const wizard = state.wizard;
+  const hasProgress = Boolean(
+    state.containers.length
+    || state.importBatches.length
+    || wizard.course.courseName
+    || wizard.course.courseId
+    || wizard.anchorFiles.length
+    || wizard.curriculumDraft
+    || wizard.dayDraft
+    || wizard.dayResults.length
+  );
+  target.hidden = !hasProgress;
+  if (!hasProgress) {
+    target.replaceChildren();
+    return;
+  }
   const action = getNextRecommendedAction();
   target.innerHTML = `
     <strong>Empfohlene nächste Aktion: ${escapeHtml(action.label)}</strong>
@@ -368,9 +385,11 @@ function renderContainers() {
   }).join('') : '<article class="empty-state"><strong>Noch keine Kurscontainer vorhanden.</strong><span>Erstelle deinen ersten Kurscontainer im geführten Ablauf.</span><button class="primary-button" type="button" data-empty-create>Neuen Kurs erstellen</button></article>';
 
   const recent = $('[data-recent-containers]');
+  const recentSection = $('[data-recent-section]');
+  if (recentSection) recentSection.hidden = !state.containers.length;
   if (recent) recent.innerHTML = state.containers.length
     ? state.containers.slice(0, 3).map((container) => `<article class="factory-card"><strong>${escapeHtml(container.manifest.name)}</strong><p>Status: ${escapeHtml(container.manifest.status)}</p><button class="secondary-button" type="button" data-open-factory-section="overview">Container öffnen</button></article>`).join('')
-    : '<article class="empty-state"><strong>Noch keine Kurscontainer vorhanden.</strong><span>Erstelle deinen ersten Kurscontainer.</span></article>';
+    : '';
 
   $('[data-duplicate-source]').innerHTML = state.containers.map((container) => (
     `<option value="${escapeHtml(container.manifest.id)}">${escapeHtml(container.manifest.name)} (${escapeHtml(container.manifest.id)})</option>`
@@ -927,7 +946,7 @@ function renderPromptQualityGate(wizard) {
   const golden = state.goldenPromptResult;
   return `
     <article class="tool-card">
-      <h3>Prompt-Praezision</h3>
+      <h3>Prompt-Präzision</h3>
       <div class="summary-grid">
         <span>Zweck: ${escapeHtml(quality?.purpose || 'generateDayDraft')}</span>
         <span>Prompt: ${escapeHtml(quality?.promptId || '-')}</span>

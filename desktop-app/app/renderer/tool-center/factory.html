@@ -9,23 +9,16 @@
 </head>
 <body>
   <a class="skip-link" href="#main-content">Zum Hauptinhalt springen</a>
-  <div class="tool-center-shell factory-shell">
-    <header class="workspace-header">
-      <div class="workspace-title">
-        <img class="workspace-company-logo" src="assets/ploglan-logo.png" alt="Ploglan">
-        <div>
-          <h1>ueTool ContentFactory</h1>
-          <p class="header-subtitle">Unterrichtsmaterialien analysieren und Kurscontainer erstellen</p>
-        </div>
-      </div>
-      <div class="workspace-actions">
-        <span class="project-context" data-project-context>Kein Kursprojekt geöffnet</span>
-        <button class="tertiary-button" type="button" data-refresh aria-label="Ansicht aktualisieren">Aktualisieren</button>
-      </div>
-    </header>
-
+  <div class="factory-shell">
     <div class="factory-app-layout">
       <nav class="factory-sidebar" aria-label="Hauptnavigation">
+      <div class="factory-brand">
+        <img class="factory-brand-logo" src="assets/ploglan-logo.png" alt="Ploglan">
+        <span class="factory-brand-text">
+          <strong>ContentFactory</strong>
+          <small>Kurscontainer erstellen und verwalten</small>
+        </span>
+      </div>
         <p class="navigation-label">Arbeitsbereiche</p>
         <button class="app-nav-item is-active" type="button" data-factory-tab="home" aria-current="page"><span aria-hidden="true">⌂</span> Start</button>
         <button class="app-nav-item" type="button" data-factory-tab="plan-wizard"><span aria-hidden="true">＋</span> Kurs erstellen</button>
@@ -42,8 +35,13 @@
         </details>
       </nav>
 
-      <main class="factory-layout" id="main-content" tabindex="-1">
-      <p class="status-line sr-status" data-factory-status role="status" aria-live="polite"></p>
+      <div class="factory-main-column">
+        <header class="factory-context-bar">
+          <span class="project-context" data-project-context>Kein Kursprojekt geöffnet</span>
+          <button class="tertiary-button" type="button" data-refresh aria-label="Ansicht aktualisieren">Aktualisieren</button>
+        </header>
+        <main class="factory-layout" id="main-content" tabindex="-1">
+      <p class="status-line sr-status" data-factory-status role="status" aria-live="polite" hidden></p>
 
       <section class="factory-panel is-active" data-factory-panel="home">
         <div class="page-heading"><p class="eyebrow">Start</p><h2>Willkommen in der ContentFactory</h2><p>Erstelle aus einem Unterrichtsplan und deinen Materialien einen geprüften Kurscontainer.</p></div>
@@ -51,8 +49,8 @@
           <div><h3 id="dashboard-start-title">Neuen Kurs erstellen</h3><p>Der geführte Ablauf begleitet dich von den Grundlagen bis zum sicheren Export.</p></div>
           <button class="primary-button" type="button" data-open-factory-section="plan-wizard">Neuen Kurs erstellen</button>
         </section>
-        <article class="workflow-next-action" data-next-action aria-label="Empfohlene nächste Aktion"></article>
-        <section class="dashboard-section" aria-labelledby="recent-title"><h3 id="recent-title">Zuletzt bearbeitet</h3><div class="factory-grid" data-recent-containers><p>Noch keine Kurscontainer vorhanden. Erstelle deinen ersten Kurscontainer.</p></div></section>
+        <article class="workflow-next-action" data-next-action aria-label="Empfohlene nächste Aktion" hidden></article>
+        <section class="dashboard-section" data-recent-section aria-labelledby="recent-title" hidden><h3 id="recent-title">Zuletzt bearbeitet</h3><div class="factory-grid" data-recent-containers></div></section>
       </section>
 
       <section class="factory-panel" data-factory-panel="plan-wizard">
@@ -165,7 +163,8 @@
           <div class="validation-box" data-batch-validation></div>
         </article>
       </section>
-      </main>
+        </main>
+      </div>
     </div>
     <footer class="factory-action-bar"><span data-global-workflow-status>Bereit</span><span>Änderungen im aktuellen Ablauf bleiben beim Navigieren erhalten.</span></footer>
   </div>
