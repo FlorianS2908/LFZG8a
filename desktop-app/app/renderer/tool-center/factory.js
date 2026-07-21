@@ -992,8 +992,9 @@ function renderAiSettings(wizard) {
         <span>OpenAI konfiguriert: ${openai.configured ? 'ja' : 'nein'}</span>
         <span>Modell: ${escapeHtml(openai.model || '-')}</span>
         <span>Key-Quelle: ${escapeHtml(openai.keySource || 'missing')}</span>
-        <span>Standardpfad: ${escapeHtml(openai.defaultPathStatus || adminStore.defaultPathStatus || 'unbekannt')}</span>
         <span>Verbindungstest: ${escapeHtml(openai.connectionTestStatus || adminStore.connectionTestStatus || 'unknown')}</span>
+        <span>Windows-Verschlüsselung: ${adminStore.encryptionAvailable ? 'verfügbar' : 'nicht verfügbar'}</span>
+        <span>Zuletzt erfolgreich getestet: ${escapeHtml(adminStore.lastSuccessfulTestAt || '-')}</span>
         <span>Timeout: ${escapeHtml(state.aiStatus?.timeoutMs || 30000)} ms</span>
         <span>Local/Fallback aktiv: ja</span>
         <span>Kostenwarnung: ${state.aiStatus?.costWarningUsd ? 'ja' : 'nein'}</span>
@@ -1004,10 +1005,10 @@ function renderAiSettings(wizard) {
       <div class="button-row">
         <button class="secondary-button" type="button" data-ai-status-check>KI-Status prüfen</button>
         <button class="secondary-button" type="button" data-ai-model-save>Modell speichern</button>
-        <button class="secondary-button" type="button" data-ai-import-default>Standardpfad verwenden</button>
-        <button class="secondary-button" type="button" data-ai-import-select>TXT-Datei auswählen</button>
-        <button class="secondary-button" type="button" data-ai-test-request>OpenAI-Testanfrage senden</button>
-        <button class="secondary-button" type="button" data-ai-clear-key>OpenAI-Key entfernen</button>
+        <button class="secondary-button" type="button" data-ai-import-select>API-Schlüssel aus Datei importieren</button>
+        <button class="secondary-button" type="button" data-ai-replace-key>API-Schlüssel eingeben/ersetzen</button>
+        <button class="secondary-button" type="button" data-ai-test-request>Verbindung testen</button>
+        <button class="secondary-button" type="button" data-ai-clear-key>Gespeicherten Schlüssel entfernen</button>
         <button class="secondary-button" type="button" data-ai-setup-guide>Setup-Anleitung öffnen</button>
       </div>
     </article>
@@ -1396,8 +1397,8 @@ function bindPlanWizardEvents() {
     renderPlanWizard();
   });
   $('[data-ai-model-save]')?.addEventListener('click', updateAiModel);
-  $('[data-ai-import-default]')?.addEventListener('click', importAiKeyFromDefaultPath);
   $('[data-ai-import-select]')?.addEventListener('click', importAiKeyFromSelectedTxt);
+  $('[data-ai-replace-key]')?.addEventListener('click', replaceAiKey);
   $('[data-ai-test-request]')?.addEventListener('click', testAiConnection);
   $('[data-ai-clear-key]')?.addEventListener('click', clearAiKey);
   $('[data-ai-setup-guide]')?.addEventListener('click', () => desktop.factory.openOpenAiSetupGuide());
@@ -1990,18 +1991,6 @@ async function updateAiModel() {
   }
 }
 
-async function importAiKeyFromDefaultPath() {
-  state.wizard.status = 'OpenAI-Key wird vom Standardpfad uebernommen ...';
-  renderPlanWizard();
-  try {
-    state.aiImportResult = await desktop.factory.importOpenAiKeyFromDefaultPath();
-    await refreshAiStatus();
-  } catch (error) {
-    state.aiImportResult = { success: false, message: error.message };
-    renderPlanWizard();
-  }
-}
-
 async function importAiKeyFromSelectedTxt() {
   state.wizard.status = 'TXT-Datei wird ausgewählt ...';
   renderPlanWizard();
@@ -2013,6 +2002,47 @@ async function importAiKeyFromSelectedTxt() {
     state.aiImportResult = { success: false, message: error.message };
     renderPlanWizard();
   }
+}
+
+async function replaceAiKey() {
+  const value = await requestSecretInput();
+  if (!value) return;
+  try {
+    state.aiImportResult = await desktop.factory.replaceOpenAiKey(value);
+    await refreshAiStatus();
+  } catch {
+    state.aiImportResult = { success: false, message: 'Der Schlüssel konnte nicht sicher gespeichert werden.' };
+    renderPlanWizard();
+  }
+}
+
+function requestSecretInput() {
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog');
+    const form = document.createElement('form');
+    form.method = 'dialog';
+    const title = document.createElement('h3');
+    title.textContent = 'OpenAI-API-Schlüssel eingeben/ersetzen';
+    const input = document.createElement('input');
+    input.type = 'password';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.setAttribute('aria-label', 'OpenAI-API-Schlüssel');
+    const buttons = document.createElement('div');
+    buttons.className = 'button-row';
+    buttons.innerHTML = '<button type="submit" value="cancel" class="secondary-button">Abbrechen</button><button type="submit" value="save" class="primary-button">Sicher speichern</button>';
+    form.append(title, input, buttons);
+    dialog.append(form);
+    document.body.append(dialog);
+    dialog.addEventListener('close', () => {
+      const value = dialog.returnValue === 'save' ? input.value : '';
+      input.value = '';
+      dialog.remove();
+      resolve(value);
+    }, { once: true });
+    dialog.showModal();
+    input.focus();
+  });
 }
 
 async function clearAiKey() {
