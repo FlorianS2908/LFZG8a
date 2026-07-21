@@ -520,9 +520,7 @@ function renderPlanWizard() {
   root.innerHTML = `
     ${workflowLayout.renderWorkflowHeader ? workflowLayout.renderWorkflowHeader(workflow, headerStatus) : ''}
     ${workflowLayout.renderWorkflowStepper ? workflowLayout.renderWorkflowStepper(workflow, wizard.activeStep, gates) : ''}
-    <article class="tool-card">
-      ${wizard.status ? `<p class="status-line">${escapeHtml(wizard.status)}</p>` : ''}
-    </article>
+    ${wizard.status ? `<div class="workflow-transient-status"><p class="status-line" role="status" aria-live="polite">${escapeHtml(wizard.status)}</p></div>` : ''}
     ${workflowLayout.renderWorkflowStepShell
       ? workflowLayout.renderWorkflowStepShell({
         workflow,
@@ -642,19 +640,18 @@ function renderAnchorStep(wizard) {
       <legend>Art der Hauptquelle</legend>
       <div class="wizard-source-options">
         ${options.map(([value, label, formats]) => `
-          <label class="source-option ${wizard.anchorType === value ? 'is-active' : ''}">
+          <label class="source-option choice-card ${wizard.anchorType === value ? 'is-active' : ''}" data-selected="${wizard.anchorType === value ? 'true' : 'false'}">
             <input type="radio" name="wizard-anchor-type" data-wizard-anchor-type-radio value="${value}" ${wizard.anchorType === value ? 'checked' : ''}>
-            <strong>${escapeHtml(label)}</strong>
-            <small>${escapeHtml(formats)}</small>
+            <span class="choice-card-copy"><strong>${escapeHtml(label)}</strong><small>Unterstützte Dateien</small><span class="file-format-list">${escapeHtml(formats)}</span></span>
           </label>
         `).join('')}
       </div>
       </fieldset>
-      <label>Quellentyp<select data-wizard-anchor-type>
+      <div class="form-group"><label for="wizard-anchor-type-select">Quellentyp</label><select id="wizard-anchor-type-select" data-wizard-anchor-type>
         ${options.map(([value, label]) => `<option value="${value}" ${wizard.anchorType === value ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('')}
-      </select></label>
+      </select></div>
       ${createDropZoneHtml({ id: 'anchor', title: 'Thematische Hauptquelle', description: wizard.anchorType === 'course-plan' ? 'Unterrichtsplan, Excel-Dateien oder ZIP hier ablegen.' : wizard.anchorType === 'book-or-presentation' ? 'PDF, EPUB, PowerPoint oder ZIP als Hauptquelle.' : 'Word, Markdown, HTML, TXT oder ZIP als Hauptquelle.', accept: anchorAccept, files: wizard.anchorFiles.map((file) => ({ ...file, uploadArea: 'anchor' })), multiple: true, kind: 'anchor' })}
-      <small>${wizard.anchorFiles.length} Hauptquell-Datei(en) ausgewählt. Unterrichtsplan, PowerPoint, PDF, EPUB, Word, Markdown, HTML, TXT und ZIP werden unterstützt.</small>
+      <p class="upload-summary"><span class="status-badge">${wizard.anchorFiles.length}</span> Hauptquell-Datei(en) ausgewählt. Unterrichtsplan, PowerPoint, PDF, EPUB, Word, Markdown, HTML, TXT und ZIP werden unterstützt.</p>
       ${wizard.anchorType === 'book-or-presentation' ? `<label>Seiten-/Folienbereiche optional<textarea data-wizard-ranges placeholder="20-45; 80-120">${escapeHtml(wizard.rangesText)}</textarea></label>` : ''}
     </article>
   `;

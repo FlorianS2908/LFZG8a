@@ -88,7 +88,7 @@ test('Designsystem enthält Fokus, responsive Desktopansicht und reduzierte Bewe
   assert.match(css, /:focus-visible/);
   assert.match(css, /@media \(max-width: 1100px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
-  assert.match(css, /min-height: 2\.75rem/);
+  assert.match(css, /--cf-control-height: 2\.875rem/);
   assert.match(css, /workflow-step-state/);
   assert.match(css, /workflow-step-locked \{ opacity: 1/);
   assert.match(css, /grid-template-columns: 1\.25rem minmax\(0, 1fr\)/);
@@ -114,6 +114,30 @@ test('Leere Startseiten- und Statusbereiche belegen keinen Layoutplatz', () => {
   assert.match(factory, /target\.hidden = !String\(message \|\| ''\)\.trim\(\)/);
   assert.match(factory, /target\.replaceChildren\(\)/);
   assert.match(factory, /recentSection\.hidden = !state\.containers\.length/);
+});
+
+test('Wizard rendert keinen leeren Statusrahmen und optionale Komponenten verschwinden vollständig', () => {
+  const factory = read(path.join('renderer', 'tool-center', 'factory.js'));
+  const css = read(path.join('renderer', 'tool-center', 'content-factory.css'));
+  assert.doesNotMatch(factory, /<article class="tool-card">\s*\$\{wizard\.status/);
+  assert.match(factory, /wizard\.status \? `<div class="workflow-transient-status">/);
+  assert.match(css, /\.workflow-transient-status:empty/);
+  assert.match(css, /\.status-line:empty/);
+  assert.match(css, /\.factory-layout \{ display: block;/);
+});
+
+test('Hauptquelle nutzt zugängliche Auswahlkarten und responsive Hilfe', () => {
+  const factory = read(path.join('renderer', 'tool-center', 'factory.js'));
+  const css = read(path.join('renderer', 'tool-center', 'content-factory.css'));
+  assert.match(factory, /class="source-option choice-card/);
+  assert.match(factory, /type="radio" name="wizard-anchor-type"/);
+  assert.match(factory, /data-selected="\$\{wizard\.anchorType === value \? 'true' : 'false'\}"/);
+  assert.match(factory, /<label for="wizard-anchor-type-select">Quellentyp<\/label>/);
+  assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(css, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.wizard-source-options \{ grid-template-columns: 1fr; \}/);
+  assert.match(css, /\.workflow-help \{ position: static; max-width: none; \}/);
+  assert.match(css, /overflow-wrap: anywhere/);
 });
 
 test('Altplattform ist entfernt und ContentFactory-Core bleibt eingebunden', () => {
