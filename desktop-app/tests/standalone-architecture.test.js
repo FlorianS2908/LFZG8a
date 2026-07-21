@@ -47,7 +47,38 @@ test('Kurserstellung zeigt sechs verständliche Phasen mit Textstatus', () => {
     assert.match(layout, new RegExp(phase));
   }
   assert.match(layout, /aria-current="step"/);
-  assert.match(layout, /✓ abgeschlossen/);
+  assert.match(layout, /✓ Erledigt/);
+  for (const state of ['Aktiv', 'Optional', 'Erledigt', 'Gesperrt']) assert.match(layout, new RegExp(state));
+});
+
+test('Wizard trennt interne Werte von deutschen Beschriftungen', () => {
+  const factory = read(path.join('renderer', 'tool-center', 'factory.js'));
+  const utils = read(path.join('renderer', 'tool-center', 'workflow-ui', 'workflow-ui-utils.js'));
+  const labels = {
+    studentWorkspace: 'Arbeitsbereich für Teilnehmende erstellen',
+    teacherSolutions: 'Lösungen für Dozenten bereitstellen',
+    generateStarterFiles: 'Startdateien erstellen',
+    generateSolutionFiles: 'Lösungsdateien erstellen',
+    generateReadme: 'Projektbeschreibung erstellen',
+    generateSetupGuide: 'Einrichtungsanleitung erstellen'
+  };
+  for (const [key, label] of Object.entries(labels)) {
+    assert.match(factory, new RegExp(`${key}: '${label}'`));
+  }
+  assert.doesNotMatch(factory, /escapeHtml\(key\)<\/label>/);
+  assert.match(utils, /none: 'Keine'/);
+  assert.match(utils, /'web-only': 'Nur Webinhalte'/);
+  assert.match(factory, /data-container-profile-check="\$\{key\}"/);
+  assert.match(factory, /escapeHtml\(visibleLabel\(value\)\)/);
+});
+
+test('Checkboxen bleiben an unveränderte Zustandsfelder gebunden', () => {
+  const factory = read(path.join('renderer', 'tool-center', 'factory.js'));
+  for (const key of ['needsStepByStep', 'projectOrientation', 'examOrientation']) {
+    assert.match(factory, new RegExp(`data-wizard-audience-check="${key}"`));
+  }
+  assert.match(factory, /wizard\.targetAudience\[field\.dataset\.wizardAudienceCheck\] = field\.checked/);
+  assert.match(factory, /wizard\.containerProfile\[field\.dataset\.containerProfileCheck\] = field\.checked/);
 });
 
 test('Designsystem enthält Fokus, responsive Desktopansicht und reduzierte Bewegung', () => {
@@ -56,4 +87,7 @@ test('Designsystem enthält Fokus, responsive Desktopansicht und reduzierte Bewe
   assert.match(css, /@media \(max-width: 1100px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /min-height: 2\.75rem/);
+  assert.match(css, /workflow-step-state/);
+  assert.match(css, /workflow-step-locked \{ opacity: 1/);
+  assert.match(css, /grid-template-columns: 1\.25rem minmax\(0, 1fr\)/);
 });
