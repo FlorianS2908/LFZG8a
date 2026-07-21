@@ -1,7 +1,0 @@
-/* Aufgabe: Gestalte diese Profilkarte mit modernem CSS.
-   Nutze :root, Custom Properties, box-sizing, Card, Button und Hover. */
-:root {
-  --color-primary: #005b96;
-}
-* { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, sans-serif; }

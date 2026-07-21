@@ -1,7 +1,0 @@
-p {
-    color: green !important; /* Diese Regel hat Vorrang */
-}
-
-p {
-    color: blue;
-}

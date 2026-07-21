@@ -1,8 +1,0 @@
-/* Wähle das erste <p> innerhalb eines <div> */
-div > p { /* ... */ }
-
-/* Wähle ein <p>, das direkt einem <div> folgt */
-div + p { /* ... */ }
-
-/* Wähle alle <p>-Elemente, die einem <div> folgen */
-div ~ p { /* ... */ }
