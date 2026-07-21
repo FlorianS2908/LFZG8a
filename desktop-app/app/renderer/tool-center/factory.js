@@ -2,6 +2,7 @@ const desktop = window.lfzq8aDesktop;
 const appNavigation = window.ContentFactoryAppNavigation;
 const uploadUtils = window.ContentFactoryUploadUtils || {};
 const workflowLayout = window.ContentFactoryWorkflowLayout || {};
+const difficultyLevels = window.ContentFactoryDifficultyLevels || { levels: [{ value: 'easy', label: 'Einfach' }, { value: 'medium', label: 'Mittel' }, { value: 'hard', label: 'Schwer' }], normalizeDifficulty: () => 'medium', difficultyLabel: () => 'Mittel' };
 const workflowRegistry = window.ContentFactoryWorkflowRegistry || {};
 const workflowStatus = window.ContentFactoryWorkflowStatus || {};
 const visibleLabel = window.ContentFactoryWorkflowUtils?.visibleLabel || ((value) => String(value ?? ''));
@@ -37,8 +38,8 @@ const state = {
     anchorType: 'course-plan',
     anchorFiles: [],
     rangesText: '',
-    duration: { durationMode: 'days', numberOfDays: 5, hoursPerDay: 8, uePerDay: 9, ueMinutes: 45, totalHours: 40, totalUE: 45, pauseModel: 'default' },
-    targetAudience: { ageRange: 'mixed', educationContext: 'umschulung', department: 'ALLGEMEIN', priorKnowledge: 'basic', learningLevel: 'basic', languageLevel: 'normal', practiceLevel: 'medium', difficultyMode: 'normal', needsStepByStep: true, examOrientation: false, projectOrientation: true },
+    duration: { numberOfDays: 5, hoursPerDay: 8, uePerDay: 9, ueMinutes: 45, totalHours: 40, totalUE: 45, pauseModel: 'default' },
+    targetAudience: { ageRange: 'mixed', educationContext: 'umschulung', department: 'ALLGEMEIN', priorKnowledge: 'basic', learningLevel: 'basic', languageLevel: 'normal', practiceLevel: 'medium', difficultyMode: 'medium', needsStepByStep: true, examOrientation: false, projectOrientation: true },
     containerProfile: { courseType: 'theory', artifactMode: 'web-only', studentWorkspace: true, teacherSolutions: true, generateStarterFiles: true, generateSolutionFiles: true, generateReadme: true, generateSetupGuide: true, generateRunScripts: false, allowExecutableTools: false, allowDatabaseActions: false },
     courseGoal: '',
     expectedOutcome: 'grundlagenkurs',
@@ -658,22 +659,25 @@ function renderAnchorStep(wizard) {
 }
 
 function renderDurationAudienceStep(wizard) {
+  normalizeDurationAndAudience(wizard);
   return `
     <article class="tool-card" data-plan-step-content="durationAudience">
       <h3>Dauer & Zielgruppe</h3>
-      <div class="factory-form-grid">
-        <label>Dauermodus<select data-wizard-duration="durationMode"><option value="days" ${wizard.duration.durationMode === 'days' ? 'selected' : ''}>Tage</option><option value="hours" ${wizard.duration.durationMode === 'hours' ? 'selected' : ''}>Stunden</option><option value="ue" ${wizard.duration.durationMode === 'ue' ? 'selected' : ''}>UE</option></select></label>
-        <label>Tage<input data-wizard-duration="numberOfDays" type="number" min="1" value="${escapeHtml(wizard.duration.numberOfDays)}"></label>
-        <label>Stunden/Tag<input data-wizard-duration="hoursPerDay" type="number" min="1" value="${escapeHtml(wizard.duration.hoursPerDay)}"></label>
-        <label>UE/Tag<input data-wizard-duration="uePerDay" type="number" min="1" value="${escapeHtml(wizard.duration.uePerDay)}"></label>
-        <label>Gesamtstunden<input data-wizard-duration="totalHours" type="number" min="1" value="${escapeHtml(wizard.duration.totalHours)}"></label>
-        <label>Gesamt-UE<input data-wizard-duration="totalUE" type="number" min="1" value="${escapeHtml(wizard.duration.totalUE)}"></label>
+      <div class="duration-audience-layout">
+        <section class="form-section" aria-labelledby="duration-heading"><h4 id="duration-heading">Dauer</h4><div class="factory-form-grid compact-form-grid">
+        <label>Tage<input data-wizard-duration="numberOfDays" type="number" min="1" step="1" value="${escapeHtml(wizard.duration.numberOfDays)}" required></label>
+        <label>Stunden/Tag<input data-wizard-duration="hoursPerDay" type="number" min="0.5" max="24" step="0.5" value="${escapeHtml(wizard.duration.hoursPerDay)}" required></label>
+        <label>UE/Tag<input data-wizard-duration="uePerDay" type="number" min="1" step="1" value="${escapeHtml(wizard.duration.uePerDay)}" required></label>
+        <label>Gesamt-UE<input data-duration-total-ue type="number" value="${escapeHtml(wizard.duration.totalUE)}" readonly><small>Automatisch: Tage × UE/Tag</small></label>
+        </div></section>
+        <section class="form-section" aria-labelledby="audience-heading"><h4 id="audience-heading">Zielgruppe</h4><div class="factory-form-grid compact-form-grid">
         <label>Zielgruppenalter<select data-wizard-audience="ageRange">${['mixed', '16-20', '20-30', '30+', 'unknown'].map((value) => `<option value="${value}" ${wizard.targetAudience.ageRange === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
         <label>Vorkenntnisse<select data-wizard-audience="priorKnowledge">${['none', 'basic', 'intermediate', 'advanced'].map((value) => `<option value="${value}" ${wizard.targetAudience.priorKnowledge === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
         <label>Niveau<select data-wizard-audience="learningLevel">${['intro', 'basic', 'exam-prep', 'professional', 'advanced'].map((value) => `<option value="${value}" ${wizard.targetAudience.learningLevel === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
-        <label>Schwierigkeit<select data-wizard-audience="difficultyMode">${['normal', 'normal-and-hard', 'easy-normal-hard'].map((value) => `<option value="${value}" ${wizard.targetAudience.difficultyMode === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+        <label>Schwierigkeit<select data-wizard-audience="difficultyMode">${difficultyLevels.levels.map(({ value, label }) => `<option value="${value}" ${wizard.targetAudience.difficultyMode === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
         <label>Endprodukt<select data-wizard-outcome>${['webseite', 'datenbankmodell', 'java-programm', 'python-programm', 'projektmappe', 'prüfungsvorbereitung', 'grundlagenkurs', 'custom'].map((value) => `<option value="${value}" ${wizard.expectedOutcome === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
         <label>Didaktik<select data-wizard-style>${['guided', 'project-based', 'exam-oriented', 'workshop', 'self-study', 'mixed'].map((value) => `<option value="${value}" ${wizard.didacticStyle === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
+        </div></section>
       </div>
       <label>Kursziel<textarea data-wizard-goal>${escapeHtml(wizard.courseGoal)}</textarea></label>
       <label class="checkline"><input data-wizard-audience-check="needsStepByStep" type="checkbox" ${wizard.targetAudience.needsStepByStep ? 'checked' : ''}> <span>Inhalte Schritt für Schritt erklären</span></label>
@@ -681,6 +685,16 @@ function renderDurationAudienceStep(wizard) {
       <label class="checkline"><input data-wizard-audience-check="examOrientation" type="checkbox" ${wizard.targetAudience.examOrientation ? 'checked' : ''}> <span>Auf die Prüfung vorbereiten</span></label>
     </article>
   `;
+}
+
+function normalizeDurationAndAudience(wizard) {
+  const days = Math.max(1, Math.round(Number(wizard.duration.numberOfDays || 1)));
+  const hoursPerDay = Math.max(0.5, Number(wizard.duration.hoursPerDay || 8));
+  const uePerDay = Math.max(1, Math.round(Number(wizard.duration.uePerDay || 9)));
+  wizard.duration = { ...wizard.duration, numberOfDays: days, hoursPerDay, uePerDay, totalHours: days * hoursPerDay, totalUE: days * uePerDay };
+  delete wizard.duration.durationMode;
+  wizard.targetAudience.difficultyMode = difficultyLevels.normalizeDifficulty(wizard.targetAudience.difficultyMode);
+  return wizard;
 }
 
 function renderAnalysisStep(wizard) {
@@ -1066,7 +1080,7 @@ function renderCurriculumReview(draft) {
                 <label>Titel<input data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="title" value="${escapeHtml(topic.title)}"></label>
                 <label>Summary<textarea data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="summary">${escapeHtml(topic.summary)}</textarea></label>
                 <label>UE<input data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="estimatedUE" type="number" min="0" value="${escapeHtml(topic.estimatedUE)}"></label>
-                <label>Difficulty<select data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="difficulty">${['easy', 'normal', 'hard'].map((value) => `<option value="${value}" ${topic.difficulty === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+                <label>Schwierigkeit<select data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="difficulty">${difficultyLevels.levels.map(({ value, label }) => `<option value="${value}" ${difficultyLevels.normalizeDifficulty(topic.difficulty) === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
                 <label class="checkline"><input data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="active" type="checkbox" ${topic.active !== false ? 'checked' : ''}> aktiv</label>
                 <small>${escapeHtml(topic.depth)} | ${escapeHtml(topic.practiceType)}</small>
                 <div class="button-row">
@@ -1138,7 +1152,7 @@ function getPlanWizardStepGates() {
   const wizard = state.wizard;
   const courseDone = Boolean(wizard.course.courseName && wizard.course.courseId && wizard.course.department);
   const anchorDone = Boolean(wizard.anchorFiles.length);
-  const durationDone = Boolean(wizard.targetAudience.priorKnowledge && wizard.targetAudience.learningLevel && wizard.targetAudience.difficultyMode && (wizard.duration.numberOfDays || wizard.duration.totalHours || wizard.duration.totalUE));
+  const durationDone = Boolean(wizard.targetAudience.priorKnowledge && wizard.targetAudience.learningLevel && wizard.targetAudience.difficultyMode && Number(wizard.duration.numberOfDays) > 0 && Number(wizard.duration.hoursPerDay) > 0 && Number(wizard.duration.uePerDay) > 0);
   const didacticDone = Boolean(getSelectedDidacticProfile()?.id || wizard.didacticProfile?.id);
   const containerProfileDone = Boolean(wizard.containerProfile?.courseType && wizard.containerProfile?.artifactMode);
   const curriculumDone = Boolean(wizard.curriculumDraft?.days?.length);
@@ -1245,9 +1259,12 @@ function bindPlanWizardEvents() {
   });
   $all('[data-wizard-duration]').forEach((field) => field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', () => {
     state.wizard.duration[field.dataset.wizardDuration] = field.type === 'number' ? Number(field.value) : field.value;
+    normalizeDurationAndAudience(state.wizard);
+    const total = $('[data-duration-total-ue]');
+    if (total) total.value = state.wizard.duration.totalUE;
   }));
   $all('[data-wizard-audience]').forEach((field) => field.addEventListener('change', () => {
-    state.wizard.targetAudience[field.dataset.wizardAudience] = field.value;
+    state.wizard.targetAudience[field.dataset.wizardAudience] = field.dataset.wizardAudience === 'difficultyMode' ? difficultyLevels.normalizeDifficulty(field.value) : field.value;
   }));
   $all('[data-wizard-audience-check]').forEach((field) => field.addEventListener('change', () => {
     state.wizard.targetAudience[field.dataset.wizardAudienceCheck] = field.checked;
@@ -1765,7 +1782,7 @@ function createUiTopic(dayNumber) {
     summary: 'Eigene Kurzbeschreibung ergaenzen.',
     sourceRefs: ['manual-review'],
     estimatedUE: 1,
-    difficulty: 'normal',
+    difficulty: 'medium',
     depth: 'basic',
     practiceType: 'guided-task',
     active: true,

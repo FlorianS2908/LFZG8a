@@ -200,7 +200,7 @@ function normalizeItems(items = [], sourceRefs = []) {
     id: item.id || `item-${index + 1}`,
     title: item.title || `Eintrag ${index + 1}`,
     text: item.text || item.content || '',
-    difficulty: item.difficulty || 'mittel',
+    difficulty: normalizeDifficulty(item.difficulty),
     phaseRef: item.phaseRef || '',
     progressionLevel: item.progressionLevel || '',
     socialForm: item.socialForm || '',
@@ -219,7 +219,7 @@ function normalizeQuiz(items = [], sourceRefs = []) {
       id: item.id || `q-${index + 1}`,
       type: item.type || 'single-choice',
       topic: item.topic || '',
-      difficulty: item.difficulty || 'leicht',
+      difficulty: normalizeDifficulty(item.difficulty, 'easy'),
       text: item.text || 'Frage fachlich pruefen.',
       options,
       correct: normalizeCorrect(item.correct, options.length),
@@ -259,3 +259,4 @@ module.exports = {
   normalizeReflection,
   normalizeTeacherRunbook
 };
+const { normalizeDifficulty } = require('../difficulty-levels');

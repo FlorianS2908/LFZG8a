@@ -18,7 +18,7 @@ function createMappingSuggestion(file) {
       : ['Admin', 'Trainer', 'Teilnehmer'],
     order: 0,
     category: '',
-    difficulty: selectedTarget === 'task' ? 'normal' : '',
+    difficulty: selectedTarget === 'task' ? 'medium' : '',
     relatedTaskId: '',
     materialType: '',
     notes: '',

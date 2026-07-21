@@ -1,4 +1,5 @@
 const { normalizeDayGenerationResult } = require('./output-normalizer');
+const { normalizeDifficulty } = require('../difficulty-levels');
 const { decideArtifactSuggestions, describeAgeRange } = require('../container-profile/audience-artifact-decision-service');
 const { normalizeDidacticProfile } = require('../didactics/didactic-profile-service');
 const { buildDidacticFlow, buildReleasePlan } = require('../didactics/lesson-flow-service');
@@ -201,11 +202,7 @@ function createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRe
 function createTasks(blocks, dayNumber, sourceRefs, targetAudience, didacticProfile = {}) {
   const profileLevels = levelsForDidacticProfile(didacticProfile);
   const phases = didacticProfile.lessonFlow || [];
-  const levels = profileLevels.length ? profileLevels : targetAudience.difficultyMode === 'easy-normal-hard'
-    ? ['leicht', 'mittel', 'schwer']
-    : targetAudience.difficultyMode === 'normal-and-hard'
-      ? ['mittel', 'schwer']
-      : ['mittel'];
+  const levels = profileLevels.length ? profileLevels : [normalizeDifficulty(targetAudience.difficultyMode)];
   return blocks.flatMap((block, blockIndex) => levels.map((level, levelIndex) => ({
     id: `task-${dayNumber}-${blockIndex + 1}-${levelIndex + 1}`,
     title: taskTitle(block.topic, level, didacticProfile),
@@ -279,12 +276,12 @@ function taskInstruction(topic, level, targetAudience, didacticProfile = {}) {
     return `Loesen Sie eine freie Aufgabe zu "${topic}" eigenstaendig.`;
   }
   const ageProfile = describeAgeRange(targetAudience.ageRange);
-  if (level === 'leicht') {
+  if (normalizeDifficulty(level) === 'easy') {
     return ageProfile.group === 'young'
       ? `Erklaeren Sie "${topic}" in zwei kurzen Saetzen und ergaenzen Sie ein einfaches Beispiel.`
       : `Erklaeren Sie den Begriff "${topic}" in drei Saetzen und nennen Sie ein einfaches Beispiel.`;
   }
-  if (level === 'schwer') {
+  if (normalizeDifficulty(level) === 'hard') {
     if (ageProfile.group === 'adult') return `Uebertragen Sie "${topic}" auf eine berufliche Arbeitssituation, begruenden Sie Ihre Entscheidung und nennen Sie Risiken.`;
     return targetAudience.projectOrientation
       ? `Uebertragen Sie "${topic}" auf ein eigenes kleines Projektbeispiel, begruenden Sie Ihre Entscheidungen und dokumentieren Sie Risiken.`
@@ -516,15 +513,15 @@ function createQuiz(blocks, dayNumber, sourceRefs, targetAudience) {
     const topic = topics[index % topics.length] || `Tag ${dayNumber}`;
     const type = ['single-choice', 'multiple-choice', 'true-false', 'matching'][index % 4];
     if (type === 'true-false') {
-      return { id: `quiz-${dayNumber}-${index + 1}`, type, topic, difficulty: 'leicht', text: `Wahr oder falsch: ${topic} sollte immer mit einem konkreten Beispiel erklaert werden.`, options: ['Wahr', 'Falsch'], correct: [0], sourceRefs, aiGenerated: false };
+      return { id: `quiz-${dayNumber}-${index + 1}`, type, topic, difficulty: 'easy', text: `Wahr oder falsch: ${topic} sollte immer mit einem konkreten Beispiel erklaert werden.`, options: ['Wahr', 'Falsch'], correct: [0], sourceRefs, aiGenerated: false };
     }
     if (type === 'multiple-choice') {
-      return { id: `quiz-${dayNumber}-${index + 1}`, type, topic, difficulty: 'mittel', text: `Welche Aussagen passen zu ${topic}?`, options: ['Fachbegriffe sauber verwenden', 'Vorgehen begruenden', 'Ergebnis ohne Kontext abgeben', 'Beispiel dokumentieren'], correct: [0, 1, 3], sourceRefs, aiGenerated: false };
+      return { id: `quiz-${dayNumber}-${index + 1}`, type, topic, difficulty: 'medium', text: `Welche Aussagen passen zu ${topic}?`, options: ['Fachbegriffe sauber verwenden', 'Vorgehen begruenden', 'Ergebnis ohne Kontext abgeben', 'Beispiel dokumentieren'], correct: [0, 1, 3], sourceRefs, aiGenerated: false };
     }
     if (type === 'matching') {
-      return { id: `quiz-${dayNumber}-${index + 1}`, type, topic, difficulty: 'mittel', text: `Ordnen Sie zu: Begriff, Beispiel und Begruendung im Kontext ${topic}.`, options: ['Begriff -> Definition', 'Beispiel -> Anwendung', 'Begruendung -> Warum passend'], correct: [0, 1, 2], sourceRefs, aiGenerated: false };
+      return { id: `quiz-${dayNumber}-${index + 1}`, type, topic, difficulty: 'medium', text: `Ordnen Sie zu: Begriff, Beispiel und Begruendung im Kontext ${topic}.`, options: ['Begriff -> Definition', 'Beispiel -> Anwendung', 'Begruendung -> Warum passend'], correct: [0, 1, 2], sourceRefs, aiGenerated: false };
     }
-    return { id: `quiz-${dayNumber}-${index + 1}`, type, topic, difficulty: 'leicht', text: `Was ist der wichtigste erste Schritt bei ${topic}?`, options: ['Begriffe klaeren', 'Ergebnis raten', 'Dokumentation weglassen', 'Quelle ignorieren'], correct: [0], sourceRefs, aiGenerated: false };
+    return { id: `quiz-${dayNumber}-${index + 1}`, type, topic, difficulty: 'easy', text: `Was ist der wichtigste erste Schritt bei ${topic}?`, options: ['Begriffe klaeren', 'Ergebnis raten', 'Dokumentation weglassen', 'Quelle ignorieren'], correct: [0], sourceRefs, aiGenerated: false };
   });
 }
 

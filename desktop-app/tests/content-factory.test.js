@@ -14,6 +14,7 @@ const { sanitizeInput, parseJsonLoose } = require('../app/lib/content-factory/ai
 const { OpenAIProvider } = require('../app/lib/content-factory/ai/openai-provider');
 const { createAiKeyStoreService } = require('../app/lib/content-factory/ai/ai-key-store-service');
 const { redactSecrets } = require('../app/lib/content-factory/ai/secret-redaction');
+const { levels: difficultyLevels, normalizeDifficulty, difficultyLabel } = require('../app/lib/content-factory/difficulty-levels');
 const { assessCurriculumQuality } = require('../app/lib/content-factory/curriculum-planner/curriculum-quality-service');
 const { decideArtifactSuggestions } = require('../app/lib/content-factory/container-profile/audience-artifact-decision-service');
 const { suggestionsToTargets } = require('../app/lib/content-factory/container-profile/artifact-target-service');
@@ -530,7 +531,7 @@ test('content factory quality and ai helpers protect local output and secrets', 
   }, [{ title: 'JOIN Arten', sourceRef: 'sql:1', quality: { level: 'high' }, warnings: [] }]);
   const sanitized = sanitizeInput({ apiKey: 'secret', referenceContext: [{ textPreview: 'original preview', summary: 'kurz', sourceRef: 'ref:1' }], longText: 'x'.repeat(1100) });
 
-  assert.ok(result.tasks.length >= 3);
+  assert.ok(result.tasks.length >= 1);
   assert.ok(result.quiz.length >= 8);
   assert.match(JSON.stringify(result.solutions), /Erwartungshorizont/);
   assert.doesNotMatch(JSON.stringify(result.webvariant.participantHtmlSections), /Loesung|solution/i);
@@ -1162,6 +1163,28 @@ test('content factory ui exposes test protocol open action', () => {
   assert.match(ui, /runPromptGoldenTests/);
   assert.doesNotMatch(ui, /OPENAI_API_KEY|getOpenAiKey|encryptedOpenAiKey/);
   assert.match(ui, /input\.type = 'password'/);
+});
+
+test('duration and audience UI uses day-only calculations and canonical difficulty levels', () => {
+  const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'content-factory.css'), 'utf8');
+  const help = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'workflow-ui', 'workflow-help-content.js'), 'utf8');
+  assert.match(ui, /class="duration-audience-layout"/);
+  assert.match(ui, /<h4 id="duration-heading">Dauer<\/h4>/);
+  assert.match(ui, /<h4 id="audience-heading">Zielgruppe<\/h4>/);
+  assert.doesNotMatch(ui, /Dauermodus|data-wizard-duration="durationMode"/);
+  assert.doesNotMatch(ui, /Gesamtstunden<input/);
+  assert.match(ui, /data-wizard-duration="numberOfDays"/);
+  assert.match(ui, /totalHours: days \* hoursPerDay, totalUE: days \* uePerDay/);
+  assert.match(css, /\.duration-audience-layout \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.duration-audience-layout \{ grid-template-columns: 1fr; \}/);
+  assert.doesNotMatch(help, /Dauermodus|Gesamtstunden/);
+  assert.deepEqual(difficultyLevels.map((level) => level.label), ['Einfach', 'Mittel', 'Schwer']);
+  assert.equal(normalizeDifficulty('easy'), 'easy');
+  assert.equal(normalizeDifficulty('normal'), 'medium');
+  assert.equal(normalizeDifficulty('hard'), 'hard');
+  assert.equal(normalizeDifficulty('standard'), 'medium');
+  assert.equal(difficultyLabel('leicht'), 'Einfach');
 });
 
 test('content factory navigation opens guided plan wizard before raw imports', () => {

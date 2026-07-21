@@ -1,8 +1,8 @@
 const presets = [
-  preset('java-beginner', 'Java Einsteiger', 'java', { priorKnowledge: 'none', learningLevel: 'intro', difficultyMode: 'easy-normal-hard' }),
-  preset('java-advanced', 'Java Fortgeschritten', 'java-maven', { priorKnowledge: 'intermediate', learningLevel: 'advanced', difficultyMode: 'normal-and-hard' }),
-  preset('sql-phpmyadmin-beginner', 'SQL / phpMyAdmin Einsteiger', 'sql', { priorKnowledge: 'none', learningLevel: 'intro', difficultyMode: 'easy-normal-hard' }),
-  preset('python-beginner', 'Python Einsteiger', 'python', { priorKnowledge: 'none', learningLevel: 'intro', difficultyMode: 'easy-normal-hard' }),
+  preset('java-beginner', 'Java Einsteiger', 'java', { priorKnowledge: 'none', learningLevel: 'intro', difficultyMode: 'easy' }),
+  preset('java-advanced', 'Java Fortgeschritten', 'java-maven', { priorKnowledge: 'intermediate', learningLevel: 'advanced', difficultyMode: 'hard' }),
+  preset('sql-phpmyadmin-beginner', 'SQL / phpMyAdmin Einsteiger', 'sql', { priorKnowledge: 'none', learningLevel: 'intro', difficultyMode: 'easy' }),
+  preset('python-beginner', 'Python Einsteiger', 'python', { priorKnowledge: 'none', learningLevel: 'intro', difficultyMode: 'easy' }),
   preset('python-jupyter', 'Python / Jupyter', 'jupyter', { priorKnowledge: 'basic', learningLevel: 'basic', needsStepByStep: true }),
   preset('uml-pap-erm', 'UML / PAP / ERM', 'uml-pap', { priorKnowledge: 'basic', learningLevel: 'basic' }),
   preset('html-css-project', 'HTML/CSS Projekt', 'html-css', { priorKnowledge: 'basic', learningLevel: 'basic', projectOrientation: true }),

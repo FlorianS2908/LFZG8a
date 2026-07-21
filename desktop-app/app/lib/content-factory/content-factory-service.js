@@ -628,7 +628,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd(), saf
           order: item.order
         });
       } else if (file.selectedTarget === 'task' || file.selectedTarget === 'projectTask') {
-        container.tasks.push({ ...item, difficulty: file.difficulty || 'normal', taskType: file.selectedTarget });
+        container.tasks.push({ ...item, difficulty: file.difficulty || 'medium', taskType: file.selectedTarget });
       } else if (file.selectedTarget === 'solution') {
         container.solutions.push({ ...item, taskId: file.relatedTaskId || '' });
       } else if (file.selectedTarget === 'quiz') {

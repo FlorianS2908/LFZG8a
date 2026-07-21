@@ -20,9 +20,9 @@
     },
     durationAudience: {
       title: 'Dauer & Zielgruppe',
-      explained: 'Hier legst du fest, für wen der Kurs ist und wie umfangreich er sein soll.',
-      why: 'Die KI/Fallback-Logik passt Sprache, Aufgaben, Demos und Hilfestufen daran an.',
-      requiredInputs: ['Dauer', 'Vorkenntnisse', 'Niveau', 'Schwierigkeit'],
+      explained: 'Tage bestimmt die Anzahl der Kurstage. Stunden/Tag beschreibt die tatsächliche tägliche Zeit, UE/Tag die Unterrichtseinheiten pro Tag.',
+      why: 'Zielgruppenangaben beeinflussen Sprache, Aufgaben und Hilfestellungen. Die Schwierigkeit wird als Einfach, Mittel oder Schwer gewählt.',
+      requiredInputs: ['Tage', 'Stunden/Tag', 'UE/Tag', 'Vorkenntnisse', 'Niveau', 'Schwierigkeit'],
       optionalInputs: ['Prüfungsorientierung', 'Projektorientierung', 'Kursziel'],
       typicalMistakes: ['Vorkenntnisse zu hoch gewaehlt', 'Prüfungsorientierung vergessen', 'Projektorientierung unklar'],
       result: 'Zielgruppe und Umfang sind gesetzt.'
