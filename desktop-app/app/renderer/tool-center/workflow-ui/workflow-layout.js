@@ -24,21 +24,34 @@
 
   function renderWorkflowStepper(workflow, activeStep, gates = []) {
     const gateById = new Map(gates.map((gate) => [gate.id, gate]));
+    const phases = [
+      { label: 'Grundlagen', steps: ['course', 'durationAudience', 'didactics', 'containerProfile'] },
+      { label: 'Unterrichtsplan', steps: ['anchor', 'analysis'] },
+      { label: 'Inhalte und Materialien', steps: ['materials', 'aiMode'] },
+      { label: 'Kursstruktur', steps: ['curriculumReview'] },
+      { label: 'Generierung', steps: ['generation'] },
+      { label: 'Prüfen und Exportieren', steps: ['preflight', 'containerDraft'] }
+    ];
+    const activePhaseIndex = Math.max(0, phases.findIndex((phase) => phase.steps.includes(activeStep)));
     return `
-      <nav class="workflow-stepper" aria-label="${escapeHtml(workflow.title)} Schritte">
-        ${(workflow.steps || []).map((step) => {
-          const gate = gateById.get(step.id) || { active: true, done: false, missing: step.lockedWhen || '' };
+      <p class="workflow-phase-progress" role="status">Phase ${activePhaseIndex + 1} von 6: ${escapeHtml(phases[activePhaseIndex].label)}</p>
+      <nav class="workflow-stepper" aria-label="Phasen der Kurserstellung">
+        ${phases.map((phase, phaseIndex) => {
+          const phaseGates = phase.steps.map((id) => gateById.get(id)).filter(Boolean);
+          const phaseDone = phaseGates.length > 0 && phaseGates.every((gate) => gate.done);
+          const phaseActive = phase.steps.includes(activeStep);
+          const selectableGate = phaseGates.find((gate) => gate.active) || phaseGates[0] || { id: phase.steps[0], active: false, missing: 'Vorherige Voraussetzungen fehlen.' };
+          const missing = phaseGates.find((gate) => !gate.active)?.missing || selectableGate.missing || '';
           const classes = [
             'workflow-step',
-            step.id === activeStep ? 'workflow-step-active' : '',
-            gate.done ? 'workflow-step-done' : '',
-            gate.active ? '' : 'workflow-step-locked',
-            step.optional ? 'workflow-step-optional' : ''
+            phaseActive ? 'workflow-step-active' : '',
+            phaseDone ? 'workflow-step-done' : '',
+            selectableGate.active ? '' : 'workflow-step-locked'
           ].filter(Boolean).join(' ');
           return `
-            <button class="${classes}" type="button" data-plan-step="${escapeHtml(step.id)}" ${gate.active ? '' : 'disabled'} title="${escapeHtml(gate.active ? step.goal : gate.missing)}">
-              <span>${escapeHtml(step.shortLabel || step.label)}</span>
-              <small>${escapeHtml(gate.done ? 'erledigt' : gate.active ? (step.optional ? 'optional' : 'aktiv') : 'gesperrt')}</small>
+            <button class="${classes}" type="button" data-plan-step="${escapeHtml(phaseActive ? activeStep : selectableGate.id)}" ${selectableGate.active ? '' : 'disabled'} ${phaseActive ? 'aria-current="step"' : ''} aria-label="Phase ${phaseIndex + 1}: ${escapeHtml(phase.label)}${phaseDone ? ', abgeschlossen' : phaseActive ? ', aktuell' : selectableGate.active ? '' : `, gesperrt: ${escapeHtml(missing)}`}">
+              <span>${phaseIndex + 1}. ${escapeHtml(phase.label)}</span>
+              <small>${escapeHtml(phaseDone ? '✓ abgeschlossen' : phaseActive ? '● aktuell' : selectableGate.active ? 'offen' : 'gesperrt')}</small>
             </button>
           `;
         }).join('')}
@@ -51,8 +64,8 @@
       <aside class="workflow-help">
         <h3>Hilfe</h3>
         <section>
-          <strong>Kurz erklaert</strong>
-          <p>${escapeHtml(asList(step.help)[0] || step.goal || 'Dieser Schritt fuehrt den Workflow weiter.')}</p>
+          <strong>Kurz erklärt</strong>
+          <p>${escapeHtml(asList(step.help)[0] || step.goal || 'Dieser Schritt führt den Workflow weiter.')}</p>
         </section>
         <section>
           <strong>Warum wichtig?</strong>
@@ -75,13 +88,13 @@
     return `<section><strong>${escapeHtml(title)}</strong><ul>${list.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></section>`;
   }
 
-  function renderWorkflowActionBar({ canBack = false, canNext = false, canSave = false, canCheck = false, canSkip = false, nextLabel = 'Weiter', backLabel = 'Zurueck' } = {}) {
+  function renderWorkflowActionBar({ canBack = false, canNext = false, canSave = false, canCheck = false, canSkip = false, nextLabel = 'Weiter', backLabel = 'Zurück' } = {}) {
     return `
       <div class="workflow-actionbar">
         <button class="secondary-button" type="button" data-wizard-prev ${canBack ? '' : 'disabled'}>${escapeHtml(backLabel)}</button>
-        ${canCheck ? '<button class="secondary-button" type="button" data-workflow-check>Pruefen</button>' : ''}
+        ${canCheck ? '<button class="secondary-button" type="button" data-workflow-check>Prüfen</button>' : ''}
         ${canSave ? '<button class="secondary-button" type="button" data-workflow-save>Speichern</button>' : ''}
-        ${canSkip ? '<button class="secondary-button" type="button" data-wizard-skip-step>Schritt ueberspringen</button>' : ''}
+        ${canSkip ? '<button class="secondary-button" type="button" data-wizard-skip-step>Optionalen Schritt überspringen</button>' : ''}
         <button class="primary-button" type="button" data-wizard-next ${canNext ? '' : 'disabled'}>${escapeHtml(nextLabel)}</button>
       </div>
     `;
@@ -116,7 +129,7 @@
         <strong>${escapeHtml(title || 'Ergebnis')}</strong>
         <p>${escapeHtml(result || '-')}</p>
         ${asList(warnings).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
-        ${nextAction ? `<p class="workflow-next-action"><strong>Naechster sinnvoller Klick:</strong> ${escapeHtml(nextAction)}</p>` : ''}
+        ${nextAction ? `<p class="workflow-next-action"><strong>Nächster sinnvoller Klick:</strong> ${escapeHtml(nextAction)}</p>` : ''}
       </article>
     `;
   }

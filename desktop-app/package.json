@@ -37,7 +37,9 @@
             "app/renderer/tool-center/factory.js",
             "app/renderer/tool-center/factory-upload-utils.js",
             "app/renderer/tool-center/workspace.css",
+            "app/renderer/tool-center/content-factory.css",
             "app/renderer/tool-center/workflow-ui/**/*",
+            "app/renderer/content-factory/**/*",
             "app/renderer/tool-center/assets/ploglan-logo.png",
             "package.json"
         ],

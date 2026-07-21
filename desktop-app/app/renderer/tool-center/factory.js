@@ -1,4 +1,5 @@
 const desktop = window.lfzq8aDesktop;
+const appNavigation = window.ContentFactoryAppNavigation;
 const uploadUtils = window.ContentFactoryUploadUtils || {};
 const workflowLayout = window.ContentFactoryWorkflowLayout || {};
 const workflowRegistry = window.ContentFactoryWorkflowRegistry || {};
@@ -66,14 +67,14 @@ const state = {
 const uploadAreas = [
   ['materials', 'Unterrichtsmaterialien', '.pptx,.pdf,.docx,.md,.html,.ipynb,.zip', 'Folien, Handouts und begleitende Materialien.'],
   ['tasks', 'Aufgaben', '.html,.md,.pdf,.docx,.ipynb,.json,.zip', 'Arbeitsauftraege und Uebungen.'],
-  ['solutions', 'Loesungen', '.html,.md,.pdf,.docx,.ipynb,.java,.cs,.sql,.zip', 'Nur fuer den Dozentenbereich.'],
+  ['solutions', 'Lösungen', '.html,.md,.pdf,.docx,.ipynb,.java,.cs,.sql,.zip', 'Nur für den Dozentenbereich.'],
   ['quiz', 'Fragenpools / Quiz', '.json,.xml,.docx,.txt,.zip', 'Quiz, Fragenpools und Testfragen.'],
   ['project', 'Projektmaterialien', '.zip,.html,.css,.js,.java,.cs,.php,.sql,.png,.jpg,.pdf,.docx', 'Projektvorlagen und Begleitdateien.'],
-  ['source-code', 'Quellcode', '.html,.css,.js,.ts,.tsx,.jsx,.php,.java,.cs,.py,.zip', 'Quellcode wird nie automatisch ausgefuehrt.'],
+  ['source-code', 'Quellcode', '.html,.css,.js,.ts,.tsx,.jsx,.php,.java,.cs,.py,.zip', 'Quellcode wird nie automatisch ausgeführt.'],
   ['database', 'Datenbank / SQL', '.sql,.csv,.zip', 'SQL bleibt Datei und wird nicht gestartet.'],
   ['assets', 'Assets / Medien', '.png,.jpg,.jpeg,.svg,.webp,.gif,.zip', 'Bilder, Medien und Assets.'],
   ['reference-literature', 'Referenzliteratur / Fachquellen', '.pdf,.epub,.docx,.txt,.md,.html,.zip', 'Reference-only, kein Export in Kurscontainer.'],
-  ['other', 'Sonstige Dateien', '', 'Alles, was manuell geprueft werden soll.'],
+  ['other', 'Sonstige Dateien', '', 'Alles, was manuell geprüft werden soll.'],
   ['zip-package', 'ZIP-Gesamtpaket', '.zip', 'ZIP-Gesamtpakete werden sicher gestaged.']
 ];
 
@@ -84,10 +85,10 @@ const planWizardSteps = [
   { id: 'didactics', label: 'Didaktik' },
   { id: 'containerProfile', label: 'Container' },
   { id: 'analysis', label: 'Analyse' },
-  { id: 'curriculumReview', label: 'Curriculum pruefen' },
+  { id: 'curriculumReview', label: 'Curriculum prüfen' },
   { id: 'materials', label: 'Materialien', optional: true },
   { id: 'aiMode', label: 'KI/Fallback' },
-  { id: 'generation', label: 'Tagesentwuerfe' },
+  { id: 'generation', label: 'Tagesentwürfe' },
   { id: 'preflight', label: 'Testlauf' },
   { id: 'containerDraft', label: 'Container-Draft', optional: true }
 ];
@@ -131,7 +132,7 @@ function createDropZoneHtml({ id, title, description, accept, files = [], multip
         <strong>${escapeHtml(title)}</strong>
         <span class="status-badge">${escapeHtml(files.length)} Datei(en)</span>
       </div>
-      <p>${escapeHtml(description || 'Dateien auswaehlen oder hier ablegen.')}</p>
+      <p>${escapeHtml(description || 'Dateien auswählen oder hier ablegen.')}</p>
       <label class="dropzone" data-dropzone="${escapeHtml(id)}" tabindex="0" aria-label="${escapeHtml(title)} Uploadzone">
         <span>Dateien hier ablegen oder durchsuchen</span>
         <small>${escapeHtml(accept || 'alle Dateitypen')} | ${multiple ? 'Mehrfachupload' : 'Einzeldatei'} | ${formatBytes(totalSize)}</small>
@@ -145,7 +146,7 @@ function createDropZoneHtml({ id, title, description, accept, files = [], multip
 }
 
 function renderFileList(files = []) {
-  if (!files.length) return '<p class="dropzone-empty">Noch keine Dateien ausgewaehlt.</p>';
+  if (!files.length) return '<p class="dropzone-empty">Noch keine Dateien ausgewählt.</p>';
   return `<ul class="dropzone-file-list">${files.map((file, index) => `
     <li class="dropzone-file-chip">
       <span title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</span>
@@ -199,6 +200,8 @@ function renderFactoryNavigationGates(activePanel = '') {
     if (gate.optional) button.dataset.optional = 'true';
     if (!gate.active && gate.message) button.title = gate.message;
     button.classList.toggle('is-active', button.dataset.factoryTab === activePanel);
+    if (button.dataset.factoryTab === activePanel) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
   });
   $all('[data-open-factory-section]').forEach((button) => {
     const gate = gates[button.dataset.openFactorySection] || { active: true };
@@ -224,8 +227,7 @@ function showPanel(panelName) {
     if (current === 'plan-wizard') renderPlanWizard();
     return;
   }
-  $all('[data-factory-tab]').forEach((button) => button.classList.toggle('is-active', button.dataset.factoryTab === panelName));
-  $all('[data-factory-panel]').forEach((panel) => panel.classList.toggle('is-active', panel.dataset.factoryPanel === panelName));
+  appNavigation.activatePanel(panelName);
   setFactoryStatus('');
   renderFactoryNavigationGates(panelName);
 }
@@ -234,7 +236,7 @@ function getNextRecommendedAction(currentState = state) {
   const wizard = currentState.wizard;
   if (!wizard.course.courseName || !wizard.course.courseId || !wizard.course.department) {
     return {
-      label: 'Kursdaten ausfuellen',
+      label: 'Kursdaten ausfüllen',
       description: 'Lege Kursname, Kurs-ID und Fachbereich fest, damit der Container eindeutig angelegt werden kann.',
       targetPanel: 'plan-wizard',
       targetStep: 'course',
@@ -244,7 +246,7 @@ function getNextRecommendedAction(currentState = state) {
   if (!wizard.anchorFiles.length) {
     return {
       label: 'Hauptquelle hochladen',
-      description: 'Lade Unterrichtsplan, PowerPoint oder PDF hoch, damit Themen extrahiert werden koennen.',
+      description: 'Lade deinen Excel-Unterrichtsplan hoch, damit Themen und Unterrichtseinheiten erkannt werden können.',
       targetPanel: 'plan-wizard',
       targetStep: 'anchor',
       buttonLabel: 'Weiter zur Hauptquelle'
@@ -261,34 +263,34 @@ function getNextRecommendedAction(currentState = state) {
   }
   if (wizard.approvedCurriculumPlan?.status !== 'approved') {
     return {
-      label: 'Curriculum pruefen',
-      description: 'Pruefe Tagesstruktur, Themen und UE-Verteilung und gib den Plan frei.',
+      label: 'Kursstruktur prüfen',
+      description: 'Prüfe Tagesstruktur, Themen und UE-Verteilung und gib den Plan frei.',
       targetPanel: 'plan-wizard',
       targetStep: 'curriculumReview',
-      buttonLabel: 'Curriculum pruefen'
+      buttonLabel: 'Kursstruktur prüfen'
     };
   }
   if (!wizard.dayResults.length && !wizard.dayDraft) {
     return {
-      label: 'Tagesentwuerfe erzeugen',
-      description: 'Erzeuge Webvarianten, Aufgaben, Loesungen, Quiz, DemoTargets und teacherRunbook.',
+      label: 'Tagesentwürfe erzeugen',
+      description: 'Erzeuge Webvarianten, Aufgaben, Lösungen, Fragenpools und Dozentenleitfäden.',
       targetPanel: 'plan-wizard',
       targetStep: 'generation',
-      buttonLabel: 'Tagesentwuerfe erzeugen'
+      buttonLabel: 'Tagesentwürfe erzeugen'
     };
   }
   if (!wizard.preflight && !wizard.testRun) {
     return {
-      label: 'Preflight starten',
-      description: 'Pruefe Sicherheit, Qualitaet, Didaktik und Loesungsschutz vor dem Container-Entwurf.',
+      label: 'Kurs abschließend prüfen',
+      description: 'Prüfe Sicherheit, Qualität, Didaktik und Lösungsschutz vor dem Kursentwurf.',
       targetPanel: 'plan-wizard',
       targetStep: 'preflight',
-      buttonLabel: 'Preflight starten'
+      buttonLabel: 'Abschlussprüfung starten'
     };
   }
   return {
-    label: 'Container pruefen oder veroeffentlichen',
-    description: 'Der Entwurf ist bereit fuer Kontrolle, Testprotokoll und spaetere Freigabe.',
+    label: 'Kursentwurf prüfen oder veröffentlichen',
+    description: 'Der Entwurf ist bereit für Kontrolle, Testprotokoll und spätere Freigabe.',
     targetPanel: 'overview',
     targetStep: '',
     buttonLabel: 'Container verwalten'
@@ -300,7 +302,7 @@ function renderNextRecommendedAction() {
   if (!target) return;
   const action = getNextRecommendedAction();
   target.innerHTML = `
-    <strong>Naechster sinnvoller Klick: ${escapeHtml(action.label)}</strong>
+    <strong>Empfohlene nächste Aktion: ${escapeHtml(action.label)}</strong>
     <p>${escapeHtml(action.description)}</p>
     <button class="primary-button" type="button" data-next-action-button>${escapeHtml(action.buttonLabel)}</button>
   `;
@@ -324,7 +326,7 @@ function renderValidation(target, validation) {
 }
 
 function renderContainers() {
-  $('[data-container-list]').innerHTML = state.containers.map((container) => {
+  $('[data-container-list]').innerHTML = state.containers.length ? state.containers.map((container) => {
     const manifest = container.manifest;
     const counts = ['routes', 'materials', 'assets', 'tasks', 'solutions', 'quizzes']
       .map((key) => `${key}: ${(container[key] || []).length}`)
@@ -348,12 +350,17 @@ function renderContainers() {
         <small>${escapeHtml((manifest.tags || []).join(', '))}</small>
         <small>${escapeHtml(counts)}</small>
         <div class="button-row">
-          ${container.generated && manifest.status === 'draft' ? `<button class="primary-button" type="button" data-publish="${escapeHtml(manifest.id)}">Veroeffentlichen</button>` : ''}
+          ${container.generated && manifest.status === 'draft' ? `<button class="primary-button" type="button" data-publish="${escapeHtml(manifest.id)}">Veröffentlichen</button>` : ''}
           ${container.generated ? `<button class="secondary-button" type="button" data-disable="${escapeHtml(manifest.id)}">Deaktivieren</button><button class="secondary-button" type="button" data-archive="${escapeHtml(manifest.id)}">Archivieren</button>` : ''}
         </div>
       </article>
     `;
-  }).join('');
+  }).join('') : '<article class="empty-state"><strong>Noch keine Kurscontainer vorhanden.</strong><span>Erstelle deinen ersten Kurscontainer im geführten Ablauf.</span><button class="primary-button" type="button" data-empty-create>Neuen Kurs erstellen</button></article>';
+
+  const recent = $('[data-recent-containers]');
+  if (recent) recent.innerHTML = state.containers.length
+    ? state.containers.slice(0, 3).map((container) => `<article class="factory-card"><strong>${escapeHtml(container.manifest.name)}</strong><p>Status: ${escapeHtml(container.manifest.status)}</p><button class="secondary-button" type="button" data-open-factory-section="overview">Container öffnen</button></article>`).join('')
+    : '<article class="empty-state"><strong>Noch keine Kurscontainer vorhanden.</strong><span>Erstelle deinen ersten Kurscontainer.</span></article>';
 
   $('[data-duplicate-source]').innerHTML = state.containers.map((container) => (
     `<option value="${escapeHtml(container.manifest.id)}">${escapeHtml(container.manifest.name)} (${escapeHtml(container.manifest.id)})</option>`
@@ -362,6 +369,20 @@ function renderContainers() {
   $all('[data-publish]').forEach((button) => button.addEventListener('click', () => publishContainer(button.dataset.publish)));
   $all('[data-disable]').forEach((button) => button.addEventListener('click', () => updateContainerStatus(button.dataset.disable, 'disable')));
   $all('[data-archive]').forEach((button) => button.addEventListener('click', () => updateContainerStatus(button.dataset.archive, 'archive')));
+  $('[data-empty-create]')?.addEventListener('click', () => showPanel('plan-wizard'));
+  recent?.querySelectorAll('[data-open-factory-section]').forEach((button) => button.addEventListener('click', () => showPanel(button.dataset.openFactorySection)));
+}
+
+function renderSettings() {
+  const aiTarget = $('[data-settings-ai-status]');
+  const storageTarget = $('[data-settings-storage]');
+  const configured = Boolean(state.aiStatus?.providers?.openai?.configured);
+  if (aiTarget) aiTarget.textContent = configured
+    ? 'OpenAI ist eingerichtet. Externe Verarbeitung wird nur nach deiner Auswahl verwendet.'
+    : 'Nicht eingerichtet. Die lokale Verarbeitung bleibt vollständig verfügbar.';
+  if (storageTarget) storageTarget.textContent = state.storageUsage
+    ? `Lokaler Speicher: ${formatBytes(state.storageUsage.totalBytes || 0)} belegt.`
+    : 'Der lokale Speicher ist verfügbar.';
 }
 
 function renderBatches() {
@@ -415,13 +436,13 @@ function renderWorkflowPanelIntros() {
       workflow: {
         id: 'content-factory-start',
         title: 'ContentFactory Start',
-        subtitle: 'Waehle den passenden Weg: gefuehrter Assistent, Verwaltung, Referenzen oder Expertenbereich.',
+        subtitle: 'Waehle den passenden Weg: geführter Assistent, Verwaltung, Referenzen oder Expertenbereich.',
         audience: 'Admin / Dozent',
-        difficulty: state.uiMode === 'expert' ? 'expert' : 'gefuehrt',
-        primaryGoal: 'Den naechsten sinnvollen Workflow starten.',
+        difficulty: state.uiMode === 'expert' ? 'expert' : 'geführt',
+        primaryGoal: 'Den nächsten sinnvollen Workflow starten.',
         result: 'Du landest im passenden Arbeitsbereich.'
       },
-      help: { id: 'start', goal: 'Starte mit dem Assistenten fuer neue Kurscontainer.', why: 'Rohdaten / Expertenimport ist nicht der Standardweg.', requiredInputs: [], optionalInputs: ['Expertenmodus'], typicalMistakes: ['Rohdaten als ersten Schritt nutzen'], result: 'Naechster Klick ist klar.' }
+      help: { id: 'start', goal: 'Starte mit dem Assistenten für neue Kurscontainer.', why: 'Rohdaten / Expertenimport ist nicht der Standardweg.', requiredInputs: [], optionalInputs: ['Expertenmodus'], typicalMistakes: ['Rohdaten als ersten Schritt nutzen'], result: 'Nächster Klick ist klar.' }
     },
     overview: { workflow: workflowRegistry.getWorkflow?.('manage-containers'), helpId: 'overview' },
     duplicate: { workflow: workflowRegistry.getWorkflow?.('duplicate-container'), helpId: 'duplicate' },
@@ -442,7 +463,7 @@ function renderWorkflowPanelIntros() {
         contentHtml: workflowLayout.renderWorkflowResultCard ? workflowLayout.renderWorkflowResultCard({
           title: 'Was mache ich hier?',
           result: step.goal || workflow.primaryGoal,
-          warnings: panel === 'import' ? ['Rohdaten / Expertenimport ist ein Expertenbereich und nicht der Standardweg fuer neue Kurscontainer.'] : [],
+          warnings: panel === 'import' ? ['Rohdaten / Expertenimport ist ein Expertenbereich und nicht der Standardweg für neue Kurscontainer.'] : [],
           nextAction: getNextRecommendedAction().label
         }) : '',
         helpHtml: workflowLayout.renderWorkflowHelp ? workflowLayout.renderWorkflowHelp(step) : '',
@@ -497,11 +518,11 @@ function createFallbackPlanWorkflow() {
   return {
     id: 'create-course-container',
     title: 'Neuen Kurscontainer erstellen',
-    subtitle: 'Gefuehrter Assistent fuer Kurscontainer.',
+    subtitle: 'Geführter Assistent für Kurscontainer.',
     audience: 'Admin / Dozent',
-    difficulty: 'gefuehrt',
+    difficulty: 'geführt',
     primaryGoal: 'Vom Plan zum Container-Draft.',
-    result: 'Gepruefter Kurscontainer-Entwurf.',
+    result: 'Geprüfter Kurscontainer-Entwurf.',
     steps: planWizardSteps.map((step) => ({
       ...step,
       shortLabel: step.label,
@@ -510,7 +531,7 @@ function createFallbackPlanWorkflow() {
       requiredInputs: [],
       optionalInputs: [],
       typicalMistakes: [],
-      result: 'Naechster Schritt ist vorbereitet.'
+      result: 'Nächster Schritt ist vorbereitet.'
     }))
   };
 }
@@ -520,7 +541,7 @@ function renderPlanWizardStepStatus(gate) {
   return workflowLayout.renderWorkflowResultCard
     ? workflowLayout.renderWorkflowResultCard({
       title: gate.done ? 'Schritt erledigt' : gate.active ? 'Aktueller Schritt' : 'Gesperrt',
-      result: gate.done ? 'Die Voraussetzung ist erfuellt.' : gate.active ? 'Bearbeite diesen Schritt und nutze danach Weiter.' : gate.missing,
+      result: gate.done ? 'Die Voraussetzung ist erfüllt.' : gate.active ? 'Bearbeite diesen Schritt und nutze danach Weiter.' : gate.missing,
       warnings: gate.active || gate.done ? [] : [gate.missing],
       nextAction: nextAction.label
     })
@@ -542,7 +563,7 @@ function renderCurrentPlanWizardStep(wizard, gate) {
     case 'analysis':
       return renderAnalysisStep(wizard);
     case 'curriculumReview':
-      return wizard.curriculumDraft ? renderCurriculumReview(wizard.curriculumDraft) : '<article class="tool-card"><h3>Curriculum pruefen</h3><p class="status-line status-warning">Noch kein Curriculum vorhanden.</p></article>';
+      return wizard.curriculumDraft ? renderCurriculumReview(wizard.curriculumDraft) : '<article class="tool-card"><h3>Curriculum prüfen</h3><p class="status-line status-warning">Noch kein Curriculum vorhanden.</p></article>';
     case 'materials':
       return renderMaterialsStep(wizard);
     case 'aiMode':
@@ -562,20 +583,24 @@ function renderCourseStep(wizard) {
   return `
     <article class="tool-card" data-plan-step-content="course">
       <h3>Kursdaten</h3>
+      <p id="course-required-help">Pflichtfelder sind mit „erforderlich“ gekennzeichnet. Diese Angaben erscheinen später in der Kursübersicht.</p>
+      <fieldset>
+      <legend>Allgemeine Kursangaben</legend>
       <div class="factory-form-grid">
-        <label>Kursname<input data-wizard-course="courseName" value="${escapeHtml(wizard.course.courseName)}" placeholder="Kursname"></label>
-        <label>Kurs-ID<input data-wizard-course="courseId" value="${escapeHtml(wizard.course.courseId)}" placeholder="kurs-id"></label>
-        <label>Fachbereich<select data-wizard-course="department">${['', 'FIAE', 'FISI', 'KABUE', 'KITS', 'ALLGEMEIN'].map((value) => `<option value="${value}" ${wizard.course.department === value ? 'selected' : ''}>${value || 'Bitte waehlen'}</option>`).join('')}</select></label>
+        <label>Kurstitel <span class="field-requirement">erforderlich</span><input data-wizard-course="courseName" value="${escapeHtml(wizard.course.courseName)}" aria-describedby="course-required-help" required></label>
+        <label>Kurs-ID <span class="field-requirement">erforderlich</span><input data-wizard-course="courseId" value="${escapeHtml(wizard.course.courseId)}" aria-describedby="course-id-help" required><small id="course-id-help">Eine eindeutige Kurzbezeichnung, zum Beispiel „lf08-netzwerke“.</small></label>
+        <label>Fachbereich <span class="field-requirement">erforderlich</span><select data-wizard-course="department" aria-describedby="course-required-help" required>${['', 'FIAE', 'FISI', 'KABUE', 'KITS', 'ALLGEMEIN'].map((value) => `<option value="${value}" ${wizard.course.department === value ? 'selected' : ''}>${value || 'Bitte wählen'}</option>`).join('')}</select></label>
       </div>
-      <label>Beschreibung<textarea data-wizard-course="description">${escapeHtml(wizard.course.description)}</textarea></label>
+      <label>Beschreibung <span class="field-requirement">optional</span><textarea data-wizard-course="description">${escapeHtml(wizard.course.description)}</textarea></label>
+      </fieldset>
     </article>
   `;
 }
 
 function renderAnchorStep(wizard) {
-  const anchorAccept = wizard.anchorType === 'course-plan' ? '.xlsx,.xlsm,.zip' : wizard.anchorType === 'book-or-presentation' ? '.pdf,.epub,.pptx,.zip' : '.docx,.txt,.md,.html,.zip';
+  const anchorAccept = wizard.anchorType === 'course-plan' ? '.xls,.xlsx,.xlsm,.zip' : wizard.anchorType === 'book-or-presentation' ? '.pdf,.epub,.pptx,.zip' : '.docx,.txt,.md,.html,.zip';
   const options = [
-    ['course-plan', 'Unterrichtsplan Upload', '.xlsx, .xlsm, .zip'],
+    ['course-plan', 'Excel-Unterrichtsplan', '.xls, .xlsx, .xlsm'],
     ['book-or-presentation', 'Buch / PDF / EPUB / PowerPoint', '.pdf, .epub, .pptx, .zip'],
     ['text-document', 'Textdokument / Word / Markdown / HTML / TXT', '.docx, .txt, .md, .html, .zip']
   ];
@@ -583,6 +608,9 @@ function renderAnchorStep(wizard) {
     <article class="tool-card" data-plan-step-content="anchor">
       <h3>Hauptquelle</h3>
       <p class="status-line">Die Hauptquelle bestimmt die Themenstruktur. Daraus wird das Curriculum erzeugt.</p>
+      <p class="status-line status-warning">Excel-Dateien werden nur gelesen. Makros werden niemals ausgeführt oder verändert.</p>
+      <fieldset>
+      <legend>Art der Hauptquelle</legend>
       <div class="wizard-source-options">
         ${options.map(([value, label, formats]) => `
           <label class="source-option ${wizard.anchorType === value ? 'is-active' : ''}">
@@ -592,11 +620,12 @@ function renderAnchorStep(wizard) {
           </label>
         `).join('')}
       </div>
+      </fieldset>
       <label>Quellentyp<select data-wizard-anchor-type>
         ${options.map(([value, label]) => `<option value="${value}" ${wizard.anchorType === value ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('')}
       </select></label>
       ${createDropZoneHtml({ id: 'anchor', title: 'Thematische Hauptquelle', description: wizard.anchorType === 'course-plan' ? 'Unterrichtsplan, Excel-Dateien oder ZIP hier ablegen.' : wizard.anchorType === 'book-or-presentation' ? 'PDF, EPUB, PowerPoint oder ZIP als Hauptquelle.' : 'Word, Markdown, HTML, TXT oder ZIP als Hauptquelle.', accept: anchorAccept, files: wizard.anchorFiles.map((file) => ({ ...file, uploadArea: 'anchor' })), multiple: true, kind: 'anchor' })}
-      <small>${wizard.anchorFiles.length} Hauptquell-Datei(en) ausgewaehlt. Unterrichtsplan, PowerPoint, PDF, EPUB, Word, Markdown, HTML, TXT und ZIP werden unterstuetzt.</small>
+      <small>${wizard.anchorFiles.length} Hauptquell-Datei(en) ausgewählt. Unterrichtsplan, PowerPoint, PDF, EPUB, Word, Markdown, HTML, TXT und ZIP werden unterstützt.</small>
       ${wizard.anchorType === 'book-or-presentation' ? `<label>Seiten-/Folienbereiche optional<textarea data-wizard-ranges placeholder="20-45; 80-120">${escapeHtml(wizard.rangesText)}</textarea></label>` : ''}
     </article>
   `;
@@ -617,13 +646,13 @@ function renderDurationAudienceStep(wizard) {
         <label>Vorkenntnisse<select data-wizard-audience="priorKnowledge">${['none', 'basic', 'intermediate', 'advanced'].map((value) => `<option value="${value}" ${wizard.targetAudience.priorKnowledge === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
         <label>Niveau<select data-wizard-audience="learningLevel">${['intro', 'basic', 'exam-prep', 'professional', 'advanced'].map((value) => `<option value="${value}" ${wizard.targetAudience.learningLevel === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
         <label>Schwierigkeit<select data-wizard-audience="difficultyMode">${['normal', 'normal-and-hard', 'easy-normal-hard'].map((value) => `<option value="${value}" ${wizard.targetAudience.difficultyMode === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
-        <label>Endprodukt<select data-wizard-outcome>${['webseite', 'datenbankmodell', 'java-programm', 'python-programm', 'projektmappe', 'pruefungsvorbereitung', 'grundlagenkurs', 'custom'].map((value) => `<option value="${value}" ${wizard.expectedOutcome === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+        <label>Endprodukt<select data-wizard-outcome>${['webseite', 'datenbankmodell', 'java-programm', 'python-programm', 'projektmappe', 'prüfungsvorbereitung', 'grundlagenkurs', 'custom'].map((value) => `<option value="${value}" ${wizard.expectedOutcome === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
         <label>Didaktik<select data-wizard-style>${['guided', 'project-based', 'exam-oriented', 'workshop', 'self-study', 'mixed'].map((value) => `<option value="${value}" ${wizard.didacticStyle === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
       </div>
       <label>Kursziel<textarea data-wizard-goal>${escapeHtml(wizard.courseGoal)}</textarea></label>
-      <label class="checkline"><input data-wizard-audience-check="needsStepByStep" type="checkbox" ${wizard.targetAudience.needsStepByStep ? 'checked' : ''}> Schritt fuer Schritt</label>
+      <label class="checkline"><input data-wizard-audience-check="needsStepByStep" type="checkbox" ${wizard.targetAudience.needsStepByStep ? 'checked' : ''}> Schritt für Schritt</label>
       <label class="checkline"><input data-wizard-audience-check="projectOrientation" type="checkbox" ${wizard.targetAudience.projectOrientation ? 'checked' : ''}> Projektorientierung</label>
-      <label class="checkline"><input data-wizard-audience-check="examOrientation" type="checkbox" ${wizard.targetAudience.examOrientation ? 'checked' : ''}> Pruefungsorientierung</label>
+      <label class="checkline"><input data-wizard-audience-check="examOrientation" type="checkbox" ${wizard.targetAudience.examOrientation ? 'checked' : ''}> Prüfungsorientierung</label>
     </article>
   `;
 }
@@ -633,7 +662,7 @@ function renderAnalysisStep(wizard) {
     <article class="tool-card" data-plan-step-content="analysis">
       <h3>Analyse</h3>
       <p class="status-line">Die Hauptquelle wird in ein Curriculum mit Tagen, Themen, Lernzielen und Quellenreferenzen uebersetzt.</p>
-      <p class="status-line">Die Container-Konfiguration steuert sichere Artefaktvorschlaege. Code, SQL und externe Tools werden nie automatisch ausgefuehrt.</p>
+      <p class="status-line">Die Container-Konfiguration steuert sichere Artefaktvorschlaege. Code, SQL und externe Tools werden nie automatisch ausgeführt.</p>
       <button class="primary-button" type="button" data-wizard-analyze ${wizard.anchorFiles.length ? '' : 'disabled'}>Curriculum analysieren</button>
       ${!wizard.anchorFiles.length ? '<p class="status-line status-warning">Analyse ist erst aktiv, wenn eine Hauptquelle vorhanden ist.</p>' : ''}
     </article>
@@ -644,7 +673,7 @@ function renderMaterialsStep(wizard) {
   return `
     <article class="tool-card" data-plan-step-content="materials">
       <h3>Materialien</h3>
-      <p class="status-line">Optional: Ergaenze Aufgaben, Loesungen, Quiz, Projektdateien, Quellcode, SQL, Assets oder sonstige Dateien. ZIPs werden sicher gestaged.</p>
+      <p class="status-line">Optional: Ergaenze Aufgaben, Lösungen, Quiz, Projektdateien, Quellcode, SQL, Assets oder sonstige Dateien. ZIPs werden sicher gestaged.</p>
       <div class="factory-grid">
         ${uploadAreas.map(([area, label, accept, description]) => {
           const files = wizard.uploadFiles.filter((file) => file.uploadArea === area);
@@ -667,7 +696,7 @@ function renderAiModeStep(wizard) {
       <div class="summary-grid">
         <span><strong>local</strong>: lokale heuristische Erstellung ohne API-Kosten</span>
         <span><strong>openai</strong>: OpenAI wird verwendet, wenn API-Key eingerichtet ist</span>
-        <span><strong>openai-review</strong>: OpenAI plus interne Review-Pruefung</span>
+        <span><strong>openai-review</strong>: OpenAI plus interne Review-Prüfung</span>
         <span><strong>openai-review-repair</strong>: OpenAI plus Review und Reparaturversuch bei Schemafehlern</span>
       </div>
       <div class="summary-grid">
@@ -686,14 +715,14 @@ function renderGenerationStep(wizard) {
   const selectedDay = wizard.approvedCurriculumPlan?.days?.find((day) => day.dayNumber === Number(wizard.selectedDayNumber)) || wizard.approvedCurriculumPlan?.days?.[0];
   return `
     <article class="tool-card" data-plan-step-content="generation">
-      <h3>Tagesentwuerfe</h3>
+      <h3>Tagesentwürfe</h3>
       <div class="factory-form-grid">
         <label>Tag<select data-wizard-day>${(wizard.approvedCurriculumPlan?.days || []).map((day) => `<option value="${day.dayNumber}" ${Number(wizard.selectedDayNumber) === day.dayNumber ? 'selected' : ''}>Tag ${day.dayNumber}: ${escapeHtml(day.title)}</option>`).join('')}</select></label>
       </div>
       <button class="primary-button" type="button" data-wizard-generate-all ${selectedDay && wizard.approvedCurriculumPlan?.status === 'approved' ? '' : 'disabled'}>Alle Tage generieren</button>
       <button class="secondary-button" type="button" data-wizard-generate ${selectedDay && wizard.approvedCurriculumPlan?.status === 'approved' ? '' : 'disabled'}>Ausgewaehlten Tag neu generieren</button>
       ${!wizard.approvedCurriculumPlan ? '<p class="status-line status-warning">Tagesentwurf erst nach Curriculum-Freigabe moeglich.</p>' : ''}
-      ${wizard.dayResults.length ? `<p class="status-line">${wizard.dayResults.length} Tagesentwurf/Tagesentwuerfe erzeugt.</p>` : ''}
+      ${wizard.dayResults.length ? `<p class="status-line">${wizard.dayResults.length} Tagesentwurf/Tagesentwürfe erzeugt.</p>` : ''}
       ${wizard.dayResults.length ? renderDayResultList(wizard.dayResults) : ''}
       ${wizard.dayDraft ? renderDayDraftPreview(wizard.dayDraft) : '<p class="status-line">Noch kein Tagesentwurf erzeugt.</p>'}
       <label>Korrekturhinweis<textarea data-wizard-corrections>${escapeHtml(wizard.corrections)}</textarea></label>
@@ -708,7 +737,7 @@ function renderContainerDraftStep(wizard) {
   return `
     <article class="tool-card" data-plan-step-content="containerDraft">
       <h3>Container-Draft</h3>
-      <p class="status-line">Draft bedeutet Entwurf eines Kurscontainers. Der Entwurf kann lokal getestet und spaeter veroeffentlicht werden.</p>
+      <p class="status-line">Ein Kursentwurf kann lokal getestet und später veröffentlicht werden.</p>
       <button class="primary-button" type="button" data-wizard-create-draft ${wizard.dayResults.length || wizard.dayDraft ? '' : 'disabled'}>Dual-Mode-Container-Draft erzeugen</button>
       ${wizard.generatedDraft ? renderGeneratedDraft(wizard.generatedDraft) : '<p class="status-line">Noch kein Container-Draft erzeugt.</p>'}
     </article>
@@ -723,7 +752,7 @@ function renderDayDraftPreview(draft) {
       ${(draft.webvariant?.participantHtmlSections || []).map((section) => `<section><strong>${escapeHtml(section.title)}</strong>${section.content}</section>`).join('')}
       <h4>Aufgaben</h4><ul>${(draft.tasks || []).map((task) => `<li>${escapeHtml(task.title)}: ${escapeHtml(task.text)}</li>`).join('')}</ul>
       <h4>Quiz</h4><ul>${(draft.quiz || []).map((quiz) => `<li>${escapeHtml(quiz.text)}</li>`).join('')}</ul>
-      <details><summary>Dozentenloesungen</summary><ul>${(draft.solutions || []).map((solution) => `<li>${escapeHtml(solution.title)}: ${escapeHtml(solution.text)}</li>`).join('')}</ul></details>
+      <details><summary>Dozentenlösungen</summary><ul>${(draft.solutions || []).map((solution) => `<li>${escapeHtml(solution.title)}: ${escapeHtml(solution.text)}</li>`).join('')}</ul></details>
       ${(draft.warnings || []).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
     </div>
   `;
@@ -750,7 +779,7 @@ function renderContainerProfileStep(wizard) {
         <label class="checkline"><input data-container-profile-check="allowExecutableTools" type="checkbox" ${profile.allowExecutableTools ? 'checked' : ''}> externe Tools erlauben</label>
         <label class="checkline"><input data-container-profile-check="allowDatabaseActions" type="checkbox" ${profile.allowDatabaseActions ? 'checked' : ''}> DB-Aktionen erlauben</label>
       </div>
-      <p class="status-line status-warning">EXE/BAT/CMD/PS1 werden nie exportiert oder ausgefuehrt. SQL wird nur als Datei erzeugt.</p>
+      <p class="status-line status-warning">EXE/BAT/CMD/PS1 werden nie exportiert oder ausgeführt. SQL wird nur als Datei erzeugt.</p>
       <div class="button-row">
         <button class="secondary-button" type="button" data-profile-preset="java-maven">Maven-Projekt erzwingen</button>
         <button class="secondary-button" type="button" data-profile-preset="java">nur einfache Java-Dateien</button>
@@ -804,7 +833,7 @@ function renderDidacticProfileStep(wizard) {
         <label>Sozialform<input data-didactic-field="socialForm" value="${escapeHtml(profile.socialForm || '')}"></label>
       </div>
       <label class="checkline"><input data-didactic-check="defaultDemoEnabled" type="checkbox" ${profile.defaultDemoEnabled !== false ? 'checked' : ''}> Demos standardmaessig erzeugen</label>
-      <label class="checkline"><input data-didactic-check="defaultParticipantDemoVisible" type="checkbox" ${profile.defaultParticipantDemoVisible === true ? 'checked' : ''}> Demos fuer Teilnehmende sichtbar</label>
+      <label class="checkline"><input data-didactic-check="defaultParticipantDemoVisible" type="checkbox" ${profile.defaultParticipantDemoVisible === true ? 'checked' : ''}> Demos für Teilnehmende sichtbar</label>
       <div class="validation-box">
         <strong>${escapeHtml(profile.label || profile.id)}</strong>
         <p>${escapeHtml(profile.description || '')}</p>
@@ -847,7 +876,7 @@ function renderPreflightTestRun(wizard) {
       ${testRun ? renderTestRunResult(testRun) : ''}
       ${wizard.cleanupReport ? `<p class="status-line">${escapeHtml(wizard.cleanupReport.action)}: ${(wizard.cleanupReport.deleted || []).length} geloescht.</p>` : ''}
       <div class="button-row">
-        <button class="secondary-button" type="button" data-wizard-preflight ${canPreflight ? '' : 'disabled'}>Preflight pruefen</button>
+        <button class="secondary-button" type="button" data-wizard-preflight ${canPreflight ? '' : 'disabled'}>Preflight prüfen</button>
         <button class="primary-button" type="button" data-wizard-test-run ${canTest ? '' : 'disabled'}>Testlauf erzeugen</button>
         <button class="secondary-button" type="button" data-wizard-test-run-confirm ${preflight?.status === 'yellow' && canTest ? '' : 'disabled'}>Testlauf trotz Warnungen</button>
         <button class="secondary-button" type="button" data-wizard-delete-last-test>Letzten Test-Draft loeschen</button>
@@ -874,7 +903,7 @@ function renderTestRunResult(result) {
   return `
     <div class="validation-box">
       <strong class="${css}">Testlauf: ${escapeHtml(result.status)}</strong>
-      ${result.requiresConfirmation ? '<p class="status-line status-warning">Warnungen muessen fuer den Testlauf bestaetigt werden.</p>' : ''}
+      ${result.requiresConfirmation ? '<p class="status-line status-warning">Warnungen muessen für den Testlauf bestätigt werden.</p>' : ''}
       ${result.containerId ? `<p>Container: ${escapeHtml(result.containerId)}</p><p>Pfad: ${escapeHtml(result.storagePath)}</p>` : ''}
       ${result.testProtocol ? renderTestProtocolSummary(result.testProtocol) : ''}
       ${(result.errors || []).map((item) => `<p class="status-line status-error">${escapeHtml(item)}</p>`).join('')}
@@ -907,7 +936,7 @@ function renderPromptQualityGate(wizard) {
       ${wizard.promptRulesVisible && quality?.rules ? `<div class="validation-box"><strong>Prompt-Regeln</strong><ul>${quality.rules.map((rule) => `<li>${escapeHtml(rule)}</li>`).join('')}</ul></div>` : ''}
       <div class="button-row">
         <button class="secondary-button" type="button" data-prompt-preview>Prompt-Vorschau anzeigen</button>
-        <button class="secondary-button" type="button" data-prompt-quality>Prompt pruefen</button>
+        <button class="secondary-button" type="button" data-prompt-quality>Prompt prüfen</button>
         <button class="secondary-button" type="button" data-prompt-golden>Golden Tests ausfuehren</button>
         <button class="secondary-button" type="button" data-prompt-rules>Prompt-Regeln anzeigen</button>
       </div>
@@ -944,13 +973,13 @@ function renderAiSettings(wizard) {
       ${test ? `<p class="status-line ${test.status === 'failed' ? 'status-error' : test.status === 'warning' ? 'status-warning' : ''}">Testanfrage: ${escapeHtml(test.status)} - ${escapeHtml(test.message)}</p>` : ''}
       ${importResult ? `<p class="status-line ${importResult.success === false ? 'status-error' : ''}">${escapeHtml(importResult.message || importResult.status || '')}</p>` : ''}
       <div class="button-row">
-        <button class="secondary-button" type="button" data-ai-status-check>KI-Status pruefen</button>
+        <button class="secondary-button" type="button" data-ai-status-check>KI-Status prüfen</button>
         <button class="secondary-button" type="button" data-ai-model-save>Modell speichern</button>
         <button class="secondary-button" type="button" data-ai-import-default>Standardpfad verwenden</button>
-        <button class="secondary-button" type="button" data-ai-import-select>TXT-Datei auswaehlen</button>
+        <button class="secondary-button" type="button" data-ai-import-select>TXT-Datei auswählen</button>
         <button class="secondary-button" type="button" data-ai-test-request>OpenAI-Testanfrage senden</button>
         <button class="secondary-button" type="button" data-ai-clear-key>OpenAI-Key entfernen</button>
-        <button class="secondary-button" type="button" data-ai-setup-guide>Setup-Anleitung oeffnen</button>
+        <button class="secondary-button" type="button" data-ai-setup-guide>Setup-Anleitung öffnen</button>
       </div>
     </article>
   `;
@@ -958,7 +987,7 @@ function renderAiSettings(wizard) {
 
 function renderArtifactSuggestionPreview(wizard) {
   const topics = (wizard.curriculumDraft?.days || []).flatMap((day) => (day.topics || []).slice(0, 2).map((topic) => ({ dayNumber: day.dayNumber, title: topic.title }))).slice(0, 8);
-  return `<div class="validation-box"><strong>Artefakt-Vorschlaege pruefen</strong>${topics.map((topic) => `<p>Tag ${escapeHtml(topic.dayNumber)} - ${escapeHtml(topic.title)}: ${escapeHtml(wizard.containerProfile.courseType)} / ${escapeHtml(wizard.containerProfile.artifactMode)}</p>`).join('')}<small>Details, Zielpfade und Begruendungen werden im Analysebericht dokumentiert. Sichere Defaults werden verwendet, wenn nichts manuell geaendert wird.</small></div>`;
+  return `<div class="validation-box"><strong>Artefakt-Vorschlaege prüfen</strong>${topics.map((topic) => `<p>Tag ${escapeHtml(topic.dayNumber)} - ${escapeHtml(topic.title)}: ${escapeHtml(wizard.containerProfile.courseType)} / ${escapeHtml(wizard.containerProfile.artifactMode)}</p>`).join('')}<small>Details, Zielpfade und Begruendungen werden im Analysebericht dokumentiert. Sichere Defaults werden verwendet, wenn nichts manuell geaendert wird.</small></div>`;
 }
 
 function renderDayResultList(results) {
@@ -980,7 +1009,7 @@ function renderCurriculumReview(draft) {
   const sourceQualities = Array.from(new Map((draft.extractedSourceOutline || []).map((item) => [item.sourceFile || item.sourceRef, item.quality]).filter((item) => item[1])).entries());
   return `
     <article class="tool-card">
-      <h3>6-7. Curriculum pruefen und freigeben</h3>
+      <h3>6-7. Curriculum prüfen und freigeben</h3>
       <div class="summary-grid">
         <span>Status: ${escapeHtml(draft.status)}</span>
         <span>Tage: ${escapeHtml(draft.days?.length || 0)}</span>
@@ -1040,16 +1069,16 @@ function renderGeneratedDraft(draft) {
       <dl class="factory-meta">
         <div><dt>Tage</dt><dd>${escapeHtml(draft.analysisReport?.recognizedDays || 0)}</dd></div>
         <div><dt>Warnungen</dt><dd>${escapeHtml((draft.analysisReport?.warnings || []).length)}</dd></div>
-        <div><dt>Validierung</dt><dd>${draft.validation?.isValid ? 'ok' : 'pruefen'}</dd></div>
+        <div><dt>Validierung</dt><dd>${draft.validation?.isValid ? 'ok' : 'prüfen'}</dd></div>
         <div><dt>Testprotokoll</dt><dd>${escapeHtml(draft.testProtocol?.overallStatus || draft.analysisReport?.testProtocol?.overallStatus || 'offen')}</dd></div>
       </dl>
       ${renderTestProtocolSummary(draft.testProtocol || draft.analysisReport?.testProtocol)}
       ${renderDemoSummary(draft)}
       <div class="button-row">
-        <button class="secondary-button" type="button" data-wizard-open="standalone">Standalone oeffnen</button>
-        <button class="secondary-button" type="button" data-wizard-open="folder">Ordner oeffnen</button>
-        <button class="secondary-button" type="button" data-wizard-open="report">Analysebericht oeffnen</button>
-        <button class="secondary-button" type="button" data-wizard-open="test-protocol">Testprotokoll oeffnen</button>
+        <button class="secondary-button" type="button" data-wizard-open="standalone">Standalone öffnen</button>
+        <button class="secondary-button" type="button" data-wizard-open="folder">Ordner öffnen</button>
+        <button class="secondary-button" type="button" data-wizard-open="report">Analysebericht öffnen</button>
+        <button class="secondary-button" type="button" data-wizard-open="test-protocol">Testprotokoll öffnen</button>
       </div>
     </div>
   `;
@@ -1074,7 +1103,7 @@ function renderDemoSummary(draft) {
 
 function renderTestProtocolSummary(protocol) {
   const summary = protocol?.summary || {};
-  if (!protocol) return '<p class="status-line">Testprotokoll wird beim naechsten Draft/Testlauf erzeugt.</p>';
+  if (!protocol) return '<p class="status-line">Testprotokoll wird beim nächsten Draft/Testlauf erzeugt.</p>';
   return `<p class="status-line">Testprotokoll: ${escapeHtml(protocol.overallStatus || 'offen')} | passed ${escapeHtml(summary.passed || 0)} | warning ${escapeHtml(summary.warnings || 0)} | failed ${escapeHtml(summary.failed || 0)} | manuell ${escapeHtml(summary.manualChecks || 0)}</p>`;
 }
 
@@ -1096,16 +1125,16 @@ function getPlanWizardStepGates() {
   return planWizardSteps.map((step) => {
     const gate = { ...step, active: false, done: false, missing: '' };
     if (step.id === 'course') return { ...gate, active: true, done: courseDone, missing: 'Kursname, Kurs-ID und Fachbereich eintragen.' };
-    if (step.id === 'anchor') return { ...gate, active: courseDone, done: anchorDone, missing: 'Bitte zuerst Kursdaten vervollstaendigen.' };
-    if (step.id === 'durationAudience') return { ...gate, active: courseDone, done: durationDone, missing: 'Bitte zuerst Kursdaten vervollstaendigen.' };
-    if (step.id === 'didactics') return { ...gate, active: courseDone && durationDone, done: didacticDone, missing: 'Bitte zuerst Dauer und Zielgruppe pruefen.' };
-    if (step.id === 'containerProfile') return { ...gate, active: didacticDone, done: containerProfileDone, missing: 'Bitte zuerst ein didaktisches Profil auswaehlen.' };
+    if (step.id === 'anchor') return { ...gate, active: courseDone, done: anchorDone, missing: 'Bitte zuerst Kursdaten vervollständigen.' };
+    if (step.id === 'durationAudience') return { ...gate, active: courseDone, done: durationDone, missing: 'Bitte zuerst Kursdaten vervollständigen.' };
+    if (step.id === 'didactics') return { ...gate, active: courseDone && durationDone, done: didacticDone, missing: 'Bitte zuerst Dauer und Zielgruppe prüfen.' };
+    if (step.id === 'containerProfile') return { ...gate, active: didacticDone, done: containerProfileDone, missing: 'Bitte zuerst ein didaktisches Profil auswählen.' };
     if (step.id === 'analysis') return { ...gate, active: allAnalysisReady, done: curriculumDone, missing: 'Bitte Kursdaten, Hauptquelle, Zielgruppe, Didaktik und Containerprofil abschliessen.' };
     if (step.id === 'curriculumReview') return { ...gate, active: curriculumDone, done: approvedDone, missing: 'Bitte zuerst das Curriculum analysieren.' };
     if (step.id === 'materials') return { ...gate, active: approvedDone, done: materialsDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
     if (step.id === 'aiMode') return { ...gate, active: approvedDone, done: aiDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
     if (step.id === 'generation') return { ...gate, active: approvedDone, done: generationDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
-    if (step.id === 'preflight') return { ...gate, active: generationDone, done: preflightDone, missing: 'Bitte zuerst Tagesentwuerfe erzeugen.' };
+    if (step.id === 'preflight') return { ...gate, active: generationDone, done: preflightDone, missing: 'Bitte zuerst Tagesentwürfe erzeugen.' };
     if (step.id === 'containerDraft') return { ...gate, active: preflightDone || generationDone, done: draftDone, missing: 'Bitte zuerst Preflight/Testlauf oder Tagesentwurf erzeugen.' };
     return gate;
   });
@@ -1173,9 +1202,9 @@ function bindPlanWizardEvents() {
     if (state.wizard.anchorFiles.length) {
       state.wizard.anchorFiles = state.wizard.anchorFiles.map((file) => ({
         ...file,
-        warnings: [...(file.warnings || []), 'Der Anchor-Typ wurde geaendert. Bitte pruefen Sie die ausgewaehlten Dateien.']
+        warnings: [...(file.warnings || []), 'Der Anchor-Typ wurde geaendert. Bitte prüfen Sie die ausgewählten Dateien.']
       }));
-      state.wizard.status = 'Der Anchor-Typ wurde geaendert. Bitte pruefen Sie die ausgewaehlten Dateien.';
+      state.wizard.status = 'Der Anchor-Typ wurde geaendert. Bitte prüfen Sie die ausgewählten Dateien.';
     }
     renderPlanWizard();
   });
@@ -1219,7 +1248,7 @@ function bindPlanWizardEvents() {
     state.wizard.didacticProfile = { ...recommended };
     state.wizard.curriculumDraft = null;
     state.wizard.approvedCurriculumPlan = null;
-    state.wizard.status = 'Empfohlenes didaktisches Profil uebernommen. Curriculum bitte neu pruefen.';
+    state.wizard.status = 'Empfohlenes didaktisches Profil uebernommen. Curriculum bitte neu prüfen.';
     refreshDidacticRecommendation().then(renderPlanWizard);
   });
   $all('[data-didactic-field]').forEach((field) => field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', () => {
@@ -1232,7 +1261,7 @@ function bindPlanWizardEvents() {
     };
     state.wizard.curriculumDraft = null;
     state.wizard.approvedCurriculumPlan = null;
-    state.wizard.status = 'Didaktisches Profil angepasst. Curriculum bitte neu pruefen.';
+    state.wizard.status = 'Didaktisches Profil angepasst. Curriculum bitte neu prüfen.';
     refreshDidacticRecommendation().then(renderPlanWizard);
   }));
   $all('[data-didactic-check]').forEach((field) => field.addEventListener('change', () => {
@@ -1245,7 +1274,7 @@ function bindPlanWizardEvents() {
     };
     state.wizard.curriculumDraft = null;
     state.wizard.approvedCurriculumPlan = null;
-    state.wizard.status = 'Didaktisches Profil angepasst. Curriculum bitte neu pruefen.';
+    state.wizard.status = 'Didaktisches Profil angepasst. Curriculum bitte neu prüfen.';
     refreshDidacticRecommendation().then(renderPlanWizard);
   }));
   $all('[data-container-profile]').forEach((field) => field.addEventListener('change', () => {
@@ -1352,7 +1381,7 @@ function bindPlanWizardEvents() {
   $all('[data-demo-test]').forEach((button) => button.addEventListener('click', async () => {
     if (!state.wizard.generatedDraft?.containerId || !desktop.demo?.openTarget) return;
     const result = await desktop.demo.openTarget(button.dataset.demoTest, state.wizard.generatedDraft.containerId);
-    state.wizard.status = result.message || 'Demo geprueft.';
+    state.wizard.status = result.message || 'Demo geprüft.';
     renderPlanWizard();
   }));
 }
@@ -1363,7 +1392,7 @@ function moveWizardStep(direction) {
   const candidates = direction > 0 ? gates.slice(currentIndex + 1) : gates.slice(0, currentIndex).reverse();
   const target = candidates.find((gate) => gate.active);
   if (!target) {
-    state.wizard.status = direction > 0 ? 'Der naechste Schritt ist noch gesperrt.' : 'Du bist bereits am ersten Schritt.';
+    state.wizard.status = direction > 0 ? 'Der nächste Schritt ist noch gesperrt.' : 'Du bist bereits am ersten Schritt.';
     renderPlanWizard();
     return;
   }
@@ -1419,11 +1448,11 @@ function bindRawImportDropzone() {
     event.preventDefault();
     zone.classList.remove('dropzone-is-dragover');
     state.rawImportFiles = Array.from(event.dataTransfer?.files || []);
-    if (status) status.textContent = `${state.rawImportFiles.length} Datei(en) fuer Expertenimport vorgemerkt.`;
+    if (status) status.textContent = `${state.rawImportFiles.length} Datei(en) für Expertenimport vorgemerkt.`;
   });
   input?.addEventListener('change', () => {
     state.rawImportFiles = [];
-    if (status && input.files?.length) status.textContent = `${input.files.length} Datei(en) ausgewaehlt.`;
+    if (status && input.files?.length) status.textContent = `${input.files.length} Datei(en) ausgewählt.`;
   });
 }
 
@@ -1582,7 +1611,7 @@ async function analyzeWizardCurriculum() {
     state.wizard.approvedCurriculumPlan = null;
     state.wizard.coursePlan = curriculumToCoursePlan(state.wizard.curriculumDraft);
     state.wizard.selectedDayNumber = state.wizard.curriculumDraft.days[0]?.dayNumber || 1;
-    state.wizard.status = 'CurriculumPlanDraft erzeugt. Bitte pruefen und freigeben.';
+    state.wizard.status = 'CurriculumPlanDraft erzeugt. Bitte prüfen und freigeben.';
   } catch (error) {
     state.wizard.status = error.message;
   }
@@ -1595,7 +1624,7 @@ async function approveWizardCurriculum() {
     state.wizard.curriculumDraft = await desktop.factory.approveCurriculumDraft(state.wizard.curriculumDraft.id);
     state.wizard.approvedCurriculumPlan = state.wizard.curriculumDraft;
     state.wizard.coursePlan = curriculumToCoursePlan(state.wizard.curriculumDraft);
-    state.wizard.status = 'Curriculum freigegeben. Tagesentwuerfe sind jetzt moeglich.';
+    state.wizard.status = 'Curriculum freigegeben. Tagesentwürfe sind jetzt moeglich.';
   } catch (error) {
     state.wizard.status = error.message;
   }
@@ -1750,7 +1779,7 @@ async function generateWizardDayDraft() {
 }
 
 async function generateAllWizardDayDrafts() {
-  state.wizard.status = 'Alle Tagesentwuerfe werden erzeugt ...';
+  state.wizard.status = 'Alle Tagesentwürfe werden erzeugt ...';
   renderPlanWizard();
   try {
     state.wizard.dayResults = await desktop.factory.generateAllDayDrafts({
@@ -1765,7 +1794,7 @@ async function generateAllWizardDayDrafts() {
       aiMode: state.wizard.aiMode
     });
     state.wizard.dayDraft = state.wizard.dayResults[0] || null;
-    state.wizard.status = `${state.wizard.dayResults.length} Tagesentwuerfe erzeugt.`;
+    state.wizard.status = `${state.wizard.dayResults.length} Tagesentwürfe erzeugt.`;
   } catch (error) {
     state.wizard.status = error.message;
   }
@@ -1851,7 +1880,7 @@ function buildWizardTestInput(overrides = {}) {
 }
 
 async function runWizardPreflight() {
-  state.wizard.status = 'Preflight wird geprueft ...';
+  state.wizard.status = 'Preflight wird geprüft ...';
   renderPlanWizard();
   try {
     state.wizard.preflight = await desktop.factory.runPreflight(buildWizardTestInput());
@@ -1863,7 +1892,7 @@ async function runWizardPreflight() {
 }
 
 async function previewWizardPromptQuality() {
-  state.wizard.status = 'Prompt Quality Gate wird geprueft ...';
+  state.wizard.status = 'Prompt Quality Gate wird geprüft ...';
   renderPlanWizard();
   try {
     state.wizard.promptQuality = await desktop.factory.previewPromptQuality(buildWizardTestInput({ purpose: 'generateDayDraft' }));
@@ -1904,7 +1933,7 @@ async function runWizardTestDraft(confirmWarnings) {
     if (result.containerId) {
       state.wizard.generatedDraft = result;
     }
-    state.wizard.status = result.requiresConfirmation ? 'Preflight-Warnungen bestaetigen oder korrigieren.' : `Testlauf ${result.status}.`;
+    state.wizard.status = result.requiresConfirmation ? 'Preflight-Warnungen bestätigen oder korrigieren.' : `Testlauf ${result.status}.`;
     await loadState();
   } catch (error) {
     state.wizard.status = error.message;
@@ -1945,7 +1974,7 @@ async function importAiKeyFromDefaultPath() {
 }
 
 async function importAiKeyFromSelectedTxt() {
-  state.wizard.status = 'TXT-Datei wird ausgewaehlt ...';
+  state.wizard.status = 'TXT-Datei wird ausgewählt ...';
   renderPlanWizard();
   try {
     const result = await desktop.factory.selectOpenAiKeyTxt();
@@ -2039,8 +2068,8 @@ function curriculumDayToCourseDay(day) {
       learningFormat: topic.practiceType || 'guided-task',
       topic: topic.title,
       teacherTask: topic.summary,
-      learnerTask: state.wizard.targetAudience.needsStepByStep ? `${topic.title} Schritt fuer Schritt bearbeiten.` : `${topic.title} anwenden.`,
-      evaluation: `Ergebnis zu ${topic.title} pruefen.`,
+      learnerTask: state.wizard.targetAudience.needsStepByStep ? `${topic.title} Schritt für Schritt bearbeiten.` : `${topic.title} anwenden.`,
+      evaluation: `Ergebnis zu ${topic.title} prüfen.`,
       resources: (topic.sourceRefs || []).join(', '),
       notes: topic.difficulty,
       isBreak: false
@@ -2062,7 +2091,7 @@ function renderMapping(batch) {
       ${file.originalZipFilename ? `<details><summary>Aus ZIP: ${escapeHtml(file.originalZipFilename)}</summary><small>${escapeHtml(file.zipEntryPath || '')}</small></details>` : ''}
       ${file.sha256 ? `<small>SHA-256: ${escapeHtml(file.sha256.slice(0, 16))}...</small>` : ''}
       ${file.duplicate ? '<p class="status-line status-warning">Duplikat per Hash erkannt.</p>' : ''}
-      ${file.blocked ? '<p class="status-line status-error">Gesperrt: Datei wird nicht exportiert oder ausgefuehrt.</p>' : ''}
+      ${file.blocked ? '<p class="status-line status-error">Gesperrt: Datei wird nicht exportiert oder ausgeführt.</p>' : ''}
       <div class="factory-form-grid">
         <label>Zielbereich<select data-map-target>${state.targetAreas.map((area) => `<option value="${escapeHtml(area)}" ${file.selectedTarget === area ? 'selected' : ''}>${escapeHtml(state.targetAreaLabels[area] || area)}</option>`).join('')}</select></label>
         <label>Tag<input data-map-day type="number" min="1" max="99" value="${escapeHtml(file.dayNumber ?? '')}"></label>
@@ -2097,6 +2126,7 @@ async function loadState() {
   renderContainers();
   renderBatches();
   renderReferences();
+  renderSettings();
   renderWorkflowPanelIntros();
   renderPlanWizard();
   renderFactoryNavigationGates($('[data-factory-panel].is-active')?.dataset.factoryPanel || 'home');
@@ -2118,7 +2148,7 @@ async function importReferences() {
     licenseNotes: $('[data-reference-license]').value
   }));
   if (!$('[data-reference-confirm]').checked) {
-    status.textContent = 'Bitte bestaetige zuerst die interne reference-only Nutzung.';
+    status.textContent = 'Bitte bestätige zuerst, dass die Quelle nur intern verwendet wird.';
     return;
   }
   status.textContent = 'Referenzen werden lokal importiert ...';
@@ -2149,10 +2179,10 @@ async function searchReferences() {
         <article class="mapping-item">
           <strong>${escapeHtml(item.title)}</strong>
           <small>${escapeHtml(item.sourceRef)} | Score ${Math.round(item.relevanceScore * 100)}%</small>
-          <p>${escapeHtml(item.generatedSummary || 'Diese Quelle enthaelt wahrscheinlich passende Inhalte zum Suchthema.')}</p>
+          <p>${escapeHtml(item.generatedSummary || 'Diese Quelle enthält wahrscheinlich passende Inhalte zum Suchthema.')}</p>
         </article>
       `).join('')
-      : '<p class="status-line">Keine Treffer. Es werden keine vollstaendigen Chunks angezeigt.</p>';
+      : '<p class="status-line">Keine Treffer. Es werden keine vollständigen Chunks angezeigt.</p>';
   } catch (error) {
     target.innerHTML = `<p class="status-line status-error">${escapeHtml(error.message)}</p>`;
   }
@@ -2260,7 +2290,7 @@ async function createContainerFromBatch() {
 async function publishContainer(containerId) {
   const firstResult = await desktop.factory.publishContainer(containerId, {});
   if (firstResult.requiresConfirmation) {
-    const confirmed = window.confirm(`Warnungen vorhanden:\n${firstResult.validation.warnings.join('\n')}\n\nTrotzdem veroeffentlichen?`);
+    const confirmed = window.confirm(`Warnungen vorhanden:\n${firstResult.validation.warnings.join('\n')}\n\nTrotzdem veröffentlichen?`);
     if (!confirmed) return;
     await desktop.factory.publishContainer(containerId, { confirmWarnings: true });
   }
@@ -2278,7 +2308,8 @@ async function updateContainerStatus(containerId, action) {
 
 async function init() {
   if (!desktop?.factory) {
-    document.body.innerHTML = '<main class="tool-card"><h1>Factory API nicht verfuegbar</h1></main>';
+    setFactoryStatus('Vorschau ohne Desktop-Daten. In der Electron-App werden Projekte und Status geladen.', 'status-warning');
+    appNavigation.activatePanel('home', { focus: false });
     return;
   }
   $all('[data-factory-tab]').forEach((button) => button.addEventListener('click', () => showPanel(button.dataset.factoryTab)));
@@ -2288,7 +2319,7 @@ async function init() {
     state.wizard.expertMode = state.uiMode === 'expert';
     renderWorkflowPanelIntros();
     renderFactoryNavigationGates($('[data-factory-panel].is-active')?.dataset.factoryPanel || 'home');
-    setFactoryStatus(event.target.checked ? 'Expertenmodus ist aktiviert.' : 'Gefuehrter Modus ist aktiv.', event.target.checked ? '' : 'status-warning');
+    setFactoryStatus(event.target.checked ? 'Expertenmodus ist aktiviert.' : 'Geführter Modus ist aktiv.', event.target.checked ? '' : 'status-warning');
   });
   $('[data-open-landing]')?.addEventListener('click', () => desktop.openLanding?.());
   $('[data-refresh]').addEventListener('click', loadState);

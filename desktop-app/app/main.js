@@ -53,8 +53,20 @@ function createWindow() {
   });
   mainWindow.loadFile(rendererFile);
   if (process.argv.includes('--smoke-test')) {
-    mainWindow.webContents.once('did-finish-load', () => {
-      console.log('CONTENTFACTORY_SMOKE_OK');
+    mainWindow.webContents.once('did-finish-load', async () => {
+      const result = await mainWindow.webContents.executeJavaScript(`({
+        title: document.title,
+        mainNavigationItems: document.querySelectorAll('.factory-sidebar > [data-factory-tab]').length,
+        phases: window.ContentFactoryWorkflowLayout ? 6 : 0,
+        navigationModule: Boolean(window.ContentFactoryAppNavigation),
+        visiblePanel: document.querySelectorAll('[data-factory-panel].is-active').length
+      })`);
+      if (result.title !== 'ueTool ContentFactory' || result.mainNavigationItems !== 5 || result.phases !== 6 || !result.navigationModule || result.visiblePanel !== 1) {
+        console.error('CONTENTFACTORY_SMOKE_FAILED', JSON.stringify(result));
+        app.exit(1);
+        return;
+      }
+      console.log('CONTENTFACTORY_SMOKE_OK', JSON.stringify(result));
       app.quit();
     });
   }
