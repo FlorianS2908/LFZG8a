@@ -13,6 +13,7 @@ const { LocalHeuristicProvider } = require('../app/lib/content-factory/ai/local-
 const { sanitizeInput, parseJsonLoose } = require('../app/lib/content-factory/ai/openai-provider');
 const { OpenAIProvider } = require('../app/lib/content-factory/ai/openai-provider');
 const { createAiKeyStoreService } = require('../app/lib/content-factory/ai/ai-key-store-service');
+const { redactSecrets } = require('../app/lib/content-factory/ai/secret-redaction');
 const { assessCurriculumQuality } = require('../app/lib/content-factory/curriculum-planner/curriculum-quality-service');
 const { decideArtifactSuggestions } = require('../app/lib/content-factory/container-profile/audience-artifact-decision-service');
 const { suggestionsToTargets } = require('../app/lib/content-factory/container-profile/artifact-target-service');
@@ -41,6 +42,14 @@ const { createDropZoneHtml, validateUploadSelection, addFilesToUploadState, remo
 const workflowRegistry = require('../app/renderer/tool-center/workflow-ui/workflow-registry');
 const workflowLayout = require('../app/renderer/tool-center/workflow-ui/workflow-layout');
 
+function createMockSafeStorage(available = true) {
+  return {
+    isEncryptionAvailable: () => available,
+    encryptString: (value) => Buffer.from(`protected:${value}`, 'utf8'),
+    decryptString: (value) => Buffer.from(value).toString('utf8').replace(/^protected:/, '')
+  };
+}
+
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
   const appData = { dataDir: dir, ensureDataFiles() { fs.mkdirSync(dir, { recursive: true }); } };
@@ -49,7 +58,8 @@ function createTempFactory() {
     dir,
     appData,
     session,
-    service: createContentFactoryService({ appData }),
+    safeStorage: createMockSafeStorage(),
+    service: createContentFactoryService({ appData, safeStorage: createMockSafeStorage() }),
     cleanup: () => fs.rmSync(dir, { recursive: true, force: true })
   };
 }
@@ -684,11 +694,10 @@ test('content factory didactic matrix validates all profiles recommendations and
   }
 });
 
-test('openai env setup files and loader keep api keys out of repository outputs', () => {
+test('openai environment placeholders and ignore rules keep api keys out of repository outputs', () => {
   const repoRoot = path.join(__dirname, '..', '..');
   const gitignore = fs.readFileSync(path.join(repoRoot, '.gitignore'), 'utf8');
   const example = fs.readFileSync(path.join(repoRoot, '.env.example'), 'utf8');
-  const setupScript = fs.readFileSync(path.join(repoRoot, 'scripts', 'setup-openai-env.ps1'), 'utf8');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-env-'));
   const oldKey = process.env.OPENAI_API_KEY;
   const oldProvider = process.env.AI_PROVIDER;
@@ -709,7 +718,6 @@ test('openai env setup files and loader keep api keys out of repository outputs'
     assert.match(gitignore, /^openai-key\.txt$/m);
     assert.doesNotMatch(example, /s[k]-[A-Za-z0-9_-]{10,}/);
     assert.match(example, /OPENAI_API_KEY=/);
-    assert.doesNotMatch(setupScript, /s[k]-[A-Za-z0-9_-]{10,}/);
     assert.equal(dotenvEnv.openAiConfigured, true);
     assert.equal(dotenvEnv.openAiKeySource, 'dotenv');
     assert.equal(dotenvEnv.keySource, 'dotenv');
@@ -722,52 +730,6 @@ test('openai env setup files and loader keep api keys out of repository outputs'
     restoreEnv('OPENAI_API_KEY', oldKey);
     restoreEnv('AI_PROVIDER', oldProvider);
     restoreEnv('OPENAI_MODEL', oldModel);
-    fs.rmSync(tmp, { recursive: true, force: true });
-  }
-});
-
-test('openai txt setup script imports fake key into env and deletes source file', () => {
-  const repoRoot = path.join(__dirname, '..', '..');
-  const script = fs.readFileSync(path.join(repoRoot, 'scripts', 'setup-openai-key-from-txt.ps1'), 'utf8');
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-keytxt-'));
-  const keyFile = path.join(tmp, 'openai_key.txt');
-  const envPath = path.join(repoRoot, '.env');
-  const existingEnv = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : null;
-  const fakeKey = `s${'k'}-test-placeholder-not-real-1234567890`;
-  try {
-    fs.writeFileSync(keyFile, fakeKey, 'utf8');
-    if (fs.existsSync(envPath)) fs.rmSync(envPath, { force: true });
-    const powershell = process.platform === 'win32'
-      ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
-      : 'pwsh';
-    const result = require('child_process').spawnSync(powershell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(repoRoot, 'scripts', 'setup-openai-key-from-txt.ps1'), '-KeyFile', keyFile], {
-      cwd: repoRoot,
-      encoding: 'utf8',
-      timeout: 30000
-    });
-    if (result.error && result.error.code === 'EPERM') {
-      assert.match(script, /Get-Content -LiteralPath \$KeyFile -Raw/);
-      assert.match(script, /Set-Content -LiteralPath \$envPath/);
-      assert.match(script, /Remove-Item -LiteralPath \$KeyFile -Force/);
-      assert.doesNotMatch(script, /Write-Host\s+\$apiKey|Write-Output\s+\$apiKey/);
-      return;
-    }
-    assert.ifError(result.error);
-    assert.equal(result.status, 0, result.stderr || result.stdout);
-    assert.equal(fs.existsSync(keyFile), false);
-    const envContent = fs.readFileSync(envPath, 'utf8');
-    assert.match(envContent, /AI_PROVIDER=openai/);
-    assert.match(envContent, /OPENAI_MODEL=gpt-5\.4-mini/);
-    assert.match(envContent, /OPENAI_API_KEY=/);
-    assert.doesNotMatch(result.stdout + result.stderr, new RegExp(fakeKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-    assert.doesNotMatch(script, /s[k]-[A-Za-z0-9_-]{10,}/);
-    assert.match(script, /api_key_ContentFactory\.txt/);
-  } finally {
-    if (existingEnv === null) {
-      if (fs.existsSync(envPath)) fs.rmSync(envPath, { force: true });
-    } else {
-      fs.writeFileSync(envPath, existingEnv, 'utf8');
-    }
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
@@ -792,8 +754,8 @@ test('openai provider status and fallback never expose api keys', async () => {
   assert.equal(result.aiMeta.fallbackUsed, true);
 });
 
-test('admin ai key store imports txt deletes source and never returns key', async () => {
-  const { dir, appData, service, session, cleanup } = createTempFactory();
+test('secure ai key store imports txt without changing source and never returns key to status', async () => {
+  const { dir, appData, safeStorage, service, session, cleanup } = createTempFactory();
   const fakeKey = `s${'k'}-admin-store-placeholder-not-real-1234567890`;
   const keyFile = path.join(dir, 'admin-openai-key.txt');
   const oldKey = process.env.OPENAI_API_KEY;
@@ -804,18 +766,17 @@ test('admin ai key store imports txt deletes source and never returns key', asyn
     fs.writeFileSync(keyFile, fakeKey, 'utf8');
     const imported = service.importOpenAiKeyFromTxt(keyFile, session);
     const status = service.getAiProviderStatus(session);
-    const store = createAiKeyStoreService({ appData });
+    const store = createAiKeyStoreService({ appData, safeStorage });
     const keyInfo = store.getOpenAiKeyForServerUse();
 
     assert.equal(imported.success, true);
-    assert.equal(imported.deletedSourceFile, true);
-    assert.equal(fs.existsSync(keyFile), false);
+    assert.equal(fs.existsSync(keyFile), true);
     assert.equal(status.providers.openai.configured, true);
     assert.equal(status.providers.openai.keySource, 'admin-key-store');
     assert.equal(keyInfo.value, fakeKey);
     assert.equal(keyInfo.source, 'admin-key-store');
     assert.doesNotMatch(JSON.stringify(imported) + JSON.stringify(status), new RegExp(fakeKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-    assert.doesNotMatch(JSON.stringify(status), /openAiKeyLocal|apiKey|secret/i);
+    assert.doesNotMatch(JSON.stringify(status), /encryptedOpenAiKey|apiKey|secret/i);
     assert.ok(fs.existsSync(path.join(dir, 'secure', 'ai-provider-config.json')));
 
     service.clearOpenAiKey(session);
@@ -830,8 +791,39 @@ test('admin ai key store imports txt deletes source and never returns key', asyn
   }
 });
 
-test('openai provider resolves process env before admin key store and admin before dotenv', () => {
-  const { dir, appData, service, session, cleanup } = createTempFactory();
+test('secure ai key import handles missing, empty, unavailable encryption and no automatic overwrite', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-secure-key-'));
+  const appData = { dataDir: dir, ensureDataFiles() {} };
+  const session = { authenticated: true, user: { id: 'test' } };
+  const keyFile = path.join(dir, 'key.txt');
+  const fakeKey = 'dummy-openai-key-value-for-tests-only';
+  try {
+    const store = createAiKeyStoreService({ appData, safeStorage: createMockSafeStorage() });
+    assert.throws(() => store.importOpenAiKeyFromTxt(path.join(dir, 'missing.txt'), session), /nicht gefunden/);
+    fs.writeFileSync(keyFile, '  \n', 'utf8');
+    assert.throws(() => store.importOpenAiKeyFromTxt(keyFile, session), /leer/);
+    fs.writeFileSync(keyFile, fakeKey, 'utf8');
+    const unavailable = createAiKeyStoreService({ appData: { dataDir: path.join(dir, 'unavailable') }, safeStorage: createMockSafeStorage(false) });
+    assert.throws(() => unavailable.importOpenAiKeyFromTxt(keyFile, session), /nicht verfügbar/);
+    assert.equal(store.importOpenAiKeyFromTxt(keyFile, session).success, true);
+    fs.writeFileSync(keyFile, 'different-dummy-value', 'utf8');
+    assert.equal(store.importOpenAiKeyFromTxt(keyFile, session).reason, 'already-configured');
+    assert.equal(store.getOpenAiKeyForServerUse().value, fakeKey);
+    const configText = fs.readFileSync(store.storePath, 'utf8');
+    assert.doesNotMatch(configText, new RegExp(fakeKey));
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('central redaction removes keys authorization and encrypted credential payloads', () => {
+  const secret = `s${'k'}-dummy-value-that-must-never-appear`;
+  const redacted = JSON.stringify(redactSecrets({ Authorization: `Bearer ${secret}`, apiKey: secret, encryptedOpenAiKey: 'ciphertext', nested: { message: `failed for ${secret}` } }));
+  assert.doesNotMatch(redacted, new RegExp(secret));
+  assert.doesNotMatch(redacted, /ciphertext/);
+  assert.match(redacted, /REDACTED/);
+});
+
+test('openai provider resolves secure store before process env and dotenv', () => {
+  const { dir, appData, safeStorage, service, session, cleanup } = createTempFactory();
   const oldKey = process.env.OPENAI_API_KEY;
   const oldModel = process.env.OPENAI_MODEL;
   const oldProvider = process.env.AI_PROVIDER;
@@ -846,15 +838,15 @@ test('openai provider resolves process env before admin key store and admin befo
     delete process.env.OPENAI_MODEL;
     delete process.env.AI_PROVIDER;
 
-    const adminProvider = new OpenAIProvider({ projectRoot: dir, aiKeyStore: createAiKeyStoreService({ appData }) });
+    const adminProvider = new OpenAIProvider({ projectRoot: dir, aiKeyStore: createAiKeyStoreService({ appData, safeStorage }) });
     process.env.OPENAI_API_KEY = envKey;
     process.env.OPENAI_MODEL = 'env-model';
-    const envProvider = new OpenAIProvider({ projectRoot: dir, aiKeyStore: createAiKeyStoreService({ appData }) });
+    const envProvider = new OpenAIProvider({ projectRoot: dir, aiKeyStore: createAiKeyStoreService({ appData, safeStorage }) });
 
     assert.equal(adminProvider.getStatus().keySource, 'admin-key-store');
     assert.equal(adminProvider.apiKey, storeKey);
-    assert.equal(envProvider.getStatus().keySource, 'process.env');
-    assert.equal(envProvider.apiKey, envKey);
+    assert.equal(envProvider.getStatus().keySource, 'admin-key-store');
+    assert.equal(envProvider.apiKey, storeKey);
     assert.doesNotMatch(JSON.stringify(envProvider.getStatus()), new RegExp(envKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   } finally {
     restoreEnv('OPENAI_API_KEY', oldKey);
@@ -1168,7 +1160,8 @@ test('content factory ui exposes test protocol open action', () => {
   assert.match(ui, /Prompt-Präzision/);
   assert.match(ui, /previewPromptQuality/);
   assert.match(ui, /runPromptGoldenTests/);
-  assert.doesNotMatch(ui, /OPENAI_API_KEY|apiKey|secret/i);
+  assert.doesNotMatch(ui, /OPENAI_API_KEY|getOpenAiKey|encryptedOpenAiKey/);
+  assert.match(ui, /input\.type = 'password'/);
 });
 
 test('content factory navigation opens guided plan wizard before raw imports', () => {
