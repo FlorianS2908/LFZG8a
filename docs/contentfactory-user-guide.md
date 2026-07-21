@@ -1,14 +1,14 @@
 # Benutzerleitfaden
 
-1. **Projekt anlegen:** Kursname und eindeutige Kurs-ID erfassen und lokal speichern.
-2. **Unterrichtsplan importieren:** Eine `.xls`, `.xlsx` oder `.xlsm` auswählen. Makros werden nicht ausgeführt.
-3. **Tabelle zuordnen:** Tabellenblatt und Kopfzeile wählen, vorgeschlagene Spaltenzuordnung prüfen und Pflichtfelder bestätigen.
-4. **Materialien importieren:** Dateien oder Ordner in die Importzone ziehen. Unbekannte Typen bleiben optional als Anlagen erhalten.
-5. **Kategorien prüfen:** Automatische Vorschläge kontrollieren, Primärkategorie ändern und nicht zugeordnete Dateien bearbeiten.
-6. **Tagesstruktur bearbeiten:** Themen, Lernziele, Inhalte, Materialien, Aufgaben, Lösungen und Links je Tag ergänzen, verschieben oder entfernen.
-7. **KI-Vorschläge prüfen:** Optional lokale oder konfigurierte KI-Entwürfe erzeugen. Vorschläge werden nie ungeprüft übernommen.
-8. **Preflight ausführen:** Blockierende Fehler beheben und Warnungen bewusst bewerten.
-9. **Vorschau kontrollieren:** Metadaten, Tage, Dozenten-/Teilnehmeransicht, Fragenpools und Exportbaum prüfen.
-10. **Kurscontainer exportieren:** Export erst ohne blockierende Fehler starten; Validierungsbericht und Prüfsummen aufbewahren.
+Nach dem Start zeigt die linke Navigation fünf Bereiche. **Start** bietet die wichtigste Aktion und zuletzt bearbeitete Container. **Kurs erstellen** öffnet den geführten Ablauf. **Meine Kurscontainer** verwaltet Entwürfe und veröffentlichte Container. **Referenzquellen** verwaltet lokale Fachquellen. Unter **Einstellungen** siehst du lokale Verarbeitung, KI-Status und Speicher. Technische Werkzeuge liegen getrennt unter **Expertenfunktionen**.
+
+1. **Grundlagen:** Kursname, Kurs-ID, Dauer, Zielgruppe und didaktische Einstellungen erfassen.
+2. **Unterrichtsplan:** Eine `.xls`, `.xlsx` oder `.xlsm` auswählen. Makros werden nicht ausgeführt. Tabellenblatt, Kopfzeile und Spaltenzuordnung prüfen.
+3. **Inhalte und Materialien:** Zusätzliche Dateien importieren, Kategorien bestätigen und optional lokale Referenzen oder KI-Verarbeitung auswählen.
+4. **Kursstruktur:** Themen, Lernziele, Inhalte, Materialien, Aufgaben, Lösungen und Links je Tag prüfen und bearbeiten.
+5. **Generierung:** Tagesentwürfe erzeugen und alle Vorschläge kontrollieren. KI-Ergebnisse werden nie ungeprüft übernommen.
+6. **Prüfen und Exportieren:** Abschlussprüfung starten, blockierende Fehler beheben, Warnungen bewerten, Vorschau kontrollieren und den Kurscontainer exportieren.
+
+Die Phasenanzeige nennt immer „Phase x von 6“, den Namen und den Zustand. Abgeschlossene Phasen können erneut geöffnet werden. Gesperrte Phasen erklären, welche Angabe oder Aktion noch fehlt.
 
 Manuelles Speichern, Autosave und Wiederöffnen verwenden das lokale Projektverzeichnis der Anwendung. Vor dem Löschen oder Überschreiben eigener Inhalte verlangt die Oberfläche eine Bestätigung.
