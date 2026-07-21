@@ -1,6 +1,5 @@
 const path = require('path');
 const { readJson, writeJson, ensureDir } = require('../json-store');
-const { moduleRegistry } = require('../modules/module-registry');
 const { importFiles } = require('./import-adapters');
 const { applyMapping, validateMappings } = require('./mapping-service');
 const { createManifest, cloneManifestForDuplicate } = require('./manifest-service');
@@ -34,7 +33,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
   const batchesPath = path.join(factoryDir, 'import-batches.json');
   const storage = createContainerStorageService({
     dataDir: appData.dataDir,
-    staticContainers: moduleRegistry.getAllModules()
+    staticContainers: []
   });
   const referenceLibrary = createReferenceLibraryService({ appData });
   const aiKeyStore = createAiKeyStoreService({ appData });
@@ -71,11 +70,8 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
     return listImportBatches().find((batch) => batch.id === batchId) || null;
   }
 
-  function assertAdmin(session) {
-    const roles = session?.user?.roles || [];
-    if (!session?.authenticated || (!roles.includes('Admin') && !roles.includes('SuperAdmin'))) {
-      throw new Error('Kein Zugriff: Content Factory ist nur fuer Admins verfuegbar.');
-    }
+  function assertAdmin() {
+    // Die Standalone-ContentFactory besitzt bewusst keine Konten oder Rollen.
     return true;
   }
 

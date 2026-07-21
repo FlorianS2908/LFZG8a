@@ -1,195 +1,32 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+const invoke = (channel) => (...args) => ipcRenderer.invoke(channel, ...args);
 contextBridge.exposeInMainWorld('lfzq8aDesktop', {
-  getSetupState: () => ipcRenderer.invoke('setup:get-state'),
-  saveSetup: (settings) => ipcRenderer.invoke('setup:save', settings),
-  startWorkshop: () => ipcRenderer.invoke('setup:start-workshop'),
-  openTeacherInfo: (url) => ipcRenderer.invoke('teacher:open', url),
-  openParticipantReleases: () => ipcRenderer.invoke('teacher:open-releases'),
-  openInEditor: (target) => ipcRenderer.invoke('editor:open', target),
-  getCourseState: () => ipcRenderer.invoke('course:get-state'),
-  getTaskPackages: () => ipcRenderer.invoke('task-packages:get'),
-  getTaskReleases: () => ipcRenderer.invoke('task-releases:get'),
-  saveTaskRelease: (taskId, release) => ipcRenderer.invoke('task-release:save', taskId, release),
-  bulkUpdateTaskReleases: (filter, values) => ipcRenderer.invoke('task-release:bulk', filter, values),
-  resetTaskReleases: () => ipcRenderer.invoke('task-release:reset'),
-  onTaskReleasesChanged: (callback) => {
-    const listener = (event, releases) => callback(releases);
-    ipcRenderer.on('task-releases:changed', listener);
-    return () => ipcRenderer.removeListener('task-releases:changed', listener);
-  },
-  getParticipantReleases: () => ipcRenderer.invoke('participant-releases:get'),
-  saveParticipantReleases: (releases) => ipcRenderer.invoke('participant-releases:save', releases),
-  onParticipantReleasesChanged: (callback) => {
-    const listener = (event, releases) => callback(releases);
-    ipcRenderer.on('participant-releases:changed', listener);
-    return () => ipcRenderer.removeListener('participant-releases:changed', listener);
-  },
-  getClassroomInfo: () => ipcRenderer.invoke('classroom:get-info'),
-  listParticipants: () => ipcRenderer.invoke('classroom:list-participants'),
-  listHistory: () => ipcRenderer.invoke('history:list'),
-  addHistory: (entry) => ipcRenderer.invoke('history:add', entry),
-  resetHistory: () => ipcRenderer.invoke('history:reset'),
-  createTestReport: () => ipcRenderer.invoke('test-report:create'),
-  listTestReports: () => ipcRenderer.invoke('test-report:list'),
-  openTestReportDir: () => ipcRenderer.invoke('test-report:open-dir'),
-  moveViewToMonitor: (viewType, displayId) => ipcRenderer.invoke('display:move-view', viewType, displayId),
-  highlightMonitor: (displayId, label) => ipcRenderer.invoke('display:highlight', displayId, label),
-  openDataDir: () => ipcRenderer.invoke('app:open-data-dir'),
-  getWorkspaceState: () => ipcRenderer.invoke('workspace:get-state'),
-  saveWorkspaceProfile: (profile) => ipcRenderer.invoke('workspace:save-profile', profile),
-  openLanding: () => ipcRenderer.invoke('workspace:open-landing'),
-  openLfzq8a: () => ipcRenderer.invoke('workspace:open-lfzq8a'),
-  openModule: (moduleId) => ipcRenderer.invoke('workspace:open-module', moduleId),
-  openWizard: () => ipcRenderer.invoke('workspace:open-wizard'),
-  auth: {
-    getState: () => ipcRenderer.invoke('auth:get-state'),
-    login: (credentials) => ipcRenderer.invoke('auth:login', credentials),
-    register: (input) => ipcRenderer.invoke('auth:register', input),
-    logout: () => ipcRenderer.invoke('auth:logout'),
-    changePassword: (input) => ipcRenderer.invoke('auth:change-password', input)
-  },
-  courseSettings: {
-    get: (courseId) => ipcRenderer.invoke('course-settings:get', courseId),
-    save: (courseId, settings) => ipcRenderer.invoke('course-settings:save', courseId, settings)
-  },
   factory: {
-    getState: () => ipcRenderer.invoke('factory:get-state'),
-    duplicateContainer: (options) => ipcRenderer.invoke('factory:duplicate-container', options),
-    importFiles: (input) => ipcRenderer.invoke('factory:import-files', input),
-    createCurriculumAnchor: (input) => ipcRenderer.invoke('factory:create-curriculum-anchor', input),
-    analyzeCurriculumAnchor: (input) => ipcRenderer.invoke('factory:analyze-curriculum-anchor', input),
-    getCurriculumDraft: (draftId) => ipcRenderer.invoke('factory:get-curriculum-draft', draftId),
-    updateCurriculumDraft: (draftId, patch) => ipcRenderer.invoke('factory:update-curriculum-draft', draftId, patch),
-    moveCurriculumTopic: (draftId, topicId, targetDayNumber, targetOrder) => ipcRenderer.invoke('factory:move-curriculum-topic', draftId, topicId, targetDayNumber, targetOrder),
-    approveCurriculumDraft: (draftId) => ipcRenderer.invoke('factory:approve-curriculum-draft', draftId),
-    listCurriculumDrafts: () => ipcRenderer.invoke('factory:list-curriculum-drafts'),
-    removeCurriculumDraft: (draftId) => ipcRenderer.invoke('factory:remove-curriculum-draft', draftId),
-    parseCoursePlan: (input) => ipcRenderer.invoke('factory:parse-course-plan', input),
-    getAiProviderStatus: () => ipcRenderer.invoke('factory:get-ai-provider-status'),
-    testOpenAiConnection: () => ipcRenderer.invoke('factory:test-openai-connection'),
-    importOpenAiKeyFromTxt: (filePath) => ipcRenderer.invoke('factory:import-openai-key-from-txt', filePath),
-    importOpenAiKeyFromDefaultPath: () => ipcRenderer.invoke('factory:import-openai-key-from-default-path'),
-    selectOpenAiKeyTxt: () => ipcRenderer.invoke('factory:select-openai-key-txt'),
-    clearOpenAiKey: () => ipcRenderer.invoke('factory:clear-openai-key'),
-    updateAiModel: (model) => ipcRenderer.invoke('factory:update-ai-model', model),
-    estimateAiCost: (input) => ipcRenderer.invoke('factory:estimate-ai-cost', input),
-    openOpenAiSetupGuide: () => ipcRenderer.invoke('factory:open-openai-setup-guide'),
-    runPreflight: (input) => ipcRenderer.invoke('factory:run-preflight', input),
-    previewPromptQuality: (input) => ipcRenderer.invoke('factory:preview-prompt-quality', input),
-    runPromptGoldenTests: () => ipcRenderer.invoke('factory:run-prompt-golden-tests'),
-    runTestDraft: (input) => ipcRenderer.invoke('factory:run-test-draft', input),
-    listPresets: () => ipcRenderer.invoke('factory:list-presets'),
-    applyPreset: (id, input) => ipcRenderer.invoke('factory:apply-preset', id, input),
-    recommendDidacticProfiles: (input) => ipcRenderer.invoke('factory:recommend-didactic-profiles', input),
-    evaluateDidacticFit: (profile, input) => ipcRenderer.invoke('factory:evaluate-didactic-fit', profile, input),
-    evaluateAllDidacticFits: (input) => ipcRenderer.invoke('factory:evaluate-all-didactic-fits', input),
-    createDidacticPreview: (input) => ipcRenderer.invoke('factory:create-didactic-preview', input),
-    deleteGeneratedDraft: (containerId) => ipcRenderer.invoke('factory:delete-generated-draft', containerId),
-    deleteLastTestDraft: () => ipcRenderer.invoke('factory:delete-last-test-draft'),
-    clearStaging: () => ipcRenderer.invoke('factory:clear-staging'),
-    listStorageUsage: () => ipcRenderer.invoke('factory:list-storage-usage'),
-    generateDayDraft: (input) => ipcRenderer.invoke('factory:generate-day-draft', input),
-    generateAllDayDrafts: (input) => ipcRenderer.invoke('factory:generate-all-day-drafts', input),
-    reviseDayDraft: (input) => ipcRenderer.invoke('factory:revise-day-draft', input),
-    createPlanContainerDraft: (input) => ipcRenderer.invoke('factory:create-plan-container-draft', input),
-    validateGeneratedContainer: (containerId) => ipcRenderer.invoke('factory:validate-generated-container', containerId),
-    openGeneratedDraft: (containerId, target) => ipcRenderer.invoke('factory:open-generated-draft', containerId, target),
-    updateMapping: (batchId, fileId, mapping) => ipcRenderer.invoke('factory:update-mapping', batchId, fileId, mapping),
-    validateBatch: (batchId) => ipcRenderer.invoke('factory:validate-batch', batchId),
-    createContainerFromBatch: (batchId, options) => ipcRenderer.invoke('factory:create-container-from-batch', batchId, options),
-    publishContainer: (containerId, options) => ipcRenderer.invoke('factory:publish-container', containerId, options),
-    disableContainer: (containerId) => ipcRenderer.invoke('factory:disable-container', containerId),
-    archiveContainer: (containerId) => ipcRenderer.invoke('factory:archive-container', containerId),
-    importReferenceSources: (input) => ipcRenderer.invoke('factory:import-reference-sources', input),
-    listReferenceSources: () => ipcRenderer.invoke('factory:list-reference-sources'),
-    getReferenceSource: (referenceId) => ipcRenderer.invoke('factory:get-reference-source', referenceId),
-    searchReferences: (query) => ipcRenderer.invoke('factory:search-references', query),
-    removeReferenceSource: (referenceId) => ipcRenderer.invoke('factory:remove-reference-source', referenceId),
-    getReferenceSafetyReport: (referenceId) => ipcRenderer.invoke('factory:get-reference-safety-report', referenceId)
-  },
-  demo: {
-    openTarget: (demoId, containerId) => ipcRenderer.invoke('demo:open-target', demoId, containerId),
-    listTargets: (containerId, dayNumber) => ipcRenderer.invoke('demo:list-targets-for-day', containerId, dayNumber),
-    getTarget: (containerId, demoId) => ipcRenderer.invoke('demo:get-target', containerId, demoId)
-  },
-  releaseCenter: {
-    getState: () => ipcRenderer.invoke('release-center:get-state'),
-    saveAssignments: (userId, moduleIds) => ipcRenderer.invoke('release-center:save-assignments', userId, moduleIds),
-    revokePendingRegistration: (id) => ipcRenderer.invoke('release-center:revoke-pending-registration', id)
-  },
-  userCreate: {
-    createPendingRegistration: (input) => ipcRenderer.invoke('user-create:create-pending-registration', input)
-  },
-  adminTools: {
-    list: () => ipcRenderer.invoke('admin-tools:list'),
-    getState: (toolId) => ipcRenderer.invoke('admin-tools:get-state', toolId),
-    saveConfig: (toolId, config) => ipcRenderer.invoke('admin-tools:save-config', toolId, config),
-    runPreview: (toolId) => ipcRenderer.invoke('admin-tools:run-preview', toolId)
-  },
-  courseManagement: {
-    getState: () => ipcRenderer.invoke('course-management:get-state'),
-    createCourse: (input) => ipcRenderer.invoke('course-management:create-course', input),
-    assignMember: (courseInstanceId, userId, roleInCourse) => ipcRenderer.invoke('course-management:assign-member', courseInstanceId, userId, roleInCourse),
-    assignContainer: (courseInstanceId, contentContainerId) => ipcRenderer.invoke('course-management:assign-container', courseInstanceId, contentContainerId),
-    updateStatus: (courseInstanceId, status, expectedRevision) => ipcRenderer.invoke('course-management:update-status', courseInstanceId, status, expectedRevision)
-  },
-  dokuTool: {
-    getQuizConfig: () => ipcRenderer.invoke('dokutool:quiz-config'),
-    getQuizQuestions: (query) => ipcRenderer.invoke('dokutool:quiz-questions', query),
-    saveQuizProfile: (profile) => ipcRenderer.invoke('dokutool:quiz-profile-save', profile),
-    analyze: (input) => ipcRenderer.invoke('dokutool:analyze', input),
-    listReports: () => ipcRenderer.invoke('dokutool:reports-list'),
-    getReport: (reportId) => ipcRenderer.invoke('dokutool:report-get', reportId)
+    getState: invoke('factory:get-state'), duplicateContainer: invoke('factory:duplicate-container'), importFiles: invoke('factory:import-files'),
+    createCurriculumAnchor: invoke('factory:create-curriculum-anchor'), analyzeCurriculumAnchor: invoke('factory:analyze-curriculum-anchor'),
+    getCurriculumDraft: invoke('factory:get-curriculum-draft'), updateCurriculumDraft: invoke('factory:update-curriculum-draft'),
+    moveCurriculumTopic: invoke('factory:move-curriculum-topic'), approveCurriculumDraft: invoke('factory:approve-curriculum-draft'),
+    listCurriculumDrafts: invoke('factory:list-curriculum-drafts'), removeCurriculumDraft: invoke('factory:remove-curriculum-draft'),
+    parseCoursePlan: invoke('factory:parse-course-plan'), getAiProviderStatus: invoke('factory:get-ai-provider-status'),
+    testOpenAiConnection: invoke('factory:test-openai-connection'), importOpenAiKeyFromTxt: invoke('factory:import-openai-key-from-txt'),
+    importOpenAiKeyFromDefaultPath: invoke('factory:import-openai-key-from-default-path'), selectOpenAiKeyTxt: invoke('factory:select-openai-key-txt'),
+    clearOpenAiKey: invoke('factory:clear-openai-key'), updateAiModel: invoke('factory:update-ai-model'), estimateAiCost: invoke('factory:estimate-ai-cost'),
+    openOpenAiSetupGuide: invoke('factory:open-openai-setup-guide'), runPreflight: invoke('factory:run-preflight'),
+    previewPromptQuality: invoke('factory:preview-prompt-quality'), runPromptGoldenTests: invoke('factory:run-prompt-golden-tests'),
+    runTestDraft: invoke('factory:run-test-draft'), listPresets: invoke('factory:list-presets'), applyPreset: invoke('factory:apply-preset'),
+    recommendDidacticProfiles: invoke('factory:recommend-didactic-profiles'), evaluateDidacticFit: invoke('factory:evaluate-didactic-fit'),
+    evaluateAllDidacticFits: invoke('factory:evaluate-all-didactic-fits'), createDidacticPreview: invoke('factory:create-didactic-preview'),
+    deleteGeneratedDraft: invoke('factory:delete-generated-draft'), deleteLastTestDraft: invoke('factory:delete-last-test-draft'),
+    clearStaging: invoke('factory:clear-staging'), listStorageUsage: invoke('factory:list-storage-usage'),
+    generateDayDraft: invoke('factory:generate-day-draft'), generateAllDayDrafts: invoke('factory:generate-all-day-drafts'),
+    reviseDayDraft: invoke('factory:revise-day-draft'), createPlanContainerDraft: invoke('factory:create-plan-container-draft'),
+    validateGeneratedContainer: invoke('factory:validate-generated-container'), openGeneratedDraft: invoke('factory:open-generated-draft'),
+    updateMapping: invoke('factory:update-mapping'), validateBatch: invoke('factory:validate-batch'),
+    createContainerFromBatch: invoke('factory:create-container-from-batch'), publishContainer: invoke('factory:publish-container'),
+    disableContainer: invoke('factory:disable-container'), archiveContainer: invoke('factory:archive-container'),
+    importReferenceSources: invoke('factory:import-reference-sources'), listReferenceSources: invoke('factory:list-reference-sources'),
+    getReferenceSource: invoke('factory:get-reference-source'), searchReferences: invoke('factory:search-references'),
+    removeReferenceSource: invoke('factory:remove-reference-source'), getReferenceSafetyReport: invoke('factory:get-reference-safety-report')
   }
-});
-
-contextBridge.exposeInMainWorld('ueTool', {
-  demo: {
-    openTarget: (demoId, containerId) => ipcRenderer.invoke('demo:open-target', demoId, containerId),
-    listTargets: (containerId, dayNumber) => ipcRenderer.invoke('demo:list-targets-for-day', containerId, dayNumber),
-    getTarget: (containerId, demoId) => ipcRenderer.invoke('demo:get-target', containerId, demoId)
-  }
-});
-
-window.addEventListener('DOMContentLoaded', () => {
-  document.addEventListener('click', (event) => {
-    const link = event.target.closest && event.target.closest('a.teacher-open');
-    if (!link || !window.lfzq8aDesktop) {
-      return;
-    }
-
-    event.preventDefault();
-    window.lfzq8aDesktop.openTeacherInfo(link.href);
-  });
-
-  document.addEventListener('click', async (event) => {
-    const button = event.target.closest && event.target.closest('[data-open-editor]');
-    if (!button || !window.lfzq8aDesktop) {
-      return;
-    }
-
-    event.preventDefault();
-    const target = new URL(button.dataset.openEditor, window.location.href).href;
-    try {
-      await window.lfzq8aDesktop.openInEditor(target);
-    } catch (error) {
-      window.alert(`VS Code konnte nicht gestartet werden: ${error.message}`);
-    }
-  });
-
-  document.addEventListener('click', async (event) => {
-    const button = event.target.closest && event.target.closest('.demo-open-button[data-demo-id]');
-    if (!button || !window.lfzq8aDesktop?.demo) {
-      return;
-    }
-    const containerId = button.dataset.containerId || window.CONTENT_FACTORY_CONTAINER_ID || '';
-    if (!containerId) {
-      button.insertAdjacentHTML('afterend', '<p class="demo-launch-status">Direktes Oeffnen ist nur in der Electron-App mit Container-Kontext verfuegbar.</p>');
-      return;
-    }
-    event.preventDefault();
-    const result = await window.lfzq8aDesktop.demo.openTarget(button.dataset.demoId, containerId);
-    button.insertAdjacentHTML('afterend', `<p class="demo-launch-status">${String(result.message || 'Demo geprueft.').replace(/</g, '&lt;')}</p>`);
-  });
 });

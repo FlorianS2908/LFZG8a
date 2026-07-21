@@ -1,49 +1,64 @@
 {
-    "name":  "uetool-as-saas",
-    "version":  "0.1.0",
-    "description":  "ueTool_asSaaS Desktop-App fuer ContentFactory, DokuTool, QuizTools und HTML/CSS-Unterrichtsumgebung.",
-    "main":  "app/main.js",
-    "private":  true,
-    "author":  "Ploglan",
-    "productName":  "ueTool_asSaaS",
-    "scripts":  {
-                    "start":  "electron .",
-                    "dev":  "electron .",
-                    "check":  "node scripts/check-all.js",
-                    "test":  "node tests/run-tests.js",
-                    "test:electron":  "electron tests/electron-course-smoke.js \u0026\u0026 electron tests/electron-workspace-smoke.js",
-                    "test:watch":  "node tests/run-tests.js",
-                    "verify":  "node scripts/check-all.js \u0026\u0026 node tests/run-tests.js",
-                    "dist":  "electron-builder --win"
-                },
-    "build":  {
-                  "appId":  "de.ploglan.toolzentrale",
-                  "productName":  "ueTool_asSaaS",
-                  "directories":  {
-                                      "output":  "dist"
-                                  },
-                  "files":  [
-                                "app/**/*",
-                                "package.json"
-                            ],
-                  "win":  {
-                              "icon":  "app/assets/icons/app-icon.ico",
-                              "signAndEditExecutable":  false,
-                              "target":  [
-                                             "nsis"
-                                         ]
-                          },
-                  "nsis":  {
-                               "oneClick":  false,
-                               "perMachine":  false,
-                               "allowToChangeInstallationDirectory":  true,
-                               "createDesktopShortcut":  true,
-                               "createStartMenuShortcut":  true,
-                               "shortcutName":  "ueTool_asSaaS"
-                           }
-              },
-    "devDependencies":  {
-                            "electron":  "^31.7.7",
-                            "electron-builder":  "^24.13.3"
-                        }
+    "name": "uetool-contentfactory",
+    "version": "1.0.0",
+    "description": "ueTool ContentFactory zum Analysieren von Unterrichtsmaterialien und Erstellen von Kurscontainern.",
+    "main": "app/main.js",
+    "private": true,
+    "author": "Ploglan",
+    "productName": "ueTool ContentFactory",
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron .",
+        "check": "node scripts/check-all.js",
+        "test": "node tests/run-tests.js",
+        "test:coverage": "node --experimental-test-coverage --test tests/standalone-architecture.test.js && node --experimental-test-coverage ../packages/content-factory-core/tests/content-factory-core.test.ts",
+        "test:electron": "electron . --smoke-test",
+        "test:watch": "node tests/run-tests.js",
+        "verify": "node scripts/check-all.js && node tests/run-tests.js",
+        "build": "electron-builder --dir",
+        "package": "electron-builder --win",
+        "dist": "electron-builder --win"
+    },
+    "build": {
+        "appId": "de.uetool.contentfactory",
+        "productName": "ueTool ContentFactory",
+        "directories": {
+            "output": "dist"
+        },
+        "files": [
+            "app/main.js",
+            "app/preload.js",
+            "app/assets/icons/*",
+            "app/lib/json-store.js",
+            "app/lib/env/**/*",
+            "app/lib/modules/module-types.js",
+            "app/lib/content-factory/**/*",
+            "app/renderer/tool-center/factory.html",
+            "app/renderer/tool-center/factory.js",
+            "app/renderer/tool-center/factory-upload-utils.js",
+            "app/renderer/tool-center/workspace.css",
+            "app/renderer/tool-center/workflow-ui/**/*",
+            "app/renderer/tool-center/assets/ploglan-logo.png",
+            "package.json"
+        ],
+        "win": {
+            "icon": "app/assets/icons/app-icon.ico",
+            "signAndEditExecutable": false,
+            "target": [
+                "nsis"
+            ]
+        },
+        "nsis": {
+            "oneClick": false,
+            "perMachine": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "ueTool ContentFactory"
+        }
+    },
+    "devDependencies": {
+        "electron": "^39.8.1",
+        "electron-builder": "^26.15.3"
+    }
 }

@@ -1,0 +1,15 @@
+{
+  "name": "uetool-contentfactory",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Eigenständige Electron-Anwendung zum Erstellen validierter Kurscontainer.",
+  "scripts": {
+    "dev": "npm --prefix desktop-app run dev",
+    "start": "npm --prefix desktop-app start",
+    "test": "npm --prefix desktop-app test && node packages/content-factory-core/tests/content-factory-core.test.ts",
+    "test:coverage": "npm --prefix desktop-app run test:coverage",
+    "check": "npm --prefix desktop-app run check",
+    "build": "npm --prefix desktop-app run build",
+    "package": "npm --prefix desktop-app run package"
+  }
+}

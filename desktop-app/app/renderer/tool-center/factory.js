@@ -2290,7 +2290,7 @@ async function init() {
     renderFactoryNavigationGates($('[data-factory-panel].is-active')?.dataset.factoryPanel || 'home');
     setFactoryStatus(event.target.checked ? 'Expertenmodus ist aktiviert.' : 'Gefuehrter Modus ist aktiv.', event.target.checked ? '' : 'status-warning');
   });
-  $('[data-open-landing]').addEventListener('click', () => desktop.openLanding());
+  $('[data-open-landing]')?.addEventListener('click', () => desktop.openLanding?.());
   $('[data-refresh]').addEventListener('click', loadState);
   $('[data-run-duplicate]').addEventListener('click', duplicateContainer);
   $('[data-run-import]').addEventListener('click', importRawFiles);
