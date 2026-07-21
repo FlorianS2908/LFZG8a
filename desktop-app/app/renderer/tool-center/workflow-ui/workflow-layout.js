@@ -38,7 +38,9 @@
       <nav class="workflow-stepper" aria-label="Phasen der Kurserstellung">
         ${phases.map((phase, phaseIndex) => {
           const phaseGates = phase.steps.map((id) => gateById.get(id)).filter(Boolean);
-          const phaseDone = phaseGates.length > 0 && phaseGates.every((gate) => gate.done);
+          const phaseDone = phaseGates.length > 0 && phaseGates.every((gate) => gate.done && gate.reviewPassed);
+          const completionDone = phaseGates.length > 0 && phaseGates.every((gate) => gate.done);
+          const reviewDone = phaseGates.length > 0 && phaseGates.every((gate) => gate.reviewPassed);
           const phaseActive = phase.steps.includes(activeStep);
           const selectableGate = phaseGates.find((gate) => gate.active) || phaseGates[0] || { id: phase.steps[0], active: false, missing: 'Vorherige Voraussetzungen fehlen.' };
           const missing = phaseGates.find((gate) => !gate.active)?.missing || selectableGate.missing || '';
@@ -51,7 +53,7 @@
           return `
             <button class="${classes}" type="button" data-plan-step="${escapeHtml(phaseActive ? activeStep : selectableGate.id)}" ${selectableGate.active ? '' : 'disabled'} ${phaseActive ? 'aria-current="step"' : ''} aria-label="Phase ${phaseIndex + 1}: ${escapeHtml(phase.label)}${phaseDone ? ', abgeschlossen' : phaseActive ? ', aktuell' : selectableGate.active ? '' : `, gesperrt: ${escapeHtml(missing)}`}">
               <span class="workflow-step-label">${phaseIndex + 1}. ${escapeHtml(phase.label)}</span>
-              <span class="workflow-step-state">${escapeHtml(phaseDone ? '✓ Erledigt' : phaseActive ? '● Aktiv' : selectableGate.active ? 'Optional' : 'Gesperrt')}</span>
+              <span class="workflow-step-state"><span>${escapeHtml(completionDone ? '✓ Erledigt' : phaseActive ? '● Aktiv · Erledigt offen' : '○ Erledigt')}</span><span>${escapeHtml(reviewDone ? '✓ Review bestanden' : '○ Review offen')}</span></span>
             </button>
           `;
         }).join('')}

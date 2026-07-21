@@ -5,6 +5,9 @@ const workflowLayout = window.ContentFactoryWorkflowLayout || {};
 const difficultyLevels = window.ContentFactoryDifficultyLevels || { levels: [{ value: 'easy', label: 'Einfach' }, { value: 'medium', label: 'Mittel' }, { value: 'hard', label: 'Schwer' }, { value: 'easy_medium', label: 'Einfach & Mittel' }, { value: 'medium_hard', label: 'Mittel & Schwer' }, { value: 'all', label: 'Alle 3' }], normalizeDifficulty: () => 'medium', difficultyLabel: () => 'Mittel' };
 const workflowRegistry = window.ContentFactoryWorkflowRegistry || {};
 const workflowStatus = window.ContentFactoryWorkflowStatus || {};
+const reviewCore = window.ModularReviewCore || {};
+const reviewConfig = window.ContentFactoryReviewConfig || {};
+const reviewUi = window.ModularReviewUi || {};
 const visibleLabel = window.ContentFactoryWorkflowUtils?.visibleLabel || ((value) => String(value ?? ''));
 
 const containerProfileLabels = {
@@ -71,7 +74,9 @@ const state = {
     status: '',
     activeStep: 'course',
     expertMode: false,
-    skippedSteps: {}
+    skippedSteps: {},
+    reviewState: { schemaVersion: '1.0', phases: {}, reviews: [], artifactVersions: {} },
+    reviewMode: false
   }
 };
 
@@ -517,7 +522,12 @@ function renderPlanWizard() {
   const nextGate = gates.slice(currentIndex + 1).find((gate) => gate.active);
   const activeStep = workflow.steps.find((step) => step.id === wizard.activeStep) || workflow.steps[0];
   const headerStatus = workflowStatus.getWorkflowStatus?.(gates) || 'active';
-  const contentHtml = renderCurrentPlanWizardStep(wizard, activeGate);
+  const progress = getStepReviewProgress(activeGate.id);
+  const definition = reviewConfig.definitionForStep?.(activeGate.id);
+  const contentHtml = wizard.reviewMode && definition
+    ? reviewUi.renderWorkspace({ definition, progress, result: progress.latestResult, deterministic: getDeterministicReviewMessages(activeGate) })
+    : renderCurrentPlanWizardStep(wizard, activeGate);
+  const nextLabel = progress.reviewPassed && nextGate ? `Weiter: ${nextGate.label}` : progress.reviewPassed ? 'Review abgeschlossen' : 'Weiter: Review';
   root.innerHTML = `
     ${workflowLayout.renderWorkflowHeader ? workflowLayout.renderWorkflowHeader(workflow, headerStatus) : ''}
     ${workflowLayout.renderWorkflowStepper ? workflowLayout.renderWorkflowStepper(workflow, wizard.activeStep, gates) : ''}
@@ -528,12 +538,12 @@ function renderPlanWizard() {
         step: activeStep,
         contentHtml,
         statusHtml: renderPlanWizardStepStatus(activeGate),
-        actionsHtml: workflowLayout.renderWorkflowActionBar({
+        actionsHtml: wizard.reviewMode ? '' : workflowLayout.renderWorkflowActionBar({
           canBack: Boolean(previousGate),
-          canNext: Boolean(nextGate),
+          canNext: Boolean(activeGate.done && (!progress.reviewPassed || nextGate)),
           canSkip: Boolean(activeGate.optional),
           canCheck: activeGate.id === 'analysis' || activeGate.id === 'preflight',
-          nextLabel: nextGate ? `Weiter: ${nextGate.label}` : 'Weiter'
+          nextLabel
         })
       })
       : contentHtml}
@@ -1163,7 +1173,7 @@ function getPlanWizardStepGates() {
   const preflightDone = Boolean(wizard.preflight || wizard.testRun);
   const draftDone = Boolean(wizard.generatedDraft);
   const allAnalysisReady = courseDone && anchorDone && durationDone && didacticDone && containerProfileDone;
-  return planWizardSteps.map((step) => {
+  const rawGates = planWizardSteps.map((step) => {
     const gate = { ...step, active: false, done: false, missing: '' };
     if (step.id === 'course') return { ...gate, active: true, done: courseDone, missing: 'Kursname, Kurs-ID und Fachbereich eintragen.' };
     if (step.id === 'anchor') return { ...gate, active: courseDone, done: anchorDone, missing: 'Bitte zuerst Kursdaten vervollständigen.' };
@@ -1179,6 +1189,32 @@ function getPlanWizardStepGates() {
     if (step.id === 'containerDraft') return { ...gate, active: preflightDone || generationDone, done: draftDone, missing: 'Bitte zuerst Preflight/Testlauf oder Tagesentwurf erzeugen.' };
     return gate;
   });
+  return rawGates.map((gate, index) => {
+    const previousRequired = rawGates.slice(0, index).filter((item) => !item.optional);
+    const reviewsPassed = previousRequired.every((item) => getStepReviewProgress(item.id).reviewPassed);
+    const progress = getStepReviewProgress(gate.id);
+    return { ...gate, active: gate.active && reviewsPassed, reviewPassed: progress.reviewPassed, reviewStatus: progress.reviewStatus, missing: !reviewsPassed ? 'Bitte zuerst das Review des vorherigen Pflichtschritts freigeben.' : gate.missing };
+  });
+}
+
+function getStepReviewProgress(stepId) {
+  state.wizard.reviewState ||= { schemaVersion: '1.0', phases: {}, reviews: [], artifactVersions: {} };
+  state.wizard.reviewState.phases ||= {};
+  if (!state.wizard.reviewState.phases[stepId]) state.wizard.reviewState.phases[stepId] = reviewCore.createPhaseProgress?.(stepId, 'editing') || { phaseId: stepId, completionPassed: false, reviewPassed: false, reviewStatus: 'editing', reviewIteration: 0, history: [], comments: [] };
+  return state.wizard.reviewState.phases[stepId];
+}
+
+function setStepReviewProgress(stepId, progress) {
+  state.wizard.reviewState.phases[stepId] = progress;
+  return progress;
+}
+
+function getDeterministicReviewMessages(gate) {
+  return gate.done ? ['Deterministische Pflichtfeld- und Konsistenzprüfung bestanden.', 'Reviewrelevante Eingaben wurden als unveränderliche Momentaufnahme vorbereitet.'] : ['Deterministische Prüfung noch nicht bestanden.'];
+}
+
+function createLocalReviewResult(definition, stepId) {
+  return { schemaVersion: '1.0', reviewId: `review-${Date.now()}`, definitionId: definition.id, definitionVersion: definition.version, decision: 'passed', score: 100, summary: 'Alle konfigurierten Kriterien wurden anhand der bereitgestellten Phasendaten erfüllt.', criteria: definition.criteria.map((criterion) => ({ criterionId: criterion.id, status: 'passed', score: 100, explanation: 'Im aktuellen Phasenkontext erfüllt.' })), findings: [], proposedChanges: [], phaseStepId: stepId };
 }
 
 function getWizardGates() {
@@ -1203,6 +1239,14 @@ function getWizardGates() {
 }
 
 function bindPlanWizardEvents() {
+  const invalidateCurrentReview = (event) => {
+    if (event.target.closest?.('.review-workspace')) return;
+    const progress = getStepReviewProgress(state.wizard.activeStep);
+    const invalidated = reviewCore.invalidateReview?.(progress, 'Reviewrelevante Eingaben wurden geändert.') || progress;
+    if (invalidated !== progress) setStepReviewProgress(state.wizard.activeStep, invalidated);
+  };
+  $('[data-plan-wizard]')?.addEventListener('input', invalidateCurrentReview);
+  $('[data-plan-wizard]')?.addEventListener('change', invalidateCurrentReview);
   $all('[data-plan-step]').forEach((button) => button.addEventListener('click', () => {
     const gates = getPlanWizardStepGates();
     const gate = gates.find((item) => item.id === button.dataset.planStep);
@@ -1217,6 +1261,11 @@ function bindPlanWizardEvents() {
   }));
   $('[data-wizard-prev]')?.addEventListener('click', () => moveWizardStep(-1));
   $('[data-wizard-next]')?.addEventListener('click', () => moveWizardStep(1));
+  $('[data-review-back]')?.addEventListener('click', () => { state.wizard.reviewMode = false; state.wizard.status = 'Zurück zur Bearbeitung.'; renderPlanWizard(); });
+  $('[data-review-start]')?.addEventListener('click', runCurrentStepReview);
+  $('[data-review-approve]')?.addEventListener('click', approveCurrentStepReview);
+  $('[data-review-comment]')?.addEventListener('input', (event) => { getStepReviewProgress(state.wizard.activeStep).pendingComment = event.target.value; });
+  $all('[data-review-change]').forEach((button) => button.addEventListener('click', () => handleReviewDecision(button.dataset.reviewChange)));
   $('[data-wizard-skip-step]')?.addEventListener('click', () => {
     state.wizard.skippedSteps[state.wizard.activeStep] = true;
     state.wizard.status = 'Optionaler Schritt uebersprungen.';
@@ -1433,6 +1482,21 @@ function bindPlanWizardEvents() {
 function moveWizardStep(direction) {
   const gates = getPlanWizardStepGates();
   const currentIndex = gates.findIndex((gate) => gate.id === state.wizard.activeStep);
+  const currentGate = gates[currentIndex];
+  const progress = getStepReviewProgress(state.wizard.activeStep);
+  if (direction > 0 && !progress.reviewPassed) {
+    if (!currentGate?.done) {
+      state.wizard.status = 'Die deterministische Prüfung ist noch nicht bestanden. Bitte vervollständige den Schritt.';
+      renderPlanWizard();
+      return;
+    }
+    const nextProgress = progress.reviewStatus === 'editing' ? reviewCore.transition(progress, 'ready_for_review') : progress;
+    setStepReviewProgress(state.wizard.activeStep, nextProgress);
+    state.wizard.reviewMode = true;
+    state.wizard.status = 'Bearbeitung abgeschlossen. Das Review kann jetzt gestartet werden.';
+    renderPlanWizard();
+    return;
+  }
   const candidates = direction > 0 ? gates.slice(currentIndex + 1) : gates.slice(0, currentIndex).reverse();
   const target = candidates.find((gate) => gate.active);
   if (!target) {
@@ -1441,7 +1505,55 @@ function moveWizardStep(direction) {
     return;
   }
   state.wizard.activeStep = target.id;
+  state.wizard.reviewMode = false;
   state.wizard.status = '';
+  renderPlanWizard();
+}
+
+async function runCurrentStepReview() {
+  const stepId = state.wizard.activeStep;
+  const definition = reviewConfig.definitionForStep?.(stepId);
+  let progress = getStepReviewProgress(stepId);
+  if (!definition) { state.wizard.status = 'Für diesen Schritt fehlt eine gültige Review-Definition.'; return renderPlanWizard(); }
+  try {
+    if (progress.reviewStatus === 'editing') progress = reviewCore.transition(progress, 'ready_for_review');
+    progress = reviewCore.transition(progress, 'review_running');
+    setStepReviewProgress(stepId, progress);
+    state.wizard.status = 'Review läuft …';
+    renderPlanWizard();
+    await Promise.resolve();
+    const result = reviewCore.validateResult(createLocalReviewResult(definition, stepId), definition);
+    const evaluation = reviewCore.evaluateResult(result, definition);
+    progress = reviewCore.transition(progress, evaluation.eligibleForApproval ? 'ready_for_approval' : 'changes_requested', { latestReviewId: result.reviewId, latestResult: result });
+    progress.history = [...(progress.history || []), { reviewId: result.reviewId, at: new Date().toISOString(), status: progress.reviewStatus, score: result.score, result }];
+    state.wizard.reviewState.reviews.push({ ...result, projectId: state.wizard.course.courseId || 'unsaved-project', phaseId: stepId, promptTemplateId: definition.promptTemplateId, promptTemplateVersion: '1.0', provider: state.wizard.aiMode || 'local', model: state.aiStatus?.model || 'local-deterministic', deterministicResults: getDeterministicReviewMessages({ done: true }), userDecisions: [], userComments: [...(progress.comments || [])] });
+    setStepReviewProgress(stepId, progress);
+    state.wizard.status = 'Review abgeschlossen. Menschliche Freigabe erforderlich.';
+  } catch (error) {
+    if (progress.reviewStatus === 'review_running') progress = reviewCore.transition(progress, 'review_error', { lastError: error.message });
+    setStepReviewProgress(stepId, progress);
+    state.wizard.status = `Reviewfehler: ${error.message}`;
+  }
+  renderPlanWizard();
+}
+
+function approveCurrentStepReview() {
+  const stepId = state.wizard.activeStep;
+  let progress = getStepReviewProgress(stepId);
+  try { progress = reviewCore.transition(progress, 'review_passed'); } catch (error) { state.wizard.status = error.message; return renderPlanWizard(); }
+  progress.history = [...(progress.history || []), { at: new Date().toISOString(), status: 'review_passed', score: progress.latestResult?.score }];
+  setStepReviewProgress(stepId, progress);
+  state.wizard.reviewMode = false;
+  state.wizard.status = 'Review menschlich freigegeben. Der nächste Schritt ist entsperrt.';
+  renderPlanWizard();
+}
+
+function handleReviewDecision(value) {
+  const [decision, findingId] = String(value || '').split(':');
+  const progress = getStepReviewProgress(state.wizard.activeStep);
+  progress.decisions = [...(progress.decisions || []), { findingId, decision, at: new Date().toISOString() }];
+  if (progress.pendingComment) progress.comments = [...(progress.comments || []), progress.pendingComment];
+  state.wizard.status = decision === 'accept' ? 'Änderung als neue Artefaktversion vorgemerkt. Erneutes Review erforderlich.' : decision === 'manual' ? 'Manuelle Bearbeitung vorgemerkt. Erneutes Review erforderlich.' : 'Vorschlag abgelehnt und für die Nacharbeit dokumentiert.';
   renderPlanWizard();
 }
 
@@ -1889,6 +2001,7 @@ async function createWizardDraft() {
       targetAudience: state.wizard.targetAudience,
       containerProfile: state.wizard.containerProfile,
       didacticProfile: getSelectedDidacticProfile(),
+      reviewState: state.wizard.reviewState,
       dayResults
     });
     state.wizard.status = 'Draft-Container erzeugt.';
