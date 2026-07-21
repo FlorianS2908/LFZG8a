@@ -27,3 +27,33 @@ test('Oberfläche trägt den Produktnamen und keine Plattformnavigation', () => 
   assert.match(html, /Unterrichtsmaterialien analysieren und Kurscontainer erstellen/);
   assert.doesNotMatch(html, /Login|Tool-Zentrale|Adminbereich|Teilnehmeransicht/);
 });
+
+test('Hauptnavigation, Expertenbereich und Landmarken sind zugänglich strukturiert', () => {
+  const html = read(path.join('renderer', 'tool-center', 'factory.html'));
+  const mainNavigation = html.match(/<nav class="factory-sidebar"[\s\S]*?<\/nav>/)?.[0] || '';
+  assert.equal((mainNavigation.match(/data-factory-tab="(?:home|plan-wizard|overview|references|settings)"/g) || []).length, 5);
+  assert.match(mainNavigation, /<details class="expert-navigation"/);
+  assert.match(mainNavigation, /<summary>Expertenfunktionen<\/summary>/);
+  assert.match(html, /class="skip-link"/);
+  assert.match(html, /id="main-content"/);
+  assert.match(html, /role="status" aria-live="polite"/);
+  assert.match(html, /aria-current="page"/);
+});
+
+test('Kurserstellung zeigt sechs verständliche Phasen mit Textstatus', () => {
+  const layout = read(path.join('renderer', 'tool-center', 'workflow-ui', 'workflow-layout.js'));
+  assert.match(layout, /Phase \$\{activePhaseIndex \+ 1\} von 6/);
+  for (const phase of ['Grundlagen', 'Unterrichtsplan', 'Inhalte und Materialien', 'Kursstruktur', 'Generierung', 'Prüfen und Exportieren']) {
+    assert.match(layout, new RegExp(phase));
+  }
+  assert.match(layout, /aria-current="step"/);
+  assert.match(layout, /✓ abgeschlossen/);
+});
+
+test('Designsystem enthält Fokus, responsive Desktopansicht und reduzierte Bewegung', () => {
+  const css = read(path.join('renderer', 'tool-center', 'content-factory.css'));
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /@media \(max-width: 1100px\)/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(css, /min-height: 2\.75rem/);
+});
