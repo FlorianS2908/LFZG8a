@@ -37,6 +37,6 @@ Die ContentFactory verarbeitet Excel-Unterrichtspläne (`.xls`, `.xlsx`, `.xlsm`
 - `packages/content-factory-core/`: produktive, frameworkunabhängige Fachlogik
 - `docs/`: Benutzer-, Format-, KI-, Import-, Curriculum- und Didaktikdokumentation
 
-Projekte, Referenzen und Schlüsselkonfigurationen werden ausschließlich im lokalen Electron-Benutzerdatenverzeichnis gespeichert. OpenAI ist optional; ohne API-Schlüssel bleibt die lokale regelbasierte Verarbeitung verfügbar.
+Projekte und Referenzen werden ausschließlich im lokalen Electron-Benutzerdatenverzeichnis gespeichert. OpenAI-Schlüssel werden im Main-Prozess mit Windows `safeStorage` verschlüsselt; der Renderer kann sie weder lesen noch exportieren. Ohne API-Schlüssel bleibt der gekennzeichnete lokale Mock-/Offline-Fallback verfügbar. Einrichtung, Verbindungstest, Austausch und Entfernung sind in den KI-Einstellungen erreichbar.
 
-Weitere Informationen stehen im [Benutzerhandbuch](docs/contentfactory-user-guide.md), in der [Containerformat-Dokumentation](docs/contentfactory-container-format.md) und in der [Standalone-Analyse](docs/contentfactory-standalone-analysis.md).
+Weitere Informationen stehen in der [OpenAI-Einrichtung](docs/OPENAI_API_SETUP.md), im [Benutzerhandbuch](docs/contentfactory-user-guide.md), in der [Containerformat-Dokumentation](docs/contentfactory-container-format.md) und in der [Standalone-Analyse](docs/contentfactory-standalone-analysis.md).

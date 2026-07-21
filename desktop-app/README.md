@@ -8,6 +8,9 @@ npm run dev
 npm test
 npm run check
 npm run build
+npm run package
 ```
 
 Die Paketdateiliste ist in `package.json` explizit begrenzt. Das Ploglan-Logo wird aus `app/renderer/tool-center/assets/ploglan-logo.png` geladen und mit paketiert.
+
+OpenAI-Zugriffe, Schlüsselimport und Verbindungstest laufen ausschließlich im Electron-Main-Prozess. Der Schlüssel wird mit `safeStorage` im Electron-`userData` verschlüsselt. Preload stellt nur eng begrenzte Status- und Aktionsmethoden bereit; es gibt keine Lesefunktion für Credentials. Modell und Entwicklungsfallback sind über `OPENAI_MODEL` beziehungsweise `OPENAI_API_KEY` konfigurierbar, wobei der sichere Store Vorrang hat.
