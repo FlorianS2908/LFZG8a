@@ -1,4 +1,5 @@
 const fs = require('fs');
+const test = require('node:test');
 const os = require('os');
 const path = require('path');
 const assert = require('node:assert/strict');

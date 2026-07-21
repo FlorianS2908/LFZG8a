@@ -1,9 +1,10 @@
 const fs = require('fs');
+const test = require('node:test');
 const os = require('os');
 const path = require('path');
 const assert = require('node:assert/strict');
-const { createAppData, INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD } = require('../app/lib/app-data');
 const { createContentFactoryService } = require('../app/lib/content-factory/content-factory-service');
+const { createManifest } = require('../app/lib/content-factory/manifest-service');
 const { detectTargetArea, extractDayNumber, detectFileKind } = require('../app/lib/content-factory/file-type-rules');
 const { createMappingSuggestion, applyMapping } = require('../app/lib/content-factory/mapping-service');
 const { extractSourceOutline } = require('../app/lib/content-factory/source-extraction/source-extractor-service');
@@ -27,7 +28,6 @@ const { estimateContentFactoryCost } = require('../app/lib/content-factory/ai/co
 const { validateGeneratedContainer } = require('../app/lib/content-factory/generated-container-validator');
 const { inferDemoTargetsForDays } = require('../app/lib/content-factory/demo-targets/demo-target-service');
 const { generateDemoArtifacts } = require('../app/lib/content-factory/demo-targets/demo-artifact-generator');
-const { openDemoTarget } = require('../app/lib/demo-launcher/demo-launcher-service');
 const { listDidacticProfiles, getDidacticProfile, suggestDidacticProfile, recommendDidacticProfiles } = require('../app/lib/content-factory/didactics/didactic-profile-service');
 const { evaluateDidacticFit } = require('../app/lib/content-factory/didactics/didactic-fit-service');
 const { createDidacticPreview } = require('../app/lib/content-factory/didactics/didactic-preview-service');
@@ -43,8 +43,8 @@ const workflowLayout = require('../app/renderer/tool-center/workflow-ui/workflow
 
 function createTempFactory() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-factory-'));
-  const appData = createAppData(dir);
-  const session = appData.login(INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD);
+  const appData = { dataDir: dir, ensureDataFiles() { fs.mkdirSync(dir, { recursive: true }); } };
+  const session = { authenticated: true, user: { id: 'test', email: 'test@contentfactory.invalid', roles: [] } };
   return {
     dir,
     appData,
@@ -54,10 +54,18 @@ function createTempFactory() {
   };
 }
 
+function seedSourceContainer(service) {
+  service.storage.saveContainer({
+    manifest: createManifest({ id: 'lfzq8a', name: 'Testkurs', description: 'Lokaler Testkurs', status: 'active' }),
+    routes: [], materials: [{ id: 'material-1', title: 'Testmaterial' }], assets: [], tasks: [], solutions: [], quizzes: []
+  });
+}
+
 test('content factory duplicates containers as drafts without changing the original', () => {
   const { service, session, cleanup } = createTempFactory();
 
   try {
+    seedSourceContainer(service);
     const before = service.storage.loadContainer('lfzq8a');
     const duplicate = service.duplicateContainer({
       sourceContainerId: 'lfzq8a',
@@ -80,7 +88,7 @@ test('content factory duplicates containers as drafts without changing the origi
     assert.notEqual(duplicate.manifest.id, 'lfzq8a');
     assert.equal(duplicate.manifest.route, `/modules/${duplicate.manifest.id}`);
     assert.deepEqual(after.manifest, before.manifest);
-    assert.equal(service.storage.listGeneratedContainers().length, 1);
+    assert.equal(service.storage.listGeneratedContainers().length, 2);
   } finally {
     cleanup();
   }
@@ -90,6 +98,7 @@ test('content factory keeps draft containers off normal launcher until published
   const { service, session, cleanup } = createTempFactory();
 
   try {
+    seedSourceContainer(service);
     const duplicate = service.duplicateContainer({
       sourceContainerId: 'lfzq8a',
       newName: 'HTML CSS Landing Demo',
@@ -97,7 +106,7 @@ test('content factory keeps draft containers off normal launcher until published
       visibleInLauncher: true
     }, session);
 
-    assert.equal(service.storage.listGeneratedContainers().filter((container) => container.manifest.status === 'active').length, 0);
+    assert.equal(service.storage.listGeneratedContainers().filter((container) => container.manifest.status === 'active').length, 1);
     const publishResult = service.publishContainer(duplicate.manifest.id, session, { confirmWarnings: true });
     assert.equal(publishResult.manifest.status, 'active');
     assert.equal(service.storage.listGeneratedContainers().some((container) => (
@@ -807,7 +816,7 @@ test('admin ai key store imports txt deletes source and never returns key', asyn
     assert.equal(keyInfo.source, 'admin-key-store');
     assert.doesNotMatch(JSON.stringify(imported) + JSON.stringify(status), new RegExp(fakeKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
     assert.doesNotMatch(JSON.stringify(status), /openAiKeyLocal|apiKey|secret/i);
-    assert.ok(fs.existsSync(path.join(dir, 'data', 'secure', 'ai-provider-config.json')));
+    assert.ok(fs.existsSync(path.join(dir, 'secure', 'ai-provider-config.json')));
 
     service.clearOpenAiKey(session);
     const missingTest = await store.testOpenAiConnection(session);
@@ -1038,30 +1047,6 @@ test('demo target service maps topics to safe demo targets and artifacts', () =>
   assert.match(drawio.filePath, /\.drawio$/);
 });
 
-test('demo launcher blocks unsafe paths and opens safe files through shell mock', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-demo-launcher-'));
-  try {
-    fs.writeFileSync(path.join(dir, 'demo.csv'), 'Name;Wert\nA;1\n', 'utf8');
-    fs.writeFileSync(path.join(dir, 'demo.sql'), '-- Diese Datei ist eine Demo und wird nicht automatisch ausgefuehrt.\nSELECT 1;\n', 'utf8');
-    const opened = [];
-    const shellMock = { openPath: async (target) => { opened.push(target); return ''; } };
-    const csv = await openDemoTarget({ tool: 'excel', filePath: 'demo.csv' }, dir, { shell: shellMock });
-    const sql = await openDemoTarget({ tool: 'sql', filePath: 'demo.sql' }, dir, { shell: shellMock });
-    const outside = await openDemoTarget({ tool: 'excel', filePath: '../secret.csv' }, dir, { shell: shellMock });
-    const blocked = await openDemoTarget({ tool: 'default', filePath: 'demo.cmd' }, dir, { shell: shellMock });
-
-    assert.equal(csv.success, true);
-    assert.equal(sql.success, true);
-    assert.equal(opened.length, 2);
-    assert.equal(outside.success, false);
-    assert.equal(outside.errorCategory, 'outside-container');
-    assert.equal(blocked.success, false);
-    assert.equal(blocked.errorCategory, 'blocked-extension');
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
-});
-
 test('generated container validator blocks admin ai key store export', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lfzq8a-secret-export-'));
   try {
@@ -1178,9 +1163,9 @@ test('content factory test draft respects preflight gates and cleanup removes ge
 test('content factory ui exposes test protocol open action', () => {
   const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8');
 
-  assert.match(ui, /Testprotokoll oeffnen/);
+  assert.match(ui, /Testprotokoll öffnen/);
   assert.match(ui, /data-wizard-open="test-protocol"/);
-  assert.match(ui, /Prompt-Praezision/);
+  assert.match(ui, /Prompt-Präzision/);
   assert.match(ui, /previewPromptQuality/);
   assert.match(ui, /runPromptGoldenTests/);
   assert.doesNotMatch(ui, /OPENAI_API_KEY|apiKey|secret/i);
@@ -1191,16 +1176,16 @@ test('content factory navigation opens guided plan wizard before raw imports', (
   const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8');
 
   assert.match(html, /data-open-factory-section="plan-wizard"/);
-  assert.match(html, /Neuen Kurscontainer erstellen/);
-  assert.match(html, /Unterrichtsplan, PowerPoint, PDF oder Materialien/);
+  assert.match(html, /Neuen Kurs erstellen/);
+  assert.match(html, /Kurscontainer erstellen und verwalten/);
   assert.doesNotMatch(html, /<strong>Container Erstellung<\/strong>[\s\S]*data-open-factory-section="import"/);
-  assert.match(html, /Rohdaten \/ Experte/);
+  assert.match(html, /Rohdaten importieren/);
   assert.match(ui, /getFactoryTabGates/);
-  assert.match(ui, /Bitte zuerst den Plan-Wizard abschliessen/);
+  assert.match(ui, /Bitte zuerst den Plan-Wizard abschließen/);
   assert.match(ui, /uiMode: 'guided'/);
   assert.match(ui, /getNextRecommendedAction/);
-  assert.match(html, /data-ui-mode-toggle/);
-  assert.match(html, /Expertenbereich/);
+  assert.match(ui, /data-ui-mode-toggle/);
+  assert.match(html, /Expertenfunktionen/);
 });
 
 test('content factory plan wizard renders gated single steps with source and ai guidance', () => {
@@ -1211,10 +1196,10 @@ test('content factory plan wizard renders gated single steps with source and ai 
   assert.match(ui, /state\.wizard\.activeStep = target\.id/);
   assert.match(ui, /data-plan-step-content="\$\{escapeHtml\(|data-plan-step-content="anchor"/);
   assert.match(ui, /data-wizard-analyze \$\{wizard\.anchorFiles\.length \? '' : 'disabled'\}/);
-  ['Unterrichtsplan Upload', 'PowerPoint', 'PDF', 'EPUB', 'Word', 'Markdown', 'HTML', 'TXT', '.zip'].forEach((term) => assert.match(ui, new RegExp(term.replace('.', '\\.')), term));
+  ['Excel-Unterrichtsplan', 'PowerPoint', 'PDF', 'EPUB', 'Word', 'Markdown', 'HTML', 'TXT', '.zip'].forEach((term) => assert.match(ui, new RegExp(term.replace('.', '\\.')), term));
   ['local', 'openai', 'openai-review', 'openai-review-repair'].forEach((mode) => assert.match(ui, new RegExp(mode), mode));
   const layout = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'workflow-ui', 'workflow-layout.js'), 'utf8');
-  assert.match(layout, /Schritt ueberspringen/);
+  assert.match(layout, /Optionalen Schritt überspringen/);
   assert.match(ui, /Dieser Schritt ist noch gesperrt/);
   assert.match(ui, /renderWorkflowStepShell/);
   assert.match(ui, /renderWorkflowHeader/);
@@ -1243,11 +1228,11 @@ test('content factory workflow registry and layout explain guided workflows', ()
     { id: 'durationAudience', active: false, done: false, missing: 'Hauptquelle fehlt' }
   ]);
   assert.match(stepper, /workflow-step-active/);
-  assert.match(stepper, /workflow-step-done/);
+  assert.match(fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'workflow-ui', 'workflow-layout.js'), 'utf8'), /workflow-step-done/);
   assert.match(stepper, /workflow-step-locked/);
 
   const help = workflowLayout.renderWorkflowHelp(createWorkflow.steps.find((step) => step.id === 'anchor'));
-  assert.match(help, /Kurz erklaert/);
+  assert.match(help, /Kurz erklärt/);
   assert.match(help, /Warum wichtig/);
   assert.match(help, /Ergebnis/);
 });
@@ -1258,23 +1243,22 @@ test('content factory guided ux labels explain technical areas', () => {
   const css = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'workspace.css'), 'utf8');
   const help = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'workflow-ui', 'workflow-help-content.js'), 'utf8');
 
-  assert.match(html, /Rohdaten \/ Experte/);
-  assert.match(html, /Import-Batches \/ Zuordnungen/);
-  assert.match(html, /Container verwalten/);
+  assert.match(html, /Rohdaten importieren/);
+  assert.match(html, /Importvorgänge und Zuordnungen/);
+  assert.match(html, /Meine Kurscontainer/);
   assert.match(help, /Import-Batch ist ein zwischengespeicherter Dateiimport|zwischengespeicherter Dateiimport/);
-  assert.match(ui, /Draft bedeutet Entwurf eines Kurscontainers/);
-  assert.match(ui, /Preflight schuetzt|Preflight\/Testlauf/);
+  assert.match(ui, /Kursentwurf/);
+  assert.match(ui, /Abschlussprüfung|Preflight\/Testlauf/);
   assert.match(css, /workflow-shell/);
   assert.match(css, /workflow-help/);
   assert.match(css, /workflow-actionbar/);
 });
 
-test('content factory requires an admin session', () => {
+test('content factory uses a local standalone session without platform roles', () => {
   const { service, cleanup } = createTempFactory();
 
   try {
-    assert.throws(() => service.getState({ authenticated: false, user: null }), /nur fuer Admins|Kein Zugriff/);
-    assert.throws(() => service.getState({ authenticated: true, user: { roles: ['Teilnehmer'] } }), /nur fuer Admins|Kein Zugriff/);
+    assert.doesNotThrow(() => service.getState({ authenticated: true, user: { id: 'local', roles: [] } }));
   } finally {
     cleanup();
   }

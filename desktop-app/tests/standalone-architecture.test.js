@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 
 const appRoot = path.resolve(__dirname, '..', 'app');
+const desktopRoot = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(desktopRoot, '..');
 const read = (relative) => fs.readFileSync(path.join(appRoot, relative), 'utf8');
 
 test('Electron startet direkt in der ContentFactory und ist isoliert', () => {
@@ -24,7 +26,7 @@ test('Preload stellt ausschließlich ContentFactory-APIs bereit', () => {
 test('Oberfläche trägt den Produktnamen und keine Plattformnavigation', () => {
   const html = read(path.join('renderer', 'tool-center', 'factory.html'));
   assert.match(html, /ueTool ContentFactory/);
-  assert.match(html, /Unterrichtsmaterialien analysieren und Kurscontainer erstellen/);
+  assert.match(html, /Kurscontainer erstellen und verwalten/);
   assert.doesNotMatch(html, /Login|Tool-Zentrale|Adminbereich|Teilnehmeransicht/);
 });
 
@@ -90,4 +92,37 @@ test('Designsystem enthält Fokus, responsive Desktopansicht und reduzierte Bewe
   assert.match(css, /workflow-step-state/);
   assert.match(css, /workflow-step-locked \{ opacity: 1/);
   assert.match(css, /grid-template-columns: 1\.25rem minmax\(0, 1fr\)/);
+});
+
+test('Ploglan-Markenbereich steht einmalig über der Seitennavigation und wird paketiert', () => {
+  const html = read(path.join('renderer', 'tool-center', 'factory.html'));
+  const sidebar = html.match(/<nav class="factory-sidebar"[\s\S]*?<\/nav>/)?.[0] || '';
+  const packageJson = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf8'));
+  assert.match(sidebar, /class="factory-brand"/);
+  assert.match(sidebar, /class="factory-brand-logo" src="assets\/ploglan-logo\.png" alt="Ploglan"/);
+  assert.equal((html.match(/ploglan-logo\.png/g) || []).length, 1);
+  assert.equal(fs.existsSync(path.join(appRoot, 'renderer', 'tool-center', 'assets', 'ploglan-logo.png')), true);
+  assert.ok(packageJson.build.files.includes('app/renderer/tool-center/assets/ploglan-logo.png'));
+});
+
+test('Leere Startseiten- und Statusbereiche belegen keinen Layoutplatz', () => {
+  const html = read(path.join('renderer', 'tool-center', 'factory.html'));
+  const factory = read(path.join('renderer', 'tool-center', 'factory.js'));
+  assert.match(html, /data-factory-status[^>]*hidden/);
+  assert.match(html, /data-next-action[^>]*hidden/);
+  assert.match(html, /data-recent-section[^>]*hidden/);
+  assert.match(factory, /target\.hidden = !String\(message \|\| ''\)\.trim\(\)/);
+  assert.match(factory, /target\.replaceChildren\(\)/);
+  assert.match(factory, /recentSection\.hidden = !state\.containers\.length/);
+});
+
+test('Altplattform ist entfernt und ContentFactory-Core bleibt eingebunden', () => {
+  for (const relative of [
+    'app/renderer/course.html', 'app/renderer/wizard.html', 'app/renderer/tool-center/login.html',
+    'app/renderer/tool-center/workspace.html', 'app/renderer/tool-center/timer-quiz.bundle.js',
+    'app/lib/admin-tools/admin-tool-registry.js', 'app/lib/course-management/course-management-service.js', 'app/lib/app-data.js'
+  ]) assert.equal(fs.existsSync(path.join(desktopRoot, relative)), false, relative);
+  assert.equal(fs.existsSync(path.join(repoRoot, 'packages', 'content-factory-core', 'src')), true);
+  const packageJson = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf8'));
+  assert.equal(packageJson.build.extraResources[0].from, '../packages/content-factory-core');
 });
