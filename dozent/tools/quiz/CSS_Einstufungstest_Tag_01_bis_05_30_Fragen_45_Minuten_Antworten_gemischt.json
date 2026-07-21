@@ -1,0 +1,904 @@
+{
+  "id": "lf_zq8a_css_einstufungstest_tag_01_bis_05_30_fragen_45_minuten",
+  "name": "LFZQ8a HTML & CSS · Einstufungstest Tag 01–05 · 30 Fragen · 45 Minuten",
+  "description": "Diagnostischer Fragenpool zum Einstieg. Je Themen-Tag sind sechs Fragen enthalten: zwei leichte, zwei mittlere und zwei schwere. Der Pool prüft CSS-Grundlagen, Flexbox, Grid, Responsive Design, Webfonts sowie Refactoring und Qualitätssicherung. Enthalten sind Single Choice, Multiple Choice, Codeverständnis und Zuordnungsfragen mit Post-its. Die Antwortreihenfolgen wurden ausgewogen gemischt; korrekte Positionen und Zuordnungen sind entsprechend aktualisiert.",
+  "durationMinutes": 45,
+  "timeLimitMinutes": 45,
+  "questionCount": 30,
+  "topics": {
+    "101": "CSS-Einbindung, Syntax und Selektoren",
+    "102": "Kaskade, Spezifität und Box-Modell",
+    "201": "Flexbox-Grundlagen und Achsen",
+    "202": "Flex-Items, Umbruch und Komponenten",
+    "301": "CSS-Grid-Grundlagen und Tracks",
+    "302": "Grid-Platzierung und responsive Grids",
+    "401": "Mobile First, Breakpoints und Media Queries",
+    "402": "Responsive Medien, Testing und Bedienbarkeit",
+    "501": "Webfonts, Datenschutz und Performance",
+    "502": "Refactoring und CSS-Qualitätssicherung"
+  },
+  "topicLabels": {
+    "101": "CSS-Einbindung, Syntax und Selektoren",
+    "102": "Kaskade, Spezifität und Box-Modell",
+    "201": "Flexbox-Grundlagen und Achsen",
+    "202": "Flex-Items, Umbruch und Komponenten",
+    "301": "CSS-Grid-Grundlagen und Tracks",
+    "302": "Grid-Platzierung und responsive Grids",
+    "401": "Mobile First, Breakpoints und Media Queries",
+    "402": "Responsive Medien, Testing und Bedienbarkeit",
+    "501": "Webfonts, Datenschutz und Performance",
+    "502": "Refactoring und CSS-Qualitätssicherung"
+  },
+  "difficultyLevels": {
+    "leicht": "Grundlagen, Begriffe und direkte Wiedererkennung",
+    "mittel": "Anwendung, Einordnung und typische Fehlerquellen",
+    "schwer": "Transfer, Codeverständnis und fachliche Begründung"
+  },
+  "difficultyLabels": {
+    "leicht": "Grundlagen, Begriffe und direkte Wiedererkennung",
+    "mittel": "Anwendung, Einordnung und typische Fehlerquellen",
+    "schwer": "Transfer, Codeverständnis und fachliche Begründung"
+  },
+  "questions": [
+    {
+      "type": "single-choice",
+      "topic": "101",
+      "difficulty": "leicht",
+      "text": "Welches HTML-Element bindet eine externe CSS-Datei korrekt ein?",
+      "options": [
+        "<script src=\"css/style.css\"></script>",
+        "<style src=\"css/style.css\"></style>",
+        "<link rel=\"stylesheet\" href=\"css/style.css\">",
+        "<css href=\"css/style.css\">"
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "<link rel=\"stylesheet\" href=\"css/style.css\">",
+      "explanation": "Externe Stylesheets werden im head mit dem link-Element eingebunden.",
+      "id": "DIAG-30-001"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "101",
+      "difficulty": "leicht",
+      "text": "Ordne die CSS-Begriffe ihrer Bedeutung zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l2",
+          "text": "#main"
+        },
+        {
+          "id": "l1",
+          "text": ".card"
+        },
+        {
+          "id": "l3",
+          "text": "padding"
+        },
+        {
+          "id": "l5",
+          "text": "rem"
+        },
+        {
+          "id": "l4",
+          "text": "margin"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r5",
+          "text": "Einheit relativ zur Root-Schriftgröße",
+          "match": "l5"
+        },
+        {
+          "id": "r3",
+          "text": "Innenabstand",
+          "match": "l3"
+        },
+        {
+          "id": "r2",
+          "text": "Element mit der ID main",
+          "match": "l2"
+        },
+        {
+          "id": "r4",
+          "text": "Außenabstand",
+          "match": "l4"
+        },
+        {
+          "id": "r1",
+          "text": "Elemente mit der Klasse card",
+          "match": "l1"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        }
+      ],
+      "solution": ".card → Elemente mit der Klasse card<br>#main → Element mit der ID main<br>padding → Innenabstand<br>margin → Außenabstand<br>rem → Einheit relativ zur Root-Schriftgröße",
+      "explanation": "Die Begriffe gehören zu den zentralen CSS-Grundlagen.",
+      "id": "DIAG-30-002"
+    },
+    {
+      "type": "single-choice",
+      "topic": "102",
+      "difficulty": "mittel",
+      "text": "Welche Farbe erhält die Überschrift <code>&lt;h1 class=\"title\"&gt;Test&lt;/h1&gt;</code>?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">h1 { color: blue; }\n.title { color: green; }</pre></div>",
+      "options": [
+        "blau",
+        "grün",
+        "keine Farbe",
+        "schwarz"
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "grün",
+      "explanation": "Der Klassenselektor .title ist spezifischer als der Elementselektor h1.",
+      "id": "DIAG-30-003"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "102",
+      "difficulty": "mittel",
+      "text": "Welche Maßnahmen unterstützen wartbares CSS? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Für jede Regel !important einsetzen",
+        "Wiederkehrende Werte als Custom Properties zentralisieren",
+        "HTML-Struktur und Gestaltung nachvollziehbar trennen",
+        "Aussagekräftige Klassennamen verwenden"
+      ],
+      "correct": [
+        1,
+        2,
+        3
+      ],
+      "solution": "Aussagekräftige Klassennamen verwenden<br>Wiederkehrende Werte als Custom Properties zentralisieren<br>HTML-Struktur und Gestaltung nachvollziehbar trennen",
+      "explanation": "Wartbares CSS ist verständlich, zentral steuerbar und vermeidet unnötige Sonderregeln.",
+      "id": "DIAG-30-004"
+    },
+    {
+      "type": "single-choice",
+      "topic": "102",
+      "difficulty": "schwer",
+      "text": "Welche Farbe erhält der Absatz <code>&lt;p id=\"info\" class=\"notice\"&gt;Hinweis&lt;/p&gt;</code>?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">p { color: gray; }\n.notice { color: orange; }\n#info { color: navy; }</pre></div>",
+      "options": [
+        "orange",
+        "abhängig von der Reihenfolge",
+        "grau",
+        "navy"
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "navy",
+      "explanation": "Der ID-Selektor #info besitzt die höchste Spezifität der drei Regeln.",
+      "id": "DIAG-30-005"
+    },
+    {
+      "type": "single-choice",
+      "topic": "102",
+      "difficulty": "schwer",
+      "text": "Ein Element hat <code>width: 320px</code>, <code>padding: 16px</code>, <code>border: 4px solid</code> und <code>box-sizing: content-box</code>. Wie breit ist es insgesamt?",
+      "options": [
+        "360px",
+        "320px",
+        "352px",
+        "344px"
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "360px",
+      "explanation": "320 + 2 × 16 + 2 × 4 ergibt insgesamt 360px.",
+      "id": "DIAG-30-006"
+    },
+    {
+      "type": "single-choice",
+      "topic": "201",
+      "difficulty": "leicht",
+      "text": "Welche Eigenschaft macht ein Element zum Flex-Container?",
+      "options": [
+        "position: flex",
+        "layout: flexbox",
+        "flex-container: true",
+        "display: flex"
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "display: flex",
+      "explanation": "Flexbox wird mit display:flex aktiviert.",
+      "id": "DIAG-30-007"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "201",
+      "difficulty": "leicht",
+      "text": "Ordne die Flexbox-Eigenschaften ihrer Wirkung zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l2",
+          "text": "align-items"
+        },
+        {
+          "id": "l1",
+          "text": "justify-content"
+        },
+        {
+          "id": "l5",
+          "text": "align-self"
+        },
+        {
+          "id": "l3",
+          "text": "gap"
+        },
+        {
+          "id": "l4",
+          "text": "flex-wrap"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r4",
+          "text": "Umbruch erlauben",
+          "match": "l4"
+        },
+        {
+          "id": "r5",
+          "text": "Ein einzelnes Item abweichend ausrichten",
+          "match": "l5"
+        },
+        {
+          "id": "r1",
+          "text": "Verteilung auf der Hauptachse",
+          "match": "l1"
+        },
+        {
+          "id": "r2",
+          "text": "Ausrichtung auf der Querachse",
+          "match": "l2"
+        },
+        {
+          "id": "r3",
+          "text": "Abstand zwischen Flex-Items",
+          "match": "l3"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        }
+      ],
+      "solution": "justify-content → Verteilung auf der Hauptachse<br>align-items → Ausrichtung auf der Querachse<br>gap → Abstand zwischen Flex-Items<br>flex-wrap → Umbruch erlauben<br>align-self → Ein einzelnes Item abweichend ausrichten",
+      "explanation": "Die Eigenschaften wirken entweder am Container oder an einem einzelnen Flex-Item.",
+      "id": "DIAG-30-008"
+    },
+    {
+      "type": "single-choice",
+      "topic": "202",
+      "difficulty": "mittel",
+      "text": "Welche Aussage beschreibt das Layout korrekt?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.nav {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}</pre></div>",
+      "options": [
+        "Die Navigation wird horizontal zentriert, aber nicht verteilt.",
+        "Die Elemente werden untereinander angeordnet.",
+        "Die Elemente werden auf der Hauptachse verteilt und auf der Querachse zentriert.",
+        "Die Elemente werden automatisch zu Grid-Items."
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Die Elemente werden auf der Hauptachse verteilt und auf der Querachse zentriert.",
+      "explanation": "Bei flex-direction:row ist die Hauptachse horizontal und die Querachse vertikal.",
+      "id": "DIAG-30-009"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "202",
+      "difficulty": "mittel",
+      "text": "Welche Regeln passen zu einem flexiblen Kartenlayout mit Flexbox? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "display: flex am Kartencontainer",
+        "Eine starre Breite von 1400px für jede Karte",
+        "gap für gleichmäßige Abstände",
+        "flex-wrap: wrap am Kartencontainer"
+      ],
+      "correct": [
+        0,
+        2,
+        3
+      ],
+      "solution": "display: flex am Kartencontainer<br>flex-wrap: wrap am Kartencontainer<br>gap für gleichmäßige Abstände",
+      "explanation": "Flexbox, Umbruch und zentrale Abstände bilden ein anpassbares Kartenlayout.",
+      "id": "DIAG-30-010"
+    },
+    {
+      "type": "single-choice",
+      "topic": "201",
+      "difficulty": "schwer",
+      "text": "Wie wirkt <code>justify-content: center</code> in diesem Beispiel?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.panel {\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n}</pre></div>",
+      "options": [
+        "Die Items werden auf der vertikalen Hauptachse zentriert.",
+        "Die Items werden auf der Querachse gestreckt.",
+        "Die Regel hat bei column keine Wirkung.",
+        "Die Items werden horizontal zentriert."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Die Items werden auf der vertikalen Hauptachse zentriert.",
+      "explanation": "Bei flex-direction:column verläuft die Hauptachse vertikal.",
+      "id": "DIAG-30-011"
+    },
+    {
+      "type": "single-choice",
+      "topic": "202",
+      "difficulty": "schwer",
+      "text": "Welche Aussage zu <code>order</code> bei Flexbox ist fachlich wichtig?",
+      "options": [
+        "order sortiert Elemente automatisch alphabetisch.",
+        "order ändert nur die visuelle Reihenfolge und kann von Tastatur- oder Screenreader-Reihenfolgen abweichen.",
+        "order verändert dauerhaft die Reihenfolge im HTML.",
+        "order darf nur bei Grid verwendet werden."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "order ändert nur die visuelle Reihenfolge und kann von Tastatur- oder Screenreader-Reihenfolgen abweichen.",
+      "explanation": "Die semantische DOM-Reihenfolge bleibt erhalten; deshalb darf die visuelle Sortierung nicht irreführend sein.",
+      "id": "DIAG-30-012"
+    },
+    {
+      "type": "single-choice",
+      "topic": "301",
+      "difficulty": "leicht",
+      "text": "Welche Eigenschaft aktiviert CSS Grid?",
+      "options": [
+        "layout: grid",
+        "display: grid",
+        "position: grid",
+        "grid: true"
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "display: grid",
+      "explanation": "CSS Grid wird mit display:grid aktiviert.",
+      "id": "DIAG-30-013"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "301",
+      "difficulty": "leicht",
+      "text": "Ordne die Grid-Begriffe ihrer Bedeutung zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l1",
+          "text": "fr"
+        },
+        {
+          "id": "l2",
+          "text": "repeat()"
+        },
+        {
+          "id": "l4",
+          "text": "grid-area"
+        },
+        {
+          "id": "l5",
+          "text": "minmax()"
+        },
+        {
+          "id": "l3",
+          "text": "gap"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r2",
+          "text": "Wiederholte Trackdefinition abkürzen",
+          "match": "l2"
+        },
+        {
+          "id": "r5",
+          "text": "Mindest- und Maximalgröße definieren",
+          "match": "l5"
+        },
+        {
+          "id": "r4",
+          "text": "Benannten Bereich zuweisen",
+          "match": "l4"
+        },
+        {
+          "id": "r1",
+          "text": "Anteil am verfügbaren Raum",
+          "match": "l1"
+        },
+        {
+          "id": "r3",
+          "text": "Abstand zwischen Grid-Tracks",
+          "match": "l3"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        }
+      ],
+      "solution": "fr → Anteil am verfügbaren Raum<br>repeat() → Wiederholte Trackdefinition abkürzen<br>gap → Abstand zwischen Grid-Tracks<br>grid-area → Benannten Bereich zuweisen<br>minmax() → Mindest- und Maximalgröße definieren",
+      "explanation": "Diese Begriffe gehören zu den wichtigsten Bausteinen von CSS Grid.",
+      "id": "DIAG-30-014"
+    },
+    {
+      "type": "single-choice",
+      "topic": "302",
+      "difficulty": "mittel",
+      "text": "Welche Aussage passt zu diesem Grid?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.layout {\n  display: grid;\n  grid-template-columns: 240px 1fr;\n}</pre></div>",
+      "options": [
+        "1fr steht für eine feste Breite von 1px.",
+        "Es entstehen 240 gleich breite Spalten.",
+        "Beide Spalten sind 240px breit.",
+        "Die erste Spalte ist 240px breit, die zweite nutzt den übrigen verfügbaren Raum."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Die erste Spalte ist 240px breit, die zweite nutzt den übrigen verfügbaren Raum.",
+      "explanation": "Eine feste Spalte kann mit einer flexiblen fr-Spalte kombiniert werden.",
+      "id": "DIAG-30-015"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "302",
+      "difficulty": "mittel",
+      "text": "Welche Eigenschaften können Grid-Items gezielt platzieren oder Bereiche festlegen? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "grid-area",
+        "font-weight",
+        "grid-column",
+        "grid-row"
+      ],
+      "correct": [
+        0,
+        2,
+        3
+      ],
+      "solution": "grid-column<br>grid-row<br>grid-area",
+      "explanation": "Grid-Items lassen sich über Spalten, Zeilen oder benannte Bereiche platzieren.",
+      "id": "DIAG-30-016"
+    },
+    {
+      "type": "single-choice",
+      "topic": "302",
+      "difficulty": "schwer",
+      "text": "Welche Aussage beschreibt den Code korrekt?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.cards {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));\n  gap: 1rem;\n}</pre></div>",
+      "options": [
+        "Es entstehen immer exakt 240 Spalten.",
+        "auto-fit deaktiviert das Grid auf kleinen Bildschirmen.",
+        "Es entsteht ein responsives Kartenraster mit möglichst vielen Spalten, die mindestens 240px breit sind.",
+        "Die Karten sind immer exakt 1rem breit."
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "Es entsteht ein responsives Kartenraster mit möglichst vielen Spalten, die mindestens 240px breit sind.",
+      "explanation": "auto-fit und minmax erzeugen ein flexibel umbrechendes Kartenraster.",
+      "id": "DIAG-30-017"
+    },
+    {
+      "type": "single-choice",
+      "topic": "301",
+      "difficulty": "schwer",
+      "text": "Für welche Aufgabe ist CSS Grid meist geeigneter als Flexbox?",
+      "options": [
+        "Eine Button-Gruppe auf einer einzigen Achse ausrichten",
+        "Eine horizontale Navigation verteilen",
+        "Ein einzelnes Icon neben einem Text ausrichten",
+        "Ein Seitenlayout gleichzeitig in Kopfbereich, Sidebar, Inhalt und Fußbereich gliedern"
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Ein Seitenlayout gleichzeitig in Kopfbereich, Sidebar, Inhalt und Fußbereich gliedern",
+      "explanation": "Grid eignet sich besonders für zweidimensionale Seitenraster mit Zeilen und Spalten.",
+      "id": "DIAG-30-018"
+    },
+    {
+      "type": "single-choice",
+      "topic": "401",
+      "difficulty": "leicht",
+      "text": "Was bedeutet Mobile First?",
+      "options": [
+        "CSS ausschließlich auf mobilen Geräten laden.",
+        "Zuerst das Desktoplayout erstellen und danach alle Regeln löschen.",
+        "Nur Smartphones unterstützen und Desktop ignorieren.",
+        "Zuerst für kleine Viewports gestalten und anschließend für größere erweitern."
+      ],
+      "correct": [
+        3
+      ],
+      "solution": "Zuerst für kleine Viewports gestalten und anschließend für größere erweitern.",
+      "explanation": "Mobile First verwendet kleine Viewports als Basis und erweitert das Layout meist mit min-width.",
+      "id": "DIAG-30-019"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "401",
+      "difficulty": "leicht",
+      "text": "Ordne die Responsive-Begriffe ihrer Bedeutung zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l5",
+          "text": "prefers-reduced-motion"
+        },
+        {
+          "id": "l4",
+          "text": "@media (min-width: 768px)"
+        },
+        {
+          "id": "l1",
+          "text": "Viewport"
+        },
+        {
+          "id": "l3",
+          "text": "@media (max-width: 600px)"
+        },
+        {
+          "id": "l2",
+          "text": "Breakpoint"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r2",
+          "text": "Punkt für eine Layoutänderung",
+          "match": "l2"
+        },
+        {
+          "id": "r1",
+          "text": "Sichtbarer Bereich des Browsers",
+          "match": "l1"
+        },
+        {
+          "id": "r5",
+          "text": "Präferenz für reduzierte Bewegung",
+          "match": "l5"
+        },
+        {
+          "id": "r3",
+          "text": "Regeln bis 600px Breite",
+          "match": "l3"
+        },
+        {
+          "id": "r4",
+          "text": "Regeln ab 768px Breite",
+          "match": "l4"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        }
+      ],
+      "solution": "Viewport → Sichtbarer Bereich des Browsers<br>Breakpoint → Punkt für eine Layoutänderung<br>@media (max-width: 600px) → Regeln bis 600px Breite<br>@media (min-width: 768px) → Regeln ab 768px Breite<br>prefers-reduced-motion → Präferenz für reduzierte Bewegung",
+      "explanation": "Responsive Design reagiert auf verfügbare Fläche und Nutzungseinstellungen.",
+      "id": "DIAG-30-020"
+    },
+    {
+      "type": "single-choice",
+      "topic": "401",
+      "difficulty": "mittel",
+      "text": "Wie wird das Layout bei einer Viewportbreite von 500px dargestellt?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.layout { display: grid; grid-template-columns: 1fr 1fr; }\n@media (max-width: 650px) {\n  .layout { grid-template-columns: 1fr; }\n}</pre></div>",
+      "options": [
+        "zweispaltig",
+        "dreispaltig",
+        "einspaltig",
+        "unsichtbar"
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "einspaltig",
+      "explanation": "Bei 500px greift die max-width-Media-Query und setzt eine Spalte.",
+      "id": "DIAG-30-021"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "402",
+      "difficulty": "mittel",
+      "text": "Welche Maßnahmen gehören zu einer soliden responsiven Umsetzung? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Horizontales Scrollen und abgeschnittene Inhalte prüfen",
+        "Unterschiedliche Viewportbreiten in den DevTools testen",
+        "Bilder mit max-width:100% und height:auto verwenden",
+        "Wichtige Bedienfunktionen ausschließlich über :hover erreichbar machen"
+      ],
+      "correct": [
+        0,
+        1,
+        2
+      ],
+      "solution": "Bilder mit max-width:100% und height:auto verwenden<br>Unterschiedliche Viewportbreiten in den DevTools testen<br>Horizontales Scrollen und abgeschnittene Inhalte prüfen",
+      "explanation": "Responsivität umfasst flexible Medien, systematische Tests und vollständige Bedienbarkeit.",
+      "id": "DIAG-30-022"
+    },
+    {
+      "type": "single-choice",
+      "topic": "402",
+      "difficulty": "schwer",
+      "text": "Welche Schriftgröße ergibt sich bei 1200px Viewportbreite, wenn <code>4vw = 48px</code> und <code>1rem = 16px</code> angenommen wird?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">h1 { font-size: clamp(2rem, 4vw, 3.5rem); }</pre></div>",
+      "options": [
+        "56px",
+        "48px",
+        "32px",
+        "64px"
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "48px",
+      "explanation": "Das Minimum beträgt 32px, das Maximum 56px; 48px liegt dazwischen und wird verwendet.",
+      "id": "DIAG-30-023"
+    },
+    {
+      "type": "single-choice",
+      "topic": "402",
+      "difficulty": "schwer",
+      "text": "Ein Dropdown-Menü öffnet sich ausschließlich über <code>:hover</code>. Welche Verbesserung ist fachlich am sinnvollsten?",
+      "options": [
+        "Den Hover-Effekt mit !important verstärken.",
+        "Das Menü zusätzlich per Tastaturfokus und eindeutigem Klick- oder Button-Mechanismus bedienbar machen.",
+        "Das Menü nur auf Desktop anzeigen.",
+        "Alle Links auf 6px verkleinern."
+      ],
+      "correct": [
+        1
+      ],
+      "solution": "Das Menü zusätzlich per Tastaturfokus und eindeutigem Klick- oder Button-Mechanismus bedienbar machen.",
+      "explanation": "Touch-Geräte und Tastaturnutzer benötigen eine Bedienmöglichkeit unabhängig von Hover.",
+      "id": "DIAG-30-024"
+    },
+    {
+      "type": "single-choice",
+      "topic": "501",
+      "difficulty": "leicht",
+      "text": "Welches Format ist für moderne Webfonts häufig besonders geeignet?",
+      "options": [
+        "exe",
+        "sql",
+        "woff2",
+        "xlsx"
+      ],
+      "correct": [
+        2
+      ],
+      "solution": "woff2",
+      "explanation": "woff2 ist ein kompaktes und weit verbreitetes Webfontformat.",
+      "id": "DIAG-30-025"
+    },
+    {
+      "type": "matching-postits",
+      "topic": "501",
+      "difficulty": "leicht",
+      "text": "Ordne die Webfont-Begriffe ihrer Bedeutung zu.<br><small>Ziehe die gelben Post-its auf die passenden Zielkarten.</small>",
+      "items": [
+        {
+          "id": "l1",
+          "text": "@font-face"
+        },
+        {
+          "id": "l4",
+          "text": "font-weight"
+        },
+        {
+          "id": "l5",
+          "text": "Fallback"
+        },
+        {
+          "id": "l2",
+          "text": "src"
+        },
+        {
+          "id": "l3",
+          "text": "font-family"
+        }
+      ],
+      "targets": [
+        {
+          "id": "r3",
+          "text": "Name der Schriftfamilie",
+          "match": "l3"
+        },
+        {
+          "id": "r1",
+          "text": "Schriftfamilie im CSS definieren",
+          "match": "l1"
+        },
+        {
+          "id": "r4",
+          "text": "Schriftgewicht oder Schriftschnitt",
+          "match": "l4"
+        },
+        {
+          "id": "r2",
+          "text": "Quelle der Fontdatei",
+          "match": "l2"
+        },
+        {
+          "id": "r5",
+          "text": "Ersatzschrift bei Ladeproblemen",
+          "match": "l5"
+        }
+      ],
+      "pairs": [
+        {
+          "leftId": "l5",
+          "rightId": "r5"
+        },
+        {
+          "leftId": "l4",
+          "rightId": "r4"
+        },
+        {
+          "leftId": "l2",
+          "rightId": "r2"
+        },
+        {
+          "leftId": "l3",
+          "rightId": "r3"
+        },
+        {
+          "leftId": "l1",
+          "rightId": "r1"
+        }
+      ],
+      "solution": "@font-face → Schriftfamilie im CSS definieren<br>src → Quelle der Fontdatei<br>font-family → Name der Schriftfamilie<br>font-weight → Schriftgewicht oder Schriftschnitt<br>Fallback → Ersatzschrift bei Ladeproblemen",
+      "explanation": "Webfonts benötigen eine Definition, eine Quelle und sinnvolle Ersatzschriften.",
+      "id": "DIAG-30-026"
+    },
+    {
+      "type": "single-choice",
+      "topic": "501",
+      "difficulty": "mittel",
+      "text": "Was bewirkt <code>font-display: swap</code> grob?",
+      "options": [
+        "Der Text kann zunächst mit einer Ersatzschrift erscheinen und später auf die Webfont wechseln.",
+        "Alle Schriftschnitte werden automatisch fett.",
+        "Die Fontdatei wird in eine Datenbank geschrieben.",
+        "Der Text bleibt bis zum vollständigen Laden unsichtbar."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Der Text kann zunächst mit einer Ersatzschrift erscheinen und später auf die Webfont wechseln.",
+      "explanation": "swap reduziert das Risiko von länger unsichtbarem Text während des Fontladens.",
+      "id": "DIAG-30-027"
+    },
+    {
+      "type": "multiple-choice",
+      "topic": "501",
+      "difficulty": "mittel",
+      "text": "Welche Punkte sollten beim Einsatz lokal eingebundener Webfonts geprüft werden? <br><small>Mehrere Antworten möglich.</small>",
+      "options": [
+        "Dass zwingend eine Anfrage an einen externen Fontanbieter erfolgt",
+        "Korrekte Dateipfade und Formate",
+        "Sinnvolle Fallback-Schriften",
+        "Lizenz und Nutzungsrechte"
+      ],
+      "correct": [
+        1,
+        2,
+        3
+      ],
+      "solution": "Lizenz und Nutzungsrechte<br>Korrekte Dateipfade und Formate<br>Sinnvolle Fallback-Schriften",
+      "explanation": "Lokale Fonts vermeiden externe Anfragen, müssen aber technisch und rechtlich korrekt eingebunden sein.",
+      "id": "DIAG-30-028"
+    },
+    {
+      "type": "single-choice",
+      "topic": "502",
+      "difficulty": "schwer",
+      "text": "Welche Refactoring-Lösung ist für diesen Code am sinnvollsten?<br><div class=\"code-card\" style=\"max-width:900px;border-radius:16px;overflow:hidden;background:#102d42;box-shadow:0 10px 24px rgba(0,0,0,.16);font-family:Consolas,'Courier New',monospace;margin:12px 0;\"><div style=\"height:42px;background:#12334a;border-bottom:1px solid rgba(255,255,255,.14);display:flex;align-items:center;padding:0 16px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;\"><span style=\"width:11px;height:11px;background:#ff5f57;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#ffbd2e;border-radius:50%;display:inline-block;margin-right:7px;\"></span><span style=\"width:11px;height:11px;background:#28c840;border-radius:50%;display:inline-block;margin-right:13px;\"></span>style.css</div><pre style=\"margin:0;padding:18px 20px;color:#f8fbff;line-height:1.48;font-size:15px;white-space:pre-wrap;background:#102d42;\">.header { color: #003964; }\n.card-title { color: #003964; }\n.footer-title { color: #003964; }</pre></div>",
+      "options": [
+        "Den Farbwert als Custom Property zentral definieren und mit var() verwenden.",
+        "Den Farbwert in jeder Regel mehrfach wiederholen.",
+        "Alle drei Selektoren löschen.",
+        "Jede Farbe mit !important versehen."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Den Farbwert als Custom Property zentral definieren und mit var() verwenden.",
+      "explanation": "Wiederkehrende Designwerte sind gute Kandidaten für zentrale CSS Custom Properties.",
+      "id": "DIAG-30-029"
+    },
+    {
+      "type": "single-choice",
+      "topic": "502",
+      "difficulty": "schwer",
+      "text": "Welche Reihenfolge beschreibt ein fachlich sauberes CSS-Refactoring am besten?",
+      "options": [
+        "Dubletten und Spezifitätsprobleme analysieren, Struktur verbessern, anschließend validieren und in mehreren Viewports testen.",
+        "Nur die Farben ändern und die HTML-Struktur ignorieren.",
+        "Den gesamten CSS-Code durch Screenshots ersetzen.",
+        "Dateien umbenennen, alle Regeln mit !important versehen und nicht testen."
+      ],
+      "correct": [
+        0
+      ],
+      "solution": "Dubletten und Spezifitätsprobleme analysieren, Struktur verbessern, anschließend validieren und in mehreren Viewports testen.",
+      "explanation": "Refactoring besteht aus Analyse, kontrollierter Verbesserung und anschließender Qualitätssicherung.",
+      "id": "DIAG-30-030"
+    }
+  ]
+}
