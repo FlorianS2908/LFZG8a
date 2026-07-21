@@ -21,7 +21,7 @@
     durationAudience: {
       title: 'Dauer & Zielgruppe',
       explained: 'Tage bestimmt die Anzahl der Kurstage. Stunden/Tag beschreibt die tatsächliche tägliche Zeit, UE/Tag die Unterrichtseinheiten pro Tag.',
-      why: 'Zielgruppenangaben beeinflussen Sprache, Aufgaben und Hilfestellungen. Die Schwierigkeit wird als Einfach, Mittel oder Schwer gewählt.',
+      why: 'Wählen Sie einen einzelnen Schwierigkeitsgrad oder eine festgelegte Kombination. Die Auswahl steuert Aufgaben, Erklärungen und Fragen: Einfach, Mittel, Schwer, Einfach & Mittel, Mittel & Schwer oder Alle 3.',
       requiredInputs: ['Tage', 'Stunden/Tag', 'UE/Tag', 'Vorkenntnisse', 'Niveau', 'Schwierigkeit'],
       optionalInputs: ['Prüfungsorientierung', 'Projektorientierung', 'Kursziel'],
       typicalMistakes: ['Vorkenntnisse zu hoch gewaehlt', 'Prüfungsorientierung vergessen', 'Projektorientierung unklar'],

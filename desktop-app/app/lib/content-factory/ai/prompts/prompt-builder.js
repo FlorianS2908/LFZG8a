@@ -1,5 +1,6 @@
 const { getPromptContract } = require('./contracts');
 const { normalizeDidacticProfile } = require('../../didactics/didactic-profile-service');
+const { normalizeDifficulty, expandDifficulty } = require('../../difficulty-levels');
 
 const maxStringLength = 1000;
 const blockedKeyPattern = /apiKey|secret|token|OPENAI|rawText|originalText|original|chunk|chunks|textPreview/i;
@@ -73,6 +74,8 @@ function buildDeveloperRules(contract, input = {}) {
 
 function buildUserPayload(contract, input = {}) {
   const sanitized = sanitizePromptPayload(input);
+  const targetAudience = sanitized.targetAudience || sanitized.curriculumPlan?.targetAudience || {};
+  const difficultyMode = normalizeDifficulty(targetAudience.difficultyMode);
   return {
     contractId: contract.id,
     contractVersion: contract.version,
@@ -81,7 +84,7 @@ function buildUserPayload(contract, input = {}) {
     course: sanitized.course || sanitized.curriculumPlan?.course || {},
     day: sanitized.day || {},
     learningGoals: sanitized.learningGoals || sanitized.day?.learningGoals || sanitized.curriculumPlan?.learningGoals || [],
-    targetAudience: sanitized.targetAudience || sanitized.curriculumPlan?.targetAudience || {},
+    targetAudience: { ...targetAudience, difficultyMode, difficultyLevels: expandDifficulty(difficultyMode) },
     containerProfile: sanitized.containerProfile || {},
     didacticProfile: normalizeDidacticProfile(sanitized.didacticProfile || sanitized.curriculumPlan?.didacticProfile),
     artifactSuggestions: sanitized.artifactSuggestions || [],

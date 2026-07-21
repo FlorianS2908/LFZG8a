@@ -2,7 +2,7 @@ const desktop = window.lfzq8aDesktop;
 const appNavigation = window.ContentFactoryAppNavigation;
 const uploadUtils = window.ContentFactoryUploadUtils || {};
 const workflowLayout = window.ContentFactoryWorkflowLayout || {};
-const difficultyLevels = window.ContentFactoryDifficultyLevels || { levels: [{ value: 'easy', label: 'Einfach' }, { value: 'medium', label: 'Mittel' }, { value: 'hard', label: 'Schwer' }], normalizeDifficulty: () => 'medium', difficultyLabel: () => 'Mittel' };
+const difficultyLevels = window.ContentFactoryDifficultyLevels || { levels: [{ value: 'easy', label: 'Einfach' }, { value: 'medium', label: 'Mittel' }, { value: 'hard', label: 'Schwer' }, { value: 'easy_medium', label: 'Einfach & Mittel' }, { value: 'medium_hard', label: 'Mittel & Schwer' }, { value: 'all', label: 'Alle 3' }], normalizeDifficulty: () => 'medium', difficultyLabel: () => 'Mittel' };
 const workflowRegistry = window.ContentFactoryWorkflowRegistry || {};
 const workflowStatus = window.ContentFactoryWorkflowStatus || {};
 const visibleLabel = window.ContentFactoryWorkflowUtils?.visibleLabel || ((value) => String(value ?? ''));
@@ -675,7 +675,7 @@ function renderDurationAudienceStep(wizard) {
         <label>Vorkenntnisse<select data-wizard-audience="priorKnowledge">${['none', 'basic', 'intermediate', 'advanced'].map((value) => `<option value="${value}" ${wizard.targetAudience.priorKnowledge === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
         <label>Niveau<select data-wizard-audience="learningLevel">${['intro', 'basic', 'exam-prep', 'professional', 'advanced'].map((value) => `<option value="${value}" ${wizard.targetAudience.learningLevel === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
         <label>Schwierigkeit<select data-wizard-audience="difficultyMode">${difficultyLevels.levels.map(({ value, label }) => `<option value="${value}" ${wizard.targetAudience.difficultyMode === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
-        <label>Endprodukt<select data-wizard-outcome>${['webseite', 'datenbankmodell', 'java-programm', 'python-programm', 'projektmappe', 'prüfungsvorbereitung', 'grundlagenkurs', 'custom'].map((value) => `<option value="${value}" ${wizard.expectedOutcome === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+        <label class="form-field-wide">Endprodukt<select data-wizard-outcome title="${escapeHtml(visibleLabel(wizard.expectedOutcome))}">${['webseite', 'datenbankmodell', 'java-programm', 'python-programm', 'projektmappe', 'prüfungsvorbereitung', 'grundlagenkurs', 'custom'].map((value) => `<option value="${value}" ${wizard.expectedOutcome === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
         <label>Didaktik<select data-wizard-style>${['guided', 'project-based', 'exam-oriented', 'workshop', 'self-study', 'mixed'].map((value) => `<option value="${value}" ${wizard.didacticStyle === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
         </div></section>
       </div>

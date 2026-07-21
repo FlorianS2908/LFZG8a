@@ -1,7 +1,10 @@
 import type { DayGenerationResult } from './schemas.ts';
 
-function normalizeDifficulty(value: string): 'easy' | 'medium' | 'hard' {
-  const normalized = String(value || '').toLowerCase();
+function normalizeDifficulty(value: string): 'easy' | 'medium' | 'hard' | 'easy_medium' | 'medium_hard' | 'all' {
+  const normalized = String(value || '').toLowerCase().replace(/-and-/g, '_').replace(/\s*&\s*|\s*\+\s*|\s*,\s*|[\s-]+/g, '_');
+  if (['easy_medium_hard', 'easy_normal_hard', 'all', 'alle_3'].includes(normalized)) return 'all';
+  if (['easy_medium', 'easy_normal', 'einfach_mittel', 'leicht_mittel'].includes(normalized)) return 'easy_medium';
+  if (['medium_hard', 'normal_hard', 'mittel_schwer'].includes(normalized)) return 'medium_hard';
   if (['easy', 'leicht', 'einfach'].includes(normalized)) return 'easy';
   if (['hard', 'schwer', 'difficult'].includes(normalized)) return 'hard';
   return 'medium';

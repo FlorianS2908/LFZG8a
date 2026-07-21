@@ -1,5 +1,5 @@
 const { normalizeDayGenerationResult } = require('./output-normalizer');
-const { normalizeDifficulty } = require('../difficulty-levels');
+const { normalizeDifficulty, expandDifficulty } = require('../difficulty-levels');
 const { decideArtifactSuggestions, describeAgeRange } = require('../container-profile/audience-artifact-decision-service');
 const { normalizeDidacticProfile } = require('../didactics/didactic-profile-service');
 const { buildDidacticFlow, buildReleasePlan } = require('../didactics/lesson-flow-service');
@@ -202,7 +202,7 @@ function createParticipantSections({ title, goals, blocks, tasks, quiz, sourceRe
 function createTasks(blocks, dayNumber, sourceRefs, targetAudience, didacticProfile = {}) {
   const profileLevels = levelsForDidacticProfile(didacticProfile);
   const phases = didacticProfile.lessonFlow || [];
-  const levels = profileLevels.length ? profileLevels : [normalizeDifficulty(targetAudience.difficultyMode)];
+  const levels = profileLevels.length ? profileLevels : expandDifficulty(targetAudience.difficultyMode);
   return blocks.flatMap((block, blockIndex) => levels.map((level, levelIndex) => ({
     id: `task-${dayNumber}-${blockIndex + 1}-${levelIndex + 1}`,
     title: taskTitle(block.topic, level, didacticProfile),

@@ -14,7 +14,7 @@ const { sanitizeInput, parseJsonLoose } = require('../app/lib/content-factory/ai
 const { OpenAIProvider } = require('../app/lib/content-factory/ai/openai-provider');
 const { createAiKeyStoreService } = require('../app/lib/content-factory/ai/ai-key-store-service');
 const { redactSecrets } = require('../app/lib/content-factory/ai/secret-redaction');
-const { levels: difficultyLevels, normalizeDifficulty, difficultyLabel } = require('../app/lib/content-factory/difficulty-levels');
+const { levels: difficultyLevels, normalizeDifficulty, expandDifficulty, difficultyLabel } = require('../app/lib/content-factory/difficulty-levels');
 const { assessCurriculumQuality } = require('../app/lib/content-factory/curriculum-planner/curriculum-quality-service');
 const { decideArtifactSuggestions } = require('../app/lib/content-factory/container-profile/audience-artifact-decision-service');
 const { suggestionsToTargets } = require('../app/lib/content-factory/container-profile/artifact-target-service');
@@ -1179,12 +1179,21 @@ test('duration and audience UI uses day-only calculations and canonical difficul
   assert.match(css, /\.duration-audience-layout \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(css, /\.duration-audience-layout \{ grid-template-columns: 1fr; \}/);
   assert.doesNotMatch(help, /Dauermodus|Gesamtstunden/);
-  assert.deepEqual(difficultyLevels.map((level) => level.label), ['Einfach', 'Mittel', 'Schwer']);
+  assert.deepEqual(difficultyLevels.map((level) => level.label), ['Einfach', 'Mittel', 'Schwer', 'Einfach & Mittel', 'Mittel & Schwer', 'Alle 3']);
   assert.equal(normalizeDifficulty('easy'), 'easy');
   assert.equal(normalizeDifficulty('normal'), 'medium');
   assert.equal(normalizeDifficulty('hard'), 'hard');
   assert.equal(normalizeDifficulty('standard'), 'medium');
+  assert.equal(normalizeDifficulty('easy+medium'), 'easy_medium');
+  assert.equal(normalizeDifficulty('mittel_schwer'), 'medium_hard');
+  assert.equal(normalizeDifficulty(['easy', 'medium', 'hard']), 'all');
+  assert.deepEqual(expandDifficulty('all'), ['easy', 'medium', 'hard']);
   assert.equal(difficultyLabel('leicht'), 'Einfach');
+  assert.equal(difficultyLevels.some((level) => level.label === 'Einfach & Schwer'), false);
+  const prompt = buildPrompt('generateDayDraft', createApprovedTestInput({ targetAudience: { ...createApprovedTestInput().targetAudience, difficultyMode: 'easy_medium' } }));
+  assert.deepEqual(prompt.userPayload.targetAudience.difficultyLevels, ['easy', 'medium']);
+  assert.match(css, /select \{ padding-right: 2\.75rem/);
+  assert.match(css, /repeat\(auto-fit, minmax\(min\(100%, 14rem\), 1fr\)\)/);
 });
 
 test('content factory navigation opens guided plan wizard before raw imports', () => {
