@@ -28,7 +28,7 @@ function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
 }
 
-function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
+function createContentFactoryService({ appData, projectRoot = process.cwd(), safeStorage, migrationPath }) {
   const factoryDir = path.join(appData.dataDir, 'content-factory');
   const batchesPath = path.join(factoryDir, 'import-batches.json');
   const storage = createContainerStorageService({
@@ -36,7 +36,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
     staticContainers: []
   });
   const referenceLibrary = createReferenceLibraryService({ appData });
-  const aiKeyStore = createAiKeyStoreService({ appData });
+  const aiKeyStore = createAiKeyStoreService({ appData, safeStorage, migrationPath });
   const aiOrchestrator = new AiOrchestrator({ projectRoot, aiKeyStore });
   const curriculumPlanner = createCurriculumPlannerService({ factoryDir, aiOrchestrator });
   const cleanup = createCleanupService({ factoryDir, storage });
@@ -115,8 +115,6 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
         ...status.providers,
         openai: {
           ...status.providers.openai,
-          defaultPathAvailable: adminStatus.defaultPathAvailable,
-          defaultPathStatus: adminStatus.defaultPathStatus,
           connectionTestStatus: adminStatus.connectionTestStatus
         }
       }
@@ -139,16 +137,20 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
     };
   }
 
-  function importOpenAiKeyFromTxt(filePath, session) {
+  function importOpenAiKeyFromTxt(filePath, session, options) {
     assertAdmin(session);
-    const result = aiKeyStore.importOpenAiKeyFromTxt(filePath, session);
+    const result = aiKeyStore.importOpenAiKeyFromTxt(filePath, session, options);
     aiOrchestrator.refreshOpenAiProvider();
     return result;
   }
 
-  function importOpenAiKeyFromDefaultPath(session) {
+  function importOpenAiKeyFromDefaultPath(session) { return aiKeyStore.importMigrationKeyOnce(session); }
+
+  function replaceOpenAiKey(value, session) {
     assertAdmin(session);
-    return importOpenAiKeyFromTxt(aiKeyStore.defaultImportPath, session);
+    const result = aiKeyStore.replaceOpenAiKey(value, session);
+    aiOrchestrator.refreshOpenAiProvider();
+    return result;
   }
 
   function clearOpenAiKey(session) {
@@ -730,6 +732,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd() }) {
     testOpenAiConnection,
     importOpenAiKeyFromTxt,
     importOpenAiKeyFromDefaultPath,
+    replaceOpenAiKey,
     clearOpenAiKey,
     updateAiModel,
     estimateAiCost: (input, session) => {

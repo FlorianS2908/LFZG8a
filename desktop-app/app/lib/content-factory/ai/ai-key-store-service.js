@@ -4,183 +4,136 @@ const { ensureDir, readJson, writeJson } = require('../../json-store');
 const { OpenAIProvider } = require('./openai-provider');
 
 const defaultModel = 'gpt-5.4-mini';
-const defaultImportPath = path.join(process.env.USERPROFILE || '', 'OneDrive - Amadeus Fire AG', 'Desktop', 'api_key_ContentFactory.txt');
 
-function createAiKeyStoreService({ appData, configPath } = {}) {
+function createAiKeyStoreService({ appData, safeStorage, configPath, migrationPath, now = () => new Date() } = {}) {
   const secureDir = path.join(appData.dataDir, 'secure');
   const storePath = configPath || path.join(secureDir, 'ai-provider-config.json');
 
-  function ensureStore() {
-    ensureDir(secureDir);
+  function assertAuthorized(session) {
+    if (!session?.authenticated || !session?.user) throw new Error('Keine lokale Berechtigung für KI-Einstellungen.');
   }
 
-  function assertAdmin(session) {
-    if (!session?.authenticated || !session?.user) {
-      throw new Error('Keine lokale Berechtigung für KI-Einstellungen.');
+  function assertEncryptionAvailable() {
+    if (!safeStorage?.isEncryptionAvailable?.()) {
+      throw new Error('Sichere Windows-Verschlüsselung ist nicht verfügbar. Der Schlüssel wurde nicht gespeichert.');
     }
   }
 
   function readConfig() {
-    ensureStore();
+    ensureDir(secureDir);
     return readJson(storePath, {});
   }
 
   function saveConfig(config) {
-    ensureStore();
+    ensureDir(secureDir);
     writeJson(storePath, config);
     return config;
   }
 
-  function encodeKey(value) {
-    return Buffer.from(String(value || ''), 'utf8').toString('base64');
-  }
-
-  function decodeKey(value) {
+  function decryptKey(config = readConfig()) {
+    if (!config.encryptedOpenAiKey) return '';
+    assertEncryptionAvailable();
     try {
-      return Buffer.from(String(value || ''), 'base64').toString('utf8');
+      return safeStorage.decryptString(Buffer.from(config.encryptedOpenAiKey, 'base64'));
     } catch {
-      return '';
+      throw new Error('Der gespeicherte OpenAI-Schlüssel konnte nicht sicher gelesen werden. Bitte richten Sie ihn erneut ein.');
     }
   }
 
-  function isPlausibleOpenAiKey(value) {
-    const prefix = 's' + 'k-';
-    return String(value || '').startsWith(prefix) && String(value || '').trim().length >= 20;
+  function storeKey(key, session, source = 'admin-key-store') {
+    assertAuthorized(session);
+    assertEncryptionAvailable();
+    const normalized = String(key || '').trim();
+    if (!normalized) throw new Error('Die Schlüsseldatei ist leer oder enthält keinen verwendbaren Wert.');
+    const existing = readConfig();
+    const configuredAt = existing.configuredAt || now().toISOString();
+    const encrypted = safeStorage.encryptString(normalized);
+    saveConfig({
+      ...existing,
+      provider: 'openai',
+      configured: true,
+      model: existing.model || process.env.OPENAI_MODEL || defaultModel,
+      keySource: source,
+      encryptedOpenAiKey: Buffer.from(encrypted).toString('base64'),
+      configuredAt,
+      updatedAt: now().toISOString(),
+      connectionTestStatus: 'unknown',
+      connectionTestedAt: ''
+    });
+    return { success: true, provider: 'openai', configured: true, model: existing.model || process.env.OPENAI_MODEL || defaultModel, keySource: source, message: 'OpenAI-Schlüssel wurde sicher eingerichtet.' };
   }
 
   function getOpenAiKeyForServerUse() {
-    const config = readConfig();
-    const value = decodeKey(config.openAiKeyLocal);
-    if (!value) return { value: '', source: 'missing' };
-    return { value, source: 'admin-key-store' };
+    const value = decryptKey();
+    return value ? { value, source: 'admin-key-store' } : { value: '', source: 'missing' };
   }
 
   function getAiProviderSafeStatus() {
     const config = readConfig();
-    const key = getOpenAiKeyForServerUse();
-    const defaultPathAvailable = fs.existsSync(defaultImportPath);
+    let configured = false;
+    let encryptionAvailable = Boolean(safeStorage?.isEncryptionAvailable?.());
+    try { configured = Boolean(config.encryptedOpenAiKey && decryptKey(config)); } catch { configured = false; }
     return {
-      provider: config.provider || 'local',
-      configured: Boolean(key.value),
-      model: config.model || defaultModel,
-      keySource: key.value ? 'admin-key-store' : 'missing',
+      provider: config.provider || 'openai',
+      configured,
+      model: config.model || process.env.OPENAI_MODEL || defaultModel,
+      keySource: configured ? 'admin-key-store' : 'missing',
+      configuredAt: config.configuredAt || '',
       updatedAt: config.updatedAt || '',
-      updatedBy: config.updatedBy || '',
-      defaultPathAvailable,
-      defaultPathStatus: defaultPathAvailable ? 'Key-Datei gefunden' : 'Key-Datei am Standardpfad nicht gefunden',
-      connectionTestStatus: config.connectionTestStatus || 'unknown'
+      lastSuccessfulTestAt: config.lastSuccessfulTestAt || '',
+      connectionTestStatus: config.connectionTestStatus || 'unknown',
+      encryptionAvailable
     };
   }
 
-  function importOpenAiKeyFromTxt(filePath, session) {
-    assertAdmin(session);
-    ensureStore();
-    if (!filePath || !fs.existsSync(filePath)) {
-      throw new Error('Key-Datei wurde nicht gefunden.');
-    }
+  function importOpenAiKeyFromTxt(filePath, session, { overwrite = false } = {}) {
+    assertAuthorized(session);
+    if (!filePath || !fs.existsSync(filePath)) throw new Error('Schlüsseldatei wurde nicht gefunden.');
+    const existing = getAiProviderSafeStatus();
+    if (existing.configured && !overwrite) return { success: false, configured: true, reason: 'already-configured', message: 'Ein OpenAI-Schlüssel ist bereits sicher eingerichtet und wurde nicht überschrieben.' };
     const key = fs.readFileSync(filePath, 'utf8').trim();
-    if (!isPlausibleOpenAiKey(key)) {
-      throw new Error('Der gelesene Wert sieht nicht wie ein OpenAI API-Key aus.');
+    return storeKey(key, session);
+  }
+
+  function importMigrationKeyOnce(session) {
+    if (!migrationPath || getAiProviderSafeStatus().configured || !fs.existsSync(migrationPath)) {
+      return { success: false, reason: 'not-required' };
     }
-    const existing = readConfig();
-    const updated = saveConfig({
-      ...existing,
-      provider: 'openai',
-      configured: true,
-      model: existing.model || defaultModel,
-      keySource: 'admin-key-store',
-      openAiKeyLocal: encodeKey(key),
-      updatedAt: new Date().toISOString(),
-      updatedBy: session?.user?.email || session?.user?.id || 'admin'
-    });
-    let deletedSourceFile = false;
-    try {
-      fs.rmSync(filePath, { force: true });
-      deletedSourceFile = !fs.existsSync(filePath);
-    } catch {
-      deletedSourceFile = false;
-    }
-    if (!deletedSourceFile) {
-      throw new Error('OpenAI-Key wurde gespeichert, aber die TXT-Datei konnte nicht geloescht werden.');
-    }
-    return {
-      success: true,
-      provider: 'openai',
-      configured: true,
-      model: updated.model || defaultModel,
-      keySource: 'admin-key-store',
-      deletedSourceFile,
-      sourcePathType: filePath === defaultImportPath ? 'standard-path' : 'custom-path',
-      message: 'OpenAI-Key wurde uebernommen. Die TXT-Datei wurde geloescht.'
-    };
+    return importOpenAiKeyFromTxt(migrationPath, session);
+  }
+
+  function replaceOpenAiKey(value, session) {
+    return storeKey(value, session);
   }
 
   function clearOpenAiKey(session) {
-    assertAdmin(session);
+    assertAuthorized(session);
     const existing = readConfig();
-    saveConfig({
-      provider: existing.provider || 'local',
-      configured: false,
-      model: existing.model || defaultModel,
-      keySource: 'missing',
-      updatedAt: new Date().toISOString(),
-      updatedBy: session?.user?.email || session?.user?.id || 'admin',
-      connectionTestStatus: 'unknown'
-    });
-    return { success: true, provider: 'openai', configured: false, model: existing.model || defaultModel, keySource: 'missing', message: 'OpenAI-Key wurde entfernt. Local/Fallback bleibt aktiv.' };
+    saveConfig({ ...existing, configured: false, keySource: 'missing', encryptedOpenAiKey: undefined, updatedAt: now().toISOString(), connectionTestStatus: 'unknown', connectionTestedAt: '', lastSuccessfulTestAt: '' });
+    return { success: true, provider: 'openai', configured: false, model: existing.model || defaultModel, keySource: 'missing', message: 'Gespeicherter OpenAI-Schlüssel wurde entfernt. Der Offline-Fallback bleibt aktiv.' };
   }
 
   function updateAiModel(model, session) {
-    assertAdmin(session);
-    const safeModel = String(model || '').trim() || defaultModel;
-    const existing = readConfig();
-    saveConfig({
-      ...existing,
-      model: safeModel,
-      updatedAt: new Date().toISOString(),
-      updatedBy: session?.user?.email || session?.user?.id || 'admin'
-    });
+    assertAuthorized(session);
+    const safeModel = String(model || '').trim();
+    if (!/^[a-zA-Z0-9._:-]{2,100}$/.test(safeModel)) throw new Error('Die Modellbezeichnung ist ungültig.');
+    saveConfig({ ...readConfig(), model: safeModel, updatedAt: now().toISOString() });
     return getAiProviderSafeStatus();
   }
 
   async function testOpenAiConnection(session, options = {}) {
-    assertAdmin(session);
+    assertAuthorized(session);
     const keyInfo = getOpenAiKeyForServerUse();
     const status = getAiProviderSafeStatus();
-    if (!keyInfo.value) {
-      return { status: 'warning', provider: 'openai', model: status.model, keySource: 'missing', errorCategory: 'missing-key' };
-    }
-    const provider = new OpenAIProvider({
-      apiKey: keyInfo.value,
-      keySource: keyInfo.source,
-      model: status.model,
-      timeoutMs: options.timeoutMs || 10000
-    });
+    if (!keyInfo.value) return { status: 'warning', provider: 'openai', model: status.model, keySource: 'missing', errorCategory: 'missing-key', message: 'OpenAI ist nicht eingerichtet.' };
+    const provider = new OpenAIProvider({ apiKey: keyInfo.value, keySource: keyInfo.source, model: status.model, timeoutMs: options.timeoutMs || 10000 });
     const result = await provider.testConnection();
-    const next = readConfig();
-    saveConfig({ ...next, connectionTestStatus: result.status, connectionTestedAt: new Date().toISOString() });
-    return {
-      status: result.status,
-      provider: 'openai',
-      model: status.model,
-      keySource: keyInfo.source,
-      errorCategory: result.status === 'success' ? '' : result.errorCategory || 'connection-failed'
-    };
+    const testedAt = now().toISOString();
+    saveConfig({ ...readConfig(), connectionTestStatus: result.status, connectionTestedAt: testedAt, lastSuccessfulTestAt: result.status === 'success' ? testedAt : readConfig().lastSuccessfulTestAt || '' });
+    return { status: result.status, provider: 'openai', model: status.model, keySource: keyInfo.source, errorCategory: result.status === 'success' ? '' : result.errorCategory || 'connection-failed', message: result.status === 'success' ? 'OpenAI-Verbindung erfolgreich' : 'OpenAI-Verbindung konnte nicht bestätigt werden.' };
   }
 
-  return {
-    storePath,
-    defaultImportPath,
-    importOpenAiKeyFromTxt,
-    getOpenAiKeyForServerUse,
-    getAiProviderSafeStatus,
-    clearOpenAiKey,
-    testOpenAiConnection,
-    updateAiModel
-  };
+  return { storePath, migrationPath, importOpenAiKeyFromTxt, importMigrationKeyOnce, replaceOpenAiKey, getOpenAiKeyForServerUse, getAiProviderSafeStatus, clearOpenAiKey, testOpenAiConnection, updateAiModel };
 }
 
-module.exports = {
-  createAiKeyStoreService,
-  defaultImportPath
-};
+module.exports = { createAiKeyStoreService, defaultModel };

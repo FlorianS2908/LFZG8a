@@ -11,6 +11,7 @@ class OpenAIProvider {
     const storeStatus = options.aiKeyStore?.getAiProviderSafeStatus?.() || {};
     this.model = options.model || storeStatus.model || process.env.OPENAI_MODEL || 'gpt-5.4-mini';
     this.timeoutMs = Number(options.timeoutMs || process.env.OPENAI_TIMEOUT_MS || 30000);
+    this.maxRetries = Math.min(3, Math.max(0, Number(options.maxRetries ?? 2)));
     this.keySource = this.apiKey ? keyInfo.source : 'missing';
   }
 
@@ -85,7 +86,7 @@ class OpenAIProvider {
     return this.requestJson(prompt);
   }
 
-  requestJson(payload, options = {}) {
+  async requestJson(payload, options = {}) {
     if (!this.isConfigured()) {
       return Promise.reject(new Error('OpenAI ist nicht konfiguriert.'));
     }
@@ -98,6 +99,20 @@ class OpenAIProvider {
         { role: 'user', content: JSON.stringify(payload) }
       ]
     });
+    let attempt = 0;
+    while (true) {
+      try { return await this.performRequest(body, options.signal); }
+      catch (error) {
+        if (options.signal?.aborted) throw new Error('OpenAI-Anfrage wurde abgebrochen.');
+        const retryable = error?.statusCode === 429 || error?.statusCode >= 500;
+        if (!retryable || attempt >= this.maxRetries) throw error;
+        attempt += 1;
+        await delay(Math.min(1000, 150 * (2 ** attempt)), options.signal);
+      }
+    }
+  }
+
+  performRequest(body, signal) {
     return new Promise((resolve, reject) => {
       const request = https.request({
         hostname: 'api.openai.com',
@@ -114,7 +129,9 @@ class OpenAIProvider {
         response.on('data', (chunk) => { data += chunk; });
         response.on('end', () => {
           if (response.statusCode < 200 || response.statusCode >= 300) {
-            reject(new Error(`OpenAI API Fehler ${response.statusCode}`));
+            const error = new Error(`OpenAI API Fehler ${response.statusCode}`);
+            error.statusCode = response.statusCode;
+            reject(error);
             return;
           }
           try {
@@ -129,6 +146,10 @@ class OpenAIProvider {
         request.destroy(new Error('OpenAI Timeout.'));
       });
       request.on('error', reject);
+      if (signal) {
+        if (signal.aborted) request.destroy(new Error('OpenAI-Anfrage wurde abgebrochen.'));
+        else signal.addEventListener('abort', () => request.destroy(new Error('OpenAI-Anfrage wurde abgebrochen.')), { once: true });
+      }
       request.write(body);
       request.end();
     });
@@ -136,10 +157,17 @@ class OpenAIProvider {
 }
 
 function resolveOpenAiKey(options = {}) {
-  if (process.env.OPENAI_API_KEY) return { value: process.env.OPENAI_API_KEY, source: 'process.env' };
   const storeKey = options.aiKeyStore?.getOpenAiKeyForServerUse?.();
   if (storeKey?.value) return storeKey;
+  if (process.env.OPENAI_API_KEY) return { value: process.env.OPENAI_API_KEY, source: 'process.env' };
   return getOpenAiApiKey(options.projectRoot || process.cwd());
+}
+
+function delay(ms, signal) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, ms);
+    signal?.addEventListener('abort', () => { clearTimeout(timer); reject(new Error('OpenAI-Anfrage wurde abgebrochen.')); }, { once: true });
+  });
 }
 
 function categorizeOpenAiError(error) {

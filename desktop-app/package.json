@@ -13,6 +13,7 @@
         "test": "node tests/run-tests.js",
         "test:coverage": "node --experimental-test-coverage --test tests/standalone-architecture.test.js && node --experimental-test-coverage ../packages/content-factory-core/tests/content-factory-core.test.ts",
         "test:electron": "electron . --smoke-test",
+        "test:openai-connection": "electron . --openai-connection-test",
         "test:watch": "node tests/run-tests.js",
         "verify": "node scripts/check-all.js && node tests/run-tests.js",
         "build": "electron-builder --dir",

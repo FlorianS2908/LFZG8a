@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, safeStorage, shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { createContentFactoryService } = require('./lib/content-factory/content-factory-service');
@@ -10,6 +10,7 @@ const rendererFile = path.join(__dirname, 'renderer', 'tool-center', 'factory.ht
 const preloadFile = path.join(__dirname, 'preload.js');
 const iconFile = path.join(__dirname, 'assets', 'icons', process.platform === 'win32' ? 'app-icon.ico' : 'app-icon.png');
 const standaloneSession = Object.freeze({ authenticated: true, user: { id: 'local', email: 'local@contentfactory.invalid', roles: [] } });
+const localMigrationPath = path.join(process.env.USERPROFILE || '', 'OneDrive - Amadeus Fire AG', 'Desktop', 'api_key_ContentFactory.txt');
 
 applyAppEnv(projectRoot);
 let mainWindow;
@@ -24,7 +25,7 @@ function getAppData() {
 }
 
 function getService() {
-  if (!service) service = createContentFactoryService({ appData: getAppData(), projectRoot });
+  if (!service) service = createContentFactoryService({ appData: getAppData(), projectRoot, safeStorage, migrationPath: localMigrationPath });
   return service;
 }
 
@@ -74,7 +75,10 @@ function createWindow() {
 }
 
 function handle(channel, method) {
-  ipcMain.handle(channel, (event, ...args) => getService()[method](...args, standaloneSession));
+  ipcMain.handle(channel, async (event, ...args) => {
+    try { return await getService()[method](...args, standaloneSession); }
+    catch (error) { throw new Error(/Verschlüsselung/i.test(String(error?.message)) ? 'Sichere Speicherung ist derzeit nicht verfügbar.' : 'Die Aktion konnte nicht abgeschlossen werden.'); }
+  });
 }
 
 function registerIpc() {
@@ -93,8 +97,6 @@ function registerIpc() {
     'factory:parse-course-plan': 'parseCoursePlan',
     'factory:get-ai-provider-status': 'getAiProviderStatus',
     'factory:test-openai-connection': 'testOpenAiConnection',
-    'factory:import-openai-key-from-txt': 'importOpenAiKeyFromTxt',
-    'factory:import-openai-key-from-default-path': 'importOpenAiKeyFromDefaultPath',
     'factory:clear-openai-key': 'clearOpenAiKey',
     'factory:update-ai-model': 'updateAiModel',
     'factory:estimate-ai-cost': 'estimateAiCost',
@@ -128,7 +130,19 @@ function registerIpc() {
 
   ipcMain.handle('factory:select-openai-key-txt', async () => {
     const result = await dialog.showOpenDialog(mainWindow, { properties: ['openFile'], filters: [{ name: 'Textdatei', extensions: ['txt'] }] });
-    return result.canceled ? null : getService().importOpenAiKeyFromTxt(result.filePaths[0], standaloneSession);
+    if (result.canceled) return { canceled: true };
+    const confirmation = await dialog.showMessageBox(mainWindow, { type: 'warning', buttons: ['Abbrechen', 'Sicher importieren'], defaultId: 0, cancelId: 0, message: 'Ausgewählten API-Schlüssel sicher importieren?' });
+    return confirmation.response === 1 ? getService().importOpenAiKeyFromTxt(result.filePaths[0], standaloneSession, { overwrite: true }) : { canceled: true };
+  });
+  ipcMain.handle('factory:replace-openai-key', async (event, value) => {
+    if (typeof value !== 'string' || value.length > 10000) throw new Error('Ungültige Eingabe.');
+    const confirmation = await dialog.showMessageBox(mainWindow, { type: 'warning', buttons: ['Abbrechen', 'Sicher speichern'], defaultId: 0, cancelId: 0, message: 'OpenAI-Schlüssel eingeben oder ersetzen?' });
+    return confirmation.response === 1 ? getService().replaceOpenAiKey(value, standaloneSession) : { canceled: true };
+  });
+  ipcMain.removeHandler('factory:clear-openai-key');
+  ipcMain.handle('factory:clear-openai-key', async () => {
+    const confirmation = await dialog.showMessageBox(mainWindow, { type: 'warning', buttons: ['Abbrechen', 'Entfernen'], defaultId: 0, cancelId: 0, message: 'Gespeicherten OpenAI-Schlüssel entfernen?' });
+    return confirmation.response === 1 ? getService().clearOpenAiKey(standaloneSession) : { canceled: true };
   });
   ipcMain.handle('factory:open-openai-setup-guide', () => shell.openExternal('https://platform.openai.com/api-keys'));
   ipcMain.handle('factory:open-generated-draft', (event, containerId, target = 'standalone') => {
@@ -149,6 +163,17 @@ function registerIpc() {
 
 app.whenReady().then(() => {
   registerIpc();
+  try {
+    const result = getService().aiKeyStore.importMigrationKeyOnce(standaloneSession);
+    if (result.success) console.info('OpenAI-Schlüssel wurde sicher eingerichtet.');
+  } catch { console.warn('OpenAI-Schlüssel konnte nicht sicher eingerichtet werden.'); }
+  if (process.argv.includes('--openai-connection-test')) {
+    getService().testOpenAiConnection(standaloneSession)
+      .then((result) => console.info(result.status === 'success' ? 'OpenAI-Verbindung erfolgreich' : 'OpenAI-Verbindung konnte nicht bestätigt werden.'))
+      .catch(() => console.warn('OpenAI-Verbindung konnte nicht bestätigt werden.'))
+      .finally(() => app.quit());
+    return;
+  }
   createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
