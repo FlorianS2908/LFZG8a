@@ -56,7 +56,7 @@
     },
     curriculumReview: {
       title: 'Curriculum prüfen',
-      explained: 'Hier pruefst du die vorgeschlagene Tagesstruktur.',
+      explained: 'Hier prüfst du die vorgeschlagene Tagesstruktur.',
       why: 'Erst nach Freigabe werden Tagesentwürfe erzeugt.',
       requiredInputs: ['Themen prüfen', 'Plan freigeben'],
       optionalInputs: ['Themen verschieben', 'UE anpassen', 'Themen deaktivieren'],
@@ -92,7 +92,7 @@
     },
     preflight: {
       title: 'Preflight/Testlauf',
-      explained: 'Hier prueft das System den Entwurf, bevor daraus ein Container wird.',
+      explained: 'Hier prüft das System den Entwurf, bevor daraus ein Container wird.',
       why: 'Preflight schuetzt vor Lösungen im Teilnehmerbereich, Secrets, Rohtexten und Sicherheitsproblemen.',
       requiredInputs: ['Tagesentwurf'],
       optionalInputs: ['Testlauf trotz Warnungen bestätigen'],
@@ -115,7 +115,7 @@
     'manage-containers': {
       overview: {
         title: 'Container verwalten',
-        explained: 'Hier pruefst du vorhandene Container und deren Status.',
+        explained: 'Hier prüfst du vorhandene Container und deren Status.',
         why: 'Nur geprüfte Entwürfe sollten veröffentlicht werden.',
         requiredInputs: ['Containerliste'],
         optionalInputs: ['Bericht öffnen', 'veröffentlichen', 'deaktivieren', 'archivieren'],
@@ -169,11 +169,11 @@
       ai: {
         title: 'KI/Fallback',
         explained: 'Providerstatus, Prompt-Prüfung, Golden Tests und Kostenabschaetzung werden hier geprüft.',
-        why: 'ChatGPT-Abo ist kein API-Key; Local/Fallback bleibt immer moeglich.',
+        why: 'Ein ChatGPT-Abonnement ist kein API-Schlüssel; die lokale Erstellung bleibt immer möglich.',
         requiredInputs: ['Modus wählen'],
         optionalInputs: ['API-Key importieren', 'Modell speichern', 'Testanfrage senden'],
         typicalMistakes: ['API-Key in Dateien committen', 'Kostenabschaetzung ignorieren'],
-        result: 'KI-Modus ist pruefbar dokumentiert.'
+        result: 'Der KI-Modus ist nachvollziehbar dokumentiert.'
       }
     }
   };
