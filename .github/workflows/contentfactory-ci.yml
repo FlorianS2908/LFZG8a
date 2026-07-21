@@ -1,0 +1,37 @@
+name: ContentFactory CI
+on:
+  push:
+    branches: [agent/contentfactory-standalone]
+  pull_request:
+    branches: [main]
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - run: pnpm install --frozen-lockfile
+        working-directory: desktop-app
+      - run: pnpm run check
+        working-directory: desktop-app
+      - run: pnpm test
+        working-directory: desktop-app
+      - run: node packages/content-factory-core/tests/content-factory-core.test.ts
+      - run: pnpm run test:coverage
+        working-directory: desktop-app
+      - name: Sicherheits- und Pfadprüfung
+        shell: pwsh
+        run: |
+          $tracked = git ls-files desktop-app packages/content-factory-core docs README.md
+          $absolute = Select-String -Path $tracked -Pattern '[A-Za-z]:\\Users\\' -ErrorAction SilentlyContinue
+          $secrets = Select-String -Path $tracked -Pattern '(sk-[A-Za-z0-9]{20,}|INITIAL_ADMIN_PASSWORD|password\s*[:=]\s*["''][^"'']+)' -ErrorAction SilentlyContinue
+          if ($absolute -or $secrets) { $absolute; $secrets; exit 1 }
+      - run: pnpm run build
+        working-directory: desktop-app
+      - run: pnpm audit --audit-level=high
+        working-directory: desktop-app
