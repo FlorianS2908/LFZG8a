@@ -9,6 +9,7 @@ const { prepareDocument, cleanupPreparedFiles } = require('../document-processin
 const { normalizeCollaboration, buildAiUnderstanding, validateRanges, revisePlanTarget, diffPlans } = require('./collaboration-model');
 const { normalizeCanonicalPlan, validateCanonicalPlan, enrichPlanWithContainerConfiguration, toClassbookModel } = require('./canonical-course-plan');
 const { exportCoursePlanXlsx } = require('./course-plan-xlsx-exporter');
+const { normalizePlanReview, validatePlanReview, applyConflictDecision, editUnit, confirmPlanReview, acceptPlanReview } = require('./plan-review-model');
 
 const ORIGIN_STATUSES = new Set(['explicit', 'derived', 'generated', 'conflicting', 'needs_review']);
 const TERMINAL_OPERATION_STATUSES = new Set(['completed', 'completed_with_warnings', 'failed', 'cancelled']);
@@ -371,13 +372,13 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
       throw error;
     }
     const now = new Date().toISOString();
-    const draft = {
+    const draft = normalizePlanReview({
       ...raw, id: `course-plan-${project.id}-${planningVersion}`, planningVersion,
       status: 'draft', validation,
       sourceAnalysisVersions: analyses.map((item) => ({ documentId: item.documentId, analysisVersion: item.analysisVersion })),
       structureFrameSnapshot: structureFrame, provider: provider.name, model: provider.model,
       promptVersion: 'course-plan-v2', planningStage: 'ai_groundwork', classbookModel: toClassbookModel(raw), createdAt: now, updatedAt: now
-    };
+    });
     project.coursePlanDrafts.push(draft);
     project.currentPlanningVersion = planningVersion;
     return saveProject(project);
@@ -406,14 +407,37 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     const validation = validateCanonicalPlan(draft, draft.structureFrameSnapshot || project.structureFrame);
     if (validation.status === 'failed') throw new Error('Die Kursstruktur enthält blockierende Validierungsfehler.');
     if (project.uploadedDocuments.some((document) => document.bindingLevel === 'binding' && document.analysisStatus === 'failed' && !document.failureAcknowledged)) throw new Error('Verbindliche fehlgeschlagene Dokumente müssen erneut analysiert oder ausdrücklich als Ausnahme bestätigt werden.');
-    if ((draft.conflicts || []).some((item) => item.blocking && !item.confirmed)) throw new Error('Blockierende Konflikte müssen bearbeitet oder bestätigt werden.');
-    const approved = { ...draft, status: 'approved', validation, approvedAt: new Date().toISOString() };
+    const reviewed = acceptPlanReview(confirmPlanReview(normalizePlanReview(draft)));
+    const approved = { ...reviewed, status: 'approved', validation, approvedAt: new Date().toISOString() };
     project.coursePlanDrafts = project.coursePlanDrafts.map((item) => item.id === approved.id ? approved : item);
     project.approvedCoursePlan = approved;
     return saveProject(project);
   }
 
   function getAiUnderstanding(projectId) { return buildAiUnderstanding(getProject(projectId)); }
+
+  function decidePlanConflict(projectId, version, input = {}) { return reviseReviewedPlan(projectId, version, (draft) => applyConflictDecision(draft, input), 'conflict_resolution'); }
+  function editPlanUnit(projectId, version, input = {}) { return reviseReviewedPlan(projectId, version, (draft) => editUnit(draft, input), 'manual_edit'); }
+
+  function confirmReviewedPlan(projectId, version) {
+    const project = getProject(projectId); const draft = findDraft(project, version); const validation = validateCanonicalPlan(draft, draft.structureFrameSnapshot || project.structureFrame);
+    if (validation.status === 'failed') throw new Error(validation.errors.join(' | '));
+    const confirmed = confirmPlanReview(normalizePlanReview(draft)); confirmed.validation = validation; confirmed.updatedAt = new Date().toISOString();
+    project.coursePlanDrafts = project.coursePlanDrafts.map((item) => item.id === draft.id ? confirmed : item); return saveProject(project);
+  }
+
+  function acceptReviewedPlan(projectId, version) {
+    const project = getProject(projectId); const draft = findDraft(project, version); const accepted = { ...acceptPlanReview(normalizePlanReview(draft)), status: 'approved', approvedAt: new Date().toISOString() };
+    project.coursePlanDrafts = project.coursePlanDrafts.map((item) => item.id === draft.id ? accepted : item); project.approvedCoursePlan = cloneSerializable(accepted); return saveProject(project);
+  }
+
+  function reviseReviewedPlan(projectId, version, transform, origin) {
+    const project = getProject(projectId); const source = findDraft(project, version); const planningVersion = Number(project.currentPlanningVersion) + 1; const now = new Date().toISOString();
+    const edited = transform(normalizePlanReview(cloneSerializable(source))); edited.id = `course-plan-${project.id}-${planningVersion}`; edited.parentPlanningVersion = source.planningVersion; edited.planningVersion = planningVersion; edited.status = 'draft'; edited.updatedAt = now; edited.createdAt = now;
+    edited.validation = validateCanonicalPlan(edited, source.structureFrameSnapshot || project.structureFrame); edited.classbookModel = toClassbookModel(edited); edited.diff = diffPlans(source, edited); project.coursePlanDrafts.push(edited); project.currentPlanningVersion = planningVersion; project.approvedCoursePlan = null;
+    project.planVersions.push({ planningVersion, parentPlanningVersion: source.planningVersion, targetType: origin, diff: edited.diff, createdAt: now }); return saveProject(project);
+  }
+  function findDraft(project, version) { const draft = project.coursePlanDrafts.find((item) => Number(item.planningVersion) === Number(version || project.currentPlanningVersion)); if (!draft) throw new Error('Unterrichtsplan wurde nicht gefunden.'); return draft; }
 
   function applyContainerConfiguration(projectId, containerProfile = {}) {
     const project = getProject(projectId);
@@ -483,7 +507,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     return saveProject(project);
   }
 
-  return { getProject, listProjects, upsertProject, importSourceFile, startDocumentAnalysis, startCoursePlanning, getAnalysisProgress, getOperationStatus, getPlanningResult, cancelAiOperation, savePlanningFrame, saveCourseScope, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan, applyContainerConfiguration, getClassbookModel, exportStoredCoursePlan, getAiUnderstanding, updatePlanCollaboration, reviseTarget, restorePlanVersion };
+  return { getProject, listProjects, upsertProject, importSourceFile, startDocumentAnalysis, startCoursePlanning, getAnalysisProgress, getOperationStatus, getPlanningResult, cancelAiOperation, savePlanningFrame, saveCourseScope, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan, decidePlanConflict, editPlanUnit, confirmReviewedPlan, acceptReviewedPlan, applyContainerConfiguration, getClassbookModel, exportStoredCoursePlan, getAiUnderstanding, updatePlanCollaboration, reviseTarget, restorePlanVersion };
 }
 
 function analysisInputError(message) { const error = new Error(message); error.code = 'DOCUMENT_ANALYSIS_INPUT'; return error; }
@@ -637,7 +661,7 @@ function normalizeProject(project, id) {
   else if (normalized.structureFrame) normalized.structureFrame = { ...normalized.structureFrame, ...calculateCourseScope({ ...normalized.structureFrame, targetAudience: normalized.structureFrame.targetAudience ?? normalized.structureFrame.targetGroup ?? normalized.targetGroup, priorKnowledge: normalized.structureFrame.priorKnowledge ?? normalized.priorKnowledge }) };
   normalized.uploadedDocuments = (normalized.uploadedDocuments || []).map(normalizeDocument);
   normalized.documentAnalyses = (normalized.documentAnalyses || []).map((analysis) => ({ ...analysis, ...normalizeDocumentAnalysis(analysis, { documentId: analysis.documentId, documentType: analysis.documentType }).value }));
-  normalized.coursePlanDrafts = (normalized.coursePlanDrafts || []).map((draft) => { const plan = normalizeCanonicalPlan(draft, { ...(draft.structureFrameSnapshot || normalized.structureFrame || {}), courseId: normalized.id, title: normalized.title }); return { ...plan, classbookModel: toClassbookModel(plan) }; });
+  normalized.coursePlanDrafts = (normalized.coursePlanDrafts || []).map((draft) => { const plan = normalizePlanReview(normalizeCanonicalPlan(draft, { ...(draft.structureFrameSnapshot || normalized.structureFrame || {}), courseId: normalized.id, title: normalized.title })); return { ...plan, classbookModel: toClassbookModel(plan) }; });
   if (normalized.approvedCoursePlan) normalized.approvedCoursePlan = normalizeCanonicalPlan(normalized.approvedCoursePlan, { ...(normalized.approvedCoursePlan.structureFrameSnapshot || normalized.structureFrame || {}), courseId: normalized.id, title: normalized.title });
   normalized.pipelinePhases = { ...defaultPipelinePhases(), ...(normalized.pipelinePhases || {}) };
   return normalizeCollaboration(normalized);

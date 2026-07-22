@@ -329,7 +329,7 @@ test('Planungsprompt und Review bleiben fachneutral und Materialgeneratoren sind
   const generators = fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'content-factory', 'artifact-generators', 'artifact-generator-service.js'), 'utf8');
   assert.match(provider, /Das System ist fachneutral/);
   assert.match(provider, /materialRequirements/);
-  assert.match(renderer, /renderAnalysisList\('Materialien'/);
+  assert.match(renderer, /edit\('materials'/);
   assert.match(generators, /registerArtifactGenerator/);
 });
 

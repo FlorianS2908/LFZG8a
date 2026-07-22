@@ -30,7 +30,8 @@ test('Planungsreview nutzt volle Breite, feste Fachproportionen und Kartenansich
   const css = fs.readFileSync(path.join(root, 'content-factory.css'), 'utf8');
   const ui = fs.readFileSync(path.join(root, 'factory.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'factory.html'), 'utf8');
-  assert.match(css, /factory-panel:has\(\[data-plan-step-content="structureReview"\]\) \{ max-width: none/);
+  assert.match(css, /--cf-content-width: 100rem/);
+  assert.match(css, /factory-panel:has\(\[data-plan-step-content="structureReview"\]\) \{ max-width: var\(--cf-content-width\)/);
   assert.match(css, /\.col-content \{ width: 24%/);
   assert.match(css, /\.col-objective \{ width: 24%/);
   assert.match(css, /overflow-wrap: normal; word-break: normal/);
@@ -39,6 +40,8 @@ test('Planungsreview nutzt volle Breite, feste Fachproportionen und Kartenansich
   assert.match(ui, /<th>Kompetenzziel<\/th>/);
   assert.match(ui, /<th>Arbeitsform<\/th>/);
   assert.match(ui, /data-export-course-plan/);
+  assert.match(ui, /Unterrichtsplan bestätigen/);
+  assert.match(ui, /data-conflict-decision/);
   assert.doesNotMatch(ui, /<th>Confidence<\/th>/);
   assert.doesNotMatch(ui, /Math\.round\(Number\(unit\.confidence/);
   assert.match(html, /planning-review-view-model\.js/);

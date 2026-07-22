@@ -163,7 +163,10 @@ class OpenAIProvider {
         'Keinen einzelnen Fachbereich und keine bestimmte Werkzeugklasse als Standard voraussetzen.',
         'originStatus ist explicit, derived, generated, conflicting oder needs_review.',
         'Kennzeichne Ergänzungen als generated und löse Konflikte nicht stillschweigend.',
-        'Gib summary, days, excludedTopics, unscheduledTopics, conflicts, warnings und reviewItems als JSON zurück.'
+        'Klassifiziere Auffälligkeiten als extraction_issue, source_conflict, internal_source_conflict, planning_conflict, missing_information oder informational_note.',
+        'Jeder relevante Konflikt benötigt conflictId, type, severity, relevance, title, description, affectedSourceReferences, affectedDayNumbers, affectedUnitIds, affectedFields, conflictingValues, evidence, aiRecommendation, proposedValue, confidence und resolutionStatus.',
+        'Allgemeine Hinweise ohne konkrete UE- oder Feldreferenz dürfen nicht blockieren. Technisches OCR- oder Extraktionsrauschen ist extraction_issue und nicht fachlicher Konflikt.',
+        'Gib summary, days, excludedTopics, unscheduledTopics, conflicts, missingInformation, warnings und reviewItems als JSON zurück.'
       ],
       input: sanitizeInput(input)
     }, options);

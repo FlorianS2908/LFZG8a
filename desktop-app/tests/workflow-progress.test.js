@@ -1,0 +1,9 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('fs');
+const path = require('path');
+const progress = require('../app/renderer/tool-center/workflow-ui/workflow-progress');
+
+test('Analyse und Planung verwenden dieselbe konfigurierbare Fortschrittskomponente', () => { const analysis = progress.render({ status: 'analyzing', kind: 'analysis', step: 'Inhalte werden analysiert', total: 5, completed: 2, currentDocument: 'Sehr langer Dokumentname.pdf', history: [{ phase: 'document_preparation', step: 'Vorbereiten' }, { phase: 'document_analysis', step: 'Analysieren' }], phase: 'document_analysis' }); const planning = progress.render({ status: 'planning', kind: 'planning', step: 'Themen werden verteilt' }); assert.match(analysis, /Dokumentanalyse.*läuft/); assert.match(analysis, /40% · 2 von 5 Dokumenten/); assert.match(analysis, /Sehr langer Dokumentname/); assert.match(planning, /Unterrichtsplanerstellung.*läuft/); assert.match(planning, /workflow-progress-indeterminate/); });
+test('Warteschlange, Fehler, Abbruch und deutsche Statuswerte sind verständlich', () => { assert.match(progress.render({ status: 'queued' }), /wartet auf Verarbeitung/); assert.match(progress.render({ status: 'failed', errors: ['Sichere Fehlermeldung'] }), /Erneut versuchen/); assert.match(progress.render({ status: 'cancelled' }), /abgebrochen/i); });
+test('Renderer bindet nur die gemeinsame Fortschrittskomponente ein', () => { const root = path.join(__dirname, '..', 'app', 'renderer', 'tool-center'); const ui = fs.readFileSync(path.join(root, 'factory.js'), 'utf8'); const html = fs.readFileSync(path.join(root, 'factory.html'), 'utf8'); assert.match(ui, /workflowProgress\.render\(wizard\.analysisProgress\)/); assert.match(html, /workflow-ui\/workflow-progress\.js/); });

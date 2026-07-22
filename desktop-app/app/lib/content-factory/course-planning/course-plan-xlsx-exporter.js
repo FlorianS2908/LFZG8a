@@ -13,7 +13,8 @@ function exportCoursePlanXlsx(plan, outputPath, options = {}) {
     ['Unterrichtsplan', [HEADERS, ...rows]],
     ['Kursübersicht', [['Kurs-ID', value.courseId], ['Titel', value.title], ['Kurstage', value.totalDays], ['Unterrichtseinheiten', value.totalUnits], ['UE-Dauer', value.unitDurationMinutes]]],
     ['Konfiguration', Object.entries(options.configuration || {}).map(([key, val]) => [key, serial(val)]).length ? Object.entries(options.configuration || {}).map(([key, val]) => [key, serial(val)]) : [['Hinweis', 'Keine zusätzliche Konfiguration gespeichert']]],
-    ['Offene Punkte und Warnungen', [['Tag', 'UE', 'Warnung'], ...value.days.flatMap((day) => day.units.flatMap((unit) => unit.warnings.map((warning) => [day.dayNumber, unit.unitNumber, serial(warning)])))]],
+    ['Prüfhinweise', [['ID', 'Typ', 'Relevanz', 'Titel', 'Betroffene UE', 'Felder', 'KI-Vorschlag', 'Entscheidung', 'Endgültiger Wert', 'Kommentar'], ...(plan.conflicts || []).map((item) => [item.conflictId, item.type, item.relevance, item.title, (item.affectedUnitIds || []).join(', '), (item.affectedFields || []).join(', '), serial(item.proposedValue), item.resolutionStatus, serial(item.resolvedValue), item.userComment])]],
+    ['Quellen und Entscheidungen', [['Änderungs-ID', 'Planversion', 'UE', 'Feld', 'Vorher', 'Nachher', 'Ursprung', 'Zeitpunkt'], ...(plan.changeHistory || []).map((item) => [item.changeId, item.planVersion, item.unitId, item.fieldName, serial(item.previousValue), serial(item.newValue), item.changeOrigin, item.changedAt])]],
     ['Quellen', [['Dokument-ID', 'Fundstelle'], ...uniqueSources(value).map((ref) => [ref.documentId || '', ref.location || ref.sourceRef || ref.page || ref.section || ''])]]
   ];
   writeZipPackage(outputPath, workbookEntries(sheets));
