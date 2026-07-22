@@ -73,6 +73,40 @@ class OpenAIProvider {
     return this.requestJson(prompt);
   }
 
+  async analyzeDocument(input = {}, options = {}) {
+    return this.requestJson({
+      schema: 'DocumentAnalysis',
+      rules: [
+        'Analysiere ausschließlich die bereitgestellte Dokumentextraktion.',
+        'Erstelle noch keinen fertigen Kurs und ergänze keine fehlenden Inhalte frei.',
+        'Trenne explizite Aussagen, Ableitungen, Konflikte und fehlende Informationen.',
+        'Belege Aussagen mit documentId, fileName und Fundstelle.',
+        'Das System ist fachneutral. Leite Fachbegriffe ausschließlich aus Dokumenten und Benutzervorgaben ab.',
+        'Alle Listenfelder müssen Arrays sein; wenn keine Einträge vorhanden sind, liefere [].',
+        'detectedCategory muss {value, confidence, reason} und summary muss {short, detailed} sein.',
+        'Gib schemaVersion, documentId, documentType, detectedCategory, summary, topics, learningObjectives, competencies, exercises, solutions, assessments, materials, prerequisites, chronologyDependencies, relevantSections, irrelevantSections, conflicts, missingInformation, warnings, reviewItems, sourceReferences, reviewRequired und confidence als JSON zurück.'
+      ],
+      input: sanitizeInput(input)
+    }, options);
+  }
+
+  async generateStructuredCoursePlan(input = {}, options = {}) {
+    return this.requestJson({
+      schema: 'CoursePlanDraft',
+      rules: [
+        'Erstelle ausschließlich einen zeitlich und chronologisch geordneten Kursstrukturentwurf.',
+        'Halte Tage und tatsächlich planbare Unterrichtseinheiten exakt ein.',
+        'Jede Einheit benötigt dayNumber, unitNumber, topic, content, preliminaryLearningObjective, sourceReferences, originStatus, confidence und reviewStatus.',
+        'Jede Einheit darf fachneutral materialRequirements mit Materialart, Herkunft (reuse/adapt/generate), Zielformat, Werkzeugbedarf, Automatisierbarkeit und Prüfbedarf vorschlagen.',
+        'Keinen einzelnen Fachbereich und keine bestimmte Werkzeugklasse als Standard voraussetzen.',
+        'originStatus ist explicit, derived, generated, conflicting oder needs_review.',
+        'Kennzeichne Ergänzungen als generated und löse Konflikte nicht stillschweigend.',
+        'Gib summary, days, excludedTopics, unscheduledTopics, conflicts, warnings und reviewItems als JSON zurück.'
+      ],
+      input: sanitizeInput(input)
+    }, options);
+  }
+
   async reviseDayDraft(input = {}) {
     const prompt = {
       schema: 'DayGenerationResult',

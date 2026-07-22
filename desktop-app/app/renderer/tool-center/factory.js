@@ -22,6 +22,7 @@ const state = {
   importBatches: [],
   referenceSources: [],
   curriculumDrafts: [],
+  courseProjects: [],
   presets: [],
   didacticProfiles: [],
   storageUsage: null,
@@ -37,6 +38,9 @@ const state = {
     course: { courseName: '', courseId: '', department: '', description: '' },
     anchorTypes: ['course-plan'],
     anchorFiles: [],
+    courseProject: null,
+    analysisProgress: null,
+    planningFrame: { targetGroup: '', priorKnowledge: '', totalDays: 5, unitsPerDay: 9, totalUnits: 45, unitDurationMinutes: 45, dailyStartTime: '08:30', dailyEndTime: '16:30', breaksText: '10:00-10:15\n11:45-12:15\n13:45-14:00\n15:30-15:45', repetitionUnits: 0, projectUnits: 0, assessmentUnits: 0, bufferUnits: 0, deliveryMode: 'presence' },
     rangesText: '',
     duration: { numberOfDays: 5, hoursPerDay: 8, uePerDay: 9, ueMinutes: 45, totalHours: 40, totalUE: 45, pauseModel: 'default' },
     targetAudience: { ageRange: 'mixed', educationContext: 'umschulung', department: 'ALLGEMEIN', priorKnowledge: 'basic', learningLevel: 'basic', languageLevel: 'normal', practiceLevel: 'medium', difficultyMode: 'medium', needsStepByStep: true, examOrientation: false, projectOrientation: true },
@@ -114,10 +118,10 @@ const planWizardSteps = [
   { id: 'course', label: 'Kursdaten' },
   { id: 'anchor', label: 'Hauptquelle' },
   { id: 'durationAudience', label: 'Dauer & Zielgruppe' },
+  { id: 'courseStructure', label: 'KI-Analyse & Kursplanung' },
+  { id: 'structureReview', label: 'Analyse- & Struktur-Review' },
   { id: 'didactics', label: 'Didaktik' },
   { id: 'containerProfile', label: 'Container' },
-  { id: 'analysis', label: 'Analyse' },
-  { id: 'curriculumReview', label: 'Curriculum prüfen' },
   { id: 'materials', label: 'Materialien', optional: true },
   { id: 'aiMode', label: 'KI/Fallback' },
   { id: 'generation', label: 'Tagesentwürfe' },
@@ -608,6 +612,10 @@ function renderCurrentPlanWizardStep(wizard, gate) {
       return renderDurationAudienceStep(wizard);
     case 'didactics':
       return renderDidacticProfileStep(wizard);
+    case 'courseStructure':
+      return renderCourseStructureStep(wizard);
+    case 'structureReview':
+      return renderStructureReviewStep(wizard);
     case 'containerProfile':
       return renderContainerProfileStep(wizard);
     case 'analysis':
@@ -636,6 +644,7 @@ function renderCourseStep(wizard) {
       <p id="course-required-help">Pflichtfelder sind mit „erforderlich“ gekennzeichnet. Diese Angaben erscheinen später in der Kursübersicht.</p>
       <fieldset>
       <legend>Allgemeine Kursangaben</legend>
+      ${state.courseProjects.length ? `<label>Gespeichertes Kursprojekt öffnen<select data-open-course-project><option value="">Neues Projekt</option>${state.courseProjects.map((project) => `<option value="${escapeHtml(project.id)}">${escapeHtml(project.title || project.id)}${project.approved ? ' (freigegeben)' : ''}</option>`).join('')}</select></label>` : ''}
       <div class="factory-form-grid">
         <label>Kurstitel <span class="field-requirement">erforderlich</span><input data-wizard-course="courseName" value="${escapeHtml(wizard.course.courseName)}" aria-describedby="course-required-help" required></label>
         <label>Kurs-ID <span class="field-requirement">erforderlich</span><input data-wizard-course="courseId" value="${escapeHtml(wizard.course.courseId)}" aria-describedby="course-id-help" required><small id="course-id-help">Eine eindeutige Kurzbezeichnung, zum Beispiel „lf08-netzwerke“.</small></label>
@@ -698,8 +707,88 @@ function renderDurationAudienceStep(wizard) {
       <label class="checkline"><input data-wizard-audience-check="needsStepByStep" type="checkbox" ${wizard.targetAudience.needsStepByStep ? 'checked' : ''}> <span>Inhalte Schritt für Schritt erklären</span></label>
       <label class="checkline"><input data-wizard-audience-check="projectOrientation" type="checkbox" ${wizard.targetAudience.projectOrientation ? 'checked' : ''}> <span>Projektorientierte Aufgaben einplanen</span></label>
       <label class="checkline"><input data-wizard-audience-check="examOrientation" type="checkbox" ${wizard.targetAudience.examOrientation ? 'checked' : ''}> <span>Auf die Prüfung vorbereiten</span></label>
+      <fieldset><legend>Planungsrahmen</legend><div class="factory-form-grid compact-form-grid">
+        <label class="form-field-wide">Zielgruppe<input data-planning-frame="targetGroup" value="${escapeHtml(wizard.planningFrame.targetGroup)}" placeholder="z. B. angehende Fachkräfte" required></label>
+        <label class="form-field-wide">Vorkenntnisse<textarea data-planning-frame="priorKnowledge" required>${escapeHtml(wizard.planningFrame.priorKnowledge)}</textarea></label>
+        <label>Dauer einer UE (Minuten)<input data-planning-frame="unitDurationMinutes" type="number" min="1" value="${escapeHtml(wizard.planningFrame.unitDurationMinutes)}"></label>
+        <label>Täglicher Start<input data-planning-frame="dailyStartTime" type="time" value="${escapeHtml(wizard.planningFrame.dailyStartTime)}"></label>
+        <label>Tägliches Ende<input data-planning-frame="dailyEndTime" type="time" value="${escapeHtml(wizard.planningFrame.dailyEndTime)}"></label>
+        <label>Durchführungsform<select data-planning-frame="deliveryMode">${['presence', 'online', 'hybrid'].map((value) => `<option value="${value}" ${wizard.planningFrame.deliveryMode === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
+        <label>Wiederholung (UE)<input data-planning-frame="repetitionUnits" type="number" min="0" value="${escapeHtml(wizard.planningFrame.repetitionUnits)}"></label>
+        <label>Projektzeit (UE)<input data-planning-frame="projectUnits" type="number" min="0" value="${escapeHtml(wizard.planningFrame.projectUnits)}"></label>
+        <label>Prüfungszeit (UE)<input data-planning-frame="assessmentUnits" type="number" min="0" value="${escapeHtml(wizard.planningFrame.assessmentUnits)}"></label>
+        <label>Zeitreserve (UE)<input data-planning-frame="bufferUnits" type="number" min="0" value="${escapeHtml(wizard.planningFrame.bufferUnits)}"></label>
+      </div><label>Pausen (eine pro Zeile, HH:MM-HH:MM)<textarea data-planning-breaks>${escapeHtml(wizard.planningFrame.breaksText)}</textarea></label>
+      <button class="primary-button" type="button" data-save-planning-frame>Planungsrahmen prüfen und speichern</button>
+      ${(wizard.courseProject?.planningFrame?.warnings || []).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
+      </fieldset>
     </article>
   `;
+}
+
+function parseBreaks(text) {
+  return String(text || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => {
+    const [start, end] = line.split(/\s*[-–]\s*/);
+    return { start, end };
+  });
+}
+
+function renderCourseStructureStep(wizard) {
+  const project = wizard.courseProject;
+  const ready = Boolean(project?.planningFrame?.valid && project?.planningFrame?.confirmed && wizard.anchorFiles.length && state.aiStatus?.providers?.openai?.configured);
+  const running = wizard.analysisProgress?.status === 'running';
+  const documents = project?.uploadedDocuments?.length ? project.uploadedDocuments : wizard.anchorFiles;
+  const analyses = project?.documentAnalyses || [];
+  return `<article class="tool-card" data-plan-step-content="courseStructure">
+    <h3>KI-Analyse und Kursplanung</h3>
+    <p class="status-line">Die echte KI erhält ausschließlich hochgeladene Quellen, Kursziele und den bestätigten Planungsrahmen. Der Ablauf ist fachneutral.</p>
+    ${running ? `<div class="analysis-progress" role="status" aria-live="polite"><span class="indeterminate-spinner" aria-hidden="true"></span><strong>${escapeHtml(wizard.analysisProgress.step)}</strong><span>${escapeHtml(wizard.analysisProgress.currentDocument || '')}</span><small>wartend: ${escapeHtml(wizard.analysisProgress.queued || 0)} | erfolgreich: ${escapeHtml(wizard.analysisProgress.completed || 0)} | Warnungen: ${escapeHtml(wizard.analysisProgress.warningCount || 0)} | fehlgeschlagen: ${escapeHtml(wizard.analysisProgress.failed || 0)}</small></div>` : ''}
+    <div class="mapping-list">${documents.map((document, index) => renderDocumentAnalysisCard(document, analyses, index)).join('')}</div>
+    <div class="button-row"><button class="primary-button" type="button" data-document-analyze ${ready && !running ? '' : 'disabled'}>${running ? 'Analyse und Planung laufen …' : 'Dokumente analysieren und UE-Struktur erstellen'}</button>
+    <button class="secondary-button" type="button" data-document-analysis-cancel ${running ? '' : 'disabled'}>Vorgang abbrechen</button></div>
+    ${!ready ? '<p class="status-line status-warning">Erforderlich: Kursbezeichnung, Dokument, Zielgruppe, Vorkenntnisse, gültiger bestätigter Planungsrahmen und konfigurierte OpenAI-Verbindung.</p>' : ''}
+  </article>`;
+}
+
+function renderDocumentAnalysisCard(document, analyses, index) {
+  const id = document.id || `document-${index}`;
+  const analysis = [...analyses].reverse().find((item) => item.documentId === id);
+  const category = analysis?.detectedCategory?.value || document.detectedCategory?.value || document.detectedCategory || '-';
+  const confidence = Number(analysis?.confidence || analysis?.detectedCategory?.confidence || 0);
+  const summary = analysis?.summary?.short || (typeof analysis?.summary === 'string' ? analysis.summary : 'Noch keine Analyse vorhanden.');
+  const error = document.analysisError;
+  return `<article class="mapping-item document-analysis-card">
+    <strong>${escapeHtml(document.originalFileName || document.name)}</strong>
+    <small>Kategorie: ${escapeHtml(document.declaredCategory || document.sourceType || '-')} | erkannt: ${escapeHtml(category)} | Confidence: ${escapeHtml(Math.round(confidence * 100))}%</small>
+    <span class="status-badge">${escapeHtml(document.analysisStatus || 'queued')}</span><p>${escapeHtml(summary)}</p>
+    ${analysis ? `<details><summary>Analysefelder anzeigen</summary>${renderAnalysisList('Themen', analysis.topics)}${renderAnalysisList('Lernziele', analysis.learningObjectives)}${renderAnalysisList('Kompetenzen', analysis.competencies)}${renderAnalysisList('Aufgaben', analysis.exercises)}${renderAnalysisList('Warnungen', analysis.warnings)}${renderAnalysisList('Konflikte', analysis.conflicts)}${renderAnalysisList('Quellen', analysis.sourceReferences)}${renderAnalysisList('Review-Punkte', analysis.reviewItems)}</details>` : ''}
+    ${error ? `<p class="status-line status-error">${escapeHtml(error.message)}</p><details><summary>Technische Details</summary><dl><dt>Fehlercode</dt><dd>${escapeHtml(error.code)}</dd><dt>Schritt</dt><dd>${escapeHtml(error.step)}</dd><dt>Feld</dt><dd>${escapeHtml(error.field)}</dd><dt>Erwartet</dt><dd>${escapeHtml(error.expected)}</dd><dt>Empfangen</dt><dd>${escapeHtml(error.received)}</dd></dl></details><button class="secondary-button" type="button" data-retry-document="${escapeHtml(id)}">Dokument erneut analysieren</button>${document.bindingLevel === 'binding' && !document.failureAcknowledged ? `<button class="secondary-button" type="button" data-ack-document-failure="${escapeHtml(id)}">Als Ausnahme bestätigen</button>` : ''}` : ''}
+  </article>`;
+}
+
+function renderAnalysisList(title, values) {
+  const list = Array.isArray(values) ? values : [];
+  if (!list.length) return `<section><strong>${escapeHtml(title)}</strong><p class="dropzone-empty">Keine Einträge erkannt.</p></section>`;
+  return `<section><strong>${escapeHtml(title)}</strong><ul>${list.map((item) => `<li>${escapeHtml(formatAnalysisItem(item))}</li>`).join('')}</ul></section>`;
+}
+
+function formatAnalysisItem(item) {
+  if (item === null || item === undefined) return '';
+  if (typeof item !== 'object') return String(item);
+  return String(item.title || item.value || item.name || item.description || item.text || item.summary || item.message || item.fileName || item.documentId || 'Strukturierter Eintrag');
+}
+
+function renderStructureReviewStep(wizard) {
+  const project = wizard.courseProject;
+  const draft = project?.coursePlanDrafts?.find((item) => item.planningVersion === project.currentPlanningVersion);
+  if (!draft) return '<article class="tool-card"><h3>Struktur-Review</h3><p class="status-line status-warning">Noch keine KI-Kursstruktur vorhanden.</p></article>';
+  return `<article class="tool-card" data-plan-step-content="structureReview">
+    <h3>Struktur-Review</h3>
+    <div class="summary-grid"><span>Kurs: ${escapeHtml(project.title)}</span><span>Zielgruppe: ${escapeHtml(project.targetGroup)}</span><span>Tage: ${escapeHtml(draft.planningFrameSnapshot?.totalDays)}</span><span>planbare UE: ${escapeHtml(draft.planningFrameSnapshot?.actuallyPlannableUnits)}</span><span>Planungsversion: ${escapeHtml(draft.planningVersion)}</span><span>KI: ${escapeHtml(draft.provider)} / ${escapeHtml(draft.model)}</span><span>Validierung: ${escapeHtml(draft.validation?.status)}</span></div>
+    ${(draft.validation?.errors || []).map((error) => `<p class="status-line status-error">${escapeHtml(error)}</p>`).join('')}
+    <div class="course-plan-review-table" role="region" aria-label="Kursstruktur nach Tagen">${(draft.days || []).map((day) => `<details open><summary>Tag ${escapeHtml(day.dayNumber)}: ${escapeHtml(day.title)}</summary><div class="review-table-scroll"><table><thead><tr><th>UE</th><th>Zeit</th><th>Thema</th><th>Inhalt</th><th>Lernziel</th><th>Quelle</th><th>Herkunft</th><th>Confidence</th><th>Status</th></tr></thead><tbody>${(day.units || []).map((unit) => `<tr><td>${escapeHtml(unit.unitNumber)}</td><td>${escapeHtml(unit.startTime || '')}–${escapeHtml(unit.endTime || '')}</td><td><input data-structure-unit="${escapeHtml(unit.id)}" data-unit-field="topic" value="${escapeHtml(unit.topic)}"></td><td><textarea data-structure-unit="${escapeHtml(unit.id)}" data-unit-field="content">${escapeHtml(unit.content)}</textarea></td><td><textarea data-structure-unit="${escapeHtml(unit.id)}" data-unit-field="preliminaryLearningObjective">${escapeHtml(unit.preliminaryLearningObjective)}</textarea></td><td>${escapeHtml((unit.sourceReferences || []).map((ref) => ref.fileName || ref.documentId).join(', ') || '-')}</td><td><span class="status-badge origin-${escapeHtml(unit.originStatus)}">${escapeHtml(unit.originStatus)}</span></td><td>${escapeHtml(Math.round(Number(unit.confidence || 0) * 100))}%</td><td><select data-structure-unit="${escapeHtml(unit.id)}" data-unit-field="reviewStatus">${['open', 'reviewed', 'conflict'].map((value) => `<option value="${value}" ${unit.reviewStatus === value ? 'selected' : ''}>${escapeHtml(value)}</option>`).join('')}</select></td></tr><tr><td colspan="9"><details><summary>UE-Details und Materialbedarf</summary><p><strong>Voraussetzungen:</strong> ${escapeHtml((unit.prerequisites || []).map(formatAnalysisItem).join(', ') || 'keine angegeben')}</p><p><strong>Review-Hinweise:</strong> ${escapeHtml((unit.reviewItems || []).map(formatAnalysisItem).join(', ') || 'keine')}</p><label>Benutzerbemerkung<textarea data-structure-unit="${escapeHtml(unit.id)}" data-unit-field="notes">${escapeHtml(unit.notes || '')}</textarea></label>${renderAnalysisList('Vorgeschlagene Materialarten', unit.materialRequirements)}</details></td></tr>`).join('')}</tbody></table></div></details>`).join('')}</div>
+    <div class="button-row"><button class="secondary-button" type="button" data-save-course-structure>Entwurf speichern</button><button class="primary-button" type="button" data-approve-course-structure ${draft.validation?.status === 'failed' ? 'disabled' : ''}>Kursstruktur freigeben und zur Didaktik wechseln</button></div>
+  </article>`;
 }
 
 function normalizeDurationAndAudience(wizard) {
@@ -1167,26 +1256,27 @@ function getPlanWizardStepGates() {
   const wizard = state.wizard;
   const courseDone = Boolean(wizard.course.courseName && wizard.course.courseId && wizard.course.department);
   const anchorDone = Boolean(wizard.anchorFiles.length);
+  const documentAnalysisDone = Boolean(wizard.courseProject?.documentAnalyses?.length);
   const durationDone = Boolean(wizard.targetAudience.priorKnowledge && wizard.targetAudience.learningLevel && wizard.targetAudience.difficultyMode && Number(wizard.duration.numberOfDays) > 0 && Number(wizard.duration.hoursPerDay) > 0 && Number(wizard.duration.uePerDay) > 0);
   const didacticDone = Boolean(getSelectedDidacticProfile()?.id || wizard.didacticProfile?.id);
   const containerProfileDone = Boolean(wizard.containerProfile?.courseType && wizard.containerProfile?.artifactMode);
   const curriculumDone = Boolean(wizard.curriculumDraft?.days?.length);
-  const approvedDone = wizard.approvedCurriculumPlan?.status === 'approved';
+  const structureDone = Boolean(wizard.courseProject?.coursePlanDrafts?.length);
+  const approvedDone = wizard.courseProject?.approvedCoursePlan?.status === 'approved' || wizard.approvedCurriculumPlan?.status === 'approved';
   const materialsDone = Boolean(wizard.uploadFiles.length || wizard.skippedSteps?.materials);
   const aiDone = Boolean(wizard.aiMode);
   const generationDone = Boolean(wizard.dayResults.length || wizard.dayDraft);
   const preflightDone = Boolean(wizard.preflight || wizard.testRun);
   const draftDone = Boolean(wizard.generatedDraft);
-  const allAnalysisReady = courseDone && anchorDone && durationDone && didacticDone && containerProfileDone;
   return planWizardSteps.map((step) => {
     const gate = { ...step, active: false, done: false, missing: '' };
     if (step.id === 'course') return { ...gate, active: true, done: courseDone, missing: 'Kursname, Kurs-ID und Fachbereich eintragen.' };
     if (step.id === 'anchor') return { ...gate, active: courseDone, done: anchorDone, missing: 'Bitte zuerst Kursdaten vervollständigen.' };
-    if (step.id === 'durationAudience') return { ...gate, active: courseDone, done: durationDone, missing: 'Bitte zuerst Kursdaten vervollständigen.' };
-    if (step.id === 'didactics') return { ...gate, active: courseDone && durationDone, done: didacticDone, missing: 'Bitte zuerst Dauer und Zielgruppe prüfen.' };
+    if (step.id === 'durationAudience') return { ...gate, active: anchorDone, done: durationDone && wizard.courseProject?.planningFrame?.valid, missing: 'Bitte zuerst mindestens ein Dokument hochladen.' };
+    if (step.id === 'courseStructure') return { ...gate, active: anchorDone && wizard.courseProject?.planningFrame?.valid, done: documentAnalysisDone && structureDone, missing: 'Bitte Dokumente hochladen und Zielgruppe sowie Planungsrahmen vollständig bestätigen.' };
+    if (step.id === 'structureReview') return { ...gate, active: structureDone, done: approvedDone, missing: 'Bitte zuerst eine KI-Kursstruktur erstellen.' };
+    if (step.id === 'didactics') return { ...gate, active: approvedDone, done: didacticDone, missing: 'Bitte zuerst die Kursstruktur prüfen und ausdrücklich freigeben.' };
     if (step.id === 'containerProfile') return { ...gate, active: didacticDone, done: containerProfileDone, missing: 'Bitte zuerst ein didaktisches Profil auswählen.' };
-    if (step.id === 'analysis') return { ...gate, active: allAnalysisReady, done: curriculumDone, missing: 'Bitte Kursdaten, Hauptquelle, Zielgruppe, Didaktik und Containerprofil abschließen.' };
-    if (step.id === 'curriculumReview') return { ...gate, active: curriculumDone, done: approvedDone, missing: 'Bitte zuerst das Curriculum analysieren.' };
     if (step.id === 'materials') return { ...gate, active: approvedDone, done: materialsDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
     if (step.id === 'aiMode') return { ...gate, active: approvedDone, done: aiDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
     if (step.id === 'generation') return { ...gate, active: approvedDone, done: generationDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
@@ -1245,6 +1335,7 @@ function bindPlanWizardEvents() {
     }
     if (field.tagName === 'SELECT') renderPlanWizard();
   }));
+  $('[data-open-course-project]')?.addEventListener('change', openSavedCourseProject);
   $all('[data-wizard-anchor-type]').forEach((field) => field.addEventListener('change', (event) => {
     const type = event.target.value;
     const selected = getAnchorTypes();
@@ -1272,6 +1363,18 @@ function bindPlanWizardEvents() {
     event.target.value = '';
     renderPlanWizard();
   });
+  $('[data-document-analyze]')?.addEventListener('click', analyzeWizardDocuments);
+  $('[data-document-analysis-cancel]')?.addEventListener('click', cancelWizardDocumentAnalysis);
+  $all('[data-planning-frame]').forEach((field) => field.addEventListener('input', () => {
+    state.wizard.planningFrame[field.dataset.planningFrame] = field.type === 'number' ? Number(field.value) : field.value;
+  }));
+  $('[data-planning-breaks]')?.addEventListener('input', (event) => { state.wizard.planningFrame.breaksText = event.target.value; });
+  $('[data-save-planning-frame]')?.addEventListener('click', saveWizardPlanningFrame);
+  $all('[data-retry-document]').forEach((button) => button.addEventListener('click', () => analyzeWizardDocuments(button.dataset.retryDocument)));
+  $all('[data-ack-document-failure]').forEach((button) => button.addEventListener('click', () => acknowledgeWizardDocumentFailure(button.dataset.ackDocumentFailure)));
+  $all('[data-structure-unit]').forEach((field) => field.addEventListener('input', () => updateStructuredUnit(field.dataset.structureUnit, field.dataset.unitField, field.value)));
+  $('[data-save-course-structure]')?.addEventListener('click', saveWizardCourseStructure);
+  $('[data-approve-course-structure]')?.addEventListener('click', approveWizardCourseStructure);
   $('[data-wizard-ranges]')?.addEventListener('input', (event) => {
     state.wizard.rangesText = event.target.value;
   });
@@ -1646,6 +1749,157 @@ async function importWizardUploads() {
     state.wizard.status = error.message;
     renderPlanWizard();
   }
+}
+
+function wizardProjectInput() {
+  return {
+    id: state.wizard.course.courseId,
+    title: state.wizard.course.courseName,
+    description: state.wizard.course.description,
+    subjectArea: state.wizard.course.department,
+    targetGroup: state.wizard.planningFrame.targetGroup,
+    priorKnowledge: state.wizard.planningFrame.priorKnowledge,
+    uploadedDocuments: state.wizard.anchorFiles.map((file) => ({
+      ...file, originalFileName: file.name, storedFilePath: file.path, mimeType: file.type,
+      fileSize: file.size, declaredCategory: file.sourceType, sourcePriority: file.sourcePriority || 'high', bindingLevel: file.bindingLevel || 'binding'
+    }))
+  };
+}
+
+async function openSavedCourseProject(event) {
+  if (!event.target.value) return;
+  try {
+    const project = await desktop.factory.getCourseProject(event.target.value);
+    state.wizard.courseProject = project;
+    state.wizard.course = { ...state.wizard.course, courseName: project.title, courseId: project.id, description: project.description, department: project.subjectArea };
+    state.wizard.anchorFiles = (project.uploadedDocuments || []).map((file) => ({ ...file, name: file.originalFileName, path: file.storedFilePath, type: file.mimeType, size: file.fileSize, sourceType: file.declaredCategory }));
+    if (project.planningFrame) {
+      state.wizard.planningFrame = { ...state.wizard.planningFrame, ...project.planningFrame, targetGroup: project.targetGroup || project.planningFrame.targetGroup || '', priorKnowledge: project.priorKnowledge || project.planningFrame.priorKnowledge || '', breaksText: (project.planningFrame.breaks || []).map((item) => `${item.start}-${item.end}`).join('\n') };
+      state.wizard.duration = { ...state.wizard.duration, numberOfDays: project.planningFrame.totalDays, uePerDay: project.planningFrame.unitsPerDay, totalUE: project.planningFrame.totalUnits };
+    }
+    state.wizard.targetAudience = { ...state.wizard.targetAudience, ageRange: project.targetGroup || state.wizard.targetAudience.ageRange, priorKnowledge: project.priorKnowledge || state.wizard.targetAudience.priorKnowledge };
+    if (project.approvedCoursePlan) state.wizard.approvedCurriculumPlan = structuredPlanToCurriculum(project.approvedCoursePlan);
+    state.wizard.status = 'Gespeichertes Kursprojekt geladen.';
+  } catch (error) { state.wizard.status = error.message; }
+  renderPlanWizard();
+}
+
+async function analyzeWizardDocuments(retryDocumentId = '') {
+  if (state.wizard.analysisProgress?.status === 'running') return;
+  state.wizard.analysisProgress = { status: 'running', step: 'Dokumente werden vorbereitet', currentDocument: '', queued: state.wizard.anchorFiles.length, completed: 0, warningCount: 0, failed: 0 };
+  state.wizard.status = 'Echte KI-Analyse und UE-Planung wurden gestartet.';
+  renderPlanWizard();
+  try {
+    const project = wizardProjectInput();
+    const started = await desktop.factory.startDocumentAnalysis({ project: { ...project, planningFrame: state.wizard.courseProject?.planningFrame }, documents: project.uploadedDocuments, retryDocumentId });
+    state.wizard.analysisProgress = started.progress;
+    await pollAnalysisOperation(started.operationId);
+  } catch (error) {
+    state.wizard.analysisProgress = { status: 'failed', step: 'Analyse fehlgeschlagen', errors: [error.message] };
+    state.wizard.status = error.message;
+  } finally {
+    if (state.wizard.analysisProgress?.status === 'running') state.wizard.analysisProgress.status = 'failed';
+    renderPlanWizard();
+  }
+}
+
+async function pollAnalysisOperation(operationId) {
+  while (state.wizard.analysisProgress?.status === 'running') {
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    const progress = await desktop.factory.getAnalysisProgress(operationId);
+    state.wizard.analysisProgress = progress;
+    if (progress.project) state.wizard.courseProject = progress.project;
+    renderPlanWizard();
+    if (progress.status !== 'running') {
+      state.wizard.courseProject = await desktop.factory.getCourseProject(state.wizard.course.courseId);
+      const failed = state.wizard.courseProject.uploadedDocuments.filter((document) => document.analysisStatus === 'failed').length;
+      state.wizard.status = progress.status === 'completed' ? `Analyse und UE-Planung abgeschlossen.${failed ? ` ${failed} Dokument(e) sind fehlgeschlagen und können erneut analysiert werden.` : ''}` : progress.status === 'cancelled' ? 'Analyse wurde abgebrochen.' : formatProgressError(progress);
+      if (progress.status === 'completed') state.wizard.activeStep = 'structureReview';
+    }
+  }
+}
+
+function formatProgressError(progress) {
+  const error = (progress.errors || [])[0];
+  return typeof error === 'string' ? error : error?.message || 'Analyse und Planung konnten nicht abgeschlossen werden.';
+}
+
+async function cancelWizardDocumentAnalysis() {
+  const operationId = state.wizard.analysisProgress?.operationId;
+  if (operationId) await desktop.factory.cancelAiOperation(operationId);
+  state.wizard.analysisProgress = { ...state.wizard.analysisProgress, status: 'cancelled', step: 'Abgebrochen' };
+  renderPlanWizard();
+}
+
+async function acknowledgeWizardDocumentFailure(documentId) {
+  if (!window.confirm('Dieses verbindliche Dokument ist fehlgeschlagen. Ausnahme bewusst bestätigen und Planung mit den übrigen Quellen fortsetzen?')) return;
+  try {
+    state.wizard.courseProject = await desktop.factory.acknowledgeDocumentFailure(state.wizard.course.courseId, documentId);
+    state.wizard.status = 'Dokumentfehler wurde als bewusste Ausnahme bestätigt.';
+  } catch (error) { state.wizard.status = error.message; }
+  renderPlanWizard();
+}
+
+async function saveWizardPlanningFrame() {
+  try {
+    const wizard = state.wizard;
+    const frame = {
+      ...wizard.planningFrame,
+      targetGroup: wizard.planningFrame.targetGroup,
+      priorKnowledge: wizard.planningFrame.priorKnowledge,
+      totalDays: wizard.duration.numberOfDays,
+      unitsPerDay: wizard.duration.uePerDay,
+      totalUnits: wizard.duration.totalUE,
+      breaks: parseBreaks(wizard.planningFrame.breaksText)
+    };
+    if (!wizard.courseProject) wizard.courseProject = await desktop.factory.upsertCourseProject(wizardProjectInput());
+    try {
+      wizard.courseProject = await desktop.factory.savePlanningFrame(wizard.course.courseId, frame);
+    } catch (error) {
+      if (!/Abweichung im Planungsrahmen/.test(error.message) || !window.confirm(`${error.message}\n\nAbweichung dennoch bestätigen?`)) throw error;
+      wizard.courseProject = await desktop.factory.savePlanningFrame(wizard.course.courseId, { ...frame, confirmWarnings: true });
+    }
+    wizard.status = wizard.courseProject.planningFrame.warnings.join(' ') || 'Planungsrahmen ist gültig und gespeichert.';
+  } catch (error) { state.wizard.status = error.message; }
+  renderPlanWizard();
+}
+
+function currentStructuredDraft() {
+  const project = state.wizard.courseProject;
+  return project?.coursePlanDrafts?.find((item) => item.planningVersion === project.currentPlanningVersion);
+}
+
+function updateStructuredUnit(unitId, field, value) {
+  const draft = currentStructuredDraft();
+  for (const day of draft?.days || []) {
+    const unit = (day.units || []).find((item) => item.id === unitId);
+    if (unit) { unit[field] = value; unit.reviewStatus = 'edited'; unit.userEdited = true; break; }
+  }
+}
+
+async function saveWizardCourseStructure() {
+  try {
+    state.wizard.courseProject = await desktop.factory.saveStructuredCoursePlan(state.wizard.course.courseId, currentStructuredDraft());
+    state.wizard.status = 'Kursstruktur-Entwurf gespeichert.';
+  } catch (error) { state.wizard.status = error.message; }
+  renderPlanWizard();
+}
+
+async function approveWizardCourseStructure() {
+  const confirmed = window.confirm('Die fachliche und zeitliche Kursstruktur wird als versionierte Planungsgrundlage gespeichert. Das didaktische Kursprofil kann die Einheiten anschließend ausgestalten, darf die freigegebene Struktur jedoch nicht unbemerkt entfernen oder verschieben.');
+  if (!confirmed) return;
+  try {
+    const draft = currentStructuredDraft();
+    state.wizard.courseProject = await desktop.factory.approveStructuredCoursePlan(state.wizard.course.courseId, draft.planningVersion);
+    state.wizard.approvedCurriculumPlan = structuredPlanToCurriculum(state.wizard.courseProject.approvedCoursePlan);
+    state.wizard.status = 'Kursstruktur freigegeben. Didaktisches Kursprofil ist jetzt freigeschaltet.';
+    state.wizard.activeStep = 'didactics';
+  } catch (error) { state.wizard.status = error.message; }
+  renderPlanWizard();
+}
+
+function structuredPlanToCurriculum(plan) {
+  return { ...plan, status: 'approved', days: (plan.days || []).map((day) => ({ ...day, estimatedUE: (day.units || []).length, topics: (day.units || []).map((unit) => ({ id: unit.id, title: unit.topic, summary: unit.content, estimatedUE: 1, sourceRefs: unit.sourceReferences || [], active: true })) })) };
 }
 
 async function analyzeWizardCurriculum() {
@@ -2208,6 +2462,7 @@ async function loadState() {
   state.importBatches = data.importBatches || [];
   state.referenceSources = data.referenceSources || [];
   state.curriculumDrafts = data.curriculumDrafts || [];
+  state.courseProjects = data.courseProjects || [];
   state.presets = data.presets || [];
   state.didacticProfiles = data.didacticProfiles || [];
   if (!state.wizard.didacticProfile?.label) state.wizard.didacticProfile = getSelectedDidacticProfile();

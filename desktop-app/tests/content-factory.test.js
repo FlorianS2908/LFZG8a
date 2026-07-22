@@ -1223,12 +1223,15 @@ test('content factory navigation opens guided plan wizard before raw imports', (
 
 test('content factory plan wizard renders gated single steps with source and ai guidance', () => {
   const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8');
-  const expectedSteps = ['course', 'anchor', 'durationAudience', 'didactics', 'containerProfile', 'analysis', 'curriculumReview', 'materials', 'aiMode', 'generation', 'preflight', 'containerDraft'];
+  const expectedSteps = ['course', 'anchor', 'durationAudience', 'courseStructure', 'structureReview', 'didactics', 'containerProfile', 'materials', 'aiMode', 'generation', 'preflight', 'containerDraft'];
 
   expectedSteps.forEach((step) => assert.match(ui, new RegExp(`id: '${step}'`), step));
   assert.match(ui, /state\.wizard\.activeStep = target\.id/);
   assert.match(ui, /data-plan-step-content="\$\{escapeHtml\(|data-plan-step-content="anchor"/);
-  assert.match(ui, /data-wizard-analyze \$\{wizard\.anchorFiles\.length \? '' : 'disabled'\}/);
+  assert.match(ui, /data-document-analyze/);
+  assert.match(ui, /Dokumente analysieren und UE-Struktur erstellen/);
+  assert.match(ui, /formatAnalysisItem/);
+  assert.doesNotMatch(ui, /escapeHtml\(analysis\.summary\)|escapeHtml\(analysis\?\.detectedCategory\)/);
   ['Unterrichtsplan', 'Buch / PDF / PowerPoint', 'Textdokument', '.xls', '.xlsx', '.xlsm', '.pdf', '.epub', '.ppt', '.pptx', '.doc', '.docx', '.txt', '.md', '.html', '.htm'].forEach((term) => assert.match(ui, new RegExp(term.replace('.', '\\.')), term));
   ['local', 'openai', 'openai-review', 'openai-review-repair'].forEach((mode) => assert.match(ui, new RegExp(mode), mode));
   const layout = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'workflow-ui', 'workflow-layout.js'), 'utf8');

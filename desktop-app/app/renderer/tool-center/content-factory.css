@@ -196,6 +196,13 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .source-option.choice-card:hover { border-color: #38a7d8; background: #f2faff; }
 .source-option.choice-card.is-active { border-color: var(--cf-brand); background: var(--cf-brand-soft); box-shadow: 0 0 0 3px rgba(7, 89, 133, .14); }
 .source-option.choice-card:focus-within { outline: 3px solid var(--cf-brand); outline-offset: 3px; }
+.review-table-scroll { overflow-x: auto; }
+.course-plan-review-table table { width: 100%; border-collapse: collapse; }
+.course-plan-review-table th, .course-plan-review-table td { padding: .6rem; border: 1px solid var(--cf-line); vertical-align: top; }
+.course-plan-review-table input, .course-plan-review-table textarea { min-width: 11rem; width: 100%; }
+.origin-explicit::before { content: '✓ '; } .origin-derived::before { content: '↗ '; }
+.origin-generated::before { content: '◆ '; } .origin-needs_review::before { content: '! '; }
+.origin-conflicting::before { content: '× '; }
 .source-option.choice-card input { width: 1.15rem; height: 1.15rem; min-height: 0; margin: .15rem 0 0; accent-color: var(--cf-brand); }
 .choice-card-copy { display: grid; gap: var(--cf-space-2); min-width: 0; }
 .choice-card-copy strong { font-size: 1rem; line-height: 1.4; }

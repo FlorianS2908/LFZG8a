@@ -11,6 +11,12 @@ const preloadFile = path.join(__dirname, 'preload.js');
 const iconFile = path.join(__dirname, 'assets', 'icons', process.platform === 'win32' ? 'app-icon.ico' : 'app-icon.png');
 const standaloneSession = Object.freeze({ authenticated: true, user: { id: 'local', email: 'local@contentfactory.invalid', roles: [] } });
 const localMigrationPath = path.join(process.env.USERPROFILE || '', 'OneDrive - Amadeus Fire AG', 'Desktop', 'api_key_ContentFactory.txt');
+const localCacheRoot = path.join(process.env.LOCALAPPDATA || app.getPath('temp'), 'ueTool-ContentFactory', 'Cache');
+
+ensureDir(localCacheRoot);
+app.setPath('cache', localCacheRoot);
+app.commandLine.appendSwitch('disk-cache-dir', path.join(localCacheRoot, 'Chromium'));
+app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 
 applyAppEnv(projectRoot);
 let mainWindow;
@@ -77,7 +83,11 @@ function createWindow() {
 function handle(channel, method) {
   ipcMain.handle(channel, async (event, ...args) => {
     try { return await getService()[method](...args, standaloneSession); }
-    catch (error) { throw new Error(/Verschlüsselung/i.test(String(error?.message)) ? 'Sichere Speicherung ist derzeit nicht verfügbar.' : 'Die Aktion konnte nicht abgeschlossen werden.'); }
+    catch (error) {
+      const message = String(error?.message || '');
+      const safePlanningError = /^(KI nicht|OpenAI|Der Planungsrahmen|Abweichung im Planungsrahmen|Mindestens eine|Ungültige Dokumentanalyse|Kursstruktur|Blockierende Konflikte|Verbindliche fehlgeschlagene|Eine freigegebene|Datei kann nicht|Pause|Reservierte UE)/.test(message);
+      throw new Error(/Verschlüsselung/i.test(message) ? 'Sichere Speicherung ist derzeit nicht verfügbar.' : safePlanningError ? message : 'Die Aktion konnte nicht abgeschlossen werden.');
+    }
   });
 }
 
@@ -95,6 +105,16 @@ function registerIpc() {
     'factory:list-curriculum-drafts': 'listCurriculumDrafts',
     'factory:remove-curriculum-draft': 'removeCurriculumDraft',
     'factory:parse-course-plan': 'parseCoursePlan',
+    'factory:get-course-project': 'getCourseProject',
+    'factory:upsert-course-project': 'upsertCourseProject',
+    'factory:start-document-analysis': 'startDocumentAnalysis',
+    'factory:get-analysis-progress': 'getAnalysisProgress',
+    'factory:cancel-ai-operation': 'cancelAiOperation',
+    'factory:save-planning-frame': 'savePlanningFrame',
+    'factory:generate-structured-course-plan': 'generateStructuredCoursePlan',
+    'factory:save-structured-course-plan': 'saveStructuredCoursePlan',
+    'factory:acknowledge-document-failure': 'acknowledgeDocumentFailure',
+    'factory:approve-structured-course-plan': 'approveStructuredCoursePlan',
     'factory:get-ai-provider-status': 'getAiProviderStatus',
     'factory:test-openai-connection': 'testOpenAiConnection',
     'factory:clear-openai-key': 'clearOpenAiKey',

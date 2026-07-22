@@ -23,6 +23,7 @@ const { summarizeGoldenPromptTests } = require('./ai/prompts/golden-tests/golden
 const { listDidacticProfiles, applyDidacticProfile, suggestDidacticProfile, recommendDidacticProfiles } = require('./didactics/didactic-profile-service');
 const { evaluateDidacticFit, evaluateAllDidacticFits } = require('./didactics/didactic-fit-service');
 const { createDidacticPreview } = require('./didactics/didactic-preview-service');
+const { createCoursePlanningService } = require('./course-planning/course-planning-service');
 
 function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
@@ -39,6 +40,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd(), saf
   const aiKeyStore = createAiKeyStoreService({ appData, safeStorage, migrationPath });
   const aiOrchestrator = new AiOrchestrator({ projectRoot, aiKeyStore });
   const curriculumPlanner = createCurriculumPlannerService({ factoryDir, aiOrchestrator });
+  const coursePlanning = createCoursePlanningService({ factoryDir, aiOrchestrator });
   const cleanup = createCleanupService({ factoryDir, storage });
 
   function ensureFactory() {
@@ -85,6 +87,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd(), saf
       referenceLibraryRoot: referenceLibrary.rootDir,
       referenceSources: referenceLibrary.listReferenceSources(),
       curriculumDrafts: curriculumPlanner.listCurriculumDrafts(),
+      courseProjects: coursePlanning.listProjects(),
       presets: listPresets(),
       didacticProfiles: listDidacticProfiles(),
       storageUsage: cleanup.listStorageUsage(),
@@ -687,6 +690,17 @@ function createContentFactoryService({ appData, projectRoot = process.cwd(), saf
     duplicateContainer,
     createImportBatch,
     curriculumPlanner,
+    coursePlanning,
+    getCourseProject: (projectId, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.getProject(projectId); },
+    upsertCourseProject: (input, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.upsertProject(input); },
+    startDocumentAnalysis: (input, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.startDocumentAnalysis(input); },
+    getAnalysisProgress: (operationId, session) => { assertAdmin(session); return coursePlanning.getAnalysisProgress(operationId); },
+    cancelAiOperation: (operationId, session) => { assertAdmin(session); return coursePlanning.cancelAiOperation(operationId); },
+    savePlanningFrame: (projectId, frame, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.savePlanningFrame(projectId, frame); },
+    generateStructuredCoursePlan: (input, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.generateCoursePlan(input); },
+    saveStructuredCoursePlan: (projectId, draft, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.saveCoursePlanDraft(projectId, draft); },
+    acknowledgeDocumentFailure: (projectId, documentId, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.acknowledgeDocumentFailure(projectId, documentId); },
+    approveStructuredCoursePlan: (projectId, version, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.approveCoursePlan(projectId, version); },
     createCurriculumAnchor: (input, session) => {
       assertAdmin(session);
       ensureFactory();

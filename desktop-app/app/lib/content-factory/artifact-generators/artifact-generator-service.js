@@ -1,5 +1,12 @@
 const { packageNameFromCourseId, javaClassName } = require('../container-profile/project-template-service');
 
+const artifactGenerators = new Map();
+
+function registerArtifactGenerator(format, generator) {
+  if (!format || typeof generator !== 'function') throw new Error('Artefakt-Generator benötigt Format und Funktion.');
+  artifactGenerators.set(String(format).toLowerCase(), generator);
+}
+
 function generateArtifactFiles(input = {}) {
   const course = input.course || {};
   const targets = input.artifactTargets || [];
@@ -7,6 +14,8 @@ function generateArtifactFiles(input = {}) {
 }
 
 function generateTarget({ course, target }) {
+  const registered = artifactGenerators.get(String(target.format || '').toLowerCase());
+  if (registered) return registered({ course, target, file });
   if (target.format === 'maven-project') return mavenFiles(course, target);
   if (target.format === 'java') return [file(target, javaContent(target), target.solutionOnly)];
   if (target.format === 'py') return [file(target, pythonContent(target), target.solutionOnly)];
@@ -111,5 +120,7 @@ function escapeXml(value) {
 }
 
 module.exports = {
-  generateArtifactFiles
+  generateArtifactFiles,
+  registerArtifactGenerator,
+  listArtifactGenerators: () => [...artifactGenerators.keys()]
 };

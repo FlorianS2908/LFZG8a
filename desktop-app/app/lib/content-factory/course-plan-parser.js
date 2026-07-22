@@ -228,6 +228,7 @@ function escapePowerShell(value) {
 
 module.exports = {
   parseCoursePlan,
+  readWorkbookXml,
   parseRows,
   fallbackPlan
 };
