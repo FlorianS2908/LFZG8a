@@ -311,5 +311,7 @@ th, td { padding: var(--cf-space-3); text-align: left; overflow-wrap: anywhere; 
 }
 
 .analysis-lock-overlay strong { font-size: clamp(1.25rem, 2vw, 1.8rem); }
+.analysis-lock-overlay.planning-lock-overlay { inset: auto 1rem 1rem auto; max-width: min(32rem, calc(100vw - 2rem)); place-content: initial; justify-items: start; text-align: left; border: 1px solid #9cc7df; border-radius: 1rem; background: rgba(243, 248, 251, 0.98); backdrop-filter: none; box-shadow: 0 16px 40px rgb(15 23 42 / 24%); }
+.analysis-lock-overlay.planning-lock-overlay strong { font-size: 1.1rem; }
 .analysis-lock-file { max-width: min(42rem, 90vw); overflow-wrap: anywhere; }
 .analysis-progress { display: grid; gap: .75rem; padding: 1.25rem; border-radius: 1rem; background: #eef8ff; }

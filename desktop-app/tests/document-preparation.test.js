@@ -8,7 +8,7 @@ const { prepareDocument, cleanupPreparedFiles } = require('../app/lib/content-fa
 const { readZipPackage, writeZipPackage } = require('../app/lib/content-factory/document-processing/safe-zip-package');
 const { OpenAIProvider, sanitizeInput } = require('../app/lib/content-factory/ai/openai-provider');
 const { extractReadablePdfText } = require('../app/lib/content-factory/source-extraction/pdf-outline-extractor');
-const { validateCoursePlan, segmentExtraction, withPhaseTimeout, extractDocument } = require('../app/lib/content-factory/course-planning/course-planning-service');
+const { validateCoursePlan, segmentExtraction, withPhaseTimeout, extractDocument, buildUeScaffold, deduplicateSourceReferences } = require('../app/lib/content-factory/course-planning/course-planning-service');
 const { createCoursePlanningService } = require('../app/lib/content-factory/course-planning/course-planning-service');
 
 test('zentrale Formatstrategie stimmt Provider-Direktformate und sichere Konvertierungen ab', () => {
@@ -29,6 +29,15 @@ test('große Extraktionen werden quellengetreu segmentiert und Phasen haben eige
   assert.equal(segments.flatMap((segment) => segment.sections).length, sections.length);
   assert.match(segments.flatMap((segment) => segment.sourceReferences).join(' '), /Zeilen 1-10/);
   await assert.rejects(withPhaseTimeout(new Promise(() => {}), 5, 'PHASE_TIMEOUT', 'zu langsam'), (error) => error.code === 'PHASE_TIMEOUT');
+});
+
+test('deterministisches UE-Gerüst nummeriert Tage, lokale und globale UEs lückenlos', () => {
+  const frame = { valid: true, totalDays: 3, totalUnits: 8, unitDurationMinutes: 45 };
+  const first = buildUeScaffold(frame); const second = buildUeScaffold(frame);
+  assert.deepEqual(first, second); assert.deepEqual(first.days.map((day) => day.units.length), [3, 3, 2]);
+  assert.deepEqual(first.days.flatMap((day) => day.units.map((unit) => unit.globalUnitNumber)), [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.deepEqual(first.days.flatMap((day) => day.units.map((unit) => unit.unitNumber)), [1, 2, 3, 1, 2, 3, 1, 2]);
+  assert.deepEqual(deduplicateSourceReferences([{ documentId: 'a', location: 'S. 1' }, { documentId: 'a', location: 'S. 1' }, { documentId: 'a', location: 'S. 2' }, { documentId: 'b', location: 'S. 1' }]).length, 3);
 });
 
 test('CSV wird strukturiert in referenzierbare Zeilenbereiche extrahiert', () => {
@@ -109,11 +118,18 @@ test('hybrider Responses-Payload enthält echte Extraktion und Datei, aber keine
   const source = path.join(root, 'quelle.md'); fs.writeFileSync(source, '# Routing\nNetze sicher segmentieren');
   const provider = new OpenAIProvider({ apiKey: 'sk-test-not-logged', model: 'test-model' });
   let captured;
+  let uploads = 0;
+  provider.uploadProviderFile = async () => { uploads += 1; return { id: 'file-test-1' }; };
   provider.performRequest = async (body, signal, apiPath, parser) => { captured = { body: JSON.parse(body), apiPath }; return parser({ output_text: '{"schemaVersion":1}' }); };
-  const result = await provider.analyzeDocument({ extraction: { sections: [{ title: 'Routing', textPreview: 'Netze sicher segmentieren' }] }, preparation: { providerFiles: [{ localPath: source, mimeType: 'text/markdown' }] }, storedFilePath: source, apiKey: 'never' });
+  const preparation = { providerFiles: [{ localPath: source, mimeType: 'text/markdown' }] };
+  const result = await provider.analyzeDocument({ extraction: { sections: [{ title: 'Routing', textPreview: 'Netze sicher segmentieren' }] }, preparation, storedFilePath: source, apiKey: 'never' });
   const serialized = JSON.stringify(captured.body);
+  await provider.analyzeDocument({ extraction: { sections: [{ title: 'Routing' }] }, preparation });
   assert.equal(captured.apiPath, '/v1/responses');
   assert.match(serialized, /input_file/);
+  assert.match(serialized, /file-test-1/);
+  assert.doesNotMatch(serialized, /base64/);
+  assert.equal(uploads, 1);
   assert.match(serialized, /Netze sicher segmentieren/);
   assert.doesNotMatch(serialized, /storedFilePath|sk-test-not-logged|never/);
   assert.equal(result.schemaVersion, 1);
@@ -142,6 +158,11 @@ test('Neustart erkennt persistierten nichtterminalen Analyseauftrag als unterbro
   const project = service.getProject('resume');
   assert.equal(project.analysisOperation.status, 'failed');
   assert.equal(project.analysisOperation.errorCode, 'ANALYSIS_INTERRUPTED');
+  service.upsertProject({ ...project, id: 'resume-plan', pipelinePhases: { ...project.pipelinePhases, document_analysis: { status: 'completed' }, topic_distribution: { status: 'running', startedAt: new Date().toISOString() } }, planningOperation: { operationId: 'planning-old', projectId: 'resume-plan', kind: 'planning', phase: 'topic_distribution', status: 'planning' } });
+  service = createCoursePlanningService({ factoryDir, aiOrchestrator: {} });
+  const resumedPlan = service.getProject('resume-plan');
+  assert.equal(resumedPlan.planningOperation.status, 'timed_out');
+  assert.equal(resumedPlan.pipelinePhases.document_analysis.status, 'completed');
   fs.rmSync(factoryDir, { recursive: true, force: true });
 });
 

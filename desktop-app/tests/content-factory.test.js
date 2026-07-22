@@ -1238,7 +1238,8 @@ test('content factory plan wizard renders gated single steps with source and ai 
   assert.match(ui, /state\.wizard\.activeStep = target\.id/);
   assert.match(ui, /data-plan-step-content="\$\{escapeHtml\(|data-plan-step-content="anchor"/);
   assert.match(ui, /data-document-analyze/);
-  assert.match(ui, /Analysieren und Unterrichtsplan erstellen/);
+  assert.match(ui, /Dokumente analysieren/);
+  assert.match(ui, /Unterrichtsplan aus Analyse erstellen/);
   assert.match(ui, /data-save-course-scope/);
   assert.doesNotMatch(ui, /data-save-planning-frame/);
   assert.doesNotMatch(ui, /desktop\.factory\.savePlanningFrame/);

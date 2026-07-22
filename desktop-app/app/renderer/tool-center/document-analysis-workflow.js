@@ -3,7 +3,7 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.ContentFactoryDocumentAnalysisWorkflow = api;
 }(typeof globalThis !== 'undefined' ? globalThis : this, function createWorkflowHelpers() {
-  const TERMINAL_STATUSES = new Set(['completed', 'completed_with_warnings', 'failed', 'cancelled', 'not_found']);
+  const TERMINAL_STATUSES = new Set(['completed', 'completed_with_warnings', 'failed', 'timed_out', 'cancelled', 'not_found']);
 
   function normalizeRetryDocumentId(value) {
     return typeof value === 'string' ? value.trim() : '';
@@ -83,16 +83,20 @@
     };
   }
 
-  async function pollAnalysisUntilTerminal({ operationId, getProgress, onProgress = () => {}, intervalMs = 350, timeoutMs = 900000, maxConsecutiveErrors = 3, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
+  async function pollAnalysisUntilTerminal({ operationId, getProgress, onProgress = () => {}, intervalMs = 500, timeoutMs = 0, inactivityTimeoutMs = 120000, maxConsecutiveErrors = 3, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
     const startedAt = Date.now();
     let consecutiveErrors = 0;
-    while (Date.now() - startedAt < timeoutMs) {
-      await sleep(intervalMs);
+    let lastActivityAt = Date.now(); let lastSignature = ''; let currentInterval = intervalMs;
+    while (!timeoutMs || Date.now() - startedAt < timeoutMs) {
+      await sleep(currentInterval);
       try {
         const progress = await getProgress(operationId);
         consecutiveErrors = 0;
+        const signature = JSON.stringify([progress?.status, progress?.phase, progress?.step, progress?.completed, progress?.currentSegment, progress?.updatedAt]);
+        if (signature !== lastSignature) { lastSignature = signature; lastActivityAt = Date.now(); currentInterval = 500; } else currentInterval = Math.min(2000, currentInterval + 250);
         onProgress(progress);
         if (isTerminalAnalysisStatus(progress?.status)) return progress;
+        if (inactivityTimeoutMs && Date.now() - lastActivityAt >= inactivityTimeoutMs) { const error = new Error(`Seit ${Math.round(inactivityTimeoutMs / 1000)} Sekunden wurde kein Fortschritt gemeldet. Die Backendoperation kann weiterhin laufen. Vorgangs-ID: ${operationId}`); error.code = 'ANALYSIS_INACTIVITY_TIMEOUT'; throw error; }
       } catch (error) {
         consecutiveErrors += 1;
         if (consecutiveErrors >= maxConsecutiveErrors) throw error;

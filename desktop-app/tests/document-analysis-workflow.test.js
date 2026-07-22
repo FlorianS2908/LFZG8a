@@ -103,7 +103,7 @@ test('Nicht-String-Retrywerte werden defensiv verworfen', () => {
 });
 
 test('IPC-Vertrag verwendet eindeutige serialisierbare Kanäle und Payloads', () => {
-  assert.deepEqual(DOCUMENT_ANALYSIS_CHANNELS, { start: 'factory:start-document-analysis', progress: 'factory:get-analysis-progress', cancel: 'factory:cancel-ai-operation', generatePlan: 'factory:generate-structured-course-plan' });
+  assert.deepEqual(DOCUMENT_ANALYSIS_CHANNELS, { start: 'factory:start-document-analysis', progress: 'factory:get-analysis-progress', cancel: 'factory:cancel-ai-operation', generatePlan: 'factory:generate-structured-course-plan', startPlanning: 'factory:start-course-planning', operationStatus: 'factory:get-operation-status', planningResult: 'factory:get-planning-result' });
   const payload = createDocumentAnalysisPayload({ project: { id: 'kurs', structureFrame: { valid: true } }, documents: [{ id: 'd1', storedFilePath: 'C:\\fixture.xlsm' }], retryDocumentId: '' });
   assert.deepEqual(structuredClone(payload), payload);
   assert.equal(Object.values(DOCUMENT_ANALYSIS_CHANNELS).length, new Set(Object.values(DOCUMENT_ANALYSIS_CHANNELS)).size);

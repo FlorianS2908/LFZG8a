@@ -15,11 +15,28 @@ function readJson(filePath, fallback) {
 
 function writeJson(filePath, value) {
   ensureDir(path.dirname(filePath));
-  fs.writeFileSync(filePath, JSON.stringify(value, null, 2), 'utf8');
+  const temporaryPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+  fs.writeFileSync(temporaryPath, JSON.stringify(value, null, 2), 'utf8');
+  try { fs.renameSync(temporaryPath, filePath); }
+  catch (error) {
+    const backupPath = `${filePath}.${process.pid}.bak`;
+    try {
+      if (fs.existsSync(filePath)) fs.renameSync(filePath, backupPath);
+      fs.renameSync(temporaryPath, filePath);
+      if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
+    } catch {
+      try { if (!fs.existsSync(filePath) && fs.existsSync(backupPath)) fs.renameSync(backupPath, filePath); } catch { /* preserve the first useful filesystem error */ }
+      try { if (fs.existsSync(temporaryPath)) fs.unlinkSync(temporaryPath); } catch { /* cleanup is best effort */ }
+      throw error;
+    }
+  }
 }
+
+async function writeJsonAtomic(filePath, value) { writeJson(filePath, value); }
 
 module.exports = {
   ensureDir,
   readJson,
-  writeJson
+  writeJson,
+  writeJsonAtomic
 };

@@ -603,7 +603,7 @@ function renderPlanWizard() {
     ${workflowLayout.renderWorkflowStepper ? workflowLayout.renderWorkflowStepper(workflow, wizard.activeStep, gates) : ''}
     ${wizard.status ? `<div class="workflow-transient-status"><p class="status-line" role="status" aria-live="polite">${escapeHtml(wizard.status)}</p></div>` : ''}
     ${wizard.uiError ? `<div class="modal-backdrop" role="presentation"><section class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="wizard-error-title"><h3 id="wizard-error-title">${escapeHtml(wizard.uiError.title)}</h3><p>${escapeHtml(wizard.uiError.message)}</p><div class="button-row">${wizard.uiError.retry ? '<button type="button" class="primary-button" data-retry-wizard-error>Erneut versuchen</button>' : ''}<button type="button" class="secondary-button" data-close-wizard-error>Schließen</button></div></section></div>` : ''}
-    ${analysisRunning ? `<div class="analysis-lock-overlay" role="status" aria-live="polite" aria-label="Analyse läuft"><span class="indeterminate-spinner" aria-hidden="true"></span><strong>Dokumentanalyse und Unterrichtsplanung laufen</strong><span>${escapeHtml(wizard.analysisProgress.step || 'Dokumente werden vorbereitet')}</span><span class="analysis-lock-file">${escapeHtml(wizard.analysisProgress.currentDocument || '')}</span><button class="secondary-button" type="button" data-document-analysis-cancel>Analyse abbrechen</button></div>` : ''}
+    ${analysisRunning ? `<div class="analysis-lock-overlay ${wizard.analysisProgress.kind === 'planning' ? 'planning-lock-overlay' : ''}" role="status" aria-live="polite"><span class="indeterminate-spinner" aria-hidden="true"></span><strong>${wizard.analysisProgress.kind === 'planning' ? 'Unterrichtsplanung läuft' : 'Dokumentanalyse läuft'}</strong><span>${escapeHtml(wizard.analysisProgress.step || 'Dokumente werden vorbereitet')}</span><span class="analysis-lock-file">${escapeHtml(wizard.analysisProgress.currentDocument || '')}</span><button class="secondary-button" type="button" data-document-analysis-cancel>Vorgang abbrechen</button></div>` : ''}
     ${workflowLayout.renderWorkflowStepShell
       ? workflowLayout.renderWorkflowStepShell({
         workflow,
@@ -784,13 +784,19 @@ function renderCourseStructureStep(wizard) {
   const documents = project?.uploadedDocuments?.length ? project.uploadedDocuments : wizard.anchorFiles;
   const analyses = project?.documentAnalyses || [];
   const progressCount = documentAnalysisWorkflow.calculateAnalysisProgress?.(wizard.analysisProgress) || { total: 0, processed: 0 };
+  const analysisComplete = ['completed', 'completed_with_warnings'].includes(project?.pipelinePhases?.document_analysis?.status);
+  const planningStatus = project?.planningOperation?.status || '';
+  const planningRunning = ['planning', 'validating', 'preparing', 'running'].includes(planningStatus);
   return `<article class="tool-card" data-plan-step-content="courseStructure">
     <h3>KI-Analyse und Kursplanung</h3>
     <p class="status-line">Die hochgeladenen Dokumente werden gemeinsam ausgewertet. Anschließend erstellt die KI einen Vorschlag für die Verteilung der Themen auf die vorhandenen Kurstage und Unterrichtseinheiten.</p>
     ${running ? `<div class="analysis-progress" role="status" aria-live="polite"><span class="indeterminate-spinner" aria-hidden="true"></span><strong>${escapeHtml(wizard.analysisProgress.step)}</strong><span>${escapeHtml(wizard.analysisProgress.currentDocument || '')}</span><progress value="${progressCount.percentage}" max="100" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressCount.percentage}"></progress><small>${progressCount.percentage}% | ${progressCount.processed} von ${progressCount.total} Dokumenten verarbeitet${progressCount.segmentTotal ? ` | Segment ${progressCount.segmentCompleted} von ${progressCount.segmentTotal}` : ''} | Phase: ${escapeHtml(wizard.analysisProgress.phase || '-')}</small><small>wartend: ${escapeHtml(wizard.analysisProgress.queued || 0)} | erfolgreich: ${escapeHtml(wizard.analysisProgress.completed || 0)} | Warnungen: ${escapeHtml(wizard.analysisProgress.warningCount || 0)} | fehlgeschlagen: ${escapeHtml(wizard.analysisProgress.failed || 0)}</small></div>` : ''}
     <div class="mapping-list">${documents.map((document, index) => renderDocumentAnalysisCard(document, analyses, index)).join('')}</div>
-    <div class="button-row"><button class="primary-button" type="button" data-document-analyze ${ready && !running ? '' : 'disabled'}>${running ? 'Analyse und Planung laufen …' : 'Analysieren und Unterrichtsplan erstellen'}</button>
-    <button class="secondary-button" type="button" data-document-analysis-cancel ${running ? '' : 'disabled'}>Vorgang abbrechen</button></div>
+    ${analysisComplete ? `<p class="status-line status-success">Dokumentanalyse abgeschlossen. ${escapeHtml(project.topicCatalog?.topics?.length || 0)} konsolidierte Themen stehen für die Planung bereit.</p>` : ''}
+    ${planningStatus === 'timed_out' ? '<p class="status-line status-warning">Die Planung hat ihr Phasenzeitlimit erreicht. Die Dokumentanalyse bleibt vollständig erhalten.</p>' : ''}
+    <div class="button-row"><button class="primary-button" type="button" data-document-analyze ${ready && !running && !planningRunning ? '' : 'disabled'}>${running ? 'Dokumentanalyse läuft …' : 'Dokumente analysieren'}</button>
+    <button class="primary-button" type="button" data-course-plan-start ${analysisComplete && !running && !planningRunning ? '' : 'disabled'}>${planningStatus === 'timed_out' || planningStatus === 'failed' ? 'Planung erneut starten' : planningRunning ? 'Unterrichtsplanung läuft …' : 'Unterrichtsplan aus Analyse erstellen'}</button>
+    <button class="secondary-button" type="button" data-document-analysis-cancel ${running || planningRunning ? '' : 'disabled'}>Vorgang abbrechen</button></div>
     ${!ready ? '<p class="status-line status-warning">Die Analyse kann noch nicht gestartet werden. Erforderlich sind Kursbezeichnung, mindestens ein Dokument, Zielgruppe, Vorkenntnisse, Tage, UE-Angaben und eine konfigurierte OpenAI-Verbindung.</p>' : ''}
   </article>`;
 }
@@ -828,6 +834,10 @@ function formatAnalysisItem(item) {
   return String(item.title || item.value || item.name || item.description || item.text || item.summary || item.message || item.fileName || item.documentId || 'Strukturierter Eintrag');
 }
 
+function deduplicateDisplayedSources(references = []) {
+  return [...new Map(references.filter((reference) => reference?.documentId).map((reference) => [`${reference.documentId}|${reference.location || reference.sourceRef || reference.page || reference.section || ''}`, reference])).values()];
+}
+
 function documentAnalysisStatusLabel(status) {
   return ({ queued: 'Wartet auf Analyse', extracting: 'Dokument wird ausgelesen', extracted: 'Dokument wurde ausgelesen', analyzing: 'KI analysiert das Dokument', analyzed: 'Analyse abgeschlossen', analyzed_with_warnings: 'Analyse mit Warnungen abgeschlossen', failed: 'Analyse fehlgeschlagen', cancelled: 'Analyse abgebrochen', excluded: 'Von der Analyse ausgeschlossen' })[status] || status;
 }
@@ -836,6 +846,7 @@ function renderStructureReviewStep(wizard) {
   const project = wizard.courseProject;
   const draft = project?.coursePlanDrafts?.find((item) => item.planningVersion === project.currentPlanningVersion);
   if (!draft) return '<article class="tool-card"><h3>Struktur-Review</h3><p class="status-line status-warning">Noch keine KI-Kursstruktur vorhanden.</p></article>';
+  (draft.days || []).forEach((day) => (day.units || []).forEach((unit) => { unit.sourceReferences = deduplicateDisplayedSources(unit.sourceReferences); }));
   return `<article class="tool-card" data-plan-step-content="structureReview">
     <h3>Struktur-Review</h3>
     <div class="summary-grid"><span>Kurs: ${escapeHtml(project.title)}</span><span>Zielgruppe: ${escapeHtml(project.targetGroup)}</span><span>Tage: ${escapeHtml((draft.structureFrameSnapshot || draft.planningFrameSnapshot)?.totalDays)}</span><span>planbare UE: ${escapeHtml((draft.structureFrameSnapshot || draft.planningFrameSnapshot)?.actuallyPlannableUnits)}</span><span>Planungsversion: ${escapeHtml(draft.planningVersion)}</span><span>KI: ${escapeHtml(draft.provider)} / ${escapeHtml(draft.model)}</span><span>Validierung: ${escapeHtml(draft.validation?.status)}</span></div>
@@ -1435,6 +1446,7 @@ function bindPlanWizardEvents() {
     renderPlanWizard();
   }));
   if (hasDocumentAnalysisWorkflow) documentAnalysisWorkflow.bindDocumentAnalysisControls(document, startWizardDocumentAnalysis);
+  $('[data-course-plan-start]')?.addEventListener('click', startWizardCoursePlanning);
   $('[data-close-wizard-error]')?.addEventListener('click', () => { state.wizard.uiError = null; renderPlanWizard(); });
   $('[data-retry-wizard-error]')?.addEventListener('click', () => { const retry = state.wizard.uiError?.retry; state.wizard.uiError = null; if (retry) retry(); });
   $('[data-document-analysis-cancel]')?.addEventListener('click', cancelWizardDocumentAnalysis);
@@ -1941,7 +1953,7 @@ async function analyzeWizardDocuments(retryDocumentId = '') {
   if (!state.aiStatus?.providers?.openai?.configured) { showWizardError('Die KI-Analyse konnte nicht gestartet werden', 'Bitte prüfen Sie den OpenAI-Schlüssel, das ausgewählte Modell und den Verbindungstest in den KI-Einstellungen.'); renderPlanWizard(); return; }
   const selectedCount = normalizedRetryDocumentId ? 1 : documents.length;
   state.wizard.analysisProgress = { status: 'preparing', step: 'Dokumente werden vorbereitet', currentDocument: '', total: selectedCount, queued: selectedCount, completed: 0, warningCount: 0, failed: 0, errors: [] };
-  state.wizard.status = 'Echte KI-Analyse und UE-Planung wurden gestartet.';
+  state.wizard.status = 'Dokumentanalyse wurde gestartet.';
   renderPlanWizard();
   try {
     const project = wizardProjectInput();
@@ -1963,7 +1975,6 @@ async function pollAnalysisOperation(operationId) {
   const progress = await documentAnalysisWorkflow.pollAnalysisUntilTerminal({
     operationId,
     getProgress: desktop.factory.getAnalysisProgress,
-    timeoutMs: 120000,
     onProgress: (progress) => {
     state.wizard.analysisProgress = progress;
     if (progress.project) state.wizard.courseProject = progress.project;
@@ -1974,7 +1985,22 @@ async function pollAnalysisOperation(operationId) {
   const failed = state.wizard.courseProject.uploadedDocuments.filter((document) => document.analysisStatus === 'failed').length;
   const completed = progress.status === 'completed' || progress.status === 'completed_with_warnings';
   state.wizard.status = completed ? `Analyse und UE-Planung abgeschlossen.${failed ? ` ${failed} Dokument(e) sind fehlgeschlagen und können erneut analysiert werden.` : ''}` : progress.status === 'cancelled' ? 'Analyse wurde abgebrochen.' : formatProgressError(progress);
-  if (completed) state.wizard.activeStep = 'structureReview';
+  if (completed) state.wizard.status = state.wizard.status.replace('Analyse und UE-Planung', 'Dokumentanalyse');
+}
+
+async function startWizardCoursePlanning() {
+  if (!state.wizard.courseProject?.id || !['completed', 'completed_with_warnings'].includes(state.wizard.courseProject?.pipelinePhases?.document_analysis?.status) || state.wizard.planningBusy) return;
+  state.wizard.planningBusy = true; state.wizard.status = 'Unterrichtsplanung wurde gestartet.'; renderPlanWizard();
+  try {
+    const started = await desktop.factory.startCoursePlanning({ projectId: state.wizard.courseProject.id });
+    state.wizard.analysisProgress = started.progress;
+    const progress = await documentAnalysisWorkflow.pollAnalysisUntilTerminal({ operationId: started.operationId, getProgress: desktop.factory.getOperationStatus, inactivityTimeoutMs: 120000, onProgress: (value) => { state.wizard.analysisProgress = value; renderPlanWizard(); } });
+    const result = await desktop.factory.getPlanningResult(started.operationId);
+    state.wizard.courseProject = await desktop.factory.getCourseProject(state.wizard.courseProject.id);
+    if (progress.status === 'completed' && result.plan) { state.wizard.activeStep = 'structureReview'; state.wizard.selectedPlanDay = 1; state.wizard.selectedPlanUnit = 1; state.wizard.status = 'Unterrichtsplan erstellt.'; }
+    else state.wizard.status = formatProgressError(progress);
+  } catch (error) { showWizardError('Unterrichtsplanung fehlgeschlagen', error, startWizardCoursePlanning); state.wizard.status = error.message; }
+  finally { state.wizard.planningBusy = false; renderPlanWizard(); }
 }
 
 function formatProgressError(progress) {
@@ -2109,6 +2135,7 @@ if (new URLSearchParams(window.location.search).get('coursePlanningSmoke') === '
       showPanel('plan-wizard');
     },
     continueFromDurationAudience: () => continueFromDurationAudienceToAiAnalysis(),
+    plan: () => startWizardCoursePlanning(),
     async approve() {
       const draft = currentStructuredDraft();
       state.wizard.courseProject = await desktop.factory.approveStructuredCoursePlan(state.wizard.course.courseId, draft.planningVersion);
@@ -2128,12 +2155,16 @@ if (new URLSearchParams(window.location.search).get('coursePlanningSmoke') === '
         activeStep: state.wizard.activeStep,
         operationId: state.wizard.analysisProgress?.operationId,
         analysisStatus: state.wizard.analysisProgress?.status,
+        documentAnalysisStatus: state.wizard.courseProject?.pipelinePhases?.document_analysis?.status,
+        selectedDay: state.wizard.selectedPlanDay || 1,
+        selectedUnit: state.wizard.selectedPlanUnit || 1,
         totalDays: draft?.days?.length || 0,
         totalUnits: (draft?.days || []).reduce((sum, day) => sum + (day.units || []).length, 0),
         containerProfileActive: Boolean(gates.find((gate) => gate.id === 'containerProfile')?.active),
         didacticsActive: Boolean(gates.find((gate) => gate.id === 'didactics')?.active),
         sourceStrategy: source?.preparation?.strategy,
-        sourceHasMacros: source?.preparation?.hasMacros
+        sourceHasMacros: source?.preparation?.hasMacros,
+        phaseTimings: Object.fromEntries(Object.entries(state.wizard.courseProject?.pipelinePhases || {}).map(([phase, value]) => [phase, value.runtimeMs || 0]))
       };
     }
   };

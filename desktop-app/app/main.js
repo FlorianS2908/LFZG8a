@@ -1,6 +1,7 @@
 const { app, BrowserWindow, dialog, ipcMain, safeStorage, shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { createContentFactoryService } = require('./lib/content-factory/content-factory-service');
 const { ensureDir } = require('./lib/json-store');
 const { applyAppEnv } = require('./lib/env/env-loader');
@@ -166,23 +167,28 @@ function createWindow() {
         { name: 'xl/worksheets/sheet1.xml', data: Buffer.from('<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Tag</t></is></c><c r="B1" t="inlineStr"><is><t>UE</t></is></c><c r="C1" t="inlineStr"><is><t>Thema</t></is></c></row><row r="2"><c r="A2"><v>1</v></c><c r="B2"><v>1</v></c><c r="C2" t="inlineStr"><is><t>Netzwerksegmentierung</t></is></c></row></sheetData></worksheet>') },
         { name: 'xl/vbaProject.bin', data: Buffer.from('SMOKE_MACRO_MUST_NEVER_RUN') }
       ]);
+      const sourceHashBefore = crypto.createHash('sha256').update(fs.readFileSync(sourcePath)).digest('hex');
       try {
         const result = await Promise.race([mainWindow.webContents.executeJavaScript(`(async () => {
         const api = window.ContentFactoryCoursePlanningSmoke;
         if (!api) return { error: 'Smoke-API fehlt' };
         await api.configure(${JSON.stringify(sourcePath)}, 'Wochenplan_FIAE_LF-ZQ8A.xlsm', 'application/vnd.ms-excel.sheet.macroEnabled.12');
         const started = await api.continueFromDurationAudience();
+        const afterAnalysis = api.snapshot();
+        await api.plan();
         const beforeApproval = api.snapshot();
         await api.approve();
         const afterApproval = api.snapshot();
         api.confirmDidactics();
         const afterDidactics = api.snapshot();
-        return { started, beforeApproval, afterApproval, afterDidactics };
+        return { started, afterAnalysis, beforeApproval, afterApproval, afterDidactics };
         })()`), new Promise((_, reject) => setTimeout(() => reject(new Error('Electron-Smoke-Timeout nach 30 Sekunden.')), 30000))]);
+        result.sourceHashBefore = sourceHashBefore;
+        result.sourceHashAfter = crypto.createHash('sha256').update(fs.readFileSync(sourcePath)).digest('hex');
         const before = result.beforeApproval || {};
         const after = result.afterApproval || {};
         const afterDidactics = result.afterDidactics || {};
-        if (!result.started || before.activeStep !== 'structureReview' || before.totalDays !== 1 || before.totalUnits !== 2 || before.containerProfileActive || before.sourceStrategy !== 'convert_then_analyze' || before.sourceHasMacros !== true || !after.didacticsActive || after.containerProfileActive || !afterDidactics.containerProfileActive) {
+        if (!result.started || result.sourceHashBefore !== result.sourceHashAfter || !['completed', 'completed_with_warnings'].includes(result.afterAnalysis?.documentAnalysisStatus) || result.afterAnalysis?.totalUnits !== 0 || before.activeStep !== 'structureReview' || before.totalDays !== 1 || before.totalUnits !== 2 || before.selectedDay !== 1 || before.selectedUnit !== 1 || before.containerProfileActive || before.sourceStrategy !== 'convert_then_analyze' || before.sourceHasMacros !== true || !after.didacticsActive || after.containerProfileActive || !afterDidactics.containerProfileActive) {
           fs.writeFileSync(resultPath, JSON.stringify({ ok: false, result }, null, 2), 'utf8');
           console.error('CONTENTFACTORY_COURSE_PLANNING_SMOKE_FAILED', JSON.stringify(result));
           app.exit(1);
@@ -236,6 +242,9 @@ function registerIpc() {
     [DOCUMENT_ANALYSIS_CHANNELS.start]: 'startDocumentAnalysis',
     [DOCUMENT_ANALYSIS_CHANNELS.progress]: 'getAnalysisProgress',
     [DOCUMENT_ANALYSIS_CHANNELS.cancel]: 'cancelAiOperation',
+    [DOCUMENT_ANALYSIS_CHANNELS.startPlanning]: 'startCoursePlanning',
+    [DOCUMENT_ANALYSIS_CHANNELS.operationStatus]: 'getOperationStatus',
+    [DOCUMENT_ANALYSIS_CHANNELS.planningResult]: 'getPlanningResult',
     'factory:save-planning-frame': 'savePlanningFrame',
     'factory:save-course-scope': 'saveCourseScope',
     [DOCUMENT_ANALYSIS_CHANNELS.generatePlan]: 'generateStructuredCoursePlan',

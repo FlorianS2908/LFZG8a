@@ -138,11 +138,15 @@ test('Mehrdokumentlauf normalisiert Einzelfund, bewahrt Erfolge und plant trotz 
   const started = service.startDocumentAnalysis({ projectId: 'multi' });
   let progress;
   do { await new Promise((resolve) => setTimeout(resolve, 10)); progress = service.getAnalysisProgress(started.operationId); } while (!['completed', 'completed_with_warnings', 'failed', 'cancelled'].includes(progress.status));
-  const project = service.getProject('multi');
+  let project = service.getProject('multi');
   assert.equal(progress.status, 'completed_with_warnings');
   assert.equal(project.documentAnalyses.length, 1);
   assert.deepEqual(project.documentAnalyses[0].learningObjectives, [{ title: 'Fachziel' }]);
   assert.equal(project.uploadedDocuments.find((item) => item.id === 'd2').analysisStatus, 'failed');
+  assert.equal(project.coursePlanDrafts.length, 0);
+  const planning = service.startCoursePlanning({ projectId: 'multi' });
+  do { await new Promise((resolve) => setTimeout(resolve, 10)); progress = service.getOperationStatus(planning.operationId); } while (!['completed', 'failed', 'timed_out', 'cancelled'].includes(progress.status));
+  project = service.getProject('multi');
   assert.equal(project.coursePlanDrafts.length, 1);
   fs.rmSync(factoryDir, { recursive: true, force: true });
 });
@@ -231,6 +235,8 @@ test('Analyse verwendet gespeicherten Vollkontext und repariert eine formal fals
   assert.match(analysisInput.extraction.sections.map((section) => `${section.title || ''} ${section.textPreview || section.content || ''}`).join(' '), /Segmentierung/);
   assert.equal(analysisInput.structureFrame.totalUnits, 2);
   assert.equal(analysisInput.project.courseGoal, 'Sicher planen');
+  const planning = service.startCoursePlanning({ projectId: 'context' });
+  do { await new Promise((resolve) => setTimeout(resolve, 10)); progress = service.getOperationStatus(planning.operationId); } while (!['completed', 'failed', 'timed_out', 'cancelled'].includes(progress.status));
   assert.equal(planningInputs.length, 2);
   assert.equal(planningInputs[1].repairAttempt, 1);
   const project = service.getProject('context');
@@ -285,6 +291,30 @@ function crc32(buffer) {
   for (const byte of buffer) { crc ^= byte; for (let index = 0; index < 8; index += 1) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0); }
   return (crc ^ 0xffffffff) >>> 0;
 }
+
+test('Analysecache bleibt bei Planungstimeout erhalten und Planung sendet nur Katalog plus Gerüst', async () => {
+  const factoryDir = fs.mkdtempSync(path.join(os.tmpdir(), 'split-pipeline-')); const source = path.join(factoryDir, 'quelle.md'); fs.writeFileSync(source, '# Routing\nSubnetting');
+  let analysisCalls = 0; let planningInput;
+  const provider = { name: 'fake', model: 'fake', isConfigured: () => true,
+    async analyzeDocument(input) { analysisCalls += 1; return { documentId: input.document.id, documentType: 'markdown', detectedCategory: 'Quelle', summary: 'Routing', topics: [{ title: 'Routing', difficulty: 'basic' }], learningObjectives: [{ title: 'Subnetze planen' }], sourceReferences: [{ documentId: input.document.id, location: 'Abschnitt 1' }], confidence: 1 }; },
+    async generateStructuredCoursePlan(input) { planningInput = input; return new Promise(() => {}); }
+  };
+  const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: provider }, logger: { info() {}, error() {} } });
+  service.upsertProject({ id: 'split', title: 'Split' }); service.importSourceFile({ projectId: 'split', documentId: 'doc', sourcePath: source, originalFileName: 'quelle.md' });
+  service.saveCourseScope('split', { totalDays: 2, unitsPerDay: 2, unitDurationMinutes: 45, targetAudience: { value: 'students' }, priorKnowledge: { value: 'none' } });
+  let operation = service.startDocumentAnalysis({ projectId: 'split' }); let progress;
+  do { await new Promise((resolve) => setTimeout(resolve, 5)); progress = service.getOperationStatus(operation.operationId); } while (!['completed', 'failed'].includes(progress.status));
+  operation = service.startDocumentAnalysis({ projectId: 'split' });
+  do { await new Promise((resolve) => setTimeout(resolve, 5)); progress = service.getOperationStatus(operation.operationId); } while (!['completed', 'failed'].includes(progress.status));
+  assert.equal(analysisCalls, 1);
+  operation = service.startCoursePlanning({ projectId: 'split', timeoutMs: 5 });
+  do { await new Promise((resolve) => setTimeout(resolve, 5)); progress = service.getOperationStatus(operation.operationId); } while (!['completed', 'failed', 'timed_out'].includes(progress.status));
+  const project = service.getProject('split');
+  assert.equal(progress.status, 'timed_out'); assert.equal(project.pipelinePhases.document_analysis.status, 'completed'); assert.equal(project.documentAnalyses.length, 1);
+  assert.ok(planningInput.topicCatalog.topics.length); assert.equal('documentAnalyses' in planningInput, false); assert.equal(planningInput.ueScaffold.days.length, 2);
+  const result = service.getPlanningResult(operation.operationId); assert.equal(JSON.stringify(result).includes('extraction'), false);
+  fs.rmSync(factoryDir, { recursive: true, force: true });
+});
 
 test('Renderer erhält keine API-Schlüssel über die Preload-Oberfläche', () => {
   const preload = fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8');

@@ -7,7 +7,7 @@ const DOCUMENT_ANALYSIS_CHANNELS = Object.freeze({
   start: 'factory:start-document-analysis',
   progress: 'factory:get-analysis-progress',
   cancel: 'factory:cancel-ai-operation',
-  generatePlan: 'factory:generate-structured-course-plan'
+  generatePlan: 'factory:generate-structured-course-plan', startPlanning: 'factory:start-course-planning', operationStatus: 'factory:get-operation-status', planningResult: 'factory:get-planning-result'
 });
 
 const invoke = (channel) => (...args) => ipcRenderer.invoke(channel, ...args);
@@ -25,6 +25,8 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
     startDocumentAnalysis: invoke(DOCUMENT_ANALYSIS_CHANNELS.start), getAnalysisProgress: invoke(DOCUMENT_ANALYSIS_CHANNELS.progress),
     cancelAiOperation: invoke(DOCUMENT_ANALYSIS_CHANNELS.cancel), savePlanningFrame: invoke('factory:save-planning-frame'),
     saveCourseScope: invoke('factory:save-course-scope'),
+    startCoursePlanning: invoke(DOCUMENT_ANALYSIS_CHANNELS.startPlanning), getOperationStatus: invoke(DOCUMENT_ANALYSIS_CHANNELS.operationStatus),
+    getPlanningResult: invoke(DOCUMENT_ANALYSIS_CHANNELS.planningResult),
     generateStructuredCoursePlan: invoke(DOCUMENT_ANALYSIS_CHANNELS.generatePlan), saveStructuredCoursePlan: invoke('factory:save-structured-course-plan'),
     acknowledgeDocumentFailure: invoke('factory:acknowledge-document-failure'),
     approveStructuredCoursePlan: invoke('factory:approve-structured-course-plan'),
