@@ -24,4 +24,9 @@ for (const relative of ['app/main.js', 'app/preload.js']) {
     process.exit(1);
   }
 }
+const textFiles = ['app/main.js', 'app/preload.js', 'app/renderer/tool-center', 'app/lib/content-factory'].flatMap((target) => collectText(path.join(root, target)));
+const mojibake = /Ãƒ|Ã¢|ï¿½|\uFFFD/;
+for (const file of textFiles) { if (mojibake.test(fs.readFileSync(file, 'utf8'))) { console.error(`Mojibake-Sequenz in ${path.relative(root, file)}`); process.exit(1); } }
 console.log('ContentFactory-Prüfungen erfolgreich.');
+
+function collectText(target) { if (!fs.existsSync(target)) return []; const stat = fs.statSync(target); if (stat.isFile()) return /\.(?:js|html|css|json|md|yml)$/i.test(target) ? [target] : []; return fs.readdirSync(target, { withFileTypes: true }).flatMap((entry) => collectText(path.join(target, entry.name))); }

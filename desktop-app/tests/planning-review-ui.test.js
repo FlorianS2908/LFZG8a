@@ -40,7 +40,7 @@ test('Planungsreview nutzt volle Breite, feste Fachproportionen und Kartenansich
   assert.match(ui, /<th>Kompetenzziel<\/th>/);
   assert.match(ui, /<th>Arbeitsform<\/th>/);
   assert.match(ui, /data-export-course-plan/);
-  assert.match(ui, /Unterrichtsplan bestätigen/);
+  assert.match(ui, /Prüfung abschließen/);
   assert.match(ui, /data-conflict-decision/);
   assert.doesNotMatch(ui, /<th>Confidence<\/th>/);
   assert.doesNotMatch(ui, /Math\.round\(Number\(unit\.confidence/);

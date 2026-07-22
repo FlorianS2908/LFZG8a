@@ -1,0 +1,11 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { createCoursePlanningService } = require('../app/lib/content-factory/course-planning/course-planning-service');
+
+function serviceWithProject() { const factoryDir = fs.mkdtempSync(path.join(os.tmpdir(), 'topic-review-')); const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: { isConfigured: () => true } } }); service.upsertProject({ id: 'p', title: 'Kurs', topicCatalog: { topics: [{ id: 't1', title: 'Thema', subtopics: ['A'], learningObjectives: ['Ziel'], competencies: ['Kompetenz'], sourceReferences: [{ documentId: 'd1' }] }] } }); return { service, factoryDir }; }
+test('Altprojekt erhält rückwärtskompatible pending Themenprüfung', () => { const { service, factoryDir } = serviceWithProject(); const project = service.getProject('p'); assert.equal(project.topicReview.status, 'pending'); assert.equal(project.topicReview.topics[0].sourceReferences[0].documentId, 'd1'); fs.rmSync(factoryDir, { recursive: true, force: true }); });
+test('Themen können persistent bearbeitet, ergänzt, sortiert, gelöscht und bestätigt werden', () => { const { service, factoryDir } = serviceWithProject(); let project = service.updateTopicReview('p', { topics: [{ ...service.getProject('p').topicReview.topics[0], title: 'Bearbeitet' }, { id: 't2', title: 'Neu', sourceReferences: [] }] }); assert.equal(project.topicReview.status, 'edited'); assert.equal(project.topicReview.version, 2); project = service.getProject('p'); assert.equal(project.topicReview.topics[1].title, 'Neu'); project = service.confirmTopicReview('p', 'tester'); assert.equal(project.topicReview.status, 'confirmed'); assert.ok(project.topicReview.confirmedAt); fs.rmSync(factoryDir, { recursive: true, force: true }); });
+test('Planung wird ohne bestätigte Themenbasis blockiert', () => { const { service, factoryDir } = serviceWithProject(); service.upsertProject({ ...service.getProject('p'), pipelinePhases: { document_analysis: { status: 'completed' } } }); assert.throws(() => service.startCoursePlanning({ projectId: 'p' }), (error) => error.code === 'PLANNING_REQUIRES_TOPIC_REVIEW'); fs.rmSync(factoryDir, { recursive: true, force: true }); });

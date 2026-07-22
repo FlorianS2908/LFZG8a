@@ -16,10 +16,10 @@ function parseCoursePlan(filePath, options = {}) {
 
   try {
     const workbook = readWorkbookXml(filePath);
-    const selectedSheet = options.selectedSheet && workbook.sheets.some((sheet) => sheet.name === options.selectedSheet)
-      ? options.selectedSheet
-      : workbook.sheets[0]?.name || 'Tabelle1';
-    const sheet = workbook.sheets.find((entry) => entry.name === selectedSheet) || workbook.sheets[0];
+    const selection = selectCoursePlanSheet(workbook.sheets, options.selectedSheet);
+    if (!selection.sheet) return fallbackPlan(fileName, options, [selection.message]);
+    const selectedSheet = selection.sheet.name;
+    const sheet = selection.sheet;
     if (!sheet || !sheet.rows.length) {
       return fallbackPlan(fileName, options, ['Keine lesbaren Zeilen im Unterrichtsplan gefunden.']);
     }
@@ -28,12 +28,22 @@ function parseCoursePlan(filePath, options = {}) {
       fileName,
       selectedSheet,
       availableSheets: workbook.sheets.map((entry) => entry.name),
-      warnings
+      warnings: [...warnings, ...(selection.ambiguous ? ['Mehrere Tabellenblätter sind ähnlich geeignet. Bitte Blattauswahl prüfen.'] : [])],
+      sheetSelection: { suggestedSheet: selectedSheet, scores: selection.scores, ambiguous: selection.ambiguous }
     });
   } catch (error) {
     return fallbackPlan(fileName, options, [`Unterrichtsplanparser-Fallback: ${error.message}`]);
   }
 }
+
+function selectCoursePlanSheet(sheets = [], selectedSheet = '') {
+  const scores = scoreSheets(sheets);
+  if (selectedSheet) { const exact = sheets.find((sheet) => sheet.name === selectedSheet); if (exact) return { sheet: exact, scores, ambiguous: false, explicit: true }; }
+  const ranked = scores.filter((item) => !item.hidden).sort((a, b) => b.score - a.score);
+  if (!ranked.length || ranked[0].score < 2) return { sheet: null, scores, ambiguous: false, message: 'Kein fachlich geeignetes Tabellenblatt gefunden. Bitte ein Blatt manuell auswählen.' };
+  return { sheet: sheets.find((sheet) => sheet.name === ranked[0].name), scores, ambiguous: Boolean(ranked[1] && ranked[0].score - ranked[1].score <= 1) };
+}
+function scoreSheets(sheets = []) { const positive = /\b(tag|ue|unterrichtseinheit|thema|lernziel|kompetenz|zeit|dauer|material|methode|arbeitsform)\b/gi; const negative = /(änderungshistorie|anleitung|checkliste|versionshistorie|hinweise|kennzahlen)/gi; return sheets.map((sheet) => { const sample = `${sheet.name} ${(sheet.rows || []).slice(0, 15).flat().join(' ')}`; const positives = new Set((sample.match(positive) || []).map((value) => value.toLowerCase())).size; const negatives = new Set((sample.match(negative) || []).map((value) => value.toLowerCase())).size; return { name: sheet.name, hidden: Boolean(sheet.hidden), score: positives * 2 - negatives * 3 - (sheet.hidden ? 1 : 0), positiveMatches: positives, negativeMatches: negatives }; }); }
 
 function readWorkbookXml(filePath) {
   const entries = Object.fromEntries(readZipPackage(filePath).filter((entry) => /^xl\/(workbook|sharedStrings|worksheets\/sheet[0-9]+)\.xml$/.test(entry.name)).map((entry) => [entry.name, entry.data.toString('utf8')]));
@@ -145,6 +155,8 @@ function parseRows(rows, options) {
     totalDays: days.length,
     totalUE: days.reduce((sum, day) => sum + day.ueBlocks.length, 0),
     sourceFile: options.fileName,
+    sheetSelection: options.sheetSelection || null,
+    parseStatus: 'parsed',
     days,
     warnings: options.warnings || []
   };
@@ -180,7 +192,8 @@ function fallbackPlan(fileName, options = {}, warnings = []) {
       pauses: [],
       warnings
     }],
-    warnings
+    warnings,
+    parseStatus: 'manual_review_required'
   };
 }
 
@@ -218,5 +231,7 @@ module.exports = {
   parseCoursePlan,
   readWorkbookXml,
   parseRows,
-  fallbackPlan
+  fallbackPlan,
+  selectCoursePlanSheet,
+  scoreSheets
 };

@@ -11,6 +11,7 @@ function detectFormat(filePathOrName = '') {
     '.md': 'md',
     '.html': 'html',
     '.htm': 'html'
+    ,'.ipynb': 'ipynb'
   }[extension] || 'unknown';
 }
 

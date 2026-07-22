@@ -800,6 +800,8 @@ function renderCourseStructureStep(wizard) {
   const analysisComplete = ['completed', 'completed_with_warnings'].includes(project?.pipelinePhases?.document_analysis?.status);
   const planningStatus = project?.planningOperation?.status || '';
   const planningRunning = ['planning', 'validating', 'preparing', 'running'].includes(planningStatus);
+  const topicReviewConfirmed = project?.topicReview?.status === 'confirmed';
+  const hasStalePlan = Boolean(project?.coursePlanDrafts?.some((draft) => draft.status === 'stale'));
   return `<article class="tool-card" data-plan-step-content="courseStructure">
     <h3>KI-Analyse und Kursplanung</h3>
     <p class="status-line">Die hochgeladenen Dokumente werden gemeinsam ausgewertet. Anschließend erstellt die KI einen Vorschlag für die Verteilung der Themen auf die vorhandenen Kurstage und Unterrichtseinheiten.</p>
@@ -808,9 +810,11 @@ function renderCourseStructureStep(wizard) {
     ${analysisComplete ? `<p class="status-line status-success">Dokumentanalyse abgeschlossen. ${escapeHtml(project.topicCatalog?.topics?.length || 0)} konsolidierte Themen stehen für die Planung bereit.</p>` : ''}
     ${planningStatus === 'timed_out' ? '<p class="status-line status-warning">Die Planung hat ihr Phasenzeitlimit erreicht. Die Dokumentanalyse bleibt vollständig erhalten.</p>' : ''}
     <div class="button-row"><button class="primary-button" type="button" data-document-analyze ${ready && !running && !planningRunning ? '' : 'disabled'}>${running ? 'Dokumentanalyse läuft …' : 'Dokumente analysieren'}</button>
-    <button class="primary-button" type="button" data-course-plan-start ${analysisComplete && !running && !planningRunning ? '' : 'disabled'}>${planningStatus === 'timed_out' || planningStatus === 'failed' ? 'Planung erneut starten' : planningRunning ? 'Unterrichtsplanung läuft …' : 'Unterrichtsplan aus Analyse erstellen'}</button>
+    <button class="primary-button" type="button" data-course-plan-start ${analysisComplete && topicReviewConfirmed && !running && !planningRunning ? '' : 'disabled'}>${planningStatus === 'timed_out' || planningStatus === 'failed' || hasStalePlan ? 'Unterrichtsplan neu erstellen' : planningRunning ? 'Unterrichtsplanung läuft …' : 'Unterrichtsplan erstellen'}</button>
     <button class="secondary-button" type="button" data-document-analysis-cancel ${running || planningRunning ? '' : 'disabled'}>Vorgang abbrechen</button></div>
     ${analysisComplete ? renderAiUnderstanding(project) : ''}
+    ${analysisComplete ? `<p class="status-line ${topicReviewConfirmed ? 'status-success' : 'status-warning'}">${topicReviewConfirmed ? 'Themenbasis bestätigt. Der Unterrichtsplan kann jetzt erstellt werden.' : 'Prüfe und bestätige zuerst die erkannten Themen und Analyseergebnisse.'}</p>` : ''}
+    ${hasStalePlan ? '<p class="status-line status-warning">Die bestätigte Themenbasis wurde verändert. Der vorhandene Unterrichtsplan basiert auf einer älteren Version und muss neu erstellt werden.</p>' : ''}
     ${!ready ? '<p class="status-line status-warning">Die Analyse kann noch nicht gestartet werden. Erforderlich sind Kursbezeichnung, mindestens ein Dokument, Zielgruppe, Vorkenntnisse, Tage, UE-Angaben und eine konfigurierte OpenAI-Verbindung.</p>' : ''}
   </article>`;
 }
@@ -819,12 +823,19 @@ function renderAiUnderstanding(project) {
   const frame = project.structureFrame || {};
   const conflicts = (project.documentAnalyses || []).flatMap((item) => item.conflicts || []);
   const missing = (project.documentAnalyses || []).flatMap((item) => item.missingInformation || []);
-  return `<details class="validation-box" data-ai-understanding><summary>Von der KI erkannt</summary>
+  const review = project.topicReview || { status: 'pending', topics: project.topicCatalog?.topics || [] };
+  return `<details class="validation-box" data-ai-understanding open><summary>Erkannte Themen und Analyseergebnisse prüfen</summary>
+    <p>Die KI hat aus den analysierten Dokumenten folgende Themenbasis ermittelt. Prüfe und bearbeite diese Angaben, bevor daraus der Unterrichtsplan erstellt wird.</p>
     <label>Zusammenarbeit mit der KI<select data-interaction-mode aria-label="Interaktionsmodus"><option value="automatic" ${project.interactionMode === 'automatic' ? 'selected' : ''}>Automatisch</option><option value="guided" ${!project.interactionMode || project.interactionMode === 'guided' ? 'selected' : ''}>Begleitet (empfohlen)</option><option value="strict" ${project.interactionMode === 'strict' ? 'selected' : ''}>Streng kontrolliert</option></select></label>
     <div class="summary-grid"><span>Kurstage: ${escapeHtml(frame.totalDays || 0)}</span><span>UE gesamt: ${escapeHtml(frame.totalUnits || 0)}</span><span>UE pro Tag: ${escapeHtml(frame.unitsPerDay || 0)}</span><span>UE-Dauer: ${escapeHtml(frame.unitDurationMinutes || 0)} Minuten</span><span>Dokumente: ${escapeHtml(project.uploadedDocuments?.length || 0)}</span><span>Leitquellen: ${escapeHtml((project.uploadedDocuments || []).filter((item) => item.bindingLevel === 'binding').length)}</span></div>
-    ${renderAnalysisList('Wichtigste Themen', (project.topicCatalog?.topics || []).slice(0, 10))}${renderAnalysisList('Offene Widersprüche', conflicts)}${renderAnalysisList('Fehlende Angaben', missing)}
+    <div class="topic-review-list">${(review.topics || []).map((topic, index) => renderTopicReviewItem(topic, index, review.topics.length)).join('')}</div>
+    <div class="button-row"><button type="button" class="secondary-button" data-topic-add>Thema hinzufügen</button><button type="button" class="secondary-button" data-topic-save>Änderungen speichern</button><button type="button" class="primary-button" data-topic-confirm ${review.topics?.length ? '' : 'disabled'}>Themenbasis bestätigen</button></div>
+    <p><strong>Status:</strong> ${review.status === 'confirmed' ? 'Bestätigt' : review.status === 'edited' ? 'Bearbeitet' : 'KI-Vorschlag'} · Version ${escapeHtml(review.version || 1)}</p>
+    ${renderAnalysisList('Offene Widersprüche', conflicts)}${renderAnalysisList('Fehlende Angaben', missing)}
     <small>Begleitet fragt nur bei fachlich relevanten Alternativen nach. Unwesentliche Annahmen blockieren die Planung nicht.</small></details>`;
 }
+
+function renderTopicReviewItem(topic, index, count) { const field = (name) => `data-topic-index="${index}" data-topic-field="${name}"`; return `<article class="mapping-item topic-review-item"><label>Titel<input ${field('title')} value="${escapeHtml(topic.title || '')}"></label><label>Unterthemen<textarea ${field('subtopics')}>${escapeHtml((topic.subtopics || []).join('\n'))}</textarea></label><label>Lernziele<textarea ${field('learningObjectives')}>${escapeHtml((topic.learningObjectives || []).map(formatAnalysisItem).join('\n'))}</textarea></label><label>Kompetenzen<textarea ${field('competencies')}>${escapeHtml((topic.competencies || []).map(formatAnalysisItem).join('\n'))}</textarea></label><label>Schwierigkeitsgrad<select ${field('difficulty')}>${['introductory','basic','intermediate','advanced'].map((value) => `<option value="${value}" ${topic.difficulty === value ? 'selected' : ''}>${({ introductory: 'Einstieg', basic: 'Grundlagen', intermediate: 'Mittel', advanced: 'Fortgeschritten' })[value]}</option>`).join('')}</select></label><p><strong>Quellenbelege:</strong> ${escapeHtml((topic.sourceReferences || []).map(planningReviewView.compactSource).join(' · ') || 'keine')}</p><div class="button-row"><button type="button" class="tertiary-button" data-topic-move="up" data-topic-index="${index}" ${index === 0 ? 'disabled' : ''}>Nach oben</button><button type="button" class="tertiary-button" data-topic-move="down" data-topic-index="${index}" ${index === count - 1 ? 'disabled' : ''}>Nach unten</button><button type="button" class="secondary-button" data-topic-remove="${index}">Thema löschen</button></div></article>`; }
 
 function renderDocumentAnalysisCard(document, analyses, index) {
   const id = document.id || `document-${index}`;
@@ -878,7 +889,7 @@ function renderStructureReviewStep(wizard) {
     ${(draft.validation?.errors || []).map((error) => `<p class="status-line status-error">${escapeHtml(error)}</p>`).join('')}
     ${renderConflictOverview(draft)}
     <div class="course-plan-review-table" role="region" aria-label="Unterrichtsplan nach Tagen">${(draft.days || []).map((day) => `<details open><summary>Tag ${escapeHtml(day.dayNumber)}: ${escapeHtml(day.title)}</summary><div class="review-table-scroll"><table><thead><tr><th>Tag</th><th>UE</th><th>Fortlaufend</th><th>Dauer</th><th>Thema</th><th>Inhalt</th><th>Kompetenzziel</th><th>Arbeitsform</th><th>Quellen</th><th>Konflikte und Hinweise</th><th>Prüfstatus</th></tr></thead><tbody>${(day.units || []).map((unit) => renderPlanReviewUnit(unit, draft.conflicts || [])).join('')}</tbody></table></div></details>`).join('')}</div>
-    <div class="button-row"><button class="secondary-button" type="button" data-save-course-structure>Alle Entscheidungen speichern</button><button class="secondary-button" type="button" data-export-course-plan>Als Excel exportieren</button><button class="secondary-button" type="button" data-confirm-course-plan ${canConfirmPlan(draft) ? '' : 'disabled'}>Unterrichtsplan bestätigen</button><button class="primary-button" type="button" data-accept-course-plan ${draft.reviewState?.confirmed ? '' : 'disabled'}>Unterrichtsplan annehmen und weiter</button></div>
+    <div class="button-row"><button class="secondary-button" type="button" data-save-course-structure>Alle Entscheidungen speichern</button><button class="secondary-button" type="button" data-export-course-plan>Als Excel exportieren</button><button class="secondary-button" type="button" data-confirm-course-plan ${canConfirmPlan(draft) ? '' : 'disabled'}>Prüfung abschließen</button><button class="primary-button" type="button" data-accept-course-plan ${draft.reviewState?.confirmed ? '' : 'disabled'}>Unterrichtsplan freigeben und weiter</button></div>
     ${!canConfirmPlan(draft) ? `<p class="status-line status-warning">${escapeHtml(reviewBlockingMessage(draft))}</p>` : ''}
   </article>`;
 }
@@ -1509,6 +1520,12 @@ function bindPlanWizardEvents() {
   }));
   if (hasDocumentAnalysisWorkflow) documentAnalysisWorkflow.bindDocumentAnalysisControls(document, startWizardDocumentAnalysis);
   $('[data-course-plan-start]')?.addEventListener('click', startWizardCoursePlanning);
+  $all('[data-topic-field]').forEach((field) => field.addEventListener('input', () => updateTopicReviewField(field)));
+  $('[data-topic-add]')?.addEventListener('click', () => { const review = state.wizard.courseProject.topicReview; review.topics.push({ id: `topic-user-${Date.now()}`, title: '', subtopics: [], learningObjectives: [], competencies: [], sourceReferences: [], difficulty: 'basic', reviewStatus: 'edited' }); review.status = 'edited'; renderPlanWizard(); });
+  $all('[data-topic-remove]').forEach((button) => button.addEventListener('click', () => { state.wizard.courseProject.topicReview.topics.splice(Number(button.dataset.topicRemove), 1); state.wizard.courseProject.topicReview.status = 'edited'; renderPlanWizard(); }));
+  $all('[data-topic-move]').forEach((button) => button.addEventListener('click', () => moveTopicReview(Number(button.dataset.topicIndex), button.dataset.topicMove)));
+  $('[data-topic-save]')?.addEventListener('click', saveTopicReview);
+  $('[data-topic-confirm]')?.addEventListener('click', confirmTopicReview);
   $('[data-interaction-mode]')?.addEventListener('change', async (event) => {
     const projectId = state.wizard.courseProject?.id;
     if (!projectId) return;
@@ -2001,6 +2018,7 @@ function wizardProjectInput() {
     priorKnowledge: selectionText(state.wizard.structureFrame.priorKnowledge),
     audienceProfile: { ...state.wizard.targetAudience },
     containerProfile: { ...state.wizard.containerProfile },
+    selectedCoursePlanSheet: state.wizard.coursePlan?.selectedSheet || state.wizard.courseProject?.selectedCoursePlanSheet || '',
     structureFrame: { ...state.wizard.structureFrame },
     uploadedDocuments: state.wizard.anchorFiles.map((file) => ({
       ...file, originalFileName: file.name, storedFilePath: file.path, mimeType: file.type,
@@ -2015,6 +2033,7 @@ async function openSavedCourseProject(event) {
     const project = await desktop.factory.getCourseProject(event.target.value);
     state.wizard.courseProject = project;
     if (project.containerProfile) state.wizard.containerProfile = project.containerProfile;
+    if (project.selectedCoursePlanSheet && state.wizard.coursePlan) state.wizard.coursePlan.selectedSheet = project.selectedCoursePlanSheet;
     state.wizard.course = { ...state.wizard.course, courseName: project.title, courseId: project.id, description: project.description, department: project.subjectArea };
     state.wizard.anchorFiles = (project.uploadedDocuments || []).map((file) => ({ ...file, name: file.originalFileName, path: file.storedFilePath, type: file.mimeType, size: file.fileSize, sourceType: file.declaredCategory }));
     if (project.planningFrame) {
@@ -2091,11 +2110,16 @@ async function startWizardCoursePlanning() {
     const progress = await documentAnalysisWorkflow.pollAnalysisUntilTerminal({ operationId: started.operationId, getProgress: desktop.factory.getOperationStatus, inactivityTimeoutMs: 120000, onProgress: (value) => { state.wizard.analysisProgress = value; renderPlanWizard(); } });
     const result = await desktop.factory.getPlanningResult(started.operationId);
     state.wizard.courseProject = await desktop.factory.getCourseProject(state.wizard.courseProject.id);
-    if (progress.status === 'completed' && result.plan) { state.wizard.activeStep = 'structureReview'; state.wizard.selectedPlanDay = 1; state.wizard.selectedPlanUnit = 1; state.wizard.status = 'Unterrichtsplan erstellt.'; }
+    if (progress.status === 'completed' && result.plan) { state.wizard.courseProject = await desktop.factory.getCourseProject(state.wizard.course.courseId); const current = currentStructuredDraft(); if (!current || current.status === 'stale') throw new Error('Die Planung wurde abgeschlossen, aber der erzeugte Unterrichtsplan konnte nicht in das Kursprojekt übernommen werden.'); state.wizard.activeStep = 'structureReview'; state.wizard.selectedPlanDay = 1; state.wizard.selectedPlanUnit = 1; state.wizard.status = 'Unterrichtsplan erstellt und persistent gespeichert.'; }
     else state.wizard.status = formatProgressError(progress);
   } catch (error) { showWizardError('Unterrichtsplanung fehlgeschlagen', error, startWizardCoursePlanning); state.wizard.status = error.message; }
   finally { state.wizard.planningBusy = false; renderPlanWizard(); }
 }
+
+function updateTopicReviewField(field) { const topic = state.wizard.courseProject?.topicReview?.topics?.[Number(field.dataset.topicIndex)]; if (!topic) return; topic[field.dataset.topicField] = ['subtopics','learningObjectives','competencies'].includes(field.dataset.topicField) ? field.value.split(/\r?\n/).map((value) => value.trim()).filter(Boolean) : field.value; topic.reviewStatus = 'edited'; state.wizard.courseProject.topicReview.status = 'edited'; }
+function moveTopicReview(index, direction) { const topics = state.wizard.courseProject.topicReview.topics; const target = direction === 'up' ? index - 1 : index + 1; if (target < 0 || target >= topics.length) return; [topics[index], topics[target]] = [topics[target], topics[index]]; state.wizard.courseProject.topicReview.status = 'edited'; renderPlanWizard(); }
+async function saveTopicReview() { try { state.wizard.courseProject = await desktop.factory.updateTopicReview(state.wizard.course.courseId, { topics: state.wizard.courseProject.topicReview.topics }); state.wizard.status = 'Themenbasis gespeichert.'; } catch (error) { state.wizard.status = error.message; } renderPlanWizard(); }
+async function confirmTopicReview() { try { if (state.wizard.courseProject.topicReview.status === 'edited') await saveTopicReview(); state.wizard.courseProject = await desktop.factory.confirmTopicReview(state.wizard.course.courseId); state.wizard.status = 'Themenbasis bestätigt. Der Unterrichtsplan kann jetzt erstellt werden.'; } catch (error) { state.wizard.status = error.message; } renderPlanWizard(); }
 
 function formatProgressError(progress) {
   const error = (progress.errors || [])[0];
@@ -2230,7 +2254,7 @@ if (new URLSearchParams(window.location.search).get('coursePlanningSmoke') === '
       showPanel('plan-wizard');
     },
     continueFromDurationAudience: () => continueFromDurationAudienceToAiAnalysis(),
-    plan: () => startWizardCoursePlanning(),
+    async plan() { state.wizard.courseProject = await desktop.factory.confirmTopicReview(state.wizard.course.courseId); return startWizardCoursePlanning(); },
     async approve() {
       const draft = currentStructuredDraft();
       state.wizard.courseProject = await desktop.factory.approveStructuredCoursePlan(state.wizard.course.courseId, draft.planningVersion);
@@ -2992,7 +3016,7 @@ async function importRawFiles() {
   const selectedFiles = state.rawImportFiles.length ? state.rawImportFiles : Array.from($('[data-import-files]').files || []);
   const files = selectedFiles.map((file) => ({
     name: file.name,
-    path: file.path || '',
+    sourcePath: desktop.factory.getPathForFile(file),
     size: file.size,
     type: file.type
   }));

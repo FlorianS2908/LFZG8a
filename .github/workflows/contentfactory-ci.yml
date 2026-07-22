@@ -1,7 +1,10 @@
 name: ContentFactory CI
 on:
   push:
-    branches: [agent/contentfactory-standalone]
+    branches:
+      - main
+      - "feature/**"
+      - "agent/**"
   pull_request:
     branches: [main]
 jobs:

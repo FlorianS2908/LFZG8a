@@ -4,7 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { createCoursePlanningService, extractDocument, calculatePlanningFrame, calculateCourseScope, validateDocumentAnalysis, validateCoursePlan, normalizeProject } = require('../app/lib/content-factory/course-planning/course-planning-service');
-const { readWorkbookXml } = require('../app/lib/content-factory/course-plan-parser');
+const { readWorkbookXml, selectCoursePlanSheet } = require('../app/lib/content-factory/course-plan-parser');
 const { normalizeDocumentAnalysis } = require('../app/lib/content-factory/course-planning/document-analysis-schema');
 
 const validFrame = {
@@ -14,6 +14,9 @@ const validFrame = {
   breaks: [{ start: '10:00', end: '10:15' }, { start: '11:45', end: '12:15' }, { start: '13:45', end: '14:00' }, { start: '15:30', end: '15:45' }],
   repetitionUnits: 2, projectUnits: 3, assessmentUnits: 1, bufferUnits: 0
 };
+
+test('Blattauswahl bevorzugt fachlichen Wochenplan statt Änderungshistorie', () => { const sheets = [{ name: 'Änderungshistorie', hidden: false, rows: [['Version', 'Änderung']] }, { name: 'Template Wochenplanung', hidden: false, rows: [['Tag', 'UE', 'Thema', 'Lernziel', 'Dauer', 'Arbeitsform']] }]; const selection = selectCoursePlanSheet(sheets); assert.equal(selection.sheet.name, 'Template Wochenplanung'); assert.ok(selection.scores[1].score > selection.scores[0].score); });
+test('fehlendes geeignetes Blatt verlangt manuelle Prüfung', () => { const selection = selectCoursePlanSheet([{ name: 'Hinweise', hidden: false, rows: [['Allgemeine Hinweise']] }]); assert.equal(selection.sheet, null); assert.match(selection.message, /manuell auswählen/); });
 
 test('Planungsrahmen berechnet Nettozeit und reservierte UE deterministisch', () => {
   const result = calculatePlanningFrame(validFrame);
@@ -144,6 +147,7 @@ test('Mehrdokumentlauf normalisiert Einzelfund, bewahrt Erfolge und plant trotz 
   assert.deepEqual(project.documentAnalyses[0].learningObjectives, [{ title: 'Fachziel' }]);
   assert.equal(project.uploadedDocuments.find((item) => item.id === 'd2').analysisStatus, 'failed');
   assert.equal(project.coursePlanDrafts.length, 0);
+  service.confirmTopicReview('multi');
   const planning = service.startCoursePlanning({ projectId: 'multi' });
   do { await new Promise((resolve) => setTimeout(resolve, 10)); progress = service.getOperationStatus(planning.operationId); } while (!['completed', 'failed', 'timed_out', 'cancelled'].includes(progress.status));
   project = service.getProject('multi');
@@ -235,6 +239,7 @@ test('Analyse verwendet gespeicherten Vollkontext und repariert eine formal fals
   assert.match(analysisInput.extraction.sections.map((section) => `${section.title || ''} ${section.textPreview || section.content || ''}`).join(' '), /Segmentierung/);
   assert.equal(analysisInput.structureFrame.totalUnits, 2);
   assert.equal(analysisInput.project.courseGoal, 'Sicher planen');
+  service.confirmTopicReview('context');
   const planning = service.startCoursePlanning({ projectId: 'context' });
   do { await new Promise((resolve) => setTimeout(resolve, 10)); progress = service.getOperationStatus(planning.operationId); } while (!['completed', 'failed', 'timed_out', 'cancelled'].includes(progress.status));
   assert.equal(planningInputs.length, 2);
@@ -307,6 +312,7 @@ test('Analysecache bleibt bei Planungstimeout erhalten und Planung sendet nur Ka
   operation = service.startDocumentAnalysis({ projectId: 'split' });
   do { await new Promise((resolve) => setTimeout(resolve, 5)); progress = service.getOperationStatus(operation.operationId); } while (!['completed', 'failed'].includes(progress.status));
   assert.equal(analysisCalls, 1);
+  service.confirmTopicReview('split');
   operation = service.startCoursePlanning({ projectId: 'split', timeoutMs: 5 });
   do { await new Promise((resolve) => setTimeout(resolve, 5)); progress = service.getOperationStatus(operation.operationId); } while (!['completed', 'failed', 'timed_out'].includes(progress.status));
   const project = service.getProject('split');

@@ -10,7 +10,7 @@ const DOCUMENT_ANALYSIS_CHANNELS = Object.freeze({
   generatePlan: 'factory:generate-structured-course-plan', startPlanning: 'factory:start-course-planning', operationStatus: 'factory:get-operation-status', planningResult: 'factory:get-planning-result',
   aiUnderstanding: 'factory:get-ai-understanding', collaboration: 'factory:update-plan-collaboration', reviseTarget: 'factory:revise-plan-target', restoreVersion: 'factory:restore-plan-version',
   applyConfiguration: 'factory:apply-course-plan-configuration', classbookModel: 'factory:get-course-plan-classbook-model', exportPlan: 'factory:export-course-plan-xlsx',
-  decideConflict: 'factory:decide-course-plan-conflict', editUnit: 'factory:edit-course-plan-unit', confirmReview: 'factory:confirm-course-plan-review', acceptReview: 'factory:accept-course-plan-review'
+  decideConflict: 'factory:decide-course-plan-conflict', editUnit: 'factory:edit-course-plan-unit', confirmReview: 'factory:confirm-course-plan-review', acceptReview: 'factory:accept-course-plan-review', updateTopics: 'factory:update-topic-review', confirmTopics: 'factory:confirm-topic-review'
 });
 
 const invoke = (channel) => (...args) => ipcRenderer.invoke(channel, ...args);
@@ -34,6 +34,7 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
     revisePlanTarget: invoke(DOCUMENT_ANALYSIS_CHANNELS.reviseTarget), restorePlanVersion: invoke(DOCUMENT_ANALYSIS_CHANNELS.restoreVersion),
     applyCoursePlanConfiguration: invoke(DOCUMENT_ANALYSIS_CHANNELS.applyConfiguration), getCoursePlanClassbookModel: invoke(DOCUMENT_ANALYSIS_CHANNELS.classbookModel), exportCoursePlanXlsx: invoke(DOCUMENT_ANALYSIS_CHANNELS.exportPlan),
     decideCoursePlanConflict: invoke(DOCUMENT_ANALYSIS_CHANNELS.decideConflict), editCoursePlanUnit: invoke(DOCUMENT_ANALYSIS_CHANNELS.editUnit), confirmCoursePlanReview: invoke(DOCUMENT_ANALYSIS_CHANNELS.confirmReview), acceptCoursePlanReview: invoke(DOCUMENT_ANALYSIS_CHANNELS.acceptReview),
+    updateTopicReview: invoke(DOCUMENT_ANALYSIS_CHANNELS.updateTopics), confirmTopicReview: invoke(DOCUMENT_ANALYSIS_CHANNELS.confirmTopics),
     generateStructuredCoursePlan: invoke(DOCUMENT_ANALYSIS_CHANNELS.generatePlan), saveStructuredCoursePlan: invoke('factory:save-structured-course-plan'),
     acknowledgeDocumentFailure: invoke('factory:acknowledge-document-failure'),
     approveStructuredCoursePlan: invoke('factory:approve-structured-course-plan'),

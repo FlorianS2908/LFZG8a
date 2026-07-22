@@ -18,6 +18,8 @@ const DOCUMENT_ANALYSIS_CHANNELS = Object.freeze({
   ,editUnit: 'factory:edit-course-plan-unit'
   ,confirmReview: 'factory:confirm-course-plan-review'
   ,acceptReview: 'factory:accept-course-plan-review'
+  ,updateTopics: 'factory:update-topic-review'
+  ,confirmTopics: 'factory:confirm-topic-review'
 });
 
 const IPC_CONTRACTS = Object.freeze(Object.fromEntries(Object.entries(DOCUMENT_ANALYSIS_CHANNELS).map(([operation, channel]) => [operation, Object.freeze({ apiVersion: API_VERSION, channel, permission: 'admin', operation, transport: ['progress', 'operationStatus'].includes(operation) ? 'poll' : 'invoke', errorCodes: ['DOCUMENT_ANALYSIS_INPUT', 'OPERATION_NOT_FOUND', 'PLAN_TARGET_LOCKED'] })])));

@@ -255,6 +255,8 @@ function registerIpc() {
     [DOCUMENT_ANALYSIS_CHANNELS.editUnit]: 'editCoursePlanUnit',
     [DOCUMENT_ANALYSIS_CHANNELS.confirmReview]: 'confirmCoursePlanReview',
     [DOCUMENT_ANALYSIS_CHANNELS.acceptReview]: 'acceptCoursePlanReview',
+    [DOCUMENT_ANALYSIS_CHANNELS.updateTopics]: 'updateTopicReview',
+    [DOCUMENT_ANALYSIS_CHANNELS.confirmTopics]: 'confirmTopicReview',
     'factory:save-planning-frame': 'savePlanningFrame',
     'factory:save-course-scope': 'saveCourseScope',
     [DOCUMENT_ANALYSIS_CHANNELS.generatePlan]: 'generateStructuredCoursePlan',

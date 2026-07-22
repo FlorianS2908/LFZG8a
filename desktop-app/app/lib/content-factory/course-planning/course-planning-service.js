@@ -241,6 +241,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     updateProgress(progress, 'merging', 'topic_consolidation', 'Themen werden zusammengeführt');
     project.mergedKnowledgeBase = mergeAnalyses(successful);
     project.topicCatalog = consolidateTopicCatalog(successful);
+    project.topicReview = createTopicReview(project.topicCatalog, successful, project.topicReview);
     setProjectPhase(project, 'topic_consolidation', 'completed', { progress: 100 });
     saveProject(project);
     progress.status = progress.failed || progress.warningCount ? 'completed_with_warnings' : 'completed';
@@ -265,6 +266,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
   function startCoursePlanning(input = {}) {
     const project = getProject(input.projectId);
     if (!['completed', 'completed_with_warnings'].includes(project.pipelinePhases?.document_analysis?.status) || !project.topicCatalog?.topics?.length) throw sourceError('PLANNING_REQUIRES_ANALYSIS', 'Der Unterrichtsplan kann erst nach abgeschlossener Dokumentanalyse und Themenkonsolidierung erstellt werden.');
+    if (project.topicReview?.status !== 'confirmed') throw sourceError('PLANNING_REQUIRES_TOPIC_REVIEW', 'Prüfe und bestätige zuerst die erkannten Themen und Analyseergebnisse.');
     if ([...operations.values()].some((item) => item.projectId === project.id && item.kind === 'planning' && !TERMINAL_OPERATION_STATUSES.has(item.progress.status))) throw analysisInputError('Für dieses Kursprojekt läuft bereits eine Unterrichtsplanung.');
     const operationId = `planning-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const controller = new AbortController();
@@ -354,7 +356,8 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     const planningVersion = Number(project.currentPlanningVersion || 0) + 1;
     const planningInput = {
       course: projectContext(project), structureFrame: cloneSerializable(structureFrame),
-      topicCatalog: cloneSerializable(project.topicCatalog || consolidateTopicCatalog(analyses)),
+      topicCatalog: { ...cloneSerializable(project.topicCatalog || {}), topics: cloneSerializable(project.topicReview?.topics || project.topicCatalog?.topics || []) },
+      topicReviewVersion: Number(project.topicReview?.version || 0),
       ueScaffold: cloneSerializable(input.scaffold || project.ueScaffold || buildUeScaffold(structureFrame)),
       bindingTopics: input.bindingTopics || [], excludedTopics: input.excludedTopics || [],
       planningConfiguration: cloneSerializable(project.containerProfile?.didacticCourse || project.structuredRequirements || {})
@@ -379,6 +382,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
       structureFrameSnapshot: structureFrame, provider: provider.name, model: provider.model,
       promptVersion: 'course-plan-v2', planningStage: 'ai_groundwork', classbookModel: toClassbookModel(raw), createdAt: now, updatedAt: now
     });
+    draft.topicReviewVersion = Number(project.topicReview?.version || 0); draft.topicReviewSourceAnalysisVersions = cloneSerializable(project.topicReview?.sourceAnalysisVersions || []);
     project.coursePlanDrafts.push(draft);
     project.currentPlanningVersion = planningVersion;
     return saveProject(project);
@@ -415,6 +419,16 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
   }
 
   function getAiUnderstanding(projectId) { return buildAiUnderstanding(getProject(projectId)); }
+
+  function updateTopicReview(projectId, input = {}) {
+    const project = getProject(projectId); const current = project.topicReview || createTopicReview(project.topicCatalog, latestAnalyses(project.documentAnalyses));
+    const topics = Array.isArray(input.topics) ? input.topics.map((topic, index) => ({ ...(current.topics[index] || {}), ...topic, id: topic.id || current.topics[index]?.id || `topic-${index + 1}`, reviewStatus: topic.reviewStatus || 'edited' })) : current.topics;
+    project.topicReview = { ...current, topics, status: 'edited', version: Number(current.version || 0) + 1, confirmedAt: null, confirmedBy: null, updatedAt: new Date().toISOString() };
+    if (project.coursePlanDrafts.length) { project.coursePlanDrafts = project.coursePlanDrafts.map((draft) => draft.status === 'approved' ? draft : { ...draft, status: 'stale', staleReason: 'Die bestätigte Themenbasis wurde verändert.', staleAt: new Date().toISOString() }); project.approvedCoursePlan = null; }
+    return saveProject(project);
+  }
+
+  function confirmTopicReview(projectId, confirmedBy = null) { const project = getProject(projectId); if (!project.topicReview?.topics?.length) throw new Error('Die Themenbasis ist leer.'); project.topicReview = { ...project.topicReview, status: 'confirmed', confirmedAt: new Date().toISOString(), confirmedBy: confirmedBy || null }; return saveProject(project); }
 
   function decidePlanConflict(projectId, version, input = {}) { return reviseReviewedPlan(projectId, version, (draft) => applyConflictDecision(draft, input), 'conflict_resolution'); }
   function editPlanUnit(projectId, version, input = {}) { return reviseReviewedPlan(projectId, version, (draft) => editUnit(draft, input), 'manual_edit'); }
@@ -507,7 +521,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     return saveProject(project);
   }
 
-  return { getProject, listProjects, upsertProject, importSourceFile, startDocumentAnalysis, startCoursePlanning, getAnalysisProgress, getOperationStatus, getPlanningResult, cancelAiOperation, savePlanningFrame, saveCourseScope, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan, decidePlanConflict, editPlanUnit, confirmReviewedPlan, acceptReviewedPlan, applyContainerConfiguration, getClassbookModel, exportStoredCoursePlan, getAiUnderstanding, updatePlanCollaboration, reviseTarget, restorePlanVersion };
+  return { getProject, listProjects, upsertProject, importSourceFile, startDocumentAnalysis, startCoursePlanning, getAnalysisProgress, getOperationStatus, getPlanningResult, cancelAiOperation, savePlanningFrame, saveCourseScope, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan, updateTopicReview, confirmTopicReview, decidePlanConflict, editPlanUnit, confirmReviewedPlan, acceptReviewedPlan, applyContainerConfiguration, getClassbookModel, exportStoredCoursePlan, getAiUnderstanding, updatePlanCollaboration, reviseTarget, restorePlanVersion };
 }
 
 function analysisInputError(message) { const error = new Error(message); error.code = 'DOCUMENT_ANALYSIS_INPUT'; return error; }
@@ -661,6 +675,7 @@ function normalizeProject(project, id) {
   else if (normalized.structureFrame) normalized.structureFrame = { ...normalized.structureFrame, ...calculateCourseScope({ ...normalized.structureFrame, targetAudience: normalized.structureFrame.targetAudience ?? normalized.structureFrame.targetGroup ?? normalized.targetGroup, priorKnowledge: normalized.structureFrame.priorKnowledge ?? normalized.priorKnowledge }) };
   normalized.uploadedDocuments = (normalized.uploadedDocuments || []).map(normalizeDocument);
   normalized.documentAnalyses = (normalized.documentAnalyses || []).map((analysis) => ({ ...analysis, ...normalizeDocumentAnalysis(analysis, { documentId: analysis.documentId, documentType: analysis.documentType }).value }));
+  if (!normalized.topicReview && normalized.topicCatalog?.topics?.length) normalized.topicReview = createTopicReview(normalized.topicCatalog, latestAnalyses(normalized.documentAnalyses));
   normalized.coursePlanDrafts = (normalized.coursePlanDrafts || []).map((draft) => { const plan = normalizePlanReview(normalizeCanonicalPlan(draft, { ...(draft.structureFrameSnapshot || normalized.structureFrame || {}), courseId: normalized.id, title: normalized.title })); return { ...plan, classbookModel: toClassbookModel(plan) }; });
   if (normalized.approvedCoursePlan) normalized.approvedCoursePlan = normalizeCanonicalPlan(normalized.approvedCoursePlan, { ...(normalized.approvedCoursePlan.structureFrameSnapshot || normalized.structureFrame || {}), courseId: normalized.id, title: normalized.title });
   normalized.pipelinePhases = { ...defaultPipelinePhases(), ...(normalized.pipelinePhases || {}) };
@@ -686,6 +701,7 @@ function consolidateTopicCatalog(items = []) {
   }));
   return { schemaVersion: 1, topics: [...topics.values()], conflicts: items.flatMap((item) => item.conflicts || []), unassigned: items.flatMap((item) => item.missingInformation || []), sourceAnalysisVersions: items.map((item) => ({ documentId: item.documentId, analysisVersion: item.analysisVersion })), createdAt: new Date().toISOString() };
 }
+function createTopicReview(catalog = {}, analyses = [], existing = null) { if (existing?.topics?.length) return existing; return { schemaVersion: 1, status: 'pending', confirmedAt: null, confirmedBy: null, version: 1, sourceAnalysisVersions: analyses.map((item) => ({ documentId: item.documentId, analysisVersion: item.analysisVersion })), topics: cloneSerializable(catalog.topics || []).map((topic) => ({ ...topic, reviewStatus: 'ai_proposal' })), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; }
 function buildUeScaffold(frame = {}) {
   if (!frame.valid || !Number.isInteger(Number(frame.totalDays)) || !Number.isInteger(Number(frame.totalUnits))) throw sourceError('UE_SCAFFOLD_INVALID', 'Der bestätigte Kursrahmen ist für ein UE-Gerüst ungültig.');
   const totalDays = Number(frame.totalDays); const totalUnits = Number(frame.totalUnits);

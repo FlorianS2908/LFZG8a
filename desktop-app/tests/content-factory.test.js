@@ -1239,7 +1239,7 @@ test('content factory plan wizard renders gated single steps with source and ai 
   assert.match(ui, /data-plan-step-content="\$\{escapeHtml\(|data-plan-step-content="anchor"/);
   assert.match(ui, /data-document-analyze/);
   assert.match(ui, /Dokumente analysieren/);
-  assert.match(ui, /Unterrichtsplan aus Analyse erstellen/);
+  assert.match(ui, /Unterrichtsplan erstellen/);
   assert.match(ui, /data-save-course-scope/);
   assert.doesNotMatch(ui, /data-save-planning-frame/);
   assert.doesNotMatch(ui, /desktop\.factory\.savePlanningFrame/);
@@ -1253,6 +1253,8 @@ test('content factory plan wizard renders gated single steps with source and ai 
   assert.match(ui, /renderWorkflowStepShell/);
   assert.match(ui, /renderWorkflowHeader/);
 });
+
+test('Expertenimport löst File-Objekte ausschließlich über die Preload-API auf', () => { const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8'); const body = ui.slice(ui.indexOf('async function importRawFiles()'), ui.indexOf('function openBatch')); assert.match(body, /desktop\.factory\.getPathForFile\(file\)/); assert.doesNotMatch(body, /file\.path/); });
 
 test('content factory workflow registry and layout explain guided workflows', () => {
   const workflows = workflowRegistry.listWorkflows();
