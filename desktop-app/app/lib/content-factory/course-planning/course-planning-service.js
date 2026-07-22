@@ -6,6 +6,7 @@ const { extractSourceOutline } = require('../source-extraction/source-extractor-
 const { normalizeDocumentAnalysis, validateDocumentAnalysis } = require('./document-analysis-schema');
 
 const ORIGIN_STATUSES = new Set(['explicit', 'derived', 'generated', 'conflicting', 'needs_review']);
+const TERMINAL_OPERATION_STATUSES = new Set(['completed', 'completed_with_warnings', 'failed', 'cancelled']);
 
 function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = console }) {
   const rootDir = path.join(factoryDir, 'course-projects');
@@ -41,7 +42,9 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     const provider = aiOrchestrator.openai;
     if (!provider?.isConfigured()) throw new Error('KI nicht konfiguriert. Bitte OPENAI_API_KEY und OPENAI_MODEL in den KI-Einstellungen konfigurieren.');
     if (!project.structureFrame?.valid || !project.structureFrame?.confirmed) throw new Error('Dauer und Zielgruppe müssen vor der KI-Analyse vollständig bestätigt werden.');
-    if ([...operations.values()].some((item) => item.projectId === project.id && item.progress.status === 'running')) throw analysisInputError('Für dieses Kursprojekt läuft bereits eine Dokumentanalyse.');
+    const requestedFrame = input.structureFrameSnapshot || input.project?.structureFrame;
+    if (requestedFrame && stableSnapshot(requestedFrame) !== stableSnapshot(project.structureFrame)) throw analysisInputError('Der Kursrahmen wurde zwischen Speichern und Analysestart geändert. Bitte speichern und starten Sie die Analyse erneut.');
+    if ([...operations.values()].some((item) => item.projectId === project.id && !TERMINAL_OPERATION_STATUSES.has(item.progress.status))) throw analysisInputError('Für dieses Kursprojekt läuft bereits eine Dokumentanalyse.');
     const retryDocumentId = typeof input.retryDocumentId === 'string' ? input.retryDocumentId.trim() : '';
     const sourceDocuments = Array.isArray(input.documents) ? input.documents : project.uploadedDocuments;
     const seenIds = new Set();
@@ -55,8 +58,8 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     const operationId = `analysis-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const controller = new AbortController();
     const total = selectedDocuments.length;
-    const progress = { operationId, projectId: project.id, status: 'running', step: 'Dokumente werden vorbereitet', currentDocument: '', total, queued: total, inProgress: 0, completed: 0, warningCount: 0, failed: 0, warnings: [], errors: [], startedAt: new Date().toISOString(), completedAt: null };
-    const operationInput = { ...input, retryDocumentId, selectedDocumentIds: selectedDocuments.map((document) => document.id) };
+    const progress = { operationId, projectId: project.id, status: 'preparing', step: 'Dokumente werden vorbereitet', currentDocument: '', total, queued: total, inProgress: 0, completed: 0, warningCount: 0, failed: 0, warnings: [], errors: [], planningVersion: Number(project.currentPlanningVersion || 0) + 1, startedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), completedAt: null };
+    const operationInput = { ...input, retryDocumentId, structureFrameSnapshot: cloneSerializable(project.structureFrame), selectedDocumentIds: selectedDocuments.map((document) => document.id) };
     const operation = { controller, progress, projectId: project.id };
     operations.set(operationId, operation);
     logger.info?.('[DocumentAnalysis]', { event: 'started', operationId, projectId: project.id, documentCount: total });
@@ -69,10 +72,11 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
       progress.completedAt = new Date().toISOString();
       logger.info?.('[DocumentAnalysis]', { event: 'finished', operationId, projectId: project.id, status: progress.status, completed: progress.completed, warnings: progress.warningCount, failed: progress.failed });
     });
-    return { operationId, status: 'running', progress };
+    return { operationId, status: 'preparing', progress };
   }
 
   async function runDocumentAnalysis(input, project, provider, controller, progress) {
+    progress.status = 'extracting';
     const analyses = [...project.documentAnalyses];
     const existingDocuments = new Map((project.uploadedDocuments || []).map((document) => [document.id, document]));
     const uploadedDocuments = (input.documents || project.uploadedDocuments || []).map((document, index) => normalizeDocument({ ...(existingDocuments.get(document.id) || {}), ...document }, index));
@@ -93,6 +97,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
       try {
         progress.currentDocument = document.originalFileName;
         progress.step = document.processingStep;
+        progress.status = 'extracting';
         document.extractionStatus = 'extracting';
         saveProject(project);
         const extraction = extractDocument(document);
@@ -101,7 +106,9 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
         document.analysisStatus = 'analyzing';
         document.processingStep = 'Dokument wird durch die KI analysiert';
         progress.step = document.processingStep;
-        const raw = await provider.analyzeDocument({ project: projectContext(project), document, extraction }, { signal: controller.signal });
+        progress.status = 'analyzing';
+        progress.updatedAt = new Date().toISOString();
+        const raw = await provider.analyzeDocument({ project: projectContext(project), structureFrame: input.structureFrameSnapshot, document, extraction }, { signal: controller.signal });
         const normalized = normalizeDocumentAnalysis(raw, { documentId: document.id, documentType: extraction.documentType });
         const validation = validateDocumentAnalysis(normalized.value);
         if (!validation.valid) {
@@ -144,12 +151,22 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     if (controller.signal.aborted) { progress.status = 'cancelled'; saveProject(project); return; }
     const successful = latestAnalyses(analyses).filter((item) => !item.failed);
     if (!successful.length) { progress.status = 'failed'; progress.step = 'Keine verwertbare Dokumentanalyse'; saveProject(project); return; }
+    const blockingFailure = uploadedDocuments.find((document) => document.bindingLevel === 'binding' && document.analysisStatus === 'failed' && !document.failureAcknowledged);
+    if (blockingFailure) {
+      progress.status = 'failed';
+      progress.step = 'Verbindliche Hauptquelle konnte nicht analysiert werden';
+      progress.errors.push({ documentId: blockingFailure.id, message: 'Eine verbindliche Hauptquelle muss erneut analysiert oder ausdrücklich als Ausnahme bestätigt werden.' });
+      saveProject(project);
+      return;
+    }
     progress.step = 'Ergebnisse werden zusammengeführt';
     project.mergedKnowledgeBase = mergeAnalyses(successful);
     saveProject(project);
     progress.step = 'Tage und Unterrichtseinheiten werden geplant';
+    progress.status = 'planning';
     await generateCoursePlan({ projectId: project.id, signal: controller.signal });
     progress.step = 'Kursstruktur wird validiert';
+    progress.status = 'validating';
     progress.status = progress.failed || progress.warningCount ? 'completed_with_warnings' : 'completed';
     progress.step = 'Review wird vorbereitet';
   }
@@ -186,9 +203,14 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
       error.code = 'COURSE_SCOPE_VALIDATION';
       throw error;
     }
-    project.structureFrame = { ...(project.structureFrame || {}), ...structureFrame, confirmed: true };
+    const previousSnapshot = courseScopeSignature(project.structureFrame || {});
+    project.structureFrame = { ...(project.structureFrame || {}), ...input, ...structureFrame, confirmed: true, savedAt: new Date().toISOString() };
     project.targetGroup = selectionText(structureFrame.targetAudience);
     project.priorKnowledge = selectionText(structureFrame.priorKnowledge);
+    if (previousSnapshot && previousSnapshot !== courseScopeSignature(project.structureFrame)) {
+      project.coursePlanDrafts = project.coursePlanDrafts.map((draft) => ({ ...draft, status: 'stale', staleReason: 'Der Kursrahmen wurde geändert.', staleAt: new Date().toISOString() }));
+      project.approvedCoursePlan = null;
+    }
     return saveProject(project);
   }
 
@@ -201,16 +223,26 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     const analyses = latestAnalyses(project.documentAnalyses).filter((item) => !item.failed);
     if (!analyses.length) throw new Error('Mindestens eine erfolgreiche Dokumentanalyse ist erforderlich.');
     const planningVersion = Number(project.currentPlanningVersion || 0) + 1;
-    const raw = await provider.generateStructuredCoursePlan({
-      course: projectContext(project), structureFrame,
+    const planningInput = {
+      course: projectContext(project), structureFrame: cloneSerializable(structureFrame),
       documentAnalyses: analyses, mergedKnowledgeBase: project.mergedKnowledgeBase,
       bindingTopics: input.bindingTopics || [], excludedTopics: input.excludedTopics || []
-    }, { signal: input.signal });
-    const validation = validateCoursePlan(raw, structureFrame);
+    };
+    let raw = await provider.generateStructuredCoursePlan(planningInput, { signal: input.signal });
+    let validation = validateCoursePlan(raw, structureFrame);
+    if (validation.status === 'failed') {
+      raw = await provider.generateStructuredCoursePlan({ ...planningInput, repairAttempt: 1, validationErrors: validation.errors }, { signal: input.signal });
+      validation = validateCoursePlan(raw, structureFrame);
+    }
+    if (validation.status === 'failed') {
+      const error = new Error(`Die KI-Kursstruktur passt auch nach einem Reparaturversuch nicht zum bestätigten Kursrahmen: ${validation.errors.join(' | ')}`);
+      error.code = 'COURSE_PLAN_VALIDATION';
+      throw error;
+    }
     const now = new Date().toISOString();
     const draft = {
       ...raw, id: `course-plan-${project.id}-${planningVersion}`, planningVersion,
-      status: validation.status === 'failed' ? 'needs_review' : 'draft', validation,
+      status: 'draft', validation,
       sourceAnalysisVersions: analyses.map((item) => ({ documentId: item.documentId, analysisVersion: item.analysisVersion })),
       structureFrameSnapshot: structureFrame, provider: provider.name, model: provider.model,
       promptVersion: 'course-plan-v1', createdAt: now, updatedAt: now
@@ -267,6 +299,8 @@ function extractDocument(document) {
     return { documentId: document.id, fileName: document.originalFileName, documentType: 'spreadsheet', sections, warnings: ['Makros wurden nicht ausgeführt.'] };
   }
   const outline = extractSourceOutline({ name: document.originalFileName, path: document.storedFilePath });
+  const extractedCharacters = Number(outline.quality?.extractedCharacters || 0);
+  if (!outline.searchable || extractedCharacters < 1) throw new Error(`Datei kann nicht vollständig analysiert werden, weil kein sicher extrahierter Text verfügbar ist: ${document.originalFileName}`);
   return { documentId: document.id, fileName: document.originalFileName, documentType: outline.format, sections: outline.sections || [], warnings: outline.warnings || [] };
 }
 
@@ -345,8 +379,14 @@ function validateCoursePlan(value = {}, frame = {}) {
   const days = Array.isArray(value.days) ? value.days : [];
   if (days.length !== Number(frame.totalDays)) errors.push(`Erwartet werden ${frame.totalDays} Kurstage.`);
   const units = days.flatMap((day) => (day.units || []).map((unit) => ({ ...unit, dayNumber: unit.dayNumber || day.dayNumber })));
-  if (units.length !== Number(frame.actuallyPlannableUnits)) errors.push(`Erwartet werden genau ${frame.actuallyPlannableUnits} planbare UE, erhalten: ${units.length}.`);
-  if (Array.isArray(frame.unitsByDay) && frame.schemaVersion !== 1) days.forEach((day, index) => { if ((day.units || []).length !== frame.unitsByDay[index]) errors.push(`Tag ${index + 1}: erwartet ${frame.unitsByDay[index]} UE, erhalten ${(day.units || []).length}.`); });
+  const expectedTotalUnits = Number(frame.totalUnits ?? frame.actuallyPlannableUnits);
+  if (units.length !== expectedTotalUnits) errors.push(`Erwartet werden genau ${expectedTotalUnits} UE, erhalten: ${units.length}.`);
+  const expectedUnitsByDay = Array.isArray(frame.unitsByDay) && frame.unitsByDay.length === Number(frame.totalDays)
+    ? frame.unitsByDay.map(Number)
+    : frame.unitsPerDay ? Array.from({ length: Number(frame.totalDays) }, () => Number(frame.unitsPerDay)) : [];
+  if (expectedUnitsByDay.length) days.forEach((day, index) => {
+    if ((day.units || []).length !== expectedUnitsByDay[index]) errors.push(`Tag ${index + 1}: erwartet ${expectedUnitsByDay[index]} UE, erhalten ${(day.units || []).length}.`);
+  });
   const keys = new Set();
   units.forEach((unit, index) => {
     const key = `${unit.dayNumber}:${unit.unitNumber}`;
@@ -372,7 +412,49 @@ function normalizeProject(project, id) {
 function normalizeDocument(file = {}, index = 0) { const now = new Date().toISOString(); return { id: file.id || `document-${Date.now()}-${index}`, originalFileName: file.originalFileName || file.name || '', storedFilePath: file.storedFilePath || file.path || '', mimeType: file.mimeType || file.type || '', fileSize: Number(file.fileSize || file.size || 0), declaredCategory: file.declaredCategory || file.sourceType || '', detectedCategory: file.detectedCategory || '', sourcePriority: file.sourcePriority || 'normal', bindingLevel: file.bindingLevel || 'binding', selectedRanges: file.selectedRanges || [{ id: 'entire', rangeType: 'entire_document' }], extractionStatus: file.extractionStatus || 'queued', analysisStatus: file.analysisStatus || (file.excluded ? 'excluded' : 'queued'), processingStep: file.processingStep || '', analysisAttempts: Number(file.analysisAttempts || 0), analysisError: file.analysisError || null, createdAt: file.createdAt || now, updatedAt: now, ...file }; }
 function latestAnalyses(items = []) { const map = new Map(); items.forEach((item) => { if (!map.has(item.documentId) || map.get(item.documentId).analysisVersion < item.analysisVersion) map.set(item.documentId, item); }); return [...map.values()]; }
 function mergeAnalyses(items = []) { return { analysisVersions: items.map((item) => ({ documentId: item.documentId, analysisVersion: item.analysisVersion })), topics: items.flatMap((item) => item.topics || []), learningObjectives: items.flatMap((item) => item.learningObjectives || []), conflicts: items.flatMap((item) => item.conflicts || []), missingInformation: items.flatMap((item) => item.missingInformation || []), createdAt: new Date().toISOString() }; }
-function projectContext(project) { return { id: project.id, title: project.title, description: project.description, subjectArea: project.subjectArea, targetGroup: project.targetGroup, priorKnowledge: project.priorKnowledge }; }
+function projectContext(project) {
+  return {
+    id: project.id,
+    courseId: project.id,
+    title: project.title,
+    courseName: project.title,
+    description: project.description,
+    subjectArea: project.subjectArea,
+    department: project.subjectArea,
+    courseGoal: project.courseGoal || '',
+    expectedOutcome: project.expectedOutcome || '',
+    targetGroup: project.targetGroup,
+    priorKnowledge: project.priorKnowledge,
+    audienceProfile: cloneSerializable(project.audienceProfile || {}),
+    targetAudience: cloneSerializable(project.structureFrame?.targetAudience || {}),
+    priorKnowledgeSelection: cloneSerializable(project.structureFrame?.priorKnowledge || {})
+  };
+}
+function cloneSerializable(value) { return JSON.parse(JSON.stringify(value ?? null)); }
+function stableSnapshot(value) { return JSON.stringify(sortSnapshot(cloneSerializable(value))); }
+function sortSnapshot(value) {
+  if (Array.isArray(value)) return value.map(sortSnapshot);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.keys(value).sort().map((key) => [key, sortSnapshot(value[key])]));
+}
+function courseScopeSignature(frame = {}) {
+  if (!frame || !Object.keys(frame).length) return '';
+  return stableSnapshot({
+    totalDays: frame.totalDays,
+    unitsPerDay: frame.unitsPerDay,
+    unitsByDay: frame.unitsByDay,
+    totalUnits: frame.totalUnits,
+    unitDurationMinutes: frame.unitDurationMinutes,
+    targetAudience: frame.targetAudience,
+    priorKnowledge: frame.priorKnowledge,
+    audienceProfile: frame.audienceProfile,
+    deliveryMode: frame.deliveryMode,
+    repetitionUnits: frame.repetitionUnits,
+    projectUnits: frame.projectUnits,
+    assessmentUnits: frame.assessmentUnits,
+    bufferUnits: frame.bufferUnits
+  });
+}
 function safeId(value) { const id = String(value || 'course-project').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, ''); if (!id) throw new Error('Ungültige Projekt-ID.'); return id; }
 function positive(value, label, errors) { const number = Number(value); if (!Number.isFinite(number) || number <= 0) { errors.push(`${label} muss größer als 0 sein.`); return 0; } return number; }
 function positiveInteger(value, label, errors) { const number = Number(value); if (!Number.isInteger(number) || number <= 0) { errors.push(`${label} muss eine positive ganze Zahl sein.`); return 0; } return number; }

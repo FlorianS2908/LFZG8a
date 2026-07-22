@@ -29,7 +29,7 @@ function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
 }
 
-function createContentFactoryService({ appData, projectRoot = process.cwd(), safeStorage, migrationPath }) {
+function createContentFactoryService({ appData, projectRoot = process.cwd(), safeStorage, migrationPath, coursePlanningAiOrchestrator = null }) {
   const factoryDir = path.join(appData.dataDir, 'content-factory');
   const batchesPath = path.join(factoryDir, 'import-batches.json');
   const storage = createContainerStorageService({
@@ -40,7 +40,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd(), saf
   const aiKeyStore = createAiKeyStoreService({ appData, safeStorage, migrationPath });
   const aiOrchestrator = new AiOrchestrator({ projectRoot, aiKeyStore });
   const curriculumPlanner = createCurriculumPlannerService({ factoryDir, aiOrchestrator });
-  const coursePlanning = createCoursePlanningService({ factoryDir, aiOrchestrator });
+  const coursePlanning = createCoursePlanningService({ factoryDir, aiOrchestrator: coursePlanningAiOrchestrator || aiOrchestrator });
   const cleanup = createCleanupService({ factoryDir, storage });
 
   function ensureFactory() {

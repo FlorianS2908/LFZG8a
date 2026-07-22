@@ -11,14 +11,27 @@
 
   function createDocumentAnalysisPayload({ project, documents, retryDocumentId }) {
     const retryId = normalizeRetryDocumentId(retryDocumentId);
+    const selectedDocuments = (Array.isArray(documents) ? documents : [])
+      .filter((document) => document && !document.excluded && (!retryId || document.id === retryId));
+    const projectSnapshot = cloneSerializable(project || {});
+    const structureFrameSnapshot = cloneSerializable(projectSnapshot.structureFrame || {});
     return {
-      project,
-      documents: Array.isArray(documents) ? documents : [],
-      retryDocumentId: retryId
+      project: projectSnapshot,
+      projectId: projectSnapshot.id || '',
+      documents: cloneSerializable(selectedDocuments),
+      retryDocumentId: retryId,
+      structureFrameSnapshot,
+      requestedAt: new Date().toISOString()
     };
   }
 
+  function cloneSerializable(value) {
+    if (typeof structuredClone === 'function') return structuredClone(value);
+    return JSON.parse(JSON.stringify(value));
+  }
+
   function calculateAnalysisProgress(progress = {}) {
+    progress ||= {};
     const total = Math.max(0, Number(progress.total || 0));
     const processed = Math.min(total, Math.max(0, Number(progress.completed || 0) + Number(progress.warningCount || 0) + Number(progress.failed || 0)));
     return { total, processed };
@@ -45,6 +58,28 @@
     };
   }
 
+  function createDurationAudienceContinuation({ saveScope, startAnalysis, onSaved = () => {}, onError = () => {}, setBusy = () => {} }) {
+    let running = false;
+    return async () => {
+      if (running) return false;
+      running = true;
+      setBusy(true);
+      try {
+        const saved = await saveScope();
+        if (!saved) return false;
+        await onSaved();
+        await startAnalysis();
+        return true;
+      } catch (error) {
+        await onError(error);
+        return false;
+      } finally {
+        running = false;
+        setBusy(false);
+      }
+    };
+  }
+
   async function pollAnalysisUntilTerminal({ operationId, getProgress, onProgress = () => {}, intervalMs = 350, timeoutMs = 120000, maxConsecutiveErrors = 3, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
     const startedAt = Date.now();
     let consecutiveErrors = 0;
@@ -65,5 +100,5 @@
     throw error;
   }
 
-  return { normalizeRetryDocumentId, createDocumentAnalysisPayload, calculateAnalysisProgress, isTerminalAnalysisStatus, bindDocumentAnalysisControls, createSingleFlightAnalysisStarter, pollAnalysisUntilTerminal };
+  return { normalizeRetryDocumentId, createDocumentAnalysisPayload, calculateAnalysisProgress, isTerminalAnalysisStatus, bindDocumentAnalysisControls, createSingleFlightAnalysisStarter, createDurationAudienceContinuation, pollAnalysisUntilTerminal };
 }));

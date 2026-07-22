@@ -32,12 +32,31 @@ function getAppData() {
 }
 
 function getService() {
-  if (!service) service = createContentFactoryService({ appData: getAppData(), projectRoot, safeStorage, migrationPath: localMigrationPath });
+  if (!service) service = createContentFactoryService({
+    appData: getAppData(), projectRoot, safeStorage, migrationPath: localMigrationPath,
+    coursePlanningAiOrchestrator: process.argv.includes('--course-planning-smoke') ? createCoursePlanningSmokeAi() : null
+  });
   return service;
+}
+
+function createCoursePlanningSmokeAi() {
+  const openai = {
+    name: 'electron-smoke-testdouble', model: 'testdouble-v1', isConfigured: () => true,
+    async analyzeDocument({ document, extraction }) {
+      if (!(extraction.sections || []).some((section) => String(section.textPreview || section.content || section.title || '').trim())) throw new Error('Smoke-Test: Extraktion fehlt.');
+      return { documentId: document.id, documentType: extraction.documentType, detectedCategory: 'Testquelle', summary: 'Sicher extrahierte Testquelle', topics: [{ title: 'Netzwerkgrundlagen' }], learningObjectives: [{ title: 'Netzwerke planen' }], sourceReferences: [{ documentId: document.id }], confidence: 1 };
+    },
+    async generateStructuredCoursePlan({ structureFrame }) {
+      const units = Array.from({ length: structureFrame.totalUnits }, (_, index) => ({ id: `smoke-unit-${index + 1}`, dayNumber: Math.floor(index / structureFrame.unitsPerDay) + 1, unitNumber: index + 1, topic: `Netzwerkthema ${index + 1}`, content: 'Aus der Testquelle abgeleiteter Inhalt', preliminaryLearningObjective: 'Netzwerkgrundlagen anwenden', sourceReferences: [{ documentId: 'smoke-source', fileName: 'smoke-source.md' }], originStatus: 'explicit', confidence: 1, reviewStatus: 'open' }));
+      return { summary: 'Smoke-Test-Plan', days: Array.from({ length: structureFrame.totalDays }, (_, dayIndex) => ({ dayNumber: dayIndex + 1, title: `Tag ${dayIndex + 1}`, units: units.filter((unit) => unit.dayNumber === dayIndex + 1) })), conflicts: [], warnings: [], reviewItems: [] };
+    }
+  };
+  return { openai };
 }
 
 function createWindow() {
   const browserPreviewSmoke = process.argv.includes('--browser-preview-smoke');
+  const coursePlanningSmoke = process.argv.includes('--course-planning-smoke');
   mainWindow = new BrowserWindow({
     title: 'ueTool ContentFactory',
     width: 1440,
@@ -60,7 +79,8 @@ function createWindow() {
     if (/^https:\/\//i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
-  mainWindow.loadFile(rendererFile);
+  if (coursePlanningSmoke) mainWindow.loadFile(rendererFile, { query: { coursePlanningSmoke: '1' } });
+  else mainWindow.loadFile(rendererFile);
   if (process.argv.includes('--smoke-test')) {
     mainWindow.webContents.once('did-finish-load', async () => {
       const result = await mainWindow.webContents.executeJavaScript(`({
@@ -131,6 +151,42 @@ function createWindow() {
       }
       console.log('CONTENTFACTORY_BROWSER_PREVIEW_SMOKE_OK', JSON.stringify(result));
       app.quit();
+    });
+  }
+  if (coursePlanningSmoke) {
+    mainWindow.webContents.once('did-finish-load', async () => {
+      const resultPath = path.join(projectRoot, '.course-planning-smoke-result.json');
+      const sourcePath = path.join(app.getPath('temp'), `contentfactory-smoke-${process.pid}.md`);
+      fs.writeFileSync(sourcePath, '# Netzwerkgrundlagen\nSichere Segmentierung und Adressierung.', 'utf8');
+      try {
+        const result = await mainWindow.webContents.executeJavaScript(`(async () => {
+        const api = window.ContentFactoryCoursePlanningSmoke;
+        if (!api) return { error: 'Smoke-API fehlt' };
+        await api.configure(${JSON.stringify(sourcePath)});
+        const started = await api.continueFromDurationAudience();
+        const beforeApproval = api.snapshot();
+        await api.approve();
+        const afterApproval = api.snapshot();
+        api.confirmDidactics();
+        const afterDidactics = api.snapshot();
+        return { started, beforeApproval, afterApproval, afterDidactics };
+        })()`);
+        const before = result.beforeApproval || {};
+        const after = result.afterApproval || {};
+        const afterDidactics = result.afterDidactics || {};
+        if (!result.started || before.activeStep !== 'structureReview' || before.totalDays !== 1 || before.totalUnits !== 2 || before.containerProfileActive || !after.didacticsActive || after.containerProfileActive || !afterDidactics.containerProfileActive) {
+          fs.writeFileSync(resultPath, JSON.stringify({ ok: false, result }, null, 2), 'utf8');
+          console.error('CONTENTFACTORY_COURSE_PLANNING_SMOKE_FAILED', JSON.stringify(result));
+          app.exit(1);
+          return;
+        }
+        fs.writeFileSync(resultPath, JSON.stringify({ ok: true, result }, null, 2), 'utf8');
+        console.log('CONTENTFACTORY_COURSE_PLANNING_SMOKE_OK', JSON.stringify(result));
+        app.quit();
+      } catch (error) {
+        fs.writeFileSync(resultPath, JSON.stringify({ ok: false, error: safeLogText(error?.stack || error?.message) }, null, 2), 'utf8');
+        app.exit(1);
+      }
     });
   }
   mainWindow.once('ready-to-show', () => mainWindow.show());

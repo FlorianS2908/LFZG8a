@@ -8,6 +8,9 @@ const workflowRegistry = window.ContentFactoryWorkflowRegistry || {};
 const workflowStatus = window.ContentFactoryWorkflowStatus || {};
 const visibleLabel = window.ContentFactoryWorkflowUtils?.visibleLabel || ((value) => String(value ?? ''));
 const documentAnalysisWorkflow = window.ContentFactoryDocumentAnalysisWorkflow || {};
+const hasDocumentAnalysisWorkflow = typeof documentAnalysisWorkflow.createDocumentAnalysisPayload === 'function'
+  && typeof documentAnalysisWorkflow.pollAnalysisUntilTerminal === 'function'
+  && typeof documentAnalysisWorkflow.createSingleFlightAnalysisStarter === 'function';
 const startWizardDocumentAnalysis = documentAnalysisWorkflow.createSingleFlightAnalysisStarter?.(analyzeWizardDocuments) || analyzeWizardDocuments;
 const targetAudienceOptions = [
   ['trainees', 'Auszubildende'], ['retrainees', 'Umschülerinnen und Umschüler'], ['career_starters', 'Berufseinsteigerinnen und Berufseinsteiger'], ['experienced_professionals', 'Berufserfahrene'],
@@ -63,6 +66,7 @@ const state = {
     expectedOutcome: 'grundlagenkurs',
     didacticStyle: 'guided',
     didacticProfile: { id: 'explain-demo-practice' },
+    didacticConfirmed: false,
     curriculumDraft: null,
     approvedCurriculumPlan: null,
     coursePlan: null,
@@ -588,7 +592,8 @@ function renderPlanWizard() {
   wizard.activeStep = activeGate.id;
   const currentIndex = gates.findIndex((gate) => gate.id === wizard.activeStep);
   const previousGate = [...gates].slice(0, currentIndex).reverse().find((gate) => gate.active);
-  const nextGate = gates.slice(currentIndex + 1).find((gate) => gate.active);
+  const nextGate = gates[currentIndex + 1];
+  const canContinue = activeGate.id === 'durationAudience' ? Boolean(state.wizard.anchorFiles.length) : Boolean(nextGate?.active);
   const activeStep = workflow.steps.find((step) => step.id === wizard.activeStep) || workflow.steps[0];
   const headerStatus = workflowStatus.getWorkflowStatus?.(gates) || 'active';
   const contentHtml = renderCurrentPlanWizardStep(wizard, activeGate);
@@ -605,7 +610,7 @@ function renderPlanWizard() {
         statusHtml: renderPlanWizardStepStatus(activeGate),
         actionsHtml: workflowLayout.renderWorkflowActionBar({
           canBack: Boolean(previousGate),
-          canNext: Boolean(nextGate),
+          canNext: canContinue,
           canSkip: Boolean(activeGate.optional),
           canCheck: activeGate.id === 'analysis' || activeGate.id === 'preflight',
           nextLabel: nextGate ? `Weiter: ${nextGate.label}` : 'Weiter'
@@ -761,7 +766,7 @@ function renderDurationAudienceStep(wizard) {
 function renderCourseStructureStep(wizard) {
   const project = wizard.courseProject;
   const ready = Boolean(project?.structureFrame?.valid && project?.structureFrame?.confirmed && wizard.anchorFiles.length && state.aiStatus?.providers?.openai?.configured);
-  const running = wizard.analysisProgress?.status === 'running';
+  const running = Boolean(wizard.analysisProgress?.status && !documentAnalysisWorkflow.isTerminalAnalysisStatus?.(wizard.analysisProgress.status));
   const documents = project?.uploadedDocuments?.length ? project.uploadedDocuments : wizard.anchorFiles;
   const analyses = project?.documentAnalyses || [];
   const progressCount = documentAnalysisWorkflow.calculateAnalysisProgress?.(wizard.analysisProgress) || { total: 0, processed: 0 };
@@ -1289,12 +1294,13 @@ function getPlanWizardStepGates() {
   const wizard = state.wizard;
   const courseDone = Boolean(wizard.course.courseName && wizard.course.courseId && wizard.course.department);
   const anchorDone = Boolean(wizard.anchorFiles.length);
+  const currentDraft = wizard.courseProject?.coursePlanDrafts?.find((item) => item.planningVersion === wizard.courseProject.currentPlanningVersion);
   const documentAnalysisDone = Boolean(wizard.courseProject?.documentAnalyses?.length);
-  const durationDone = Boolean(wizard.targetAudience.priorKnowledge && wizard.targetAudience.learningLevel && wizard.targetAudience.difficultyMode && Number(wizard.duration.numberOfDays) > 0 && Number(wizard.duration.hoursPerDay) > 0 && Number(wizard.duration.uePerDay) > 0);
-  const didacticDone = Boolean(getSelectedDidacticProfile()?.id || wizard.didacticProfile?.id);
+  const durationDone = Boolean(wizard.courseProject?.structureFrame?.valid && wizard.courseProject?.structureFrame?.confirmed);
+  const didacticDone = Boolean(wizard.didacticConfirmed && (getSelectedDidacticProfile()?.id || wizard.didacticProfile?.id));
   const containerProfileDone = Boolean(wizard.containerProfile?.courseType && wizard.containerProfile?.artifactMode);
   const curriculumDone = Boolean(wizard.curriculumDraft?.days?.length);
-  const structureDone = Boolean(wizard.courseProject?.coursePlanDrafts?.length);
+  const structureDone = Boolean(currentDraft && currentDraft.validation?.status !== 'failed' && currentDraft.status !== 'stale');
   const approvedDone = wizard.courseProject?.approvedCoursePlan?.status === 'approved' || wizard.approvedCurriculumPlan?.status === 'approved';
   const materialsDone = Boolean(wizard.uploadFiles.length || wizard.skippedSteps?.materials);
   const aiDone = Boolean(wizard.aiMode);
@@ -1309,12 +1315,12 @@ function getPlanWizardStepGates() {
     if (step.id === 'courseStructure') return { ...gate, active: anchorDone && wizard.courseProject?.structureFrame?.valid, done: documentAnalysisDone && structureDone, missing: 'Bitte Dokumente hochladen sowie Dauer und Zielgruppe vollständig bestätigen.' };
     if (step.id === 'structureReview') return { ...gate, active: structureDone, done: approvedDone, missing: 'Bitte zuerst eine KI-Kursstruktur erstellen.' };
     if (step.id === 'didactics') return { ...gate, active: approvedDone, done: didacticDone, missing: 'Bitte zuerst die Kursstruktur prüfen und ausdrücklich freigeben.' };
-    if (step.id === 'containerProfile') return { ...gate, active: didacticDone, done: containerProfileDone, missing: 'Bitte zuerst ein didaktisches Profil auswählen.' };
+    if (step.id === 'containerProfile') return { ...gate, active: approvedDone && didacticDone, done: containerProfileDone, missing: 'Bitte zuerst die Kursstruktur freigeben und ein didaktisches Profil auswählen.' };
     if (step.id === 'materials') return { ...gate, active: approvedDone, done: materialsDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
     if (step.id === 'aiMode') return { ...gate, active: approvedDone, done: aiDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
-    if (step.id === 'generation') return { ...gate, active: approvedDone, done: generationDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
+    if (step.id === 'generation') return { ...gate, active: approvedDone && aiDone && containerProfileDone, done: generationDone, missing: 'Bitte zuerst Plan, Containerprofil und KI-Modus bestätigen.' };
     if (step.id === 'preflight') return { ...gate, active: generationDone, done: preflightDone, missing: 'Bitte zuerst Tagesentwürfe erzeugen.' };
-    if (step.id === 'containerDraft') return { ...gate, active: preflightDone || generationDone, done: draftDone, missing: 'Bitte zuerst Preflight/Testlauf oder Tagesentwurf erzeugen.' };
+    if (step.id === 'containerDraft') return { ...gate, active: preflightDone, done: draftDone, missing: 'Bitte zuerst den Preflight beziehungsweise Testlauf abschließen.' };
     return gate;
   });
 }
@@ -1354,7 +1360,13 @@ function bindPlanWizardEvents() {
     renderPlanWizard();
   }));
   $('[data-wizard-prev]')?.addEventListener('click', () => moveWizardStep(-1));
-  $('[data-wizard-next]')?.addEventListener('click', () => moveWizardStep(1));
+  $('[data-wizard-next]')?.addEventListener('click', async () => {
+    if (state.wizard.activeStep === 'durationAudience') {
+      await continueFromDurationAudienceToAiAnalysis();
+      return;
+    }
+    moveWizardStep(1);
+  });
   $('[data-wizard-skip-step]')?.addEventListener('click', () => {
     state.wizard.skippedSteps[state.wizard.activeStep] = true;
     state.wizard.status = 'Optionaler Schritt uebersprungen.';
@@ -1396,7 +1408,7 @@ function bindPlanWizardEvents() {
     event.target.value = '';
     renderPlanWizard();
   });
-  documentAnalysisWorkflow.bindDocumentAnalysisControls?.(document, startWizardDocumentAnalysis);
+  if (hasDocumentAnalysisWorkflow) documentAnalysisWorkflow.bindDocumentAnalysisControls(document, startWizardDocumentAnalysis);
   $('[data-close-wizard-error]')?.addEventListener('click', () => { state.wizard.uiError = null; renderPlanWizard(); });
   $('[data-retry-wizard-error]')?.addEventListener('click', () => { const retry = state.wizard.uiError?.retry; state.wizard.uiError = null; if (retry) retry(); });
   $('[data-document-analysis-cancel]')?.addEventListener('click', cancelWizardDocumentAnalysis);
@@ -1451,6 +1463,7 @@ function bindPlanWizardEvents() {
   });
   $('[data-wizard-didactic-profile]')?.addEventListener('change', (event) => {
     state.wizard.didacticProfile = (state.didacticProfiles || []).find((profile) => profile.id === event.target.value) || { id: event.target.value };
+    state.wizard.didacticConfirmed = true;
     state.wizard.curriculumDraft = null;
     state.wizard.approvedCurriculumPlan = null;
     state.wizard.status = 'Didaktik geaendert. Curriculum bitte neu analysieren.';
@@ -1461,6 +1474,7 @@ function bindPlanWizardEvents() {
     const recommended = state.wizard.didacticRecommendation?.recommended?.profile;
     if (!recommended) return;
     state.wizard.didacticProfile = { ...recommended };
+    state.wizard.didacticConfirmed = true;
     state.wizard.curriculumDraft = null;
     state.wizard.approvedCurriculumPlan = null;
     state.wizard.status = 'Empfohlenes didaktisches Profil uebernommen. Curriculum bitte neu prüfen.';
@@ -1474,6 +1488,7 @@ function bindPlanWizardEvents() {
       customized: true,
       baseProfileId: base.baseProfileId || base.id
     };
+    state.wizard.didacticConfirmed = true;
     state.wizard.curriculumDraft = null;
     state.wizard.approvedCurriculumPlan = null;
     state.wizard.status = 'Didaktisches Profil angepasst. Curriculum bitte neu prüfen.';
@@ -1487,6 +1502,7 @@ function bindPlanWizardEvents() {
       customized: true,
       baseProfileId: base.baseProfileId || base.id
     };
+    state.wizard.didacticConfirmed = true;
     state.wizard.curriculumDraft = null;
     state.wizard.approvedCurriculumPlan = null;
     state.wizard.status = 'Didaktisches Profil angepasst. Curriculum bitte neu prüfen.';
@@ -1605,10 +1621,14 @@ function bindPlanWizardEvents() {
 function moveWizardStep(direction) {
   const gates = getPlanWizardStepGates();
   const currentIndex = gates.findIndex((gate) => gate.id === state.wizard.activeStep);
-  const candidates = direction > 0 ? gates.slice(currentIndex + 1) : gates.slice(0, currentIndex).reverse();
-  const target = candidates.find((gate) => gate.active);
+  const target = direction > 0 ? gates[currentIndex + 1] : gates.slice(0, currentIndex).reverse().find((gate) => gate.active);
   if (!target) {
     state.wizard.status = direction > 0 ? 'Der nächste Schritt ist noch gesperrt.' : 'Du bist bereits am ersten Schritt.';
+    renderPlanWizard();
+    return;
+  }
+  if (!target.active) {
+    state.wizard.status = `Der nächste Pflichtschritt ist noch gesperrt. ${target.missing || ''}`.trim();
     renderPlanWizard();
     return;
   }
@@ -1808,8 +1828,12 @@ function wizardProjectInput() {
     title: state.wizard.course.courseName,
     description: state.wizard.course.description,
     subjectArea: state.wizard.course.department,
+    courseGoal: state.wizard.courseGoal,
+    expectedOutcome: state.wizard.expectedOutcome,
     targetGroup: selectionText(state.wizard.structureFrame.targetAudience),
     priorKnowledge: selectionText(state.wizard.structureFrame.priorKnowledge),
+    audienceProfile: { ...state.wizard.targetAudience },
+    structureFrame: { ...state.wizard.structureFrame },
     uploadedDocuments: state.wizard.anchorFiles.map((file) => ({
       ...file, originalFileName: file.name, storedFilePath: file.path, mimeType: file.type,
       fileSize: file.size, declaredCategory: file.sourceType, sourcePriority: file.sourcePriority || 'high', bindingLevel: file.bindingLevel || 'binding'
@@ -1840,7 +1864,12 @@ async function openSavedCourseProject(event) {
 }
 
 async function analyzeWizardDocuments(retryDocumentId = '') {
-  if (state.wizard.analysisProgress?.status === 'running') return;
+  if (state.wizard.analysisProgress?.status && !documentAnalysisWorkflow.isTerminalAnalysisStatus?.(state.wizard.analysisProgress.status)) return;
+  if (!hasDocumentAnalysisWorkflow) {
+    showWizardError('Dokumentanalyse ist nicht verfügbar', 'Das erforderliche Analysemodul konnte nicht initialisiert werden. Bitte starten Sie die Anwendung neu.');
+    renderPlanWizard();
+    return;
+  }
   const normalizedRetryDocumentId = documentAnalysisWorkflow.normalizeRetryDocumentId?.(retryDocumentId) || '';
   const documents = (state.wizard.anchorFiles || []).filter((document) => !document.excluded);
   if (!state.wizard.courseProject?.id) { showWizardError('Dokumentanalyse konnte nicht gestartet werden', 'Bitte speichern Sie zuerst Dauer und Zielgruppe.'); renderPlanWizard(); return; }
@@ -1848,20 +1877,21 @@ async function analyzeWizardDocuments(retryDocumentId = '') {
   if (normalizedRetryDocumentId && !documents.some((document) => document.id === normalizedRetryDocumentId)) { showWizardError('Dokumentanalyse konnte nicht gestartet werden', `Das Dokument „${normalizedRetryDocumentId}“ wurde nicht gefunden oder ist ausgeschlossen.`); renderPlanWizard(); return; }
   if (!state.aiStatus?.providers?.openai?.configured) { showWizardError('Die KI-Analyse konnte nicht gestartet werden', 'Bitte prüfen Sie den OpenAI-Schlüssel, das ausgewählte Modell und den Verbindungstest in den KI-Einstellungen.'); renderPlanWizard(); return; }
   const selectedCount = normalizedRetryDocumentId ? 1 : documents.length;
-  state.wizard.analysisProgress = { status: 'running', step: 'Dokumente werden vorbereitet', currentDocument: '', total: selectedCount, queued: selectedCount, completed: 0, warningCount: 0, failed: 0, errors: [] };
+  state.wizard.analysisProgress = { status: 'preparing', step: 'Dokumente werden vorbereitet', currentDocument: '', total: selectedCount, queued: selectedCount, completed: 0, warningCount: 0, failed: 0, errors: [] };
   state.wizard.status = 'Echte KI-Analyse und UE-Planung wurden gestartet.';
   renderPlanWizard();
   try {
     const project = wizardProjectInput();
     const payload = documentAnalysisWorkflow.createDocumentAnalysisPayload({ project: { ...project, structureFrame: state.wizard.courseProject.structureFrame }, documents: project.uploadedDocuments, retryDocumentId: normalizedRetryDocumentId });
     const started = await desktop.factory.startDocumentAnalysis(payload);
+    if (!started?.operationId) throw new Error('Die Dokumentanalyse wurde ohne Vorgangs-ID gestartet und deshalb sicher abgebrochen.');
     state.wizard.analysisProgress = started.progress;
     await pollAnalysisOperation(started.operationId);
   } catch (error) {
     state.wizard.analysisProgress = { ...state.wizard.analysisProgress, status: 'failed', step: state.wizard.analysisProgress?.step || 'Analyse fehlgeschlagen', errors: [...(state.wizard.analysisProgress?.errors || []), error.message] };
     showWizardError('Dokumentanalyse fehlgeschlagen', error);
   } finally {
-    if (state.wizard.analysisProgress?.status === 'running') state.wizard.analysisProgress.status = 'failed';
+    if (!documentAnalysisWorkflow.isTerminalAnalysisStatus?.(state.wizard.analysisProgress?.status)) state.wizard.analysisProgress.status = 'failed';
     renderPlanWizard();
   }
 }
@@ -1928,17 +1958,118 @@ async function acknowledgeWizardDocumentFailure(documentId) {
 async function saveWizardCourseScope() {
   try {
     const wizard = state.wizard;
+    syncWizardCourseScopeFromDom();
     const errors = validateWizardCourseScope(wizard.structureFrame);
     wizard.scopeErrors = errors;
-    if (Object.keys(errors).length) { renderPlanWizard(); return; }
-    const frame = { schemaVersion: 1, totalDays: wizard.structureFrame.totalDays, unitsPerDay: wizard.structureFrame.unitsPerDay, unitDurationMinutes: wizard.structureFrame.unitDurationMinutes, targetAudience: wizard.structureFrame.targetAudience, priorKnowledge: wizard.structureFrame.priorKnowledge };
+    if (Object.keys(errors).length) { renderPlanWizard(); return false; }
+    const frame = {
+      ...wizard.planningFrame,
+      ...wizard.structureFrame,
+      schemaVersion: 1,
+      totalDays: Number(wizard.structureFrame.totalDays),
+      unitsPerDay: Number(wizard.structureFrame.unitsPerDay),
+      totalUnits: Number(wizard.structureFrame.totalDays) * Number(wizard.structureFrame.unitsPerDay),
+      unitDurationMinutes: Number(wizard.structureFrame.unitDurationMinutes),
+      targetAudience: { ...wizard.structureFrame.targetAudience },
+      priorKnowledge: { ...wizard.structureFrame.priorKnowledge },
+      audienceProfile: { ...wizard.targetAudience },
+      courseGoal: wizard.courseGoal,
+      expectedOutcome: wizard.expectedOutcome
+    };
     if (!wizard.courseProject) wizard.courseProject = await desktop.factory.upsertCourseProject(wizardProjectInput());
     wizard.courseProject = await desktop.factory.saveCourseScope(wizard.course.courseId, frame);
     wizard.structureFrame = { ...wizard.structureFrame, ...wizard.courseProject.structureFrame };
     wizard.scopeErrors = {};
     wizard.status = 'Dauer und Zielgruppe wurden gespeichert.';
-  } catch (error) { showWizardError('Dauer und Zielgruppe konnten nicht gespeichert werden', 'Ihre Eingaben konnten nicht gespeichert werden. Die bereits eingegebenen Daten bleiben im Formular erhalten. Bitte prüfen Sie die Angaben und versuchen Sie es erneut.', saveWizardCourseScope); }
+    renderPlanWizard();
+    return true;
+  } catch (error) {
+    showWizardError('Dauer und Zielgruppe konnten nicht gespeichert werden', error, saveWizardCourseScope);
+    renderPlanWizard();
+    return false;
+  }
+}
+
+function syncWizardCourseScopeFromDom() {
+  $all('[data-structure-frame]').forEach((field) => {
+    state.wizard.structureFrame[field.dataset.structureFrame] = field.type === 'number' ? Number(field.value) : field.value;
+  });
+  $all('[data-course-scope-custom]').forEach((field) => {
+    const key = field.dataset.courseScopeCustom;
+    state.wizard.structureFrame[key] = { ...(state.wizard.structureFrame[key] || {}), customText: field.value };
+  });
+  state.wizard.structureFrame.totalUnits = Number(state.wizard.structureFrame.totalDays || 0) * Number(state.wizard.structureFrame.unitsPerDay || 0);
+}
+
+const continueFromDurationAudienceToAiAnalysis = documentAnalysisWorkflow.createDurationAudienceContinuation?.({
+  saveScope: async () => {
+    state.wizard.status = 'Kursrahmen wird geprüft und gespeichert …';
+    renderPlanWizard();
+    return saveWizardCourseScope();
+  },
+  onSaved: async () => {
+    state.wizard.activeStep = 'courseStructure';
+    state.wizard.status = 'Kursrahmen gespeichert. KI-Analyse und Kursplanung werden gestartet …';
+    renderPlanWizard();
+  },
+  startAnalysis: startWizardDocumentAnalysis,
+  onError: async (error) => {
+    showWizardError('KI-Analyse und Kursplanung konnten nicht gestartet werden', error, continueFromDurationAudienceToAiAnalysis);
+    renderPlanWizard();
+  },
+  setBusy: (busy) => {
+    const next = $('[data-wizard-next]');
+    if (next) {
+      next.disabled = busy;
+      next.setAttribute('aria-busy', String(busy));
+    }
+  }
+}) || (async () => {
+  showWizardError('KI-Analyse und Kursplanung sind nicht verfügbar', 'Das erforderliche Analysemodul konnte nicht initialisiert werden.');
   renderPlanWizard();
+  return false;
+});
+
+if (new URLSearchParams(window.location.search).get('coursePlanningSmoke') === '1') {
+  window.ContentFactoryCoursePlanningSmoke = {
+    async configure(sourcePath) {
+      state.aiStatus = { providers: { openai: { configured: true, status: 'configured', model: 'testdouble-v1' } } };
+      state.wizard.course = { courseName: 'Electron Smoke Kurs', courseId: `electron-smoke-${Date.now()}`, department: 'FISI', description: 'Realitätsnaher Electron-Test' };
+      state.wizard.courseGoal = 'Netzwerkgrundlagen sicher planen';
+      state.wizard.expectedOutcome = 'Praxistauglicher Unterrichtsplan';
+      state.wizard.anchorFiles = [{ id: 'smoke-source', name: 'smoke-source.md', path: sourcePath, type: 'text/markdown', size: 64, sourceType: 'course-plan', sourcePriority: 'high', bindingLevel: 'binding' }];
+      state.wizard.structureFrame = { schemaVersion: 1, totalDays: 1, unitsPerDay: 2, totalUnits: 2, unitDurationMinutes: 45, targetAudience: { value: 'trainees', label: 'Auszubildende', customText: '' }, priorKnowledge: { value: 'basic', label: 'Grundkenntnisse', customText: '' }, confirmed: false };
+      state.wizard.activeStep = 'durationAudience';
+      state.wizard.courseProject = null;
+      state.wizard.analysisProgress = null;
+      showPanel('plan-wizard');
+    },
+    continueFromDurationAudience: () => continueFromDurationAudienceToAiAnalysis(),
+    async approve() {
+      const draft = currentStructuredDraft();
+      state.wizard.courseProject = await desktop.factory.approveStructuredCoursePlan(state.wizard.course.courseId, draft.planningVersion);
+      state.wizard.approvedCurriculumPlan = structuredPlanToCurriculum(state.wizard.courseProject.approvedCoursePlan);
+      state.wizard.activeStep = 'didactics';
+      renderPlanWizard();
+    },
+    confirmDidactics() {
+      state.wizard.didacticConfirmed = true;
+      renderPlanWizard();
+    },
+    snapshot() {
+      const draft = currentStructuredDraft();
+      const gates = getPlanWizardStepGates();
+      return {
+        activeStep: state.wizard.activeStep,
+        operationId: state.wizard.analysisProgress?.operationId,
+        analysisStatus: state.wizard.analysisProgress?.status,
+        totalDays: draft?.days?.length || 0,
+        totalUnits: (draft?.days || []).reduce((sum, day) => sum + (day.units || []).length, 0),
+        containerProfileActive: Boolean(gates.find((gate) => gate.id === 'containerProfile')?.active),
+        didacticsActive: Boolean(gates.find((gate) => gate.id === 'didactics')?.active)
+      };
+    }
+  };
 }
 
 function currentStructuredDraft() {
@@ -2732,6 +2863,9 @@ async function updateContainerStatus(containerId, action) {
 
 async function init() {
   bindFactoryNavigation();
+  if (!hasDocumentAnalysisWorkflow) {
+    setFactoryStatus('Das Modul für Dokumentanalyse und Kursplanung konnte nicht initialisiert werden. Analysefunktionen bleiben deaktiviert.', 'status-error');
+  }
   if (!hasDesktopFactory) {
     setFactoryStatus(browserPreviewMessage(), 'status-warning');
     appNavigation.activatePanel('home', { focus: false });

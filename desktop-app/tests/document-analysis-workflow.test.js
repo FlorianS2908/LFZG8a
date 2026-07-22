@@ -8,6 +8,7 @@ const {
   calculateAnalysisProgress,
   bindDocumentAnalysisControls,
   createSingleFlightAnalysisStarter,
+  createDurationAudienceContinuation,
   pollAnalysisUntilTerminal
 } = require('../app/renderer/tool-center/document-analysis-workflow');
 const { DOCUMENT_ANALYSIS_CHANNELS } = require('../app/lib/content-factory/course-planning/analysis-ipc-contract');
@@ -40,6 +41,39 @@ test('Single-Flight-Sperre verhindert einen parallelen Doppelklick', async () =>
   assert.equal(await second, undefined);
   release('fertig');
   assert.equal(await first, 'fertig');
+});
+
+test('Weiter-Orchestrierung speichert vor der Analyse und verhindert Doppelklick', async () => {
+  const calls = [];
+  let release;
+  const continuation = createDurationAudienceContinuation({
+    saveScope: async () => { calls.push('save'); return true; },
+    onSaved: async () => calls.push('open-course-structure'),
+    startAnalysis: async () => { calls.push('start-analysis'); await new Promise((resolve) => { release = resolve; }); }
+  });
+  const first = continuation();
+  const second = continuation();
+  assert.equal(await second, false);
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.deepEqual(calls, ['save', 'open-course-structure', 'start-analysis']);
+  release();
+  assert.equal(await first, true);
+});
+
+test('Weiter-Orchestrierung startet bei Validierungs- oder Speicherfehler keine Analyse', async () => {
+  for (const saveScope of [async () => false, async () => { throw new Error('IPC fehlgeschlagen'); }]) {
+    let starts = 0;
+    let visibleError = '';
+    const continuation = createDurationAudienceContinuation({
+      saveScope,
+      startAnalysis: async () => { starts += 1; },
+      onError: async (error) => { visibleError = error.message; }
+    });
+    assert.equal(await continuation(), false);
+    assert.equal(starts, 0);
+    if (visibleError) assert.match(visibleError, /IPC fehlgeschlagen/);
+  }
 });
 
 test('Fortschritt zählt Erfolge Warnungen und Fehler genau einmal', () => {
@@ -75,4 +109,21 @@ test('IPC-Vertrag verwendet eindeutige serialisierbare Kanäle und Payloads', ()
   assert.equal(Object.values(DOCUMENT_ANALYSIS_CHANNELS).length, new Set(Object.values(DOCUMENT_ANALYSIS_CHANNELS)).size);
   const preload = fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8');
   for (const channel of Object.values(DOCUMENT_ANALYSIS_CHANNELS)) assert.ok(preload.includes(channel), channel);
+});
+
+test('Analysepayload enthält vollständigen Kursrahmen und nur ausgewählte Quellen', () => {
+  const project = {
+    id: 'kurs', title: 'Netzwerke', description: 'Praxis', subjectArea: 'FISI', courseGoal: 'Sicher planen',
+    expectedOutcome: 'Projekt', audienceProfile: { learningLevel: 'basic', needsStepByStep: true },
+    structureFrame: { totalDays: 2, unitsPerDay: 4, totalUnits: 8, unitDurationMinutes: 45, targetAudience: { value: 'trainees', label: 'Auszubildende' }, priorKnowledge: { value: 'basic', label: 'Grundkenntnisse' } }
+  };
+  const documents = [{ id: 'a', originalFileName: 'a.pdf' }, { id: 'b', excluded: true }, { id: 'c', originalFileName: 'c.pptx' }];
+  const payload = createDocumentAnalysisPayload({ project, documents, retryDocumentId: '' });
+  assert.equal(payload.project.title, 'Netzwerke');
+  assert.deepEqual(payload.structureFrameSnapshot, project.structureFrame);
+  assert.deepEqual(payload.documents.map((document) => document.id), ['a', 'c']);
+  project.structureFrame.totalDays = 99;
+  assert.equal(payload.structureFrameSnapshot.totalDays, 2);
+  const retry = createDocumentAnalysisPayload({ project, documents, retryDocumentId: 'c' });
+  assert.deepEqual(retry.documents.map((document) => document.id), ['c']);
 });

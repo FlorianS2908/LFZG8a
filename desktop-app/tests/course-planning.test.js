@@ -138,7 +138,7 @@ test('Mehrdokumentlauf normalisiert Einzelfund, bewahrt Erfolge und plant trotz 
   service.savePlanningFrame('multi', { ...validFrame, totalDays: 1, unitsPerDay: 1, totalUnits: 1, repetitionUnits: 0, projectUnits: 0, assessmentUnits: 0, breaks: [], confirmWarnings: true });
   const started = service.startDocumentAnalysis({ projectId: 'multi' });
   let progress;
-  do { await new Promise((resolve) => setTimeout(resolve, 10)); progress = service.getAnalysisProgress(started.operationId); } while (progress.status === 'running');
+  do { await new Promise((resolve) => setTimeout(resolve, 10)); progress = service.getAnalysisProgress(started.operationId); } while (!['completed', 'completed_with_warnings', 'failed', 'cancelled'].includes(progress.status));
   const project = service.getProject('multi');
   assert.equal(progress.status, 'completed_with_warnings');
   assert.equal(project.documentAnalyses.length, 1);
@@ -179,7 +179,7 @@ test('Gemischter Analyselauf beendet terminal und bewahrt Einzelergebnisse', asy
   service.saveCourseScope('mixed', { totalDays: 1, unitsPerDay: 1, unitDurationMinutes: 45, targetAudience: { value: 'students' }, priorKnowledge: { value: 'none' } });
   const started = service.startDocumentAnalysis({ projectId: 'mixed', retryDocumentId: { type: 'click' } });
   let progress;
-  do { await new Promise((resolve) => setTimeout(resolve, 10)); progress = service.getAnalysisProgress(started.operationId); } while (progress.status === 'running');
+  do { await new Promise((resolve) => setTimeout(resolve, 10)); progress = service.getAnalysisProgress(started.operationId); } while (!['completed', 'completed_with_warnings', 'failed', 'cancelled'].includes(progress.status));
   const project = service.getProject('mixed');
   assert.equal(progress.status, 'completed_with_warnings');
   assert.deepEqual({ completed: progress.completed, warnings: progress.warningCount, failed: progress.failed }, { completed: 1, warnings: 1, failed: 1 });
@@ -190,13 +190,50 @@ test('Gemischter Analyselauf beendet terminal und bewahrt Einzelergebnisse', asy
   failShouldThrow = false;
   const retry = service.startDocumentAnalysis({ projectId: 'mixed', retryDocumentId: 'fail' });
   let retryProgress;
-  do { await new Promise((resolve) => setTimeout(resolve, 10)); retryProgress = service.getAnalysisProgress(retry.operationId); } while (retryProgress.status === 'running');
+  do { await new Promise((resolve) => setTimeout(resolve, 10)); retryProgress = service.getAnalysisProgress(retry.operationId); } while (!['completed', 'completed_with_warnings', 'failed', 'cancelled'].includes(retryProgress.status));
   const retried = service.getProject('mixed');
   assert.equal(retryProgress.total, 1);
   assert.equal(retryProgress.status, 'completed');
   assert.equal(retried.uploadedDocuments.find((document) => document.id === 'fail').analysisAttempts, 2);
   assert.equal(retried.uploadedDocuments.find((document) => document.id === 'ok').analysisAttempts, 1);
   assert.equal(retried.documentAnalyses.filter((analysis) => analysis.documentId === 'ok').length, 1);
+  fs.rmSync(factoryDir, { recursive: true, force: true });
+});
+
+test('Analyse verwendet gespeicherten Vollkontext und repariert eine formal falsche Planung genau einmal', async () => {
+  const factoryDir = fs.mkdtempSync(path.join(os.tmpdir(), 'planning-context-'));
+  const source = path.join(factoryDir, 'quelle.md');
+  fs.writeFileSync(source, '# Netzwerke\nSichere Segmentierung', 'utf8');
+  let analysisInput;
+  const planningInputs = [];
+  const unit = (number) => ({ id: `u${number}`, dayNumber: 1, unitNumber: number, topic: `Thema ${number}`, content: 'Inhalt', preliminaryLearningObjective: 'Ziel', sourceReferences: [{ documentId: 'doc' }], originStatus: 'explicit' });
+  const provider = {
+    name: 'fake', model: 'fake-model', isConfigured: () => true,
+    async analyzeDocument(input) {
+      analysisInput = input;
+      return { documentId: input.document.id, documentType: 'markdown', detectedCategory: 'Quelle', summary: 'Netzwerke', topics: [{ title: 'Segmentierung' }], learningObjectives: [{ title: 'Planen' }], confidence: 1 };
+    },
+    async generateStructuredCoursePlan(input) {
+      planningInputs.push(input);
+      const count = planningInputs.length === 1 ? 1 : 2;
+      return { summary: 'Plan', days: [{ dayNumber: 1, title: 'Tag 1', units: Array.from({ length: count }, (_, index) => unit(index + 1)) }] };
+    }
+  };
+  const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: provider }, logger: { info() {}, error() {} } });
+  service.upsertProject({ id: 'context', title: 'Netzwerke', description: 'Praxis', subjectArea: 'FISI', courseGoal: 'Sicher planen', expectedOutcome: 'Projekt', audienceProfile: { needsStepByStep: true }, uploadedDocuments: [{ id: 'doc', originalFileName: 'quelle.md', storedFilePath: source, bindingLevel: 'binding' }] });
+  const saved = service.saveCourseScope('context', { totalDays: 1, unitsPerDay: 2, unitDurationMinutes: 45, targetAudience: { value: 'trainees' }, priorKnowledge: { value: 'basic' }, deliveryMode: 'presence' });
+  const started = service.startDocumentAnalysis({ projectId: 'context', structureFrameSnapshot: saved.structureFrame });
+  assert.throws(() => service.startDocumentAnalysis({ projectId: 'context', structureFrameSnapshot: saved.structureFrame }), /läuft bereits/);
+  let progress;
+  do { await new Promise((resolve) => setTimeout(resolve, 10)); progress = service.getAnalysisProgress(started.operationId); } while (!['completed', 'completed_with_warnings', 'failed', 'cancelled'].includes(progress.status));
+  assert.equal(progress.status, 'completed');
+  assert.match(analysisInput.extraction.sections.map((section) => `${section.title || ''} ${section.textPreview || section.content || ''}`).join(' '), /Segmentierung/);
+  assert.equal(analysisInput.structureFrame.totalUnits, 2);
+  assert.equal(analysisInput.project.courseGoal, 'Sicher planen');
+  assert.equal(planningInputs.length, 2);
+  assert.equal(planningInputs[1].repairAttempt, 1);
+  const project = service.getProject('context');
+  assert.equal(project.coursePlanDrafts[0].days[0].units.length, 2);
   fs.rmSync(factoryDir, { recursive: true, force: true });
 });
 
