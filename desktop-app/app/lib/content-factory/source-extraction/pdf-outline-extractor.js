@@ -56,6 +56,7 @@ function extractPdfOutline(filePath, options = {}) {
 
 function extractReadablePdfText(raw) {
   return String(raw || '')
+    .replace(/\b\d+\s+\d+\s+obj\b[\s\S]*?\bendobj\b/g, (object) => Array.from(object.matchAll(/\(([^)]{3,240})\)\s*T[Jj]/g)).map((match) => match[1]).join('\n'))
     .replace(/BT|ET|Tf|Td|Tj|TJ|cm|q|Q/g, ' ')
     .replace(/\(([^)]{3,240})\)/g, ' $1\n')
     .replace(/<([0-9A-Fa-f]{6,})>/g, ' ')
@@ -63,6 +64,7 @@ function extractReadablePdfText(raw) {
     .replace(/[^\x20-\x7EÄÖÜäöüß\n\f]+/g, ' ')
     .replace(/[ \t]+/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
+    .replace(/\b(?:obj|endobj|xref|stream|endstream|trailer)\b/gi, ' ')
     .trim();
 }
 

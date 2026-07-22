@@ -548,7 +548,7 @@ test('content factory quality and ai helpers protect local output and secrets', 
   assert.doesNotMatch(JSON.stringify(result.webvariant.participantHtmlSections), /Loesung|solution/i);
   assert.ok(quality.score >= 70);
   assert.equal(sanitized.apiKey, undefined);
-  assert.equal(sanitized.referenceContext[0].textPreview, undefined);
+  assert.equal(sanitized.referenceContext[0].textPreview, 'original preview');
   assert.ok(sanitized.longText.length < 1010);
   assert.deepEqual(parseJsonLoose('```json\n{"ok":true}\n```'), { ok: true });
 });

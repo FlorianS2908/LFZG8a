@@ -5,6 +5,7 @@ const { readWorkbookXml } = require('../course-plan-parser');
 const { extractSourceOutline } = require('../source-extraction/source-extractor-service');
 const { normalizeDocumentAnalysis, validateDocumentAnalysis } = require('./document-analysis-schema');
 const { createSourceStorageService } = require('./source-storage-service');
+const { prepareDocument, cleanupPreparedFiles } = require('../document-processing/document-preparation-service');
 
 const ORIGIN_STATUSES = new Set(['explicit', 'derived', 'generated', 'conflicting', 'needs_review']);
 const TERMINAL_OPERATION_STATUSES = new Set(['completed', 'completed_with_warnings', 'failed', 'cancelled']);
@@ -18,7 +19,12 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
 
   function getProject(id) {
     ensureStore();
-    return normalizeProject(readJson(projectPath(id), null), id);
+    const project = normalizeProject(readJson(projectPath(id), null), id);
+    if (project.analysisOperation?.operationId && !TERMINAL_OPERATION_STATUSES.has(project.analysisOperation.status) && !operations.has(project.analysisOperation.operationId)) {
+      project.analysisOperation = { ...project.analysisOperation, status: 'failed', step: 'Unterbrochener Auftrag erkannt', errorCode: 'ANALYSIS_INTERRUPTED', completedAt: new Date().toISOString() };
+      writeJson(projectPath(project.id), project);
+    }
+    return project;
   }
   function listProjects() {
     ensureStore();
@@ -40,11 +46,13 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
 
   function importSourceFile(input = {}) {
     const imported = sourceStorage.importSourceFile(input);
+    const preparation = prepareDocument({ ...input, ...imported, id: imported.documentId });
     const project = getProject(imported.projectId);
     const existing = project.uploadedDocuments.find((document) => document.id === imported.documentId);
     const checksumChanged = Boolean(existing?.checksum && existing.checksum !== imported.checksum);
     const document = normalizeDocument({
       ...(existing || {}), ...imported,
+      preparation,
       id: imported.documentId,
       declaredCategory: input.sourceCategory || existing?.declaredCategory || '',
       sourcePriority: input.sourcePriority || existing?.sourcePriority || 'high',
@@ -93,6 +101,8 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     const operationInput = { ...input, retryDocumentId, structureFrameSnapshot: cloneSerializable(project.structureFrame), selectedDocumentIds: selectedDocuments.map((document) => document.id) };
     const operation = { controller, progress, projectId: project.id };
     operations.set(operationId, operation);
+    project.analysisOperation = progress;
+    saveProject(project);
     logger.info?.('[DocumentAnalysis]', { event: 'started', operationId, projectId: project.id, documentCount: total });
     operation.promise = runDocumentAnalysis(operationInput, project, provider, controller, progress).catch((error) => {
       progress.status = controller.signal.aborted ? 'cancelled' : 'failed';
@@ -101,6 +111,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
       progress.inProgress = 0;
       progress.currentDocument = '';
       progress.completedAt = new Date().toISOString();
+      const latest = getProject(project.id); latest.analysisOperation = cloneSerializable(progress); saveProject(latest);
       logger.info?.('[DocumentAnalysis]', { event: 'finished', operationId, projectId: project.id, status: progress.status, completed: progress.completed, warnings: progress.warningCount, failed: progress.failed });
     });
     return { operationId, status: 'preparing', progress };
@@ -131,6 +142,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
         progress.status = 'extracting';
         document.extractionStatus = 'extracting';
         saveProject(project);
+        if (!document.preparation || (document.preparation.providerFiles || []).some((file) => file.temporary && !fs.existsSync(file.localPath))) document.preparation = prepareDocument(document);
         const extraction = extractDocument(document, { validateStoredSource: sourceStorage.validateStoredSource, projectId: project.id });
         document.extraction = extraction;
         document.extractionStatus = 'extracted';
@@ -139,7 +151,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
         progress.step = document.processingStep;
         progress.status = 'analyzing';
         progress.updatedAt = new Date().toISOString();
-        const raw = await provider.analyzeDocument({ project: projectContext(project), structureFrame: input.structureFrameSnapshot, document, extraction }, { signal: controller.signal });
+        const raw = await provider.analyzeDocument({ project: projectContext(project), structureFrame: input.structureFrameSnapshot, document, extraction, preparation: document.preparation }, { signal: controller.signal });
         const normalized = normalizeDocumentAnalysis(raw, { documentId: document.id, documentType: extraction.documentType });
         const validation = validateDocumentAnalysis(normalized.value);
         if (!validation.valid) {
@@ -164,7 +176,11 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
         if (document.analysisStatus === 'analyzed_with_warnings') progress.warningCount += 1;
         else progress.completed += 1;
         saveProject({ ...project, documentAnalyses: analyses });
+        cleanupPreparedFiles(document.preparation);
+        document.preparation = { ...document.preparation, providerFiles: (document.preparation.providerFiles || []).filter((file) => !file.temporary), conversionStatus: document.preparation.conversionStatus === 'completed' ? 'cleaned' : document.preparation.conversionStatus };
       } catch (error) {
+        cleanupPreparedFiles(document.preparation);
+        if (document.preparation) document.preparation = { ...document.preparation, providerFiles: (document.preparation.providerFiles || []).filter((file) => !file.temporary), conversionStatus: document.preparation.conversionStatus === 'completed' ? 'cleaned' : document.preparation.conversionStatus };
         if (controller.signal.aborted) {
           document.analysisStatus = 'cancelled';
         } else {
@@ -263,11 +279,12 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
       documentAnalyses: analyses, mergedKnowledgeBase: project.mergedKnowledgeBase,
       bindingTopics: input.bindingTopics || [], excludedTopics: input.excludedTopics || []
     };
-    let raw = await provider.generateStructuredCoursePlan(planningInput, { signal: input.signal });
-    let validation = validateCoursePlan(raw, structureFrame);
+    const knownDocumentIds = new Set([...project.uploadedDocuments.map((document) => document.id), ...analyses.map((analysis) => analysis.documentId)]);
+    let raw = deduplicatePlanSources(await provider.generateStructuredCoursePlan(planningInput, { signal: input.signal }));
+    let validation = validateCoursePlan(raw, structureFrame, knownDocumentIds);
     if (validation.status === 'failed') {
-      raw = await provider.generateStructuredCoursePlan({ ...planningInput, repairAttempt: 1, validationErrors: validation.errors }, { signal: input.signal });
-      validation = validateCoursePlan(raw, structureFrame);
+      raw = deduplicatePlanSources(await provider.generateStructuredCoursePlan({ ...planningInput, repairAttempt: 1, validationErrors: validation.errors }, { signal: input.signal }));
+      validation = validateCoursePlan(raw, structureFrame, knownDocumentIds);
     }
     if (validation.status === 'failed') {
       const error = new Error(`Die KI-Kursstruktur passt auch nach einem Reparaturversuch nicht zum bestätigten Kursrahmen: ${validation.errors.join(' | ')}`);
@@ -341,7 +358,7 @@ function extractDocument(document, options = {}) {
   const outline = extractSourceOutline({ name: document.originalFileName, path: document.storedFilePath }, { ranges });
   const extractedCharacters = Number(outline.quality?.extractedCharacters || 0);
   if (outline.quality?.usedFallback && (outline.warnings || []).some((warning) => /konnte nicht gelesen|ZIP|beschädigt/i.test(warning))) throw sourceError('EXTRACTION_FAILED', `„${document.originalFileName}“ konnte nicht extrahiert werden.`);
-  if (!outline.searchable || extractedCharacters < 1) throw sourceError('EXTRACTION_EMPTY', `Aus „${document.originalFileName}“ konnte kein sicherer Text extrahiert werden. Bildbasierte Dateien benötigen gegebenenfalls OCR.`);
+  if ((!outline.searchable || extractedCharacters < 1) && !(document.preparation?.providerFiles || []).some((file) => file.localPath && fs.existsSync(file.localPath))) throw sourceError('EXTRACTION_EMPTY', `Aus „${document.originalFileName}“ konnte kein sicherer Text extrahiert werden. Bildbasierte Dateien benötigen gegebenenfalls OCR.`);
   return { documentId: document.id, fileName: document.originalFileName, documentType: outline.format, searchable: outline.searchable, extractedCharacters, pageOrSlideCount: Number(outline.pageOrSlideCount ?? (outline.sections || []).length), sections: outline.sections || [], warnings: outline.warnings || [], selectedRanges: document.selectedRanges || [] };
 }
 
@@ -414,11 +431,12 @@ function validateSelection(selection, options, missingMessage, customMessage, er
 }
 function selectionText(selection) { return selection?.customText || selection?.label || ''; }
 
-function validateCoursePlan(value = {}, frame = {}) {
+function validateCoursePlan(value = {}, frame = {}, knownDocumentIds = null) {
   const errors = [];
   const warnings = [];
   const days = Array.isArray(value.days) ? value.days : [];
   if (days.length !== Number(frame.totalDays)) errors.push(`Erwartet werden ${frame.totalDays} Kurstage.`);
+  days.forEach((day, index) => { if (Number(day.dayNumber) !== index + 1) errors.push(`Kurstage müssen lückenlos nummeriert sein; erwartet ${index + 1}.`); });
   const units = days.flatMap((day) => (day.units || []).map((unit) => ({ ...unit, dayNumber: unit.dayNumber || day.dayNumber })));
   const expectedTotalUnits = Number(frame.totalUnits ?? frame.actuallyPlannableUnits);
   if (units.length !== expectedTotalUnits) errors.push(`Erwartet werden genau ${expectedTotalUnits} UE, erhalten: ${units.length}.`);
@@ -427,18 +445,26 @@ function validateCoursePlan(value = {}, frame = {}) {
     : frame.unitsPerDay ? Array.from({ length: Number(frame.totalDays) }, () => Number(frame.unitsPerDay)) : [];
   if (expectedUnitsByDay.length) days.forEach((day, index) => {
     if ((day.units || []).length !== expectedUnitsByDay[index]) errors.push(`Tag ${index + 1}: erwartet ${expectedUnitsByDay[index]} UE, erhalten ${(day.units || []).length}.`);
+    (day.units || []).forEach((unit, unitIndex) => { if (Number(unit.unitNumber) !== unitIndex + 1) errors.push(`Tag ${index + 1}: UE-Nummern müssen lückenlos sein; erwartet ${unitIndex + 1}.`); });
   });
   const keys = new Set();
   units.forEach((unit, index) => {
     const key = `${unit.dayNumber}:${unit.unitNumber}`;
     if (keys.has(key)) errors.push(`UE ${key} ist doppelt.`); else keys.add(key);
+    if (!String(unit.topic || '').trim()) errors.push(`UE ${index + 1}: Thema fehlt.`);
+    if (!String(unit.preliminaryLearningObjective || unit.learningObjective || unit.purpose || '').trim()) errors.push(`UE ${index + 1}: Lernziel oder Zweck fehlt.`);
     if (!ORIGIN_STATUSES.has(unit.originStatus)) errors.push(`UE ${index + 1}: ungültige Herkunft.`);
     if (!Array.isArray(unit.sourceReferences)) errors.push(`UE ${index + 1}: Quellenreferenzen fehlen.`);
+    if (knownDocumentIds) (unit.sourceReferences || []).forEach((reference) => { if (!knownDocumentIds.has(reference.documentId)) errors.push(`UE ${index + 1}: unbekannte Dokument-ID ${reference.documentId}.`); });
     if (['explicit', 'derived'].includes(unit.originStatus) && !unit.sourceReferences?.length) errors.push(`UE ${index + 1}: belegte Herkunft ohne Quelle.`);
     if (unit.materialRequirements === undefined) unit.materialRequirements = [];
     if (!Array.isArray(unit.materialRequirements)) errors.push(`UE ${index + 1}: materialRequirements muss ein Array sein.`);
   });
   return { status: errors.length ? 'failed' : warnings.length ? 'passed_with_warnings' : 'passed', errors, warnings };
+}
+
+function deduplicatePlanSources(plan = {}) {
+  return { ...plan, days: (plan.days || []).map((day) => ({ ...day, units: (day.units || []).map((unit) => ({ ...unit, sourceReferences: [...new Map((unit.sourceReferences || []).map((reference) => [`${reference.documentId || ''}|${reference.location || reference.sourceRef || ''}`, reference])).values()] })) })) };
 }
 
 function normalizeProject(project, id) {

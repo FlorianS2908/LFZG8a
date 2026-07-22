@@ -1,5 +1,6 @@
 const fs = require('fs');
 const zlib = require('zlib');
+const path = require('path');
 
 function readZipTextEntries(zipPath, pattern) {
   const buffer = fs.readFileSync(zipPath);
@@ -44,6 +45,8 @@ function readCentralDirectory(buffer) {
     const commentLength = buffer.readUInt16LE(offset + 32);
     const localOffset = buffer.readUInt32LE(offset + 42);
     const FullName = buffer.subarray(offset + 46, offset + 46 + nameLength).toString('utf8').replace(/\\/g, '/');
+    const normalizedName = path.posix.normalize(FullName);
+    if (normalizedName.startsWith('../') || normalizedName.includes('/../') || normalizedName.startsWith('/') || /^[a-z]:/i.test(normalizedName)) throw new Error('Archiv enthält einen unsicheren Pfad.');
     entries.push({ FullName, compressionMethod, compressedSize, uncompressedSize, localOffset });
     offset += 46 + nameLength + extraLength + commentLength;
   }

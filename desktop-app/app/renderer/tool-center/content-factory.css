@@ -295,3 +295,21 @@ th, td { padding: var(--cf-space-3); text-align: left; overflow-wrap: anywhere; 
 }
 
 .modal-card h3 { margin-top: 0; }
+.analysis-lock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  color: var(--text-primary, #102a43);
+  text-align: center;
+  background: rgba(243, 248, 251, 0.94);
+  backdrop-filter: blur(4px);
+}
+
+.analysis-lock-overlay strong { font-size: clamp(1.25rem, 2vw, 1.8rem); }
+.analysis-lock-file { max-width: min(42rem, 90vw); overflow-wrap: anywhere; }
+.analysis-progress { display: grid; gap: .75rem; padding: 1.25rem; border-radius: 1rem; background: #eef8ff; }

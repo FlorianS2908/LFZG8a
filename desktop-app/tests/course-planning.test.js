@@ -36,8 +36,8 @@ test('Dokumentanalyse und Herkunft werden strikt validiert', () => {
   assert.equal(validateDocumentAnalysis(canonical).valid, true);
   assert.equal(validateDocumentAnalysis({ ...canonical, topics: 'falsch' }).valid, false);
   const frame = { totalDays: 1, actuallyPlannableUnits: 1 };
-  const valid = validateCoursePlan({ days: [{ dayNumber: 1, units: [{ id: 'u1', unitNumber: 1, originStatus: 'explicit', sourceReferences: [{ documentId: 'd1' }] }] }] }, frame);
-  const invalid = validateCoursePlan({ days: [{ dayNumber: 1, units: [{ id: 'u1', unitNumber: 1, originStatus: 'explicit', sourceReferences: [] }] }] }, frame);
+  const valid = validateCoursePlan({ days: [{ dayNumber: 1, units: [{ id: 'u1', unitNumber: 1, topic: 'Thema', preliminaryLearningObjective: 'Ziel', originStatus: 'explicit', sourceReferences: [{ documentId: 'd1' }] }] }] }, frame);
+  const invalid = validateCoursePlan({ days: [{ dayNumber: 1, units: [{ id: 'u1', unitNumber: 1, topic: 'Thema', preliminaryLearningObjective: 'Ziel', originStatus: 'explicit', sourceReferences: [] }] }] }, frame);
   assert.equal(valid.status, 'passed');
   assert.equal(invalid.status, 'failed');
 });

@@ -597,11 +597,13 @@ function renderPlanWizard() {
   const activeStep = workflow.steps.find((step) => step.id === wizard.activeStep) || workflow.steps[0];
   const headerStatus = workflowStatus.getWorkflowStatus?.(gates) || 'active';
   const contentHtml = renderCurrentPlanWizardStep(wizard, activeGate);
+  const analysisRunning = Boolean(wizard.analysisProgress?.status && !documentAnalysisWorkflow.isTerminalAnalysisStatus?.(wizard.analysisProgress.status));
   root.innerHTML = `
     ${workflowLayout.renderWorkflowHeader ? workflowLayout.renderWorkflowHeader(workflow, headerStatus) : ''}
     ${workflowLayout.renderWorkflowStepper ? workflowLayout.renderWorkflowStepper(workflow, wizard.activeStep, gates) : ''}
     ${wizard.status ? `<div class="workflow-transient-status"><p class="status-line" role="status" aria-live="polite">${escapeHtml(wizard.status)}</p></div>` : ''}
     ${wizard.uiError ? `<div class="modal-backdrop" role="presentation"><section class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="wizard-error-title"><h3 id="wizard-error-title">${escapeHtml(wizard.uiError.title)}</h3><p>${escapeHtml(wizard.uiError.message)}</p><div class="button-row">${wizard.uiError.retry ? '<button type="button" class="primary-button" data-retry-wizard-error>Erneut versuchen</button>' : ''}<button type="button" class="secondary-button" data-close-wizard-error>Schließen</button></div></section></div>` : ''}
+    ${analysisRunning ? `<div class="analysis-lock-overlay" role="status" aria-live="polite" aria-label="Analyse läuft"><span class="indeterminate-spinner" aria-hidden="true"></span><strong>Dokumentanalyse und Unterrichtsplanung laufen</strong><span>${escapeHtml(wizard.analysisProgress.step || 'Dokumente werden vorbereitet')}</span><span class="analysis-lock-file">${escapeHtml(wizard.analysisProgress.currentDocument || '')}</span><button class="secondary-button" type="button" data-document-analysis-cancel>Analyse abbrechen</button></div>` : ''}
     ${workflowLayout.renderWorkflowStepShell
       ? workflowLayout.renderWorkflowStepShell({
         workflow,
@@ -619,7 +621,19 @@ function renderPlanWizard() {
       : contentHtml}
   `;
   bindPlanWizardEvents();
+  setAnalysisUiBusy(analysisRunning);
   renderFactoryNavigationGates($('[data-factory-panel].is-active')?.dataset.factoryPanel || 'plan-wizard');
+}
+
+function setAnalysisUiBusy(busy) {
+  const root = $('[data-plan-wizard]');
+  root?.setAttribute('aria-busy', String(busy));
+  const controls = [...$all('[data-plan-wizard] button, [data-plan-wizard] input, [data-plan-wizard] select, [data-plan-wizard] textarea, [data-factory-tab], [data-open-factory-section]')];
+  controls.forEach((control) => {
+    if (control.matches('[data-document-analysis-cancel]')) return;
+    if (busy) { control.dataset.analysisLocked = control.disabled ? 'already-disabled' : 'locked'; control.disabled = true; control.setAttribute('aria-disabled', 'true'); }
+    else if (control.dataset.analysisLocked === 'locked') { control.disabled = false; control.removeAttribute('aria-disabled'); delete control.dataset.analysisLocked; }
+  });
 }
 
 function createFallbackPlanWorkflow() {
@@ -789,9 +803,13 @@ function renderDocumentAnalysisCard(document, analyses, index) {
   const summary = analysis?.summary?.short || (typeof analysis?.summary === 'string' ? analysis.summary : 'Noch keine Analyse vorhanden.');
   const error = document.analysisError;
   const needsReupload = ['SOURCE_PATH_MISSING', 'SOURCE_FILE_NOT_FOUND', 'SOURCE_FILE_UNREADABLE', 'SOURCE_FILE_EMPTY', 'SOURCE_OUTSIDE_PROJECT_STORAGE', 'SOURCE_INTEGRITY_MISMATCH'].includes(error?.code);
+  const preparation = document.preparation || {};
+  const strategyLabel = ({ direct: 'Direkt analysierbar', direct_with_structured_extraction: 'Originaldatei und strukturierte Extraktion', convert_then_analyze: 'Sicher konvertiert und analysiert', extract_then_analyze: 'Sicher extrahiert und analysiert' })[preparation.strategy] || 'Wird sicher vorbereitet';
   return `<article class="mapping-item document-analysis-card">
     <strong>${escapeHtml(document.originalFileName || document.name)}</strong>
     <small>Kategorie: ${escapeHtml(document.declaredCategory || document.sourceType || '-')} | erkannt: ${escapeHtml(category)}${analysis ? ` | Confidence: ${escapeHtml(Math.round(confidence * 100))}%` : ''}${document.extraction?.extractedCharacters ? ` | Zeichen: ${escapeHtml(document.extraction.extractedCharacters)} | Abschnitte: ${escapeHtml(document.extraction.pageOrSlideCount || document.extraction.sections?.length || 0)}` : ''}</small>
+    <small>Format: ${escapeHtml(preparation.detectedFormat || document.extension || '-')} | Strategie: ${escapeHtml(strategyLabel)} | Vorbereitung: ${escapeHtml(preparation.status || 'bereit')}</small>
+    ${(preparation.securityActions || []).map((message) => `<p class="status-line">${escapeHtml(message)}</p>`).join('')}${(preparation.warnings || []).map((message) => `<p class="status-line status-warning">${escapeHtml(message)}</p>`).join('')}
     <span class="status-badge">${escapeHtml(needsReupload ? 'Erneuter Upload erforderlich' : documentAnalysisStatusLabel(document.analysisStatus || 'queued'))}</span><p>${escapeHtml(summary)}</p>
     ${analysis ? `<details><summary>Analysefelder anzeigen</summary>${renderAnalysisList('Themen', analysis.topics)}${renderAnalysisList('Lernziele', analysis.learningObjectives)}${renderAnalysisList('Kompetenzen', analysis.competencies)}${renderAnalysisList('Aufgaben', analysis.exercises)}${renderAnalysisList('Warnungen', analysis.warnings)}${renderAnalysisList('Konflikte', analysis.conflicts)}${renderAnalysisList('Quellen', analysis.sourceReferences)}${renderAnalysisList('Review-Punkte', analysis.reviewItems)}</details>` : ''}
     ${error ? `<p class="status-line status-error">${escapeHtml(error.message)}</p><details><summary>Technische Details</summary><dl><dt>Fehlercode</dt><dd>${escapeHtml(error.code)}</dd><dt>Schritt</dt><dd>${escapeHtml(error.step)}</dd><dt>Feld</dt><dd>${escapeHtml(error.field)}</dd><dt>Erwartet</dt><dd>${escapeHtml(error.expected)}</dd><dt>Empfangen</dt><dd>${escapeHtml(error.received)}</dd></dl></details>${needsReupload ? `<label class="secondary-button">Datei erneut auswählen<input type="file" hidden data-reupload-document="${escapeHtml(id)}"></label>` : `<button class="secondary-button" type="button" data-retry-document="${escapeHtml(id)}">Dokument erneut analysieren</button>`}${document.bindingLevel === 'binding' && !document.failureAcknowledged ? `<button class="secondary-button" type="button" data-ack-document-failure="${escapeHtml(id)}">Als Ausnahme bestätigen</button>` : ''}` : ''}
@@ -2077,12 +2095,12 @@ const continueFromDurationAudienceToAiAnalysis = documentAnalysisWorkflow.create
 
 if (new URLSearchParams(window.location.search).get('coursePlanningSmoke') === '1') {
   window.ContentFactoryCoursePlanningSmoke = {
-    async configure(sourcePath) {
+    async configure(sourcePath, sourceFileName = 'smoke-source.md', sourceMimeType = 'text/markdown') {
       state.aiStatus = { providers: { openai: { configured: true, status: 'configured', model: 'testdouble-v1' } } };
       state.wizard.course = { courseName: 'Electron Smoke Kurs', courseId: `electron-smoke-${Date.now()}`, department: 'FISI', description: 'Realitätsnaher Electron-Test' };
       state.wizard.courseGoal = 'Netzwerkgrundlagen sicher planen';
       state.wizard.expectedOutcome = 'Praxistauglicher Unterrichtsplan';
-      const imported = await desktop.factory.importSourceFile({ projectId: state.wizard.course.courseId, documentId: 'smoke-source', sourcePath, originalFileName: 'smoke-source.md', mimeType: 'text/markdown', sourceCategory: 'course-plan', sourcePriority: 'high', bindingLevel: 'binding' });
+      const imported = await desktop.factory.importSourceFile({ projectId: state.wizard.course.courseId, documentId: 'smoke-source', sourcePath, originalFileName: sourceFileName, mimeType: sourceMimeType, sourceCategory: 'course-plan', sourcePriority: 'high', bindingLevel: 'binding' });
       state.wizard.anchorFiles = [{ ...imported, id: imported.documentId, name: imported.originalFileName, path: imported.storedFilePath, type: imported.mimeType, size: imported.fileSize, sourceType: 'course-plan', sourcePriority: 'high', bindingLevel: 'binding' }];
       state.wizard.structureFrame = { schemaVersion: 1, totalDays: 1, unitsPerDay: 2, totalUnits: 2, unitDurationMinutes: 45, targetAudience: { value: 'trainees', label: 'Auszubildende', customText: '' }, priorKnowledge: { value: 'basic', label: 'Grundkenntnisse', customText: '' }, confirmed: false };
       state.wizard.activeStep = 'durationAudience';
@@ -2105,6 +2123,7 @@ if (new URLSearchParams(window.location.search).get('coursePlanningSmoke') === '
     snapshot() {
       const draft = currentStructuredDraft();
       const gates = getPlanWizardStepGates();
+      const source = state.wizard.courseProject?.uploadedDocuments?.find((document) => document.id === 'smoke-source');
       return {
         activeStep: state.wizard.activeStep,
         operationId: state.wizard.analysisProgress?.operationId,
@@ -2112,7 +2131,9 @@ if (new URLSearchParams(window.location.search).get('coursePlanningSmoke') === '
         totalDays: draft?.days?.length || 0,
         totalUnits: (draft?.days || []).reduce((sum, day) => sum + (day.units || []).length, 0),
         containerProfileActive: Boolean(gates.find((gate) => gate.id === 'containerProfile')?.active),
-        didacticsActive: Boolean(gates.find((gate) => gate.id === 'didactics')?.active)
+        didacticsActive: Boolean(gates.find((gate) => gate.id === 'didactics')?.active),
+        sourceStrategy: source?.preparation?.strategy,
+        sourceHasMacros: source?.preparation?.hasMacros
       };
     }
   };
