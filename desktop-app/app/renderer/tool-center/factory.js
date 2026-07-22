@@ -796,7 +796,6 @@ function renderCourseStructureStep(wizard) {
   const running = Boolean(wizard.analysisProgress?.status && !documentAnalysisWorkflow.isTerminalAnalysisStatus?.(wizard.analysisProgress.status));
   const documents = project?.uploadedDocuments?.length ? project.uploadedDocuments : wizard.anchorFiles;
   const analyses = project?.documentAnalyses || [];
-  const progressCount = documentAnalysisWorkflow.calculateAnalysisProgress?.(wizard.analysisProgress) || { total: 0, processed: 0 };
   const analysisComplete = ['completed', 'completed_with_warnings'].includes(project?.pipelinePhases?.document_analysis?.status);
   const planningStatus = project?.planningOperation?.status || '';
   const planningRunning = ['planning', 'validating', 'preparing', 'running'].includes(planningStatus);
@@ -805,7 +804,6 @@ function renderCourseStructureStep(wizard) {
   return `<article class="tool-card" data-plan-step-content="courseStructure">
     <h3>KI-Analyse und Kursplanung</h3>
     <p class="status-line">Die hochgeladenen Dokumente werden gemeinsam ausgewertet. Anschließend erstellt die KI einen Vorschlag für die Verteilung der Themen auf die vorhandenen Kurstage und Unterrichtseinheiten.</p>
-    ${running ? `<div class="analysis-progress" role="status" aria-live="polite"><span class="indeterminate-spinner" aria-hidden="true"></span><strong>${escapeHtml(wizard.analysisProgress.step)}</strong><span>${escapeHtml(wizard.analysisProgress.currentDocument || '')}</span><progress value="${progressCount.percentage}" max="100" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressCount.percentage}"></progress><small>${progressCount.percentage}% | ${progressCount.processed} von ${progressCount.total} Dokumenten verarbeitet${progressCount.segmentTotal ? ` | Segment ${progressCount.segmentCompleted} von ${progressCount.segmentTotal}` : ''} | Phase: ${escapeHtml(wizard.analysisProgress.phase || '-')}</small><small>wartend: ${escapeHtml(wizard.analysisProgress.queued || 0)} | erfolgreich: ${escapeHtml(wizard.analysisProgress.completed || 0)} | Warnungen: ${escapeHtml(wizard.analysisProgress.warningCount || 0)} | fehlgeschlagen: ${escapeHtml(wizard.analysisProgress.failed || 0)}</small></div>` : ''}
     <div class="mapping-list">${documents.map((document, index) => renderDocumentAnalysisCard(document, analyses, index)).join('')}</div>
     ${analysisComplete ? `<p class="status-line status-success">Dokumentanalyse abgeschlossen. ${escapeHtml(project.topicCatalog?.topics?.length || 0)} konsolidierte Themen stehen für die Planung bereit.</p>` : ''}
     ${planningStatus === 'timed_out' ? '<p class="status-line status-warning">Die Planung hat ihr Phasenzeitlimit erreicht. Die Dokumentanalyse bleibt vollständig erhalten.</p>' : ''}
@@ -2047,7 +2045,27 @@ async function openSavedCourseProject(event) {
     state.wizard.targetAudience = { ...state.wizard.targetAudience, ageRange: project.targetGroup || state.wizard.targetAudience.ageRange, priorKnowledge: project.priorKnowledge || state.wizard.targetAudience.priorKnowledge };
     if (project.approvedCoursePlan) state.wizard.approvedCurriculumPlan = structuredPlanToCurriculum(project.approvedCoursePlan);
     state.wizard.status = 'Gespeichertes Kursprojekt geladen.';
+    const activeOperation = [project.planningOperation, project.analysisOperation].find((operation) => operation?.operationId && !documentAnalysisWorkflow.isTerminalAnalysisStatus?.(operation.status));
+    if (activeOperation) {
+      state.wizard.analysisProgress = activeOperation;
+      state.wizard.status = `Aktiver Vorgang ${activeOperation.operationId} wird wieder aufgenommen.`;
+      void resumeWizardOperation(activeOperation);
+    }
   } catch (error) { state.wizard.status = error.message; }
+  renderPlanWizard();
+}
+
+async function resumeWizardOperation(operation) {
+  try {
+    const progress = await documentAnalysisWorkflow.pollAnalysisUntilTerminal({ operationId: operation.operationId, getProgress: desktop.factory.getOperationStatus, onProgress: (value) => { state.wizard.analysisProgress = value; renderPlanWizard(); } });
+    state.wizard.analysisProgress = progress;
+    state.wizard.courseProject = await desktop.factory.getCourseProject(state.wizard.course.courseId);
+    if (operation.kind === 'planning' && ['completed', 'completed_with_warnings'].includes(progress.status)) {
+      const result = await desktop.factory.getPlanningResult(operation.operationId); const current = currentStructuredDraft();
+      if (!result.plan || !current || current.status === 'stale') throw new Error('Die Planung wurde abgeschlossen, aber der erzeugte Unterrichtsplan konnte nicht in das Kursprojekt übernommen werden.');
+      state.wizard.activeStep = 'structureReview'; state.wizard.selectedPlanDay = 1; state.wizard.selectedPlanUnit = 1;
+    }
+  } catch (error) { state.wizard.status = `${error.message} Vorgangs-ID: ${operation.operationId}`; }
   renderPlanWizard();
 }
 
@@ -2065,7 +2083,7 @@ async function analyzeWizardDocuments(retryDocumentId = '') {
   if (normalizedRetryDocumentId && !documents.some((document) => document.id === normalizedRetryDocumentId)) { showWizardError('Dokumentanalyse konnte nicht gestartet werden', `Das Dokument „${normalizedRetryDocumentId}“ wurde nicht gefunden oder ist ausgeschlossen.`); renderPlanWizard(); return; }
   if (!state.aiStatus?.providers?.openai?.configured) { showWizardError('Die KI-Analyse konnte nicht gestartet werden', 'Bitte prüfen Sie den OpenAI-Schlüssel, das ausgewählte Modell und den Verbindungstest in den KI-Einstellungen.'); renderPlanWizard(); return; }
   const selectedCount = normalizedRetryDocumentId ? 1 : documents.length;
-  state.wizard.analysisProgress = { status: 'preparing', step: 'Dokumente werden vorbereitet', currentDocument: '', total: selectedCount, queued: selectedCount, completed: 0, warningCount: 0, failed: 0, errors: [] };
+  state.wizard.analysisProgress = { kind: 'analysis', status: 'queued', phase: 'source_validation', phaseLabel: 'Quellen prüfen', message: 'Dokumente werden vorbereitet', currentDocument: '', totalItems: selectedCount, total: selectedCount, queued: selectedCount, completed: 0, overallProgress: 0, warningCount: 0, failed: 0, errors: [] };
   state.wizard.status = 'Dokumentanalyse wurde gestartet.';
   renderPlanWizard();
   try {
@@ -2104,15 +2122,17 @@ async function pollAnalysisOperation(operationId) {
 async function startWizardCoursePlanning() {
   if (!state.wizard.courseProject?.id || !['completed', 'completed_with_warnings'].includes(state.wizard.courseProject?.pipelinePhases?.document_analysis?.status) || state.wizard.planningBusy) return;
   state.wizard.planningBusy = true; state.wizard.status = 'Unterrichtsplanung wurde gestartet.'; renderPlanWizard();
+  let operationId = '';
   try {
     const started = await desktop.factory.startCoursePlanning({ projectId: state.wizard.courseProject.id });
+    operationId = started.operationId;
     state.wizard.analysisProgress = started.progress;
-    const progress = await documentAnalysisWorkflow.pollAnalysisUntilTerminal({ operationId: started.operationId, getProgress: desktop.factory.getOperationStatus, inactivityTimeoutMs: 120000, onProgress: (value) => { state.wizard.analysisProgress = value; renderPlanWizard(); } });
+    const progress = await documentAnalysisWorkflow.pollAnalysisUntilTerminal({ operationId: started.operationId, getProgress: desktop.factory.getOperationStatus, onProgress: (value) => { state.wizard.analysisProgress = value; renderPlanWizard(); } });
     const result = await desktop.factory.getPlanningResult(started.operationId);
     state.wizard.courseProject = await desktop.factory.getCourseProject(state.wizard.courseProject.id);
-    if (progress.status === 'completed' && result.plan) { state.wizard.courseProject = await desktop.factory.getCourseProject(state.wizard.course.courseId); const current = currentStructuredDraft(); if (!current || current.status === 'stale') throw new Error('Die Planung wurde abgeschlossen, aber der erzeugte Unterrichtsplan konnte nicht in das Kursprojekt übernommen werden.'); state.wizard.activeStep = 'structureReview'; state.wizard.selectedPlanDay = 1; state.wizard.selectedPlanUnit = 1; state.wizard.status = 'Unterrichtsplan erstellt und persistent gespeichert.'; }
+    if (['completed', 'completed_with_warnings'].includes(progress.status) && result.plan) { state.wizard.courseProject = await desktop.factory.getCourseProject(state.wizard.course.courseId); const current = currentStructuredDraft(); if (!current || current.status === 'stale') throw new Error('Die Planung wurde abgeschlossen, aber der erzeugte Unterrichtsplan konnte nicht in das Kursprojekt übernommen werden.'); state.wizard.activeStep = 'structureReview'; state.wizard.selectedPlanDay = 1; state.wizard.selectedPlanUnit = 1; state.wizard.status = 'Unterrichtsplan erstellt und persistent gespeichert.'; }
     else state.wizard.status = formatProgressError(progress);
-  } catch (error) { showWizardError('Unterrichtsplanung fehlgeschlagen', error, startWizardCoursePlanning); state.wizard.status = error.message; }
+  } catch (error) { if (operationId) { try { const status = await desktop.factory.getOperationStatus(operationId); state.wizard.analysisProgress = status; if (!documentAnalysisWorkflow.isTerminalAnalysisStatus?.(status.status)) { state.wizard.status = 'Der Vorgangsstatus wird erneut geprüft. Die Verarbeitung kann weiterhin aktiv sein.'; void resumeWizardOperation(status); return; } } catch {} } showWizardError('Unterrichtsplanung fehlgeschlagen', error, startWizardCoursePlanning); state.wizard.status = `${error.message}${operationId ? ` Vorgangs-ID: ${operationId}` : ''}`; }
   finally { state.wizard.planningBusy = false; renderPlanWizard(); }
 }
 

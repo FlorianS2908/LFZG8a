@@ -80,6 +80,18 @@ test('Fortschritt zählt Erfolge Warnungen und Fehler genau einmal', () => {
   assert.deepEqual(calculateAnalysisProgress({ total: 4, completed: 1, warningCount: 1, failed: 1 }), { total: 4, processed: 3, segmentTotal: 0, segmentCompleted: 0, percentage: 75 });
 });
 
+test('Echter Gesamtfortschritt wird direkt und vor Abschluss begrenzt dargestellt', () => {
+  assert.equal(calculateAnalysisProgress({ status: 'running', totalItems: 1, currentItem: 1, overallProgress: .42 }).percentage, 42);
+  assert.equal(calculateAnalysisProgress({ status: 'running', totalItems: 3, currentItem: 2, overallProgress: 1 }).percentage, 99);
+  assert.equal(calculateAnalysisProgress({ status: 'completed', totalItems: 3, currentItem: 3, overallProgress: 1 }).percentage, 100);
+});
+
+test('Staler Heartbeat löst eine Statusnachfrage aus und beendet laufende Operation nicht', async () => {
+  let clock = 0; let calls = 0; const seen = [];
+  const result = await pollAnalysisUntilTerminal({ operationId: 'resume-op', getProgress: async () => { calls += 1; return calls > 2 ? { status: 'completed', lastActivityAt: new Date(clock).toISOString() } : { status: 'running', lastActivityAt: new Date(0).toISOString() }; }, onProgress: (value) => seen.push(value), sleep: async () => { clock += 50000; }, now: () => clock, inactivityTimeoutMs: 45000, timeoutMs: 360000 });
+  assert.equal(result.status, 'completed'); assert.ok(seen.some((item) => item.stale));
+});
+
 test('Polling endet terminal, toleriert einen temporären Fehler und läuft in Timeout', async () => {
   const states = [new Error('temporär'), { status: 'running' }, { status: 'completed' }];
   const completed = await pollAnalysisUntilTerminal({ operationId: 'op-1', getProgress: async () => { const value = states.shift(); if (value instanceof Error) throw value; return value; }, sleep: async () => {}, timeoutMs: 1000 });

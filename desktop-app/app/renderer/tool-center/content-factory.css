@@ -389,5 +389,7 @@ th, td { padding: var(--cf-space-3); text-align: left; overflow-wrap: anywhere; 
 .workflow-progress-steps small { color: var(--cf-muted); }
 .workflow-progress-steps .step-done { color: var(--cf-success); background: #f0fdf4; }
 .workflow-progress-steps .step-running { color: var(--cf-brand-strong); background: var(--cf-brand-soft); }
+.workflow-progress-steps .step-failed { color: var(--cf-danger, #b42318); background: #fef3f2; }
+.workflow-progress-steps .step-cancelled { color: var(--cf-muted); background: #f3f4f6; }
 @keyframes workflow-progress-move { from { transform: translateX(-10%); } to { transform: translateX(195%); } }
 .analysis-progress { display: grid; gap: .75rem; padding: 1.25rem; border-radius: 1rem; background: #eef8ff; }

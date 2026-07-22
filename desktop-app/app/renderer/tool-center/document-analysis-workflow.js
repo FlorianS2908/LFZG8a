@@ -4,6 +4,8 @@
   if (root) root.ContentFactoryDocumentAnalysisWorkflow = api;
 }(typeof globalThis !== 'undefined' ? globalThis : this, function createWorkflowHelpers() {
   const TERMINAL_STATUSES = new Set(['completed', 'completed_with_warnings', 'failed', 'timed_out', 'cancelled', 'not_found']);
+  const RENDERER_STALE_THRESHOLD_MS = 45000;
+  const RENDERER_HARD_TIMEOUT_MS = 360000;
 
   function normalizeRetryDocumentId(value) {
     return typeof value === 'string' ? value.trim() : '';
@@ -31,6 +33,11 @@
   }
 
   function calculateAnalysisProgress(progress = {}) {
+    if (Number.isFinite(Number(progress.overallProgress))) {
+      const fraction = Math.max(0, Math.min(isTerminalAnalysisStatus(progress.status) && ['completed', 'completed_with_warnings'].includes(progress.status) ? 1 : 0.999, Number(progress.overallProgress)));
+      const percentage = Math.round(fraction * 100);
+      return { total: Number(progress.totalItems || progress.total || 0), processed: Number(progress.currentItem || progress.completed || 0), segmentTotal: Number(progress.totalSegments || progress.segmentTotal || 0), segmentCompleted: Number(progress.segmentCompleted || 0), percentage: isTerminalAnalysisStatus(progress.status) ? percentage : Math.min(99, percentage) };
+    }
     progress ||= {};
     const total = Math.max(0, Number(progress.total || 0));
     const processed = Math.min(total, Math.max(0, Number(progress.completed || 0) + Number(progress.warningCount || 0) + Number(progress.failed || 0)));
@@ -83,29 +90,31 @@
     };
   }
 
-  async function pollAnalysisUntilTerminal({ operationId, getProgress, onProgress = () => {}, intervalMs = 500, timeoutMs = 0, inactivityTimeoutMs = 120000, maxConsecutiveErrors = 3, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
-    const startedAt = Date.now();
+  async function pollAnalysisUntilTerminal({ operationId, getProgress, onProgress = () => {}, intervalMs = 500, timeoutMs = RENDERER_HARD_TIMEOUT_MS, inactivityTimeoutMs = RENDERER_STALE_THRESHOLD_MS, maxConsecutiveErrors = 3, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = () => Date.now() }) {
+    const startedAt = now();
     let consecutiveErrors = 0;
-    let lastActivityAt = Date.now(); let lastSignature = ''; let currentInterval = intervalMs;
-    while (!timeoutMs || Date.now() - startedAt < timeoutMs) {
+    let lastActivityAt = now(); let lastSignature = ''; let currentInterval = intervalMs;
+    while (!timeoutMs || now() - startedAt < timeoutMs) {
       await sleep(currentInterval);
       try {
         const progress = await getProgress(operationId);
         consecutiveErrors = 0;
-        const signature = JSON.stringify([progress?.status, progress?.phase, progress?.step, progress?.completed, progress?.currentSegment, progress?.updatedAt]);
-        if (signature !== lastSignature) { lastSignature = signature; lastActivityAt = Date.now(); currentInterval = 500; } else currentInterval = Math.min(2000, currentInterval + 250);
+        const signature = JSON.stringify([progress?.status, progress?.phase, progress?.overallProgress, progress?.lastActivityAt]);
+        const backendActivity = Date.parse(progress?.lastActivityAt || progress?.updatedAt || '') || 0;
+        if (signature !== lastSignature || backendActivity > lastActivityAt) { lastSignature = signature; lastActivityAt = Math.max(now(), backendActivity); currentInterval = intervalMs; } else currentInterval = Math.min(2000, currentInterval + 250);
         onProgress(progress);
         if (isTerminalAnalysisStatus(progress?.status)) return progress;
-        if (inactivityTimeoutMs && Date.now() - lastActivityAt >= inactivityTimeoutMs) { const error = new Error(`Seit ${Math.round(inactivityTimeoutMs / 1000)} Sekunden wurde kein Fortschritt gemeldet. Die Backendoperation kann weiterhin laufen. Vorgangs-ID: ${operationId}`); error.code = 'ANALYSIS_INACTIVITY_TIMEOUT'; throw error; }
+        if (inactivityTimeoutMs && now() - lastActivityAt >= inactivityTimeoutMs) onProgress({ ...progress, message: 'Der Vorgangsstatus wird erneut geprüft. Die Verarbeitung kann weiterhin aktiv sein.', stale: true });
       } catch (error) {
         consecutiveErrors += 1;
         if (consecutiveErrors >= maxConsecutiveErrors) throw error;
       }
     }
-    const error = new Error(`Die Analyse hat das Zeitlimit überschritten. Vorgangs-ID: ${operationId}`);
+    try { const finalStatus = await getProgress(operationId); onProgress(finalStatus); if (isTerminalAnalysisStatus(finalStatus?.status)) return finalStatus; } catch {}
+    const error = new Error(`Die Verarbeitung hat das äußerste Zeitlimit überschritten. Der Backendstatus wurde erneut geprüft. Vorgangs-ID: ${operationId}`);
     error.code = 'ANALYSIS_POLL_TIMEOUT';
     throw error;
   }
 
-  return { normalizeRetryDocumentId, createDocumentAnalysisPayload, calculateAnalysisProgress, isTerminalAnalysisStatus, bindDocumentAnalysisControls, createSingleFlightAnalysisStarter, createDurationAudienceContinuation, pollAnalysisUntilTerminal };
+  return { RENDERER_STALE_THRESHOLD_MS, RENDERER_HARD_TIMEOUT_MS, normalizeRetryDocumentId, createDocumentAnalysisPayload, calculateAnalysisProgress, isTerminalAnalysisStatus, bindDocumentAnalysisControls, createSingleFlightAnalysisStarter, createDurationAudienceContinuation, pollAnalysisUntilTerminal };
 }));
