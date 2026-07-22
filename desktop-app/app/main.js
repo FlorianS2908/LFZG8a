@@ -37,6 +37,7 @@ function getService() {
 }
 
 function createWindow() {
+  const browserPreviewSmoke = process.argv.includes('--browser-preview-smoke');
   mainWindow = new BrowserWindow({
     title: 'ueTool ContentFactory',
     width: 1440,
@@ -47,7 +48,7 @@ function createWindow() {
     backgroundColor: '#f3f8fb',
     icon: fs.existsSync(iconFile) ? iconFile : undefined,
     webPreferences: {
-      preload: preloadFile,
+      preload: browserPreviewSmoke ? undefined : preloadFile,
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
@@ -67,14 +68,68 @@ function createWindow() {
         mainNavigationItems: document.querySelectorAll('.factory-sidebar > [data-factory-tab]').length,
         phases: window.ContentFactoryWorkflowLayout ? 6 : 0,
         navigationModule: Boolean(window.ContentFactoryAppNavigation),
-        visiblePanel: document.querySelectorAll('[data-factory-panel].is-active').length
+        visiblePanel: document.querySelectorAll('[data-factory-panel].is-active').length,
+        desktopBridge: Boolean(window.lfzq8aDesktop),
+        factoryBridge: Boolean(window.lfzq8aDesktop?.factory),
+        startAnalysis: typeof window.lfzq8aDesktop?.factory?.startDocumentAnalysis === 'function',
+        getProgress: typeof window.lfzq8aDesktop?.factory?.getAnalysisProgress === 'function'
       })`);
-      if (result.title !== 'ueTool ContentFactory' || result.mainNavigationItems !== 5 || result.phases !== 6 || !result.navigationModule || result.visiblePanel !== 1) {
-        console.error('CONTENTFACTORY_SMOKE_FAILED', JSON.stringify(result));
+      const startButtonNavigation = await mainWindow.webContents.executeJavaScript(`(() => {
+        document.querySelector('[data-open-factory-section="plan-wizard"]').click();
+        return {
+          active: document.querySelector('[data-factory-panel="plan-wizard"]').classList.contains('is-active'),
+          visible: !document.querySelector('[data-factory-panel="plan-wizard"]').hidden,
+          count: document.querySelectorAll('[data-factory-panel].is-active').length
+        };
+      })()`);
+      const sidebarNavigation = await mainWindow.webContents.executeJavaScript(`(() => {
+        document.querySelector('[data-factory-tab="home"]').click();
+        document.querySelector('[data-factory-tab="plan-wizard"]').click();
+        return {
+          active: document.querySelector('[data-factory-panel="plan-wizard"]').classList.contains('is-active'),
+          visible: !document.querySelector('[data-factory-panel="plan-wizard"]').hidden,
+          count: document.querySelectorAll('[data-factory-panel].is-active').length
+        };
+      })()`);
+      if (result.title !== 'ueTool ContentFactory' || result.mainNavigationItems !== 5 || result.phases !== 6 || !result.navigationModule || result.visiblePanel !== 1 || !result.desktopBridge || !result.factoryBridge || !result.startAnalysis || !result.getProgress || !startButtonNavigation.active || !startButtonNavigation.visible || startButtonNavigation.count !== 1 || !sidebarNavigation.active || !sidebarNavigation.visible || sidebarNavigation.count !== 1) {
+        console.error('CONTENTFACTORY_SMOKE_FAILED', JSON.stringify({ result, startButtonNavigation, sidebarNavigation }));
         app.exit(1);
         return;
       }
-      console.log('CONTENTFACTORY_SMOKE_OK', JSON.stringify(result));
+      console.log('CONTENTFACTORY_SMOKE_OK', JSON.stringify({ result, startButtonNavigation, sidebarNavigation }));
+      app.quit();
+    });
+  }
+  if (browserPreviewSmoke) {
+    mainWindow.webContents.once('did-finish-load', async () => {
+      const result = await mainWindow.webContents.executeJavaScript(`(() => {
+        const errors = [];
+        window.addEventListener('error', (event) => errors.push(event.message));
+        document.querySelector('[data-open-factory-section="plan-wizard"]').click();
+        const desktopControls = Array.from(document.querySelectorAll('[data-open-course-project],[data-wizard-anchor-files],[data-document-analyze],[data-save-course-scope]'));
+        const startButton = {
+          active: document.querySelector('[data-factory-panel="plan-wizard"]').classList.contains('is-active'),
+          visible: !document.querySelector('[data-factory-panel="plan-wizard"]').hidden,
+          desktopControls: desktopControls.length,
+          desktopControlsDisabled: desktopControls.every((control) => control.disabled)
+        };
+        document.querySelector('[data-factory-tab="home"]').click();
+        document.querySelector('[data-factory-tab="plan-wizard"]').click();
+        return {
+          desktopBridge: Boolean(window.lfzq8aDesktop),
+          previewMessage: document.querySelector('[data-factory-status]').textContent,
+          startButton,
+          sidebarActive: document.querySelector('[data-factory-panel="plan-wizard"]').classList.contains('is-active'),
+          activePanels: document.querySelectorAll('[data-factory-panel].is-active').length,
+          errors
+        };
+      })()`);
+      if (result.desktopBridge || !result.previewMessage.includes('Browser-Vorschau') || !result.startButton.active || !result.startButton.visible || !result.startButton.desktopControlsDisabled || !result.sidebarActive || result.activePanels !== 1 || result.errors.length) {
+        console.error('CONTENTFACTORY_BROWSER_PREVIEW_SMOKE_FAILED', JSON.stringify(result));
+        app.exit(1);
+        return;
+      }
+      console.log('CONTENTFACTORY_BROWSER_PREVIEW_SMOKE_OK', JSON.stringify(result));
       app.quit();
     });
   }

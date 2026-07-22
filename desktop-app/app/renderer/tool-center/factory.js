@@ -1,4 +1,5 @@
 const desktop = window.lfzq8aDesktop;
+const hasDesktopFactory = Boolean(desktop?.factory);
 const appNavigation = window.ContentFactoryAppNavigation;
 const uploadUtils = window.ContentFactoryUploadUtils || {};
 const workflowLayout = window.ContentFactoryWorkflowLayout || {};
@@ -280,8 +281,41 @@ function showPanel(panelName) {
     return;
   }
   appNavigation.activatePanel(panelName);
-  setFactoryStatus('');
+  if (panelName === 'plan-wizard') renderPlanWizard();
+  setFactoryStatus(hasDesktopFactory ? '' : browserPreviewMessage(), hasDesktopFactory ? '' : 'status-warning');
   renderFactoryNavigationGates(panelName);
+  if (!hasDesktopFactory) disableDesktopOnlyControls();
+}
+
+const navigationBindings = new WeakSet();
+
+function bindFactoryNavigation() {
+  [...$all('[data-factory-tab]'), ...$all('[data-open-factory-section]')].forEach((button) => {
+    if (navigationBindings.has(button)) return;
+    navigationBindings.add(button);
+    button.addEventListener('click', () => showPanel(button.dataset.factoryTab || button.dataset.openFactorySection));
+  });
+}
+
+function browserPreviewMessage() {
+  return 'Browser-Vorschau: Navigation und Formulare können geprüft werden. Speichern, Dateiverarbeitung und KI-Analyse stehen nur in der Electron-App zur Verfügung.';
+}
+
+function disableDesktopOnlyControls() {
+  const selectors = [
+    '[data-open-course-project]', '[data-wizard-anchor-files]', '[data-document-analyze]',
+    '[data-retry-document]', '[data-save-course-scope]', '[data-wizard-plan]',
+    '[data-wizard-upload]', '[data-wizard-import]', '[data-wizard-generate]',
+    '[data-wizard-generate-all]', '[data-wizard-create-draft]', '[data-ai-status-check]',
+    '[data-ai-model-save]', '[data-ai-import-select]', '[data-ai-replace-key]',
+    '[data-ai-test-request]', '[data-ai-clear-key]', '[data-wizard-preflight]',
+    '[data-wizard-test-run]', '[data-wizard-test-run-confirm]'
+  ];
+  $all(selectors.join(',')).forEach((control) => {
+    control.disabled = true;
+    control.setAttribute('aria-disabled', 'true');
+    control.title = browserPreviewMessage();
+  });
 }
 
 function getNextRecommendedAction(currentState = state) {
@@ -1565,6 +1599,7 @@ function bindPlanWizardEvents() {
     state.wizard.status = result.message || 'Demo geprüft.';
     renderPlanWizard();
   }));
+  if (!hasDesktopFactory) disableDesktopOnlyControls();
 }
 
 function moveWizardStep(direction) {
@@ -2696,13 +2731,13 @@ async function updateContainerStatus(containerId, action) {
 }
 
 async function init() {
-  if (!desktop?.factory) {
-    setFactoryStatus('Vorschau ohne Desktop-Daten. In der Electron-App werden Projekte und Status geladen.', 'status-warning');
+  bindFactoryNavigation();
+  if (!hasDesktopFactory) {
+    setFactoryStatus(browserPreviewMessage(), 'status-warning');
     appNavigation.activatePanel('home', { focus: false });
+    disableDesktopOnlyControls();
     return;
   }
-  $all('[data-factory-tab]').forEach((button) => button.addEventListener('click', () => showPanel(button.dataset.factoryTab)));
-  $all('[data-open-factory-section]').forEach((button) => button.addEventListener('click', () => showPanel(button.dataset.openFactorySection)));
   $('[data-ui-mode-toggle]')?.addEventListener('change', (event) => {
     state.uiMode = event.target.checked ? 'expert' : 'guided';
     state.wizard.expertMode = state.uiMode === 'expert';
@@ -2719,7 +2754,11 @@ async function init() {
   $('[data-search-references]').addEventListener('click', searchReferences);
   $('[data-validate-batch]').addEventListener('click', validateBatch);
   $('[data-create-from-batch]').addEventListener('click', createContainerFromBatch);
-  await loadState();
+  try {
+    await loadState();
+  } catch (error) {
+    setFactoryStatus(`Desktop-Daten konnten nicht geladen werden: ${error.message}`, 'status-error');
+  }
 }
 
 init().catch((error) => {

@@ -1,8 +1,18 @@
 const { contextBridge, ipcRenderer } = require('electron');
-const { DOCUMENT_ANALYSIS_CHANNELS } = require('./lib/content-factory/course-planning/analysis-ipc-contract');
+
+// Sandboxed preloads may only require Electron and a small allow-list of Node
+// built-ins. Keep this explicit mirror in sync with analysis-ipc-contract.js;
+// the contract test guards against drift without loading project modules here.
+const DOCUMENT_ANALYSIS_CHANNELS = Object.freeze({
+  start: 'factory:start-document-analysis',
+  progress: 'factory:get-analysis-progress',
+  cancel: 'factory:cancel-ai-operation',
+  generatePlan: 'factory:generate-structured-course-plan'
+});
 
 const invoke = (channel) => (...args) => ipcRenderer.invoke(channel, ...args);
 contextBridge.exposeInMainWorld('lfzq8aDesktop', {
+  apiVersion: 1,
   factory: {
     getState: invoke('factory:get-state'), duplicateContainer: invoke('factory:duplicate-container'), importFiles: invoke('factory:import-files'),
     createCurriculumAnchor: invoke('factory:create-curriculum-anchor'), analyzeCurriculumAnchor: invoke('factory:analyze-curriculum-anchor'),

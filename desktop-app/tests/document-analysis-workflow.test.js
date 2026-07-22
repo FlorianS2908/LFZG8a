@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const {
   normalizeRetryDocumentId,
   createDocumentAnalysisPayload,
@@ -71,4 +73,6 @@ test('IPC-Vertrag verwendet eindeutige serialisierbare Kanäle und Payloads', ()
   const payload = createDocumentAnalysisPayload({ project: { id: 'kurs', structureFrame: { valid: true } }, documents: [{ id: 'd1', storedFilePath: 'C:\\fixture.xlsm' }], retryDocumentId: '' });
   assert.deepEqual(structuredClone(payload), payload);
   assert.equal(Object.values(DOCUMENT_ANALYSIS_CHANNELS).length, new Set(Object.values(DOCUMENT_ANALYSIS_CHANNELS)).size);
+  const preload = fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8');
+  for (const channel of Object.values(DOCUMENT_ANALYSIS_CHANNELS)) assert.ok(preload.includes(channel), channel);
 });

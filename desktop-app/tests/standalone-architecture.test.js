@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 
 const appRoot = path.resolve(__dirname, '..', 'app');
 const desktopRoot = path.resolve(__dirname, '..');
@@ -21,6 +22,31 @@ test('Preload stellt ausschließlich ContentFactory-APIs bereit', () => {
   const preload = read('preload.js');
   assert.match(preload, /factory:/);
   assert.doesNotMatch(preload, /auth:|release-center|course-management|admin-tools|dokutool|display:/i);
+});
+
+test('Sandbox-Preload lädt ohne lokale Module und stellt die sichere Factory-Bridge bereit', async () => {
+  const source = read('preload.js');
+  let exposed;
+  const calls = [];
+  const electron = {
+    contextBridge: { exposeInMainWorld(name, value) { exposed = { name, value }; } },
+    ipcRenderer: { invoke(channel, ...args) { calls.push({ channel, args }); return Promise.resolve({ ok: true }); } }
+  };
+  vm.runInNewContext(source, {
+    require(id) {
+      assert.equal(id, 'electron', `Sandbox-Preload versuchte lokales Modul zu laden: ${id}`);
+      return electron;
+    }
+  }, { filename: 'preload.js' });
+  assert.equal(exposed.name, 'lfzq8aDesktop');
+  assert.equal(exposed.value.apiVersion, 1);
+  assert.equal(typeof exposed.value.factory.startDocumentAnalysis, 'function');
+  assert.equal(typeof exposed.value.factory.getAnalysisProgress, 'function');
+  assert.equal(exposed.value.invoke, undefined);
+  assert.equal(exposed.value.factory.invoke, undefined);
+  await exposed.value.factory.startDocumentAnalysis({ projectId: 'test' });
+  await exposed.value.factory.getAnalysisProgress('operation-1');
+  assert.deepEqual(calls.map((entry) => entry.channel), ['factory:start-document-analysis', 'factory:get-analysis-progress']);
 });
 
 test('Oberfläche trägt den Produktnamen und keine Plattformnavigation', () => {
