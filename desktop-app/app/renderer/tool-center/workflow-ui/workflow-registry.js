@@ -1,5 +1,5 @@
 (function initWorkflowRegistry(globalScope) {
-  const help = globalScope.ContentFactoryWorkflowHelp || (typeof require !== 'undefined' ? require('./workflow-help-content') : {});
+  const help = globalScope.CourseForgeWorkflowHelp || globalScope.ContentFactoryWorkflowHelp || (typeof require !== 'undefined' ? require('./workflow-help-content') : {});
   const planHelp = help.planWizardHelp || {};
 
   const workflows = [
@@ -94,6 +94,6 @@
   }
 
   const api = { workflows, listWorkflows, getWorkflow };
-  globalScope.ContentFactoryWorkflowRegistry = api;
+  globalScope.CourseForgeWorkflowRegistry = api; globalScope.ContentFactoryWorkflowRegistry = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

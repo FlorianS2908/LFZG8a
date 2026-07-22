@@ -179,6 +179,6 @@
   };
 
   const api = { planWizardHelp, workflowHelpContent };
-  globalScope.ContentFactoryWorkflowHelp = api;
+  globalScope.CourseForgeWorkflowHelp = api; globalScope.ContentFactoryWorkflowHelp = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

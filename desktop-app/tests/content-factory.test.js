@@ -1219,7 +1219,7 @@ test('content factory navigation opens guided plan wizard before raw imports', (
 
   assert.match(html, /data-open-factory-section="plan-wizard"/);
   assert.match(html, /Neuen Kurs erstellen/);
-  assert.match(html, /Kurscontainer erstellen und verwalten/);
+  assert.match(html, /The AI-powered Course Compiler/);
   assert.doesNotMatch(html, /<strong>Container Erstellung<\/strong>[\s\S]*data-open-factory-section="import"/);
   assert.match(html, /Rohdaten importieren/);
   assert.match(ui, /getFactoryTabGates/);

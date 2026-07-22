@@ -1,6 +1,6 @@
-# ContentFactory Upload-Staging und ZIP-Import
+# CourseForge Upload-Staging und ZIP-Import
 
-Die ContentFactory verarbeitet produktive Uploads lokal im AppData-Bereich. Upload-Dateien werden nicht in das GitHub-Repository kopiert.
+CourseForge verarbeitet produktive Uploads lokal im AppData-Bereich. Upload-Dateien werden nicht in das GitHub-Repository kopiert.
 
 ## Speicherorte
 

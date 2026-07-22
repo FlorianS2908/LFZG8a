@@ -1,5 +1,5 @@
 (function initWorkflowLayout(globalScope) {
-  const utils = globalScope.ContentFactoryWorkflowUtils || (typeof require !== 'undefined' ? require('./workflow-ui-utils') : {});
+  const utils = globalScope.CourseForgeWorkflowUtils || globalScope.ContentFactoryWorkflowUtils || (typeof require !== 'undefined' ? require('./workflow-ui-utils') : {});
   const escapeHtml = utils.escapeHtml || ((value) => String(value ?? ''));
   const asList = utils.asList || ((value) => Array.isArray(value) ? value : [value].filter(Boolean));
   const statusLabel = utils.statusLabel || ((value) => value || 'offen');
@@ -146,6 +146,6 @@
     renderWorkflowLockedState,
     renderWorkflowResultCard
   };
-  globalScope.ContentFactoryWorkflowLayout = api;
+  globalScope.CourseForgeWorkflowLayout = api; globalScope.ContentFactoryWorkflowLayout = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

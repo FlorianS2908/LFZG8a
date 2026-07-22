@@ -12,6 +12,6 @@
   }
 
   const api = { getWorkflowStatus, buildChecklist };
-  globalScope.ContentFactoryWorkflowStatus = api;
+  globalScope.CourseForgeWorkflowStatus = api; globalScope.ContentFactoryWorkflowStatus = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

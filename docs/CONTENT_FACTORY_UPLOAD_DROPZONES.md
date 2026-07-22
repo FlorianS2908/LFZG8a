@@ -1,6 +1,6 @@
-# ContentFactory Upload Dropzones
+# CourseForge Upload Dropzones
 
-Die Uploadbereiche im ContentFactory Wizard sind als einheitliche Dropzones umgesetzt. Jede Zone kann per Klick oder per Drag-and-Drop verwendet werden und akzeptiert mehrere Dateien.
+Die Uploadbereiche im CourseForge-Wizard sind als einheitliche Dropzones umgesetzt. Jede Zone kann per Klick oder per Drag-and-Drop verwendet werden und akzeptiert mehrere Dateien.
 
 ## Uploadbereiche
 

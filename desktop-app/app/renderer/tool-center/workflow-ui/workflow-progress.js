@@ -37,6 +37,6 @@
       <div class="button-row">${!terminal ? '<button class="secondary-button" type="button" data-document-analysis-cancel>Vorgang abbrechen</button>' : ''}${['failed','timed_out'].includes(progress.status) ? '<button class="primary-button" type="button" data-progress-retry>Erneut versuchen</button><button class="secondary-button" type="button" data-progress-back>Zurück</button>' : ''}${['completed','completed_with_warnings'].includes(progress.status) ? '<button class="primary-button" type="button" data-progress-continue>Weiter</button>' : ''}</div>
     </section>`;
   }
-  globalScope.ContentFactoryWorkflowProgress = { render, measurable, labels, status, terminalStatuses, formatElapsed };
+  globalScope.CourseForgeWorkflowProgress = globalScope.ContentFactoryWorkflowProgress = { render, measurable, labels, status, terminalStatuses, formatElapsed };
   if (typeof module !== 'undefined') module.exports = { render, measurable, labels, status, terminalStatuses, formatElapsed };
 })(typeof window !== 'undefined' ? window : globalThis);

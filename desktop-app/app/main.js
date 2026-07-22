@@ -8,14 +8,15 @@ const { applyAppEnv } = require('./lib/env/env-loader');
 const { DOCUMENT_ANALYSIS_CHANNELS } = require('./lib/content-factory/course-planning/analysis-ipc-contract');
 const { writeZipPackage } = require('./lib/content-factory/document-processing/safe-zip-package');
 const { installBrokenPipeGuards } = require('./lib/safe-logger');
+const { migrateLegacyUserData } = require('./lib/courseforge-storage-migration');
 
 const projectRoot = path.resolve(__dirname, '..', '..');
 const rendererFile = path.join(__dirname, 'renderer', 'tool-center', 'factory.html');
 const preloadFile = path.join(__dirname, 'preload.js');
 const iconFile = path.join(__dirname, 'assets', 'icons', process.platform === 'win32' ? 'app-icon.ico' : 'app-icon.png');
-const standaloneSession = Object.freeze({ authenticated: true, user: { id: 'local', email: 'local@contentfactory.invalid', roles: [] } });
+const standaloneSession = Object.freeze({ authenticated: true, user: { id: 'local', email: 'local@courseforge.invalid', roles: [] } });
 const localMigrationPath = path.join(process.env.USERPROFILE || '', 'OneDrive - Amadeus Fire AG', 'Desktop', 'api_key_ContentFactory.txt');
-const localCacheRoot = path.join(process.env.LOCALAPPDATA || app.getPath('temp'), 'ueTool-ContentFactory', 'Cache');
+const localCacheRoot = path.join(process.env.LOCALAPPDATA || app.getPath('temp'), 'CourseForge', 'Cache');
 installBrokenPipeGuards();
 
 ensureDir(localCacheRoot);
@@ -28,7 +29,12 @@ let mainWindow;
 let service;
 
 function getAppData() {
-  const dataDir = path.join(app.getPath('userData'), 'projects');
+  const userDataDir = app.getPath('userData');
+  const migration = migrateLegacyUserData({
+    newUserDataDir: userDataDir,
+    legacyUserDataDirs: ['ueTool ContentFactory', 'uetool-contentfactory', 'ueTool-ContentFactory'].map((name) => path.join(app.getPath('appData'), name))
+  });
+  const dataDir = migration.activeProjectsDir;
   return {
     dataDir,
     ensureDataFiles() { ensureDir(dataDir); }
@@ -62,7 +68,7 @@ function createWindow() {
   const browserPreviewSmoke = process.argv.includes('--browser-preview-smoke');
   const coursePlanningSmoke = process.argv.includes('--course-planning-smoke');
   mainWindow = new BrowserWindow({
-    title: 'ueTool ContentFactory',
+    title: 'CourseForge',
     width: 1440,
     height: 920,
     minWidth: 1024,
@@ -90,13 +96,13 @@ function createWindow() {
       const result = await mainWindow.webContents.executeJavaScript(`({
         title: document.title,
         mainNavigationItems: document.querySelectorAll('.factory-sidebar > [data-factory-tab]').length,
-        phases: window.ContentFactoryWorkflowLayout ? 6 : 0,
-        navigationModule: Boolean(window.ContentFactoryAppNavigation),
+        phases: window.CourseForgeWorkflowLayout ? 6 : 0,
+        navigationModule: Boolean(window.CourseForgeAppNavigation),
         visiblePanel: document.querySelectorAll('[data-factory-panel].is-active').length,
-        desktopBridge: Boolean(window.lfzq8aDesktop),
-        factoryBridge: Boolean(window.lfzq8aDesktop?.factory),
-        startAnalysis: typeof window.lfzq8aDesktop?.factory?.startDocumentAnalysis === 'function',
-        getProgress: typeof window.lfzq8aDesktop?.factory?.getAnalysisProgress === 'function'
+        desktopBridge: Boolean(window.courseForgeDesktop),
+        factoryBridge: Boolean(window.courseForgeDesktop?.factory),
+        startAnalysis: typeof window.courseForgeDesktop?.factory?.startDocumentAnalysis === 'function',
+        getProgress: typeof window.courseForgeDesktop?.factory?.getAnalysisProgress === 'function'
       })`);
       const startButtonNavigation = await mainWindow.webContents.executeJavaScript(`(() => {
         document.querySelector('[data-open-factory-section="plan-wizard"]').click();
@@ -115,12 +121,12 @@ function createWindow() {
           count: document.querySelectorAll('[data-factory-panel].is-active').length
         };
       })()`);
-      if (result.title !== 'ueTool ContentFactory' || result.mainNavigationItems !== 5 || result.phases !== 6 || !result.navigationModule || result.visiblePanel !== 1 || !result.desktopBridge || !result.factoryBridge || !result.startAnalysis || !result.getProgress || !startButtonNavigation.active || !startButtonNavigation.visible || startButtonNavigation.count !== 1 || !sidebarNavigation.active || !sidebarNavigation.visible || sidebarNavigation.count !== 1) {
-        console.error('CONTENTFACTORY_SMOKE_FAILED', JSON.stringify({ result, startButtonNavigation, sidebarNavigation }));
+      if (result.title !== 'CourseForge' || result.mainNavigationItems !== 5 || result.phases !== 6 || !result.navigationModule || result.visiblePanel !== 1 || !result.desktopBridge || !result.factoryBridge || !result.startAnalysis || !result.getProgress || !startButtonNavigation.active || !startButtonNavigation.visible || startButtonNavigation.count !== 1 || !sidebarNavigation.active || !sidebarNavigation.visible || sidebarNavigation.count !== 1) {
+        console.error('COURSEFORGE_SMOKE_FAILED', JSON.stringify({ result, startButtonNavigation, sidebarNavigation }));
         app.exit(1);
         return;
       }
-      console.log('CONTENTFACTORY_SMOKE_OK', JSON.stringify({ result, startButtonNavigation, sidebarNavigation }));
+      console.log('COURSEFORGE_SMOKE_OK', JSON.stringify({ result, startButtonNavigation, sidebarNavigation }));
       app.quit();
     });
   }
@@ -140,7 +146,7 @@ function createWindow() {
         document.querySelector('[data-factory-tab="home"]').click();
         document.querySelector('[data-factory-tab="plan-wizard"]').click();
         return {
-          desktopBridge: Boolean(window.lfzq8aDesktop),
+          desktopBridge: Boolean(window.courseForgeDesktop),
           previewMessage: document.querySelector('[data-factory-status]').textContent,
           startButton,
           sidebarActive: document.querySelector('[data-factory-panel="plan-wizard"]').classList.contains('is-active'),
@@ -149,11 +155,11 @@ function createWindow() {
         };
       })()`);
       if (result.desktopBridge || !result.previewMessage.includes('Browser-Vorschau') || !result.startButton.active || !result.startButton.visible || !result.startButton.desktopControlsDisabled || !result.sidebarActive || result.activePanels !== 1 || result.errors.length) {
-        console.error('CONTENTFACTORY_BROWSER_PREVIEW_SMOKE_FAILED', JSON.stringify(result));
+        console.error('COURSEFORGE_BROWSER_PREVIEW_SMOKE_FAILED', JSON.stringify(result));
         app.exit(1);
         return;
       }
-      console.log('CONTENTFACTORY_BROWSER_PREVIEW_SMOKE_OK', JSON.stringify(result));
+      console.log('COURSEFORGE_BROWSER_PREVIEW_SMOKE_OK', JSON.stringify(result));
       app.quit();
     });
   }
@@ -170,7 +176,7 @@ function createWindow() {
       const sourceHashBefore = crypto.createHash('sha256').update(fs.readFileSync(sourcePath)).digest('hex');
       try {
         const result = await Promise.race([mainWindow.webContents.executeJavaScript(`(async () => {
-        const api = window.ContentFactoryCoursePlanningSmoke;
+        const api = window.CourseForgeCoursePlanningSmoke;
         if (!api) return { error: 'Smoke-API fehlt' };
         await api.configure(${JSON.stringify(sourcePath)}, 'Wochenplan_FIAE_LF-ZQ8A.xlsm', 'application/vnd.ms-excel.sheet.macroEnabled.12');
         const started = await api.continueFromDurationAudience();
@@ -190,12 +196,12 @@ function createWindow() {
         const afterDidactics = result.afterDidactics || {};
         if (!result.started || result.sourceHashBefore !== result.sourceHashAfter || !['completed', 'completed_with_warnings'].includes(result.afterAnalysis?.documentAnalysisStatus) || result.afterAnalysis?.totalUnits !== 0 || before.activeStep !== 'structureReview' || before.totalDays !== 1 || before.totalUnits !== 2 || before.selectedDay !== 1 || before.selectedUnit !== 1 || before.containerProfileActive || before.sourceStrategy !== 'convert_then_analyze' || before.sourceHasMacros !== true || !after.didacticsActive || after.containerProfileActive || !afterDidactics.containerProfileActive) {
           fs.writeFileSync(resultPath, JSON.stringify({ ok: false, result }, null, 2), 'utf8');
-          console.error('CONTENTFACTORY_COURSE_PLANNING_SMOKE_FAILED', JSON.stringify(result));
+          console.error('COURSEFORGE_COURSE_PLANNING_SMOKE_FAILED', JSON.stringify(result));
           app.exit(1);
           return;
         }
         fs.writeFileSync(resultPath, JSON.stringify({ ok: true, result }, null, 2), 'utf8');
-        console.log('CONTENTFACTORY_COURSE_PLANNING_SMOKE_OK', JSON.stringify(result));
+        console.log('COURSEFORGE_COURSE_PLANNING_SMOKE_OK', JSON.stringify(result));
         app.quit();
       } catch (error) {
         fs.writeFileSync(resultPath, JSON.stringify({ ok: false, error: safeLogText(error?.stack || error?.message) }, null, 2), 'utf8');
@@ -211,7 +217,7 @@ function handle(channel, method) {
     try { return await getService()[method](...args, standaloneSession); }
     catch (error) {
       const message = String(error?.message || '');
-      console.error('[ContentFactory IPC]', { channel, operation: method, errorName: error?.name || 'Error', errorCode: error?.code || null, message: safeLogText(message), stack: safeLogText(error?.stack) });
+      console.error('[CourseForge IPC]', { channel, operation: method, errorName: error?.name || 'Error', errorCode: error?.code || null, message: safeLogText(message), stack: safeLogText(error?.stack) });
       const safePlanningError = ['COURSE_SCOPE_VALIDATION', 'DOCUMENT_ANALYSIS_INPUT'].includes(error?.code) || /^SOURCE_|^EXTRACTION_/.test(error?.code || '') || /^(KI nicht|OpenAI|Der Planungsrahmen|Abweichung im Planungsrahmen|Mindestens eine|Ungültige Dokumentanalyse|Kursstruktur|Blockierende Konflikte|Verbindliche fehlgeschlagene|Eine freigegebene|Datei kann nicht|Pause|Reservierte UE)/.test(message);
       throw new Error(/Verschlüsselung/i.test(message) ? 'Sichere Speicherung ist derzeit nicht verfügbar.' : safePlanningError ? message : 'Die Aktion konnte nicht abgeschlossen werden.');
     }

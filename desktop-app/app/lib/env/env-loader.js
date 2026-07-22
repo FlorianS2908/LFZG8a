@@ -13,8 +13,8 @@ function loadAppEnv(projectRoot = process.cwd()) {
   const model = read('OPENAI_MODEL', 'gpt-5.4-mini');
   const timeout = read('OPENAI_TIMEOUT_MS', '30000');
   const maxPrompt = read('OPENAI_MAX_PROMPT_CHARS', '40000');
-  const costWarning = read('CONTENT_FACTORY_COST_WARNING_USD', '1.00');
-  const review = read('CONTENT_FACTORY_AI_REVIEW', 'false');
+  const costWarning = readWithLegacy(read, 'COURSEFORGE_COST_WARNING_USD', 'CONTENT_FACTORY_COST_WARNING_USD', '1.00');
+  const review = readWithLegacy(read, 'COURSEFORGE_AI_REVIEW', 'CONTENT_FACTORY_AI_REVIEW', 'false');
   return {
     aiProvider: normalizeProvider(provider.value),
     openAiConfigured: Boolean(apiKey.value),
@@ -26,6 +26,11 @@ function loadAppEnv(projectRoot = process.cwd()) {
     aiReview: /^true$/i.test(String(review.value || 'false')),
     keySource: apiKey.value ? apiKey.source : 'missing'
   };
+}
+
+function readWithLegacy(read, primary, legacy, fallback) {
+  const current = read(primary, '');
+  return current.value !== '' ? current : read(legacy, fallback);
 }
 
 function applyAppEnv(projectRoot = process.cwd()) {

@@ -26,10 +26,10 @@ test('Preload stellt ausschließlich ContentFactory-APIs bereit', () => {
 
 test('Sandbox-Preload lädt ohne lokale Module und stellt die sichere Factory-Bridge bereit', async () => {
   const source = read('preload.js');
-  let exposed;
+  const exposedBridges = [];
   const calls = [];
   const electron = {
-    contextBridge: { exposeInMainWorld(name, value) { exposed = { name, value }; } },
+    contextBridge: { exposeInMainWorld(name, value) { exposedBridges.push({ name, value }); } },
     ipcRenderer: { invoke(channel, ...args) { calls.push({ channel, args }); return Promise.resolve({ ok: true }); } },
     webUtils: { getPathForFile(file) { return file.__testPath || ''; } }
   };
@@ -39,7 +39,10 @@ test('Sandbox-Preload lädt ohne lokale Module und stellt die sichere Factory-Br
       return electron;
     }
   }, { filename: 'preload.js' });
-  assert.equal(exposed.name, 'lfzq8aDesktop');
+  const exposed = exposedBridges.find((entry) => entry.name === 'courseForgeDesktop');
+  const legacy = exposedBridges.find((entry) => entry.name === 'lfzq8aDesktop');
+  assert.ok(exposed);
+  assert.equal(legacy.value, exposed.value);
   assert.equal(exposed.value.apiVersion, 1);
   assert.equal(typeof exposed.value.factory.startDocumentAnalysis, 'function');
   assert.equal(typeof exposed.value.factory.getAnalysisProgress, 'function');
@@ -55,8 +58,8 @@ test('Sandbox-Preload lädt ohne lokale Module und stellt die sichere Factory-Br
 
 test('Oberfläche trägt den Produktnamen und keine Plattformnavigation', () => {
   const html = read(path.join('renderer', 'tool-center', 'factory.html'));
-  assert.match(html, /ueTool ContentFactory/);
-  assert.match(html, /Kurscontainer erstellen und verwalten/);
+  assert.match(html, /CourseForge/);
+  assert.match(html, /The AI-powered Course Compiler/);
   assert.doesNotMatch(html, /Login|Tool-Zentrale|Adminbereich|Teilnehmeransicht/);
 });
 

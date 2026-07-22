@@ -1,6 +1,6 @@
 # Softwareübersicht
 
-Die Anwendung besteht aus einem isolierten Electron-Hauptprozess, einer schmalen Preload-API, dem ContentFactory-Renderer und lokalen ContentFactory-Services. Der Build wird über `desktop-app/package.json` gesteuert und enthält ausschließlich diese Runtime-Dateien, das Ploglan-Logo sowie `packages/content-factory-core` als Ressource.
+CourseForge besteht aus einem isolierten Electron-Hauptprozess, einer schmalen Preload-API, dem CourseForge-Renderer und lokalen Kurscompiler-Services. Der Build wird über `desktop-app/package.json` gesteuert und enthält ausschließlich diese Runtime-Dateien, das Ploglan-Logo sowie `packages/content-factory-core` als kompatibel benannte Ressource.
 
 Entwicklung und Prüfung:
 

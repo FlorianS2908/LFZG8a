@@ -1,7 +1,7 @@
 (function exposeDocumentAnalysisWorkflow(root, factory) {
   const api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
-  if (root) root.ContentFactoryDocumentAnalysisWorkflow = api;
+  if (root) { root.CourseForgeDocumentAnalysisWorkflow = api; root.ContentFactoryDocumentAnalysisWorkflow = api; }
 }(typeof globalThis !== 'undefined' ? globalThis : this, function createWorkflowHelpers() {
   const TERMINAL_STATUSES = new Set(['completed', 'completed_with_warnings', 'failed', 'timed_out', 'cancelled', 'not_found']);
   const RENDERER_STALE_THRESHOLD_MS = 45000;

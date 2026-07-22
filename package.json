@@ -1,8 +1,8 @@
 {
-  "name": "uetool-contentfactory",
+  "name": "courseforge",
   "version": "1.0.0",
   "private": true,
-  "description": "Eigenständige Electron-Anwendung zum Erstellen validierter Kurscontainer.",
+  "description": "The AI-powered Course Compiler",
   "scripts": {
     "dev": "npm --prefix desktop-app run dev",
     "start": "npm --prefix desktop-app start",

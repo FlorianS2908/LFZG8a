@@ -1,4 +1,4 @@
-# UI-Richtlinien der ueTool ContentFactory
+# UI-Richtlinien von CourseForge
 
 ## Informationsarchitektur
 

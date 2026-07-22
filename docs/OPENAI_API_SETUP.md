@@ -1,4 +1,4 @@
-# OpenAI sicher in der ContentFactory einrichten
+# OpenAI sicher in CourseForge einrichten
 
 OpenAI ist der produktive Cloud-KI-Provider. Ohne Schlüssel bleibt der klar gekennzeichnete lokale Mock-/Offline-Fallback verfügbar; automatisierte Tests verwenden ausschließlich diesen Fallback und Dummy-Werte.
 
@@ -17,7 +17,7 @@ Die Oberfläche kann ausschließlich Konfigurationsstatus, Provider, Modell, Ver
 
 `OPENAI_MODEL` konfiguriert das Standardmodell zentral. Token-, Timeout- und Kostenbegrenzungen stehen in `.env.example`; dort bleiben Schlüsselwerte leer. Schlüsselquellen werden in dieser Reihenfolge verwendet:
 
-1. verschlüsselter ContentFactory-Schlüsselspeicher,
+1. verschlüsselter CourseForge-Schlüsselspeicher,
 2. `OPENAI_API_KEY` in der Prozessumgebung als bewusste Entwicklungsalternative,
 3. kein Schlüssel: Offline-Fallback und Einrichtungshinweis.
 
@@ -31,7 +31,7 @@ Die Oberfläche kann ausschließlich Konfigurationsstatus, Provider, Modell, Ver
 
 ## Unterstützte KI-Workflows
 
-Die ContentFactory analysiert und klassifiziert Materialien, erkennt Unterrichtspläne, strukturiert Themen nach Tagen, erzeugt und überarbeitet Curricula, Tagesgliederungen, Webvarianten, Aufgaben, getrennte Lösungen, Handouts, Begleitmaterialien und validierte Fragenpools. Strukturierte Ergebnisse werden vor dem Speichern validiert; Teilnehmerausgaben dürfen keine Lösungen enthalten.
+CourseForge analysiert und klassifiziert Materialien, erkennt Unterrichtspläne, strukturiert Themen nach Tagen, erzeugt und überarbeitet Curricula, Tagesgliederungen, Webvarianten, Aufgaben, getrennte Lösungen, Handouts, Begleitmaterialien und validierte Fragenpools. Strukturierte Ergebnisse werden vor dem Speichern validiert; Teilnehmerausgaben dürfen keine Lösungen enthalten.
 
 ## Befehle
 

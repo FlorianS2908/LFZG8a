@@ -1,15 +1,15 @@
-const desktop = window.lfzq8aDesktop;
+const desktop = window.courseForgeDesktop || window.lfzq8aDesktop;
 const hasDesktopFactory = Boolean(desktop?.factory);
-const appNavigation = window.ContentFactoryAppNavigation;
-const uploadUtils = window.ContentFactoryUploadUtils || {};
-const workflowLayout = window.ContentFactoryWorkflowLayout || {};
+const appNavigation = window.CourseForgeAppNavigation || window.ContentFactoryAppNavigation;
+const uploadUtils = window.CourseForgeUploadUtils || window.ContentFactoryUploadUtils || {};
+const workflowLayout = window.CourseForgeWorkflowLayout || window.ContentFactoryWorkflowLayout || {};
 const difficultyLevels = window.ContentFactoryDifficultyLevels || { levels: [{ value: 'easy', label: 'Einfach' }, { value: 'medium', label: 'Mittel' }, { value: 'hard', label: 'Schwer' }, { value: 'easy_medium', label: 'Einfach & Mittel' }, { value: 'medium_hard', label: 'Mittel & Schwer' }, { value: 'all', label: 'Alle 3' }], normalizeDifficulty: () => 'medium', difficultyLabel: () => 'Mittel' };
-const workflowRegistry = window.ContentFactoryWorkflowRegistry || {};
-const workflowStatus = window.ContentFactoryWorkflowStatus || {};
-const workflowProgress = window.ContentFactoryWorkflowProgress || {};
-const visibleLabel = window.ContentFactoryWorkflowUtils?.visibleLabel || ((value) => String(value ?? ''));
-const documentAnalysisWorkflow = window.ContentFactoryDocumentAnalysisWorkflow || {};
-const planningReviewView = window.ContentFactoryPlanningReview || { evidenceStatus: () => ({ label: 'Klärung empfohlen', supplementaryText: '' }), compactSource: (reference) => reference?.fileName || reference?.documentId || 'Quelle' };
+const workflowRegistry = window.CourseForgeWorkflowRegistry || window.ContentFactoryWorkflowRegistry || {};
+const workflowStatus = window.CourseForgeWorkflowStatus || window.ContentFactoryWorkflowStatus || {};
+const workflowProgress = window.CourseForgeWorkflowProgress || window.ContentFactoryWorkflowProgress || {};
+const visibleLabel = (window.CourseForgeWorkflowUtils || window.ContentFactoryWorkflowUtils)?.visibleLabel || ((value) => String(value ?? ''));
+const documentAnalysisWorkflow = window.CourseForgeDocumentAnalysisWorkflow || window.ContentFactoryDocumentAnalysisWorkflow || {};
+const planningReviewView = window.CourseForgePlanningReview || window.ContentFactoryPlanningReview || { evidenceStatus: () => ({ label: 'Klärung empfohlen', supplementaryText: '' }), compactSource: (reference) => reference?.fileName || reference?.documentId || 'Quelle' };
 const hasDocumentAnalysisWorkflow = typeof documentAnalysisWorkflow.createDocumentAnalysisPayload === 'function'
   && typeof documentAnalysisWorkflow.pollAnalysisUntilTerminal === 'function'
   && typeof documentAnalysisWorkflow.createSingleFlightAnalysisStarter === 'function';
@@ -555,7 +555,7 @@ function renderWorkflowPanelIntros() {
     home: {
       workflow: {
         id: 'content-factory-start',
-        title: 'ContentFactory Start',
+        title: 'CourseForge Start',
         subtitle: 'Waehle den passenden Weg: geführter Assistent, Verwaltung, Referenzen oder Expertenbereich.',
         audience: 'Admin / Dozent',
         difficulty: state.uiMode === 'expert' ? 'expert' : 'geführt',
@@ -2259,7 +2259,7 @@ const continueFromDurationAudienceToAiAnalysis = documentAnalysisWorkflow.create
 });
 
 if (new URLSearchParams(window.location.search).get('coursePlanningSmoke') === '1') {
-  window.ContentFactoryCoursePlanningSmoke = {
+  window.CourseForgeCoursePlanningSmoke = window.ContentFactoryCoursePlanningSmoke = {
     async configure(sourcePath, sourceFileName = 'smoke-source.md', sourceMimeType = 'text/markdown') {
       state.aiStatus = { providers: { openai: { configured: true, status: 'configured', model: 'testdouble-v1' } } };
       state.wizard.course = { courseName: 'Electron Smoke Kurs', courseId: `electron-smoke-${Date.now()}`, department: 'FISI', description: 'Realitätsnaher Electron-Test' };

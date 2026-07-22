@@ -2,7 +2,7 @@ const { MODEL_PRICING } = require('./model-pricing');
 
 function estimateContentFactoryCost(input = {}, options = {}) {
   const model = options.model || process.env.OPENAI_MODEL || 'gpt-5.4-mini';
-  const warningLimitUsd = Number(options.warningLimitUsd || process.env.CONTENT_FACTORY_COST_WARNING_USD || 1);
+  const warningLimitUsd = Number(options.warningLimitUsd || process.env.COURSEFORGE_COST_WARNING_USD || process.env.CONTENT_FACTORY_COST_WARNING_USD || 1);
   const serialized = JSON.stringify({
     course: input.course,
     curriculumPlan: input.approvedCurriculumPlan || input.curriculumPlan,

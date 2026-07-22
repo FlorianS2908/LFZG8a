@@ -20,5 +20,5 @@
 
   const api = { activatePanel };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  globalScope.ContentFactoryAppNavigation = api;
+  globalScope.CourseForgeAppNavigation = api; globalScope.ContentFactoryAppNavigation = api;
 })(typeof window !== 'undefined' ? window : globalThis);

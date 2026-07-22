@@ -1,4 +1,4 @@
-# UI-/UX-Bestandsaufnahme der ueTool ContentFactory
+# UI-/UX-Bestandsaufnahme von CourseForge
 
 Stand: 21.07.2026, Branch `agent/contentfactory-standalone`, Commit `8f12f1ca61a8c0557dd4c69d14741ce559eab674`.
 

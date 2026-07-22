@@ -49,6 +49,6 @@
   }
 
   const api = { escapeHtml, asList, statusLabel, visibleLabel, visibleLabels };
-  globalScope.ContentFactoryWorkflowUtils = api;
+  globalScope.CourseForgeWorkflowUtils = api; globalScope.ContentFactoryWorkflowUtils = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -14,7 +14,7 @@ const DOCUMENT_ANALYSIS_CHANNELS = Object.freeze({
 });
 
 const invoke = (channel) => (...args) => ipcRenderer.invoke(channel, ...args);
-contextBridge.exposeInMainWorld('lfzq8aDesktop', {
+const courseForgeDesktop = {
   apiVersion: 1,
   factory: {
     getState: invoke('factory:get-state'), duplicateContainer: invoke('factory:duplicate-container'), importFiles: invoke('factory:import-files'),
@@ -58,4 +58,7 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
     getReferenceSource: invoke('factory:get-reference-source'), searchReferences: invoke('factory:search-references'),
     removeReferenceSource: invoke('factory:remove-reference-source'), getReferenceSafetyReport: invoke('factory:get-reference-safety-report')
   }
-});
+};
+contextBridge.exposeInMainWorld('courseForgeDesktop', courseForgeDesktop);
+// Rückwärtskompatibilität für bestehende Renderer-Erweiterungen und Tests.
+contextBridge.exposeInMainWorld('lfzq8aDesktop', courseForgeDesktop);

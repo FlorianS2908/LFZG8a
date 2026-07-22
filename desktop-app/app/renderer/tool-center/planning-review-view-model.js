@@ -1,7 +1,7 @@
 (function planningReviewModule(root, factory) {
   const api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
-  else root.ContentFactoryPlanningReview = api;
+  else { root.CourseForgePlanningReview = api; root.ContentFactoryPlanningReview = api; }
 }(typeof globalThis !== 'undefined' ? globalThis : this, function createPlanningReview() {
   const LABELS = Object.freeze({ explicit: 'Direkt belegt', derived: 'Nachvollziehbar abgeleitet', generated: 'Klärung empfohlen', needs_review: 'Klärung empfohlen', conflicting: 'Konflikt vorhanden' });
 

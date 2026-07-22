@@ -1,4 +1,4 @@
-# ContentFactory Reference Library
+# CourseForge Reference Library
 
 ## Architekturentscheidung
 
@@ -11,7 +11,7 @@ Die Referenzbibliothek folgt dem Bring-your-own-content-Prinzip. Nutzer importie
 Standardpfad:
 
 ```text
-%APPDATA%/ueTool_asSaaS/content-factory/reference-library/
+%APPDATA%/CourseForge/projects/content-factory/reference-library/
 ```
 
 Struktur:

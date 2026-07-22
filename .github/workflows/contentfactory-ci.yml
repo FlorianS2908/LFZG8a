@@ -1,4 +1,4 @@
-name: ContentFactory CI
+name: CourseForge CI
 on:
   push:
     branches:

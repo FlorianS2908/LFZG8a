@@ -205,5 +205,5 @@
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  root.ContentFactoryUploadUtils = api;
+  root.CourseForgeUploadUtils = api; root.ContentFactoryUploadUtils = api;
 })(typeof window !== 'undefined' ? window : globalThis);
