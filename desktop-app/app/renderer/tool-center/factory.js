@@ -35,7 +35,7 @@ const state = {
   goldenPromptResult: null,
   wizard: {
     course: { courseName: '', courseId: '', department: '', description: '' },
-    anchorType: 'course-plan',
+    anchorTypes: ['course-plan'],
     anchorFiles: [],
     rangesText: '',
     duration: { numberOfDays: 5, hoursPerDay: 8, uePerDay: 9, ueMinutes: 45, totalHours: 40, totalUE: 45, pauseModel: 'default' },
@@ -88,6 +88,27 @@ const uploadAreas = [
   ['other', 'Sonstige Dateien', '', 'Alles, was manuell geprüft werden soll.'],
   ['zip-package', 'ZIP-Gesamtpaket', '.zip', 'ZIP-Gesamtpakete werden sicher gestaged.']
 ];
+
+const mainSourceOptions = [
+  { id: 'course-plan', label: 'Unterrichtsplan', formats: ['.xls', '.xlsx', '.xlsm'] },
+  { id: 'book-or-presentation', label: 'Buch / PDF / PowerPoint', formats: ['.pdf', '.epub', '.ppt', '.pptx'] },
+  { id: 'text-document', label: 'Textdokument', formats: ['.doc', '.docx', '.txt', '.md', '.html', '.htm'] }
+];
+
+function normalizeAnchorTypes(value) {
+  const values = Array.isArray(value) ? value : value ? [value] : [];
+  const valid = values.filter((type, index) => mainSourceOptions.some((option) => option.id === type) && values.indexOf(type) === index);
+  return valid.length ? valid : ['course-plan'];
+}
+
+function getAnchorTypes(wizard = state.wizard) {
+  return normalizeAnchorTypes(wizard.anchorTypes || wizard.anchorType);
+}
+
+function getSourceTypeForFile(file) {
+  const extension = uploadUtils.extensionOf ? uploadUtils.extensionOf(file.name) : String(file.name || '').toLowerCase().match(/\.[^.]+$/)?.[0];
+  return mainSourceOptions.find((option) => option.formats.includes(extension))?.id || '';
+}
 
 const planWizardSteps = [
   { id: 'course', label: 'Kursdaten' },
@@ -169,8 +190,9 @@ function renderFileList(files = []) {
 
 function getUploadAreaConfig(area, source = 'picker') {
   if (area === 'anchor') {
-    const accept = state.wizard.anchorType === 'course-plan' ? '.xlsx,.xlsm' : state.wizard.anchorType === 'book-or-presentation' ? '.pdf,.epub,.pptx,.zip' : '.docx,.txt,.md,.html,.zip';
-    return { id: 'anchor', accept, source };
+    const selected = getAnchorTypes();
+    const accept = mainSourceOptions.filter((option) => selected.includes(option.id)).flatMap((option) => option.formats).join(',');
+    return { id: 'anchor', accept, source, strictMime: true };
   }
   const found = uploadAreas.find(([id]) => id === area);
   return { id: area, accept: found?.[2] || '', source };
@@ -626,12 +648,8 @@ function renderCourseStep(wizard) {
 }
 
 function renderAnchorStep(wizard) {
-  const anchorAccept = wizard.anchorType === 'course-plan' ? '.xls,.xlsx,.xlsm,.zip' : wizard.anchorType === 'book-or-presentation' ? '.pdf,.epub,.pptx,.zip' : '.docx,.txt,.md,.html,.zip';
-  const options = [
-    ['course-plan', 'Excel-Unterrichtsplan', '.xls, .xlsx, .xlsm'],
-    ['book-or-presentation', 'Buch / PDF / EPUB / PowerPoint', '.pdf, .epub, .pptx, .zip'],
-    ['text-document', 'Textdokument / Word / Markdown / HTML / TXT', '.docx, .txt, .md, .html, .zip']
-  ];
+  const selectedTypes = getAnchorTypes(wizard);
+  const anchorAccept = mainSourceOptions.filter((option) => selectedTypes.includes(option.id)).flatMap((option) => option.formats).join(',');
   return `
     <article class="tool-card" data-plan-step-content="anchor">
       <h3>Hauptquelle</h3>
@@ -640,20 +658,17 @@ function renderAnchorStep(wizard) {
       <fieldset>
       <legend>Art der Hauptquelle</legend>
       <div class="wizard-source-options">
-        ${options.map(([value, label, formats]) => `
-          <label class="source-option choice-card ${wizard.anchorType === value ? 'is-active' : ''}" data-selected="${wizard.anchorType === value ? 'true' : 'false'}">
-            <input type="radio" name="wizard-anchor-type" data-wizard-anchor-type-radio value="${value}" ${wizard.anchorType === value ? 'checked' : ''}>
-            <span class="choice-card-copy"><strong>${escapeHtml(label)}</strong><small>Unterstützte Dateien</small><span class="file-format-list">${escapeHtml(formats)}</span></span>
+        ${mainSourceOptions.map(({ id, label, formats }) => `
+          <label class="source-option choice-card ${selectedTypes.includes(id) ? 'is-active' : ''}" data-selected="${selectedTypes.includes(id) ? 'true' : 'false'}">
+            <input type="checkbox" name="wizard-anchor-types" data-wizard-anchor-type value="${id}" ${selectedTypes.includes(id) ? 'checked' : ''}>
+            <span class="choice-card-copy"><strong>${escapeHtml(label)}</strong><span class="file-format-list">${escapeHtml(formats.join(', '))}</span></span>
           </label>
         `).join('')}
       </div>
       </fieldset>
-      <div class="form-group"><label for="wizard-anchor-type-select">Quellentyp</label><select id="wizard-anchor-type-select" data-wizard-anchor-type>
-        ${options.map(([value, label]) => `<option value="${value}" ${wizard.anchorType === value ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('')}
-      </select></div>
-      ${createDropZoneHtml({ id: 'anchor', title: 'Thematische Hauptquelle', description: wizard.anchorType === 'course-plan' ? 'Unterrichtsplan, Excel-Dateien oder ZIP hier ablegen.' : wizard.anchorType === 'book-or-presentation' ? 'PDF, EPUB, PowerPoint oder ZIP als Hauptquelle.' : 'Word, Markdown, HTML, TXT oder ZIP als Hauptquelle.', accept: anchorAccept, files: wizard.anchorFiles.map((file) => ({ ...file, uploadArea: 'anchor' })), multiple: true, kind: 'anchor' })}
-      <p class="upload-summary"><span class="status-badge">${wizard.anchorFiles.length}</span> Hauptquell-Datei(en) ausgewählt. Unterrichtsplan, PowerPoint, PDF, EPUB, Word, Markdown, HTML, TXT und ZIP werden unterstützt.</p>
-      ${wizard.anchorType === 'book-or-presentation' ? `<label>Seiten-/Folienbereiche optional<textarea data-wizard-ranges placeholder="20-45; 80-120">${escapeHtml(wizard.rangesText)}</textarea></label>` : ''}
+      ${createDropZoneHtml({ id: 'anchor', title: 'Thematische Hauptquelle', description: 'Dateien der ausgewählten Hauptquellenarten hier ablegen.', accept: anchorAccept, files: wizard.anchorFiles.map((file) => ({ ...file, uploadArea: 'anchor' })), multiple: true, kind: 'anchor' })}
+      <p class="upload-summary"><span class="status-badge">${wizard.anchorFiles.length}</span> Hauptquell-Datei(en) ausgewählt.</p>
+      ${selectedTypes.includes('book-or-presentation') ? `<label>Seiten-/Folienbereiche optional<textarea data-wizard-ranges placeholder="20-45; 80-120">${escapeHtml(wizard.rangesText)}</textarea></label>` : ''}
     </article>
   `;
 }
@@ -1230,25 +1245,28 @@ function bindPlanWizardEvents() {
     }
     if (field.tagName === 'SELECT') renderPlanWizard();
   }));
-  $all('[data-wizard-anchor-type-radio]').forEach((field) => field.addEventListener('change', (event) => {
-    state.wizard.anchorType = event.target.value;
+  $all('[data-wizard-anchor-type]').forEach((field) => field.addEventListener('change', (event) => {
+    const type = event.target.value;
+    const selected = getAnchorTypes();
+    if (!event.target.checked) {
+      const related = state.wizard.anchorFiles.filter((file) => (file.sourceType || getSourceTypeForFile(file)) === type);
+      if (related.length) {
+        const remove = window.confirm(`${related.length} Datei(en) gehören zu dieser Quellenart. OK entfernt die Dateien; Abbrechen behält Auswahl und Dateien.`);
+        if (!remove) { renderPlanWizard(); return; }
+        state.wizard.anchorFiles = state.wizard.anchorFiles.filter((file) => (file.sourceType || getSourceTypeForFile(file)) !== type);
+      }
+    }
+    const next = event.target.checked ? [...selected, type] : selected.filter((item) => item !== type);
+    if (!next.length) {
+      state.wizard.status = 'Bitte mindestens eine Art der Hauptquelle auswählen.';
+      renderPlanWizard();
+      return;
+    }
+    state.wizard.anchorTypes = normalizeAnchorTypes(next);
     state.wizard.curriculumDraft = null;
     state.wizard.approvedCurriculumPlan = null;
     renderPlanWizard();
   }));
-  $('[data-wizard-anchor-type]')?.addEventListener('change', (event) => {
-    state.wizard.anchorType = event.target.value;
-    state.wizard.curriculumDraft = null;
-    state.wizard.approvedCurriculumPlan = null;
-    if (state.wizard.anchorFiles.length) {
-      state.wizard.anchorFiles = state.wizard.anchorFiles.map((file) => ({
-        ...file,
-        warnings: [...(file.warnings || []), 'Der Anchor-Typ wurde geaendert. Bitte prüfen Sie die ausgewählten Dateien.']
-      }));
-      state.wizard.status = 'Der Anchor-Typ wurde geaendert. Bitte prüfen Sie die ausgewählten Dateien.';
-    }
-    renderPlanWizard();
-  });
   $('[data-wizard-anchor-files]')?.addEventListener('change', (event) => {
     handleDropZoneFiles('anchor', event.target.files, 'picker');
     event.target.value = '';
@@ -1513,7 +1531,7 @@ function handleDropZoneFiles(zoneId, fileList, source = 'picker') {
   if (zoneId === 'anchor') {
     state.wizard.anchorFiles = [
       ...state.wizard.anchorFiles,
-      ...result.files.map((file) => ({ ...file, uploadArea: undefined }))
+      ...result.files.map((file) => ({ ...file, uploadArea: undefined, sourceType: getSourceTypeForFile(file) }))
     ];
   } else {
     state.wizard.uploadFiles = [...state.wizard.uploadFiles, ...result.files];
@@ -1635,7 +1653,8 @@ async function analyzeWizardCurriculum() {
   renderPlanWizard();
   try {
     const anchor = await desktop.factory.createCurriculumAnchor({
-      type: state.wizard.anchorType,
+      types: getAnchorTypes(),
+      type: getAnchorTypes()[0],
       title: state.wizard.course.courseName || 'Curriculum Anchor',
       sourceFiles: state.wizard.anchorFiles,
       ranges: state.wizard.rangesText

@@ -195,6 +195,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 }
 .source-option.choice-card:hover { border-color: #38a7d8; background: #f2faff; }
 .source-option.choice-card.is-active { border-color: var(--cf-brand); background: var(--cf-brand-soft); box-shadow: 0 0 0 3px rgba(7, 89, 133, .14); }
+.source-option.choice-card:focus-within { outline: 3px solid var(--cf-brand); outline-offset: 3px; }
 .source-option.choice-card input { width: 1.15rem; height: 1.15rem; min-height: 0; margin: .15rem 0 0; accent-color: var(--cf-brand); }
 .choice-card-copy { display: grid; gap: var(--cf-space-2); min-width: 0; }
 .choice-card-copy strong { font-size: 1rem; line-height: 1.4; }

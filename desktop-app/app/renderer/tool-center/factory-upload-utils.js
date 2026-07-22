@@ -1,6 +1,14 @@
 (function initFactoryUploadUtils(root) {
   const DANGEROUS_EXTENSIONS = ['.exe', '.bat', '.cmd', '.ps1', '.msi', '.vbs', '.scr', '.com'];
   const LARGE_FILE_BYTES = 250 * 1024 * 1024;
+  const MIME_TYPES_BY_EXTENSION = {
+    '.xls': ['application/vnd.ms-excel'], '.xlsx': ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+    '.xlsm': ['application/vnd.ms-excel.sheet.macroenabled.12', 'application/vnd.ms-excel'], '.pdf': ['application/pdf'],
+    '.epub': ['application/epub+zip'], '.ppt': ['application/vnd.ms-powerpoint'],
+    '.pptx': ['application/vnd.openxmlformats-officedocument.presentationml.presentation'], '.doc': ['application/msword'],
+    '.docx': ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'], '.txt': ['text/plain'],
+    '.md': ['text/markdown', 'text/plain'], '.html': ['text/html'], '.htm': ['text/html']
+  };
 
   function normalizeAccept(accept) {
     return String(accept || '')
@@ -53,23 +61,26 @@
     };
   }
 
-  function validateDropZoneFile(file, accept = '', existingFiles = []) {
+  function validateDropZoneFile(file, accept = '', existingFiles = [], options = {}) {
     const extension = extensionOf(file.name);
     const accepted = normalizeAccept(accept);
     const warnings = [];
     const errors = [];
     const dangerous = DANGEROUS_EXTENSIONS.includes(extension);
     if (dangerous) errors.push(`Gefaehrliche Dateiendung blockiert: ${extension}`);
-    if (accepted.length && !accepted.includes(extension) && !(extension === '.zip' && accepted.includes('.zip'))) {
-      warnings.push(`Dateityp ${extension || 'unbekannt'} passt nicht zur Uploadzone.`);
-    }
+    const extensionAllowed = !accepted.length || accepted.includes(extension);
+    const declaredMime = String(file.type || '').toLowerCase();
+    const expectedMimes = MIME_TYPES_BY_EXTENSION[extension] || [];
+    const mimeAllowed = !expectedMimes.length || (declaredMime && expectedMimes.includes(declaredMime));
+    if (!extensionAllowed) (options.strictMime ? errors : warnings).push(`Datei ${file.name || 'unbekannt'} wird nicht unterstützt. Zulässig: ${accepted.join(', ')}.`);
+    if (extensionAllowed && !mimeAllowed) (options.strictMime ? errors : warnings).push(`Datei ${file.name || 'unbekannt'} hat keinen zur Endung passenden MIME-Typ. Zulässig: ${accepted.join(', ')}.`);
     if (Number(file.size || 0) <= 0) warnings.push('Datei ist leer oder Groesse unbekannt.');
     if (Number(file.size || 0) > LARGE_FILE_BYTES) warnings.push('Grosse Datei: bitte Speicherverbrauch und Inhalt pruefen.');
     const duplicate = isDuplicateUpload(file, existingFiles);
     if (duplicate) warnings.push('Duplikat erkannt.');
     return {
-      accepted: !dangerous,
-      blocked: dangerous,
+      accepted: !dangerous && (!options.strictMime || (extensionAllowed && mimeAllowed)),
+      blocked: dangerous || Boolean(options.strictMime && (!extensionAllowed || !mimeAllowed)),
       duplicate,
       warnings,
       errors
@@ -81,7 +92,7 @@
     const blockedFiles = [];
     const allExisting = [...existingFiles];
     Array.from(files || []).forEach((file) => {
-      const validation = validateDropZoneFile(file, areaConfig.accept || '', allExisting);
+      const validation = validateDropZoneFile(file, areaConfig.accept || '', allExisting, areaConfig);
       const normalized = normalizeUploadFile(file, areaConfig.id || areaConfig.uploadArea || '', areaConfig.source || 'picker', validation);
       if (validation.accepted) {
         acceptedFiles.push(normalized);

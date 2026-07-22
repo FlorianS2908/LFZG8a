@@ -158,10 +158,13 @@ test('content factory upload dropzone utils validate multi file selections safel
   const removedById = removeUploadFile([{ id: 'keep' }, { id: 'remove' }], 'remove');
   const html = renderFileList(selection.files, (value) => String(value));
   const dropzoneHtml = createDropZoneHtml({ id: 'materials', title: 'Materialien', accept: '.pdf,.zip', files: added.files, multiple: true });
+  const spoofed = validateUploadSelection([
+    { name: 'manipuliert.pdf', size: 25, type: 'text/plain', lastModified: 5 }
+  ], { id: 'anchor', accept: '.pdf', strictMime: true }, []);
 
   assert.equal(selection.files.length, 2);
   assert.equal(selection.blockedFiles.length, 1);
-  assert.equal(selection.files[0].duplicate, true);
+  assert.equal(selection.files.find((file) => file.name === 'material.pdf').duplicate, true);
   assert.equal(selection.files.every((file) => file.uploadArea === 'quiz'), true);
   assert.equal(added.files.length, 2);
   assert.equal(removedById.length, 1);
@@ -170,6 +173,8 @@ test('content factory upload dropzone utils validate multi file selections safel
   assert.match(html, /data-dropzone-remove="quiz:0"/);
   assert.match(dropzoneHtml, /multiple/);
   assert.match(dropzoneHtml, /data-dropzone="materials"/);
+  assert.equal(spoofed.files.length, 0);
+  assert.match(spoofed.errors[0], /MIME-Typ/);
 });
 
 test('content factory extracts safe source outlines from office epub text and pdf fallbacks', () => {
@@ -223,10 +228,13 @@ test('content factory productive MVP creates draft with runtime modes and standa
     const planPath = path.join(dir, 'Plan.xlsx');
     fs.writeFileSync(planPath, 'placeholder', 'utf8');
     const anchor = service.createCurriculumAnchor({
+      types: ['course-plan', 'text-document'],
       type: 'course-plan',
       title: 'LF05 FIAE',
       sourceFiles: [{ name: 'Plan.xlsx', path: planPath }]
     }, session);
+    assert.deepEqual(anchor.types, ['course-plan', 'text-document']);
+    assert.equal(anchor.type, 'course-plan');
     let curriculum = await service.analyzeCurriculumAnchor({
       anchor,
       course: { courseName: 'LF05 FIAE', courseId: 'lf05-fiae', department: 'FIAE' },
@@ -1221,7 +1229,7 @@ test('content factory plan wizard renders gated single steps with source and ai 
   assert.match(ui, /state\.wizard\.activeStep = target\.id/);
   assert.match(ui, /data-plan-step-content="\$\{escapeHtml\(|data-plan-step-content="anchor"/);
   assert.match(ui, /data-wizard-analyze \$\{wizard\.anchorFiles\.length \? '' : 'disabled'\}/);
-  ['Excel-Unterrichtsplan', 'PowerPoint', 'PDF', 'EPUB', 'Word', 'Markdown', 'HTML', 'TXT', '.zip'].forEach((term) => assert.match(ui, new RegExp(term.replace('.', '\\.')), term));
+  ['Unterrichtsplan', 'Buch / PDF / PowerPoint', 'Textdokument', '.xls', '.xlsx', '.xlsm', '.pdf', '.epub', '.ppt', '.pptx', '.doc', '.docx', '.txt', '.md', '.html', '.htm'].forEach((term) => assert.match(ui, new RegExp(term.replace('.', '\\.')), term));
   ['local', 'openai', 'openai-review', 'openai-review-repair'].forEach((mode) => assert.match(ui, new RegExp(mode), mode));
   const layout = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'workflow-ui', 'workflow-layout.js'), 'utf8');
   assert.match(layout, /Optionalen Schritt überspringen/);

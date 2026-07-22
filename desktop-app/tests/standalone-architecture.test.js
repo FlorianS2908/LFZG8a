@@ -130,9 +130,10 @@ test('Hauptquelle nutzt zugängliche Auswahlkarten und responsive Hilfe', () => 
   const factory = read(path.join('renderer', 'tool-center', 'factory.js'));
   const css = read(path.join('renderer', 'tool-center', 'content-factory.css'));
   assert.match(factory, /class="source-option choice-card/);
-  assert.match(factory, /type="radio" name="wizard-anchor-type"/);
-  assert.match(factory, /data-selected="\$\{wizard\.anchorType === value \? 'true' : 'false'\}"/);
-  assert.match(factory, /<label for="wizard-anchor-type-select">Quellentyp<\/label>/);
+  assert.match(factory, /type="checkbox" name="wizard-anchor-types"/);
+  assert.match(factory, /data-selected="\$\{selectedTypes\.includes\(id\) \? 'true' : 'false'\}"/);
+  assert.doesNotMatch(factory, /wizard-anchor-type-select/);
+  assert.match(factory, /Bitte mindestens eine Art der Hauptquelle auswählen/);
   assert.match(css, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(css, /\.wizard-source-options \{ grid-template-columns: 1fr; \}/);

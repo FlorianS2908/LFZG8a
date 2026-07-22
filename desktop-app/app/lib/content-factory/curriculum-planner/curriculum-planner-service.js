@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { writeJson } = require('../../json-store');
-const { assertAnchorType } = require('./curriculum-anchor-types');
+const { normalizeAnchorTypes } = require('./curriculum-anchor-types');
 const { parseRanges, validateRanges } = require('./source-range-parser');
 const { analyzeCurriculumSource } = require('./curriculum-source-analyzer');
 const { distributeTopics, normalizeDuration } = require('./curriculum-time-planner');
@@ -20,13 +20,15 @@ function createCurriculumPlannerService({ factoryDir, aiOrchestrator }) {
 
   function createCurriculumAnchor(input = {}) {
     ensurePlanner();
-    assertAnchorType(input.type);
-    const rangeType = input.type === 'book-or-presentation' && (input.sourceFiles || []).some((file) => /\.pptx$/i.test(file.name || file.path || '')) ? 'slides' : 'pages';
+    const types = normalizeAnchorTypes(input);
+    const legacyType = input.type && types.includes(input.type) ? input.type : types[0];
+    const rangeType = types.includes('book-or-presentation') && (input.sourceFiles || []).some((file) => /\.pptx?$/i.test(file.name || file.path || '')) ? 'slides' : 'pages';
     const ranges = parseRanges(input.ranges || [], rangeType);
     const warnings = validateRanges(ranges);
     return {
       id: input.id || `anchor-${Date.now()}`,
-      type: input.type,
+      type: legacyType,
+      types,
       title: input.title || (input.sourceFiles || [])[0]?.name || 'Curriculum Anchor',
       sourceFiles: (input.sourceFiles || []).map(publicSourceFile),
       ranges,
