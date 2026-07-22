@@ -39,7 +39,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator }) {
     const project = upsertProject(input.project || { id: input.projectId });
     const provider = aiOrchestrator.openai;
     if (!provider?.isConfigured()) throw new Error('KI nicht konfiguriert. Bitte OPENAI_API_KEY und OPENAI_MODEL in den KI-Einstellungen konfigurieren.');
-    if (!project.planningFrame?.valid || !project.planningFrame?.confirmed) throw new Error('Der Planungsrahmen muss vor der KI-Analyse vollständig geprüft und bestätigt werden.');
+    if (!project.structureFrame?.valid || !project.structureFrame?.confirmed) throw new Error('Dauer und Zielgruppe müssen vor der KI-Analyse vollständig bestätigt werden.');
     const operationId = `analysis-${Date.now()}`;
     const controller = new AbortController();
     const total = (input.documents || project.uploadedDocuments || []).filter((item) => !item.excluded && (!input.retryDocumentId || item.id === input.retryDocumentId)).length;
@@ -149,26 +149,41 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator }) {
     return saveProject(project);
   }
 
+  function saveCourseScope(projectId, input = {}) {
+    const project = getProject(projectId);
+    const structureFrame = calculateCourseScope(input);
+    if (!structureFrame.valid) {
+      const error = new Error(structureFrame.errors.join(' | '));
+      error.code = 'COURSE_SCOPE_VALIDATION';
+      throw error;
+    }
+    project.structureFrame = { ...(project.structureFrame || {}), ...structureFrame, confirmed: true };
+    project.targetGroup = selectionText(structureFrame.targetAudience);
+    project.priorKnowledge = selectionText(structureFrame.priorKnowledge);
+    return saveProject(project);
+  }
+
   async function generateCoursePlan(input = {}) {
     const project = getProject(input.projectId);
     const provider = aiOrchestrator.openai;
     if (!provider?.isConfigured()) throw new Error('KI nicht konfiguriert. Für die Kursstruktur ist eine echte OpenAI-Verbindung erforderlich.');
-    if (!project.planningFrame?.valid) throw new Error('Der Planungsrahmen ist unvollständig oder ungültig.');
+    const structureFrame = project.structureFrame;
+    if (!structureFrame?.valid) throw new Error('Dauer und Zielgruppe sind unvollständig oder ungültig.');
     const analyses = latestAnalyses(project.documentAnalyses).filter((item) => !item.failed);
     if (!analyses.length) throw new Error('Mindestens eine erfolgreiche Dokumentanalyse ist erforderlich.');
     const planningVersion = Number(project.currentPlanningVersion || 0) + 1;
     const raw = await provider.generateStructuredCoursePlan({
-      course: projectContext(project), planningFrame: project.planningFrame,
+      course: projectContext(project), structureFrame,
       documentAnalyses: analyses, mergedKnowledgeBase: project.mergedKnowledgeBase,
       bindingTopics: input.bindingTopics || [], excludedTopics: input.excludedTopics || []
     }, { signal: input.signal });
-    const validation = validateCoursePlan(raw, project.planningFrame);
+    const validation = validateCoursePlan(raw, structureFrame);
     const now = new Date().toISOString();
     const draft = {
       ...raw, id: `course-plan-${project.id}-${planningVersion}`, planningVersion,
       status: validation.status === 'failed' ? 'needs_review' : 'draft', validation,
       sourceAnalysisVersions: analyses.map((item) => ({ documentId: item.documentId, analysisVersion: item.analysisVersion })),
-      planningFrameSnapshot: project.planningFrame, provider: provider.name, model: provider.model,
+      structureFrameSnapshot: structureFrame, provider: provider.name, model: provider.model,
       promptVersion: 'course-plan-v1', createdAt: now, updatedAt: now
     };
     project.coursePlanDrafts.push(draft);
@@ -179,7 +194,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator }) {
   function saveCoursePlanDraft(projectId, draft = {}) {
     const project = getProject(projectId);
     if (project.approvedCoursePlan?.planningVersion === draft.planningVersion) throw new Error('Eine freigegebene Kursstruktur darf nicht überschrieben werden.');
-    const validation = validateCoursePlan(draft, draft.planningFrameSnapshot || project.planningFrame);
+    const validation = validateCoursePlan(draft, draft.structureFrameSnapshot || project.structureFrame);
     const updated = { ...draft, validation, status: validation.status === 'failed' ? 'needs_review' : 'draft', updatedAt: new Date().toISOString() };
     project.coursePlanDrafts = [...project.coursePlanDrafts.filter((item) => item.id !== updated.id), updated];
     return saveProject(project);
@@ -195,7 +210,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator }) {
     const project = getProject(projectId);
     const draft = project.coursePlanDrafts.find((item) => Number(item.planningVersion) === Number(version));
     if (!draft) throw new Error('Kursstruktur wurde nicht gefunden.');
-    const validation = validateCoursePlan(draft, draft.planningFrameSnapshot || project.planningFrame);
+    const validation = validateCoursePlan(draft, draft.structureFrameSnapshot || project.structureFrame);
     if (validation.status === 'failed') throw new Error('Die Kursstruktur enthält blockierende Validierungsfehler.');
     if (project.uploadedDocuments.some((document) => document.bindingLevel === 'binding' && document.analysisStatus === 'failed' && !document.failureAcknowledged)) throw new Error('Verbindliche fehlgeschlagene Dokumente müssen erneut analysiert oder ausdrücklich als Ausnahme bestätigt werden.');
     if ((draft.conflicts || []).some((item) => item.blocking && !item.confirmed)) throw new Error('Blockierende Konflikte müssen bearbeitet oder bestätigt werden.');
@@ -205,7 +220,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator }) {
     return saveProject(project);
   }
 
-  return { getProject, listProjects, upsertProject, startDocumentAnalysis, getAnalysisProgress, cancelAiOperation, savePlanningFrame, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan };
+  return { getProject, listProjects, upsertProject, startDocumentAnalysis, getAnalysisProgress, cancelAiOperation, savePlanningFrame, saveCourseScope, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan };
 }
 
 function extractDocument(document) {
@@ -256,6 +271,43 @@ function calculatePlanningFrame(frame = {}) {
   return { valid: !errors.length, errors, warnings, totalDays, unitsPerDay, totalUnits, unitDurationMinutes, grossMinutesPerDay, breakMinutesPerDay, netMinutesPerDay, possibleUnitsPerDay, possibleTotalUnits, reservedUnits, actuallyPlannableUnits };
 }
 
+function calculateCourseScope(input = {}) {
+  const errors = [];
+  const targetAudience = normalizeSelection(input.targetAudience ?? input.targetGroup, TARGET_AUDIENCES, 'other_audience');
+  const priorKnowledge = normalizeSelection(input.priorKnowledge, PRIOR_KNOWLEDGE, 'other_knowledge');
+  validateSelection(targetAudience, TARGET_AUDIENCES, 'Bitte wählen Sie eine Zielgruppe aus.', 'Bitte beschreiben Sie die sonstige Zielgruppe.', errors);
+  validateSelection(priorKnowledge, PRIOR_KNOWLEDGE, 'Bitte wählen Sie die vorhandenen Vorkenntnisse aus.', 'Bitte beschreiben Sie die sonstigen Vorkenntnisse.', errors);
+  const totalDays = positiveInteger(input.totalDays ?? input.courseDurationDays, 'Kursdauer in Tagen', errors);
+  const unitDurationMinutes = positiveInteger(input.unitDurationMinutes || 45, 'Dauer einer UE', errors);
+  const unitsPerDay = positiveInteger(input.unitsPerDay, 'Unterrichtseinheiten je Tag', errors);
+  const totalUnits = totalDays * unitsPerDay;
+  return { schemaVersion: 1, valid: errors.length === 0, errors, totalDays, unitsPerDay, totalUnits, unitDurationMinutes, targetAudience, priorKnowledge, actuallyPlannableUnits: totalUnits };
+}
+
+const TARGET_AUDIENCES = [
+  ['trainees', 'Auszubildende'], ['retrainees', 'Umschülerinnen und Umschüler'], ['career_starters', 'Berufseinsteigerinnen und Berufseinsteiger'],
+  ['experienced_professionals', 'Berufserfahrene'], ['career_changers', 'Quereinsteigerinnen und Quereinsteiger'], ['students', 'Studierende'],
+  ['school_students', 'Schülerinnen und Schüler'], ['managers', 'Führungskräfte'], ['company_employees', 'Mitarbeitende eines Unternehmens'],
+  ['mixed_group', 'Gemischte Lerngruppe'], ['other_audience', 'Sonstige Zielgruppe']
+].map(([value, label]) => ({ value, label }));
+const PRIOR_KNOWLEDGE = [
+  ['none', 'Keine Vorkenntnisse'], ['little', 'Geringe Vorkenntnisse'], ['basic', 'Grundkenntnisse'], ['extended_basic', 'Erweiterte Grundkenntnisse'],
+  ['advanced', 'Fortgeschrittene Kenntnisse'], ['mixed', 'Sehr unterschiedliche Vorkenntnisse'], ['unknown', 'Nicht bekannt'], ['other_knowledge', 'Sonstige Vorkenntnisse']
+].map(([value, label]) => ({ value, label }));
+
+function normalizeSelection(input, options, otherValue) {
+  const rawValue = typeof input === 'object' && input ? String(input.value || '').trim() : String(input || '').trim();
+  const customText = typeof input === 'object' && input ? String(input.customText || '').trim() : '';
+  const exact = options.find((option) => option.value === rawValue || option.label.toLocaleLowerCase('de') === rawValue.toLocaleLowerCase('de'));
+  if (exact) return { ...exact, customText: exact.value === otherValue ? customText : '' };
+  return rawValue ? { ...options.find((option) => option.value === otherValue), customText: rawValue } : { value: '', label: '', customText: '' };
+}
+function validateSelection(selection, options, missingMessage, customMessage, errors) {
+  if (!options.some((option) => option.value === selection.value)) errors.push(missingMessage);
+  else if (selection.value.startsWith('other_') && !selection.customText) errors.push(customMessage);
+}
+function selectionText(selection) { return selection?.customText || selection?.label || ''; }
+
 function validateCoursePlan(value = {}, frame = {}) {
   const errors = [];
   const warnings = [];
@@ -263,6 +315,7 @@ function validateCoursePlan(value = {}, frame = {}) {
   if (days.length !== Number(frame.totalDays)) errors.push(`Erwartet werden ${frame.totalDays} Kurstage.`);
   const units = days.flatMap((day) => (day.units || []).map((unit) => ({ ...unit, dayNumber: unit.dayNumber || day.dayNumber })));
   if (units.length !== Number(frame.actuallyPlannableUnits)) errors.push(`Erwartet werden genau ${frame.actuallyPlannableUnits} planbare UE, erhalten: ${units.length}.`);
+  if (Array.isArray(frame.unitsByDay) && frame.schemaVersion !== 1) days.forEach((day, index) => { if ((day.units || []).length !== frame.unitsByDay[index]) errors.push(`Tag ${index + 1}: erwartet ${frame.unitsByDay[index]} UE, erhalten ${(day.units || []).length}.`); });
   const keys = new Set();
   units.forEach((unit, index) => {
     const key = `${unit.dayNumber}:${unit.unitNumber}`;
@@ -278,7 +331,9 @@ function validateCoursePlan(value = {}, frame = {}) {
 
 function normalizeProject(project, id) {
   const now = new Date().toISOString();
-  const normalized = { id: safeId(project?.id || id), title: '', description: '', subjectArea: '', targetGroup: '', priorKnowledge: '', planningFrame: null, uploadedDocuments: [], documentAnalyses: [], mergedKnowledgeBase: null, coursePlanDrafts: [], approvedCoursePlan: null, currentPlanningVersion: 0, didacticProfile: null, createdAt: now, updatedAt: now, ...(project || {}) };
+  const normalized = { id: safeId(project?.id || id), title: '', description: '', subjectArea: '', targetGroup: '', priorKnowledge: '', planningFrame: null, structureFrame: null, uploadedDocuments: [], documentAnalyses: [], mergedKnowledgeBase: null, coursePlanDrafts: [], approvedCoursePlan: null, currentPlanningVersion: 0, didacticProfile: null, createdAt: now, updatedAt: now, ...(project || {}) };
+  if (!normalized.structureFrame && normalized.planningFrame?.valid) normalized.structureFrame = { ...calculateCourseScope({ targetGroup: normalized.targetGroup || normalized.planningFrame.targetGroup, priorKnowledge: normalized.priorKnowledge || normalized.planningFrame.priorKnowledge, totalDays: normalized.planningFrame.totalDays, unitsPerDay: normalized.planningFrame.unitsPerDay, unitDurationMinutes: normalized.planningFrame.unitDurationMinutes }), confirmed: true };
+  else if (normalized.structureFrame) normalized.structureFrame = { ...normalized.structureFrame, ...calculateCourseScope({ ...normalized.structureFrame, targetAudience: normalized.structureFrame.targetAudience ?? normalized.structureFrame.targetGroup ?? normalized.targetGroup, priorKnowledge: normalized.structureFrame.priorKnowledge ?? normalized.priorKnowledge }) };
   normalized.uploadedDocuments = (normalized.uploadedDocuments || []).map(normalizeDocument);
   normalized.documentAnalyses = (normalized.documentAnalyses || []).map((analysis) => ({ ...analysis, ...normalizeDocumentAnalysis(analysis, { documentId: analysis.documentId, documentType: analysis.documentType }).value }));
   return normalized;
@@ -289,7 +344,8 @@ function mergeAnalyses(items = []) { return { analysisVersions: items.map((item)
 function projectContext(project) { return { id: project.id, title: project.title, description: project.description, subjectArea: project.subjectArea, targetGroup: project.targetGroup, priorKnowledge: project.priorKnowledge }; }
 function safeId(value) { const id = String(value || 'course-project').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, ''); if (!id) throw new Error('Ungültige Projekt-ID.'); return id; }
 function positive(value, label, errors) { const number = Number(value); if (!Number.isFinite(number) || number <= 0) { errors.push(`${label} muss größer als 0 sein.`); return 0; } return number; }
+function positiveInteger(value, label, errors) { const number = Number(value); if (!Number.isInteger(number) || number <= 0) { errors.push(`${label} muss eine positive ganze Zahl sein.`); return 0; } return number; }
 function minutes(value) { const match = /^(\d{1,2}):(\d{2})$/.exec(String(value || '')); if (!match) return null; const result = Number(match[1]) * 60 + Number(match[2]); return result >= 0 && result < 1440 ? result : null; }
 function safeError(error) { return String(error?.message || 'Unbekannter Analysefehler').replace(/sk-[A-Za-z0-9_-]+/g, '[geschützt]').slice(0, 1000); }
 
-module.exports = { createCoursePlanningService, extractDocument, calculatePlanningFrame, validateDocumentAnalysis, validateCoursePlan, normalizeProject };
+module.exports = { createCoursePlanningService, extractDocument, calculatePlanningFrame, calculateCourseScope, validateDocumentAnalysis, validateCoursePlan, normalizeProject, TARGET_AUDIENCES, PRIOR_KNOWLEDGE };

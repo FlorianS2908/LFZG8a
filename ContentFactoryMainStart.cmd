@@ -1,5 +1,6 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
+chcp 65001 >nul
 title ContentFactory Main Start
 
 set "ROOT_DIR=%~dp0"
@@ -23,9 +24,16 @@ if not exist "%PACKAGE_JSON%" (
 
 where git >nul 2>nul
 if not errorlevel 1 (
-  for /f "usebackq delims=" %%B in (`git -C "%ROOT_DIR%." branch --show-current 2^>nul`) do set "CURRENT_BRANCH=%%B"
-  if /i not "%CURRENT_BRANCH%"=="main" (
-    echo [WARNUNG] Aktueller Branch ist "%CURRENT_BRANCH%", nicht "main".
+  set "CURRENT_BRANCH="
+  for /f "usebackq delims=" %%B in (`git -C "%ROOT_DIR%" rev-parse --abbrev-ref HEAD 2^>nul`) do set "CURRENT_BRANCH=%%B"
+  if not defined CURRENT_BRANCH (
+    echo [WARNUNG] Der aktuelle Git-Branch konnte nicht ermittelt werden.
+    echo.
+  ) else if /i "!CURRENT_BRANCH!"=="HEAD" (
+    echo [WARNUNG] Der aktuelle Git-Branch konnte nicht ermittelt werden.
+    echo.
+  ) else if /i not "!CURRENT_BRANCH!"=="main" (
+    echo [WARNUNG] Aktueller Branch ist "!CURRENT_BRANCH!", nicht "main".
     echo Diese Datei ist fuer den Start aus dem Main-Branch gedacht.
     echo.
   )

@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
     getCourseProject: invoke('factory:get-course-project'), upsertCourseProject: invoke('factory:upsert-course-project'),
     startDocumentAnalysis: invoke('factory:start-document-analysis'), getAnalysisProgress: invoke('factory:get-analysis-progress'),
     cancelAiOperation: invoke('factory:cancel-ai-operation'), savePlanningFrame: invoke('factory:save-planning-frame'),
+    saveCourseScope: invoke('factory:save-course-scope'),
     generateStructuredCoursePlan: invoke('factory:generate-structured-course-plan'), saveStructuredCoursePlan: invoke('factory:save-structured-course-plan'),
     acknowledgeDocumentFailure: invoke('factory:acknowledge-document-failure'),
     approveStructuredCoursePlan: invoke('factory:approve-structured-course-plan'),

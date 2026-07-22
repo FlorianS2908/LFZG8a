@@ -39,6 +39,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 body { margin: 0; background: var(--cf-canvas); color: var(--cf-ink); }
 button, input, select, textarea, summary { font: inherit; }
 button, summary, input, select, textarea { min-height: var(--cf-control-height); }
+.field-error { display: block; margin-top: .35rem; color: var(--cf-danger); font-weight: 650; }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible, [tabindex="0"]:focus-visible {
   outline: 3px solid #f59e0b;
   outline-offset: 2px;
@@ -273,3 +274,24 @@ th, td { padding: var(--cf-space-3); text-align: left; overflow-wrap: anywhere; 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+/* Wizard errors stay readable and never expose Electron's raw IPC wrapper. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(15 23 42 / 68%);
+}
+
+.modal-card {
+  width: min(520px, 100%);
+  padding: 24px;
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 14px;
+  background: var(--surface-color, #fff);
+  box-shadow: 0 24px 60px rgb(15 23 42 / 28%);
+}
+
+.modal-card h3 { margin-top: 0; }

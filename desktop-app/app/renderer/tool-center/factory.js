@@ -6,6 +6,15 @@ const difficultyLevels = window.ContentFactoryDifficultyLevels || { levels: [{ v
 const workflowRegistry = window.ContentFactoryWorkflowRegistry || {};
 const workflowStatus = window.ContentFactoryWorkflowStatus || {};
 const visibleLabel = window.ContentFactoryWorkflowUtils?.visibleLabel || ((value) => String(value ?? ''));
+const targetAudienceOptions = [
+  ['trainees', 'Auszubildende'], ['retrainees', 'Umschülerinnen und Umschüler'], ['career_starters', 'Berufseinsteigerinnen und Berufseinsteiger'], ['experienced_professionals', 'Berufserfahrene'],
+  ['career_changers', 'Quereinsteigerinnen und Quereinsteiger'], ['students', 'Studierende'], ['school_students', 'Schülerinnen und Schüler'], ['managers', 'Führungskräfte'],
+  ['company_employees', 'Mitarbeitende eines Unternehmens'], ['mixed_group', 'Gemischte Lerngruppe'], ['other_audience', 'Sonstige Zielgruppe']
+].map(([value, label]) => ({ value, label }));
+const priorKnowledgeOptions = [
+  ['none', 'Keine Vorkenntnisse'], ['little', 'Geringe Vorkenntnisse'], ['basic', 'Grundkenntnisse'], ['extended_basic', 'Erweiterte Grundkenntnisse'],
+  ['advanced', 'Fortgeschrittene Kenntnisse'], ['mixed', 'Sehr unterschiedliche Vorkenntnisse'], ['unknown', 'Nicht bekannt'], ['other_knowledge', 'Sonstige Vorkenntnisse']
+].map(([value, label]) => ({ value, label }));
 
 const containerProfileLabels = {
   studentWorkspace: 'Arbeitsbereich für Teilnehmende erstellen',
@@ -41,6 +50,8 @@ const state = {
     courseProject: null,
     analysisProgress: null,
     planningFrame: { targetGroup: '', priorKnowledge: '', totalDays: 5, unitsPerDay: 9, totalUnits: 45, unitDurationMinutes: 45, dailyStartTime: '08:30', dailyEndTime: '16:30', breaksText: '10:00-10:15\n11:45-12:15\n13:45-14:00\n15:30-15:45', repetitionUnits: 0, projectUnits: 0, assessmentUnits: 0, bufferUnits: 0, deliveryMode: 'presence' },
+    structureFrame: { schemaVersion: 1, targetAudience: { value: '', label: '', customText: '' }, priorKnowledge: { value: '', label: '', customText: '' }, totalDays: 5, unitsPerDay: 9, totalUnits: 45, unitDurationMinutes: 45, confirmed: false },
+    scopeErrors: {},
     rangesText: '',
     duration: { numberOfDays: 5, hoursPerDay: 8, uePerDay: 9, ueMinutes: 45, totalHours: 40, totalUE: 45, pauseModel: 'default' },
     targetAudience: { ageRange: 'mixed', educationContext: 'umschulung', department: 'ALLGEMEIN', priorKnowledge: 'basic', learningLevel: 'basic', languageLevel: 'normal', practiceLevel: 'medium', difficultyMode: 'medium', needsStepByStep: true, examOrientation: false, projectOrientation: true },
@@ -61,6 +72,7 @@ const state = {
     dayDraft: null,
     dayResults: [],
     corrections: '',
+    uiError: null,
     generatedDraft: null,
     selectedPresetId: '',
     preflight: null,
@@ -548,6 +560,7 @@ function renderPlanWizard() {
     ${workflowLayout.renderWorkflowHeader ? workflowLayout.renderWorkflowHeader(workflow, headerStatus) : ''}
     ${workflowLayout.renderWorkflowStepper ? workflowLayout.renderWorkflowStepper(workflow, wizard.activeStep, gates) : ''}
     ${wizard.status ? `<div class="workflow-transient-status"><p class="status-line" role="status" aria-live="polite">${escapeHtml(wizard.status)}</p></div>` : ''}
+    ${wizard.uiError ? `<div class="modal-backdrop" role="presentation"><section class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="wizard-error-title"><h3 id="wizard-error-title">${escapeHtml(wizard.uiError.title)}</h3><p>${escapeHtml(wizard.uiError.message)}</p><div class="button-row">${wizard.uiError.retry ? '<button type="button" class="primary-button" data-retry-wizard-error>Erneut versuchen</button>' : ''}<button type="button" class="secondary-button" data-close-wizard-error>Schließen</button></div></section></div>` : ''}
     ${workflowLayout.renderWorkflowStepShell
       ? workflowLayout.renderWorkflowStepShell({
         workflow,
@@ -651,6 +664,7 @@ function renderCourseStep(wizard) {
         <label>Fachbereich <span class="field-requirement">erforderlich</span><select data-wizard-course="department" aria-describedby="course-required-help" required>${['', 'FIAE', 'FISI', 'KABUE', 'KITS', 'ALLGEMEIN'].map((value) => `<option value="${value}" ${wizard.course.department === value ? 'selected' : ''}>${value || 'Bitte wählen'}</option>`).join('')}</select></label>
       </div>
       <label>Beschreibung <span class="field-requirement">optional</span><textarea data-wizard-course="description">${escapeHtml(wizard.course.description)}</textarea></label>
+      <label>Übergeordnetes Kursziel <span class="field-requirement">optional</span><textarea data-wizard-goal>${escapeHtml(wizard.courseGoal)}</textarea></label>
       </fieldset>
     </article>
   `;
@@ -684,69 +698,44 @@ function renderAnchorStep(wizard) {
 
 function renderDurationAudienceStep(wizard) {
   normalizeDurationAndAudience(wizard);
+  const scope = wizard.structureFrame;
+  const errors = wizard.scopeErrors || {};
   return `
     <article class="tool-card" data-plan-step-content="durationAudience">
       <h3>Dauer & Zielgruppe</h3>
       <div class="duration-audience-layout">
         <section class="form-section" aria-labelledby="duration-heading"><h4 id="duration-heading">Dauer</h4><div class="factory-form-grid compact-form-grid">
-        <label>Tage<input data-wizard-duration="numberOfDays" type="number" min="1" step="1" value="${escapeHtml(wizard.duration.numberOfDays)}" required></label>
-        <label>Stunden/Tag<input data-wizard-duration="hoursPerDay" type="number" min="0.5" max="24" step="0.5" value="${escapeHtml(wizard.duration.hoursPerDay)}" required></label>
-        <label>UE/Tag<input data-wizard-duration="uePerDay" type="number" min="1" step="1" value="${escapeHtml(wizard.duration.uePerDay)}" required></label>
-        <label>Gesamt-UE<input data-duration-total-ue type="number" value="${escapeHtml(wizard.duration.totalUE)}" readonly><small>Automatisch: Tage × UE/Tag</small></label>
+        <label>Kurstage<input data-structure-frame="totalDays" type="number" min="1" step="1" value="${escapeHtml(scope.totalDays)}" aria-describedby="scope-days-error" required>${errors.totalDays ? `<small id="scope-days-error" class="field-error">${escapeHtml(errors.totalDays)}</small>` : ''}</label>
+        <label>UE je Tag<input data-structure-frame="unitsPerDay" type="number" min="1" step="1" value="${escapeHtml(scope.unitsPerDay)}" aria-describedby="scope-units-error" required>${errors.unitsPerDay ? `<small id="scope-units-error" class="field-error">${escapeHtml(errors.unitsPerDay)}</small>` : ''}</label>
+        <label>Dauer einer UE (Minuten)<input data-structure-frame="unitDurationMinutes" type="number" min="1" step="1" value="${escapeHtml(scope.unitDurationMinutes)}" aria-describedby="scope-duration-error" required>${errors.unitDurationMinutes ? `<small id="scope-duration-error" class="field-error">${escapeHtml(errors.unitDurationMinutes)}</small>` : ''}</label>
+        <label>Gesamtzahl UE<input data-course-scope-total value="${escapeHtml(Number(scope.totalDays || 0) * Number(scope.unitsPerDay || 0))}" readonly aria-label="Automatisch berechnete Gesamtzahl der Unterrichtseinheiten"></label>
         </div></section>
         <section class="form-section" aria-labelledby="audience-heading"><h4 id="audience-heading">Zielgruppe</h4><div class="factory-form-grid compact-form-grid">
-        <label>Zielgruppenalter<select data-wizard-audience="ageRange">${['mixed', '16-20', '20-30', '30+', 'unknown'].map((value) => `<option value="${value}" ${wizard.targetAudience.ageRange === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
-        <label>Vorkenntnisse<select data-wizard-audience="priorKnowledge">${['none', 'basic', 'intermediate', 'advanced'].map((value) => `<option value="${value}" ${wizard.targetAudience.priorKnowledge === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
-        <label>Niveau<select data-wizard-audience="learningLevel">${['intro', 'basic', 'exam-prep', 'professional', 'advanced'].map((value) => `<option value="${value}" ${wizard.targetAudience.learningLevel === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
-        <label>Schwierigkeit<select data-wizard-audience="difficultyMode">${difficultyLevels.levels.map(({ value, label }) => `<option value="${value}" ${wizard.targetAudience.difficultyMode === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
-        <label class="form-field-wide">Endprodukt<select data-wizard-outcome title="${escapeHtml(visibleLabel(wizard.expectedOutcome))}">${['webseite', 'datenbankmodell', 'java-programm', 'python-programm', 'projektmappe', 'prüfungsvorbereitung', 'grundlagenkurs', 'custom'].map((value) => `<option value="${value}" ${wizard.expectedOutcome === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
-        <label>Didaktik<select data-wizard-style>${['guided', 'project-based', 'exam-oriented', 'workshop', 'self-study', 'mixed'].map((value) => `<option value="${value}" ${wizard.didacticStyle === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
+        <label class="form-field-wide">Zielgruppe<select data-course-scope-selection="targetAudience" aria-describedby="scope-audience-error" required><option value="">Bitte Zielgruppe auswählen</option>${targetAudienceOptions.map((option) => `<option value="${option.value}" ${scope.targetAudience?.value === option.value ? 'selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}</select>${errors.targetAudience ? `<small id="scope-audience-error" class="field-error">${escapeHtml(errors.targetAudience)}</small>` : ''}</label>
+        ${scope.targetAudience?.value === 'other_audience' ? `<label class="form-field-wide">Zielgruppe beschreiben<input data-course-scope-custom="targetAudience" value="${escapeHtml(scope.targetAudience.customText)}" aria-describedby="scope-audience-custom-error" required>${errors.targetAudienceCustom ? `<small id="scope-audience-custom-error" class="field-error">${escapeHtml(errors.targetAudienceCustom)}</small>` : ''}</label>` : ''}
+        <label class="form-field-wide">Vorkenntnisse<select data-course-scope-selection="priorKnowledge" aria-describedby="scope-knowledge-error" required><option value="">Bitte Vorkenntnisse auswählen</option>${priorKnowledgeOptions.map((option) => `<option value="${option.value}" ${scope.priorKnowledge?.value === option.value ? 'selected' : ''}>${escapeHtml(option.label)}</option>`).join('')}</select>${errors.priorKnowledge ? `<small id="scope-knowledge-error" class="field-error">${escapeHtml(errors.priorKnowledge)}</small>` : ''}</label>
+        ${scope.priorKnowledge?.value === 'other_knowledge' ? `<label class="form-field-wide">Vorkenntnisse beschreiben<input data-course-scope-custom="priorKnowledge" value="${escapeHtml(scope.priorKnowledge.customText)}" aria-describedby="scope-knowledge-custom-error" required>${errors.priorKnowledgeCustom ? `<small id="scope-knowledge-custom-error" class="field-error">${escapeHtml(errors.priorKnowledgeCustom)}</small>` : ''}</label>` : ''}
         </div></section>
       </div>
-      <label>Kursziel<textarea data-wizard-goal>${escapeHtml(wizard.courseGoal)}</textarea></label>
-      <label class="checkline"><input data-wizard-audience-check="needsStepByStep" type="checkbox" ${wizard.targetAudience.needsStepByStep ? 'checked' : ''}> <span>Inhalte Schritt für Schritt erklären</span></label>
-      <label class="checkline"><input data-wizard-audience-check="projectOrientation" type="checkbox" ${wizard.targetAudience.projectOrientation ? 'checked' : ''}> <span>Projektorientierte Aufgaben einplanen</span></label>
-      <label class="checkline"><input data-wizard-audience-check="examOrientation" type="checkbox" ${wizard.targetAudience.examOrientation ? 'checked' : ''}> <span>Auf die Prüfung vorbereiten</span></label>
-      <fieldset><legend>Planungsrahmen</legend><div class="factory-form-grid compact-form-grid">
-        <label class="form-field-wide">Zielgruppe<input data-planning-frame="targetGroup" value="${escapeHtml(wizard.planningFrame.targetGroup)}" placeholder="z. B. angehende Fachkräfte" required></label>
-        <label class="form-field-wide">Vorkenntnisse<textarea data-planning-frame="priorKnowledge" required>${escapeHtml(wizard.planningFrame.priorKnowledge)}</textarea></label>
-        <label>Dauer einer UE (Minuten)<input data-planning-frame="unitDurationMinutes" type="number" min="1" value="${escapeHtml(wizard.planningFrame.unitDurationMinutes)}"></label>
-        <label>Täglicher Start<input data-planning-frame="dailyStartTime" type="time" value="${escapeHtml(wizard.planningFrame.dailyStartTime)}"></label>
-        <label>Tägliches Ende<input data-planning-frame="dailyEndTime" type="time" value="${escapeHtml(wizard.planningFrame.dailyEndTime)}"></label>
-        <label>Durchführungsform<select data-planning-frame="deliveryMode">${['presence', 'online', 'hybrid'].map((value) => `<option value="${value}" ${wizard.planningFrame.deliveryMode === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
-        <label>Wiederholung (UE)<input data-planning-frame="repetitionUnits" type="number" min="0" value="${escapeHtml(wizard.planningFrame.repetitionUnits)}"></label>
-        <label>Projektzeit (UE)<input data-planning-frame="projectUnits" type="number" min="0" value="${escapeHtml(wizard.planningFrame.projectUnits)}"></label>
-        <label>Prüfungszeit (UE)<input data-planning-frame="assessmentUnits" type="number" min="0" value="${escapeHtml(wizard.planningFrame.assessmentUnits)}"></label>
-        <label>Zeitreserve (UE)<input data-planning-frame="bufferUnits" type="number" min="0" value="${escapeHtml(wizard.planningFrame.bufferUnits)}"></label>
-      </div><label>Pausen (eine pro Zeile, HH:MM-HH:MM)<textarea data-planning-breaks>${escapeHtml(wizard.planningFrame.breaksText)}</textarea></label>
-      <button class="primary-button" type="button" data-save-planning-frame>Planungsrahmen prüfen und speichern</button>
-      ${(wizard.courseProject?.planningFrame?.warnings || []).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
-      </fieldset>
+      <button class="primary-button" type="button" data-save-course-scope>Dauer und Zielgruppe übernehmen</button>
     </article>
   `;
 }
 
-function parseBreaks(text) {
-  return String(text || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => {
-    const [start, end] = line.split(/\s*[-–]\s*/);
-    return { start, end };
-  });
-}
-
 function renderCourseStructureStep(wizard) {
   const project = wizard.courseProject;
-  const ready = Boolean(project?.planningFrame?.valid && project?.planningFrame?.confirmed && wizard.anchorFiles.length && state.aiStatus?.providers?.openai?.configured);
+  const ready = Boolean(project?.structureFrame?.valid && project?.structureFrame?.confirmed && wizard.anchorFiles.length && state.aiStatus?.providers?.openai?.configured);
   const running = wizard.analysisProgress?.status === 'running';
   const documents = project?.uploadedDocuments?.length ? project.uploadedDocuments : wizard.anchorFiles;
   const analyses = project?.documentAnalyses || [];
   return `<article class="tool-card" data-plan-step-content="courseStructure">
     <h3>KI-Analyse und Kursplanung</h3>
-    <p class="status-line">Die echte KI erhält ausschließlich hochgeladene Quellen, Kursziele und den bestätigten Planungsrahmen. Der Ablauf ist fachneutral.</p>
+    <p class="status-line">Die hochgeladenen Dokumente werden gemeinsam ausgewertet. Anschließend erstellt die KI einen Vorschlag für die Verteilung der Themen auf die vorhandenen Kurstage und Unterrichtseinheiten.</p>
     ${running ? `<div class="analysis-progress" role="status" aria-live="polite"><span class="indeterminate-spinner" aria-hidden="true"></span><strong>${escapeHtml(wizard.analysisProgress.step)}</strong><span>${escapeHtml(wizard.analysisProgress.currentDocument || '')}</span><small>wartend: ${escapeHtml(wizard.analysisProgress.queued || 0)} | erfolgreich: ${escapeHtml(wizard.analysisProgress.completed || 0)} | Warnungen: ${escapeHtml(wizard.analysisProgress.warningCount || 0)} | fehlgeschlagen: ${escapeHtml(wizard.analysisProgress.failed || 0)}</small></div>` : ''}
     <div class="mapping-list">${documents.map((document, index) => renderDocumentAnalysisCard(document, analyses, index)).join('')}</div>
-    <div class="button-row"><button class="primary-button" type="button" data-document-analyze ${ready && !running ? '' : 'disabled'}>${running ? 'Analyse und Planung laufen …' : 'Dokumente analysieren und UE-Struktur erstellen'}</button>
+    <div class="button-row"><button class="primary-button" type="button" data-document-analyze ${ready && !running ? '' : 'disabled'}>${running ? 'Analyse und Planung laufen …' : 'Dokumente analysieren und Themenstruktur erstellen'}</button>
     <button class="secondary-button" type="button" data-document-analysis-cancel ${running ? '' : 'disabled'}>Vorgang abbrechen</button></div>
-    ${!ready ? '<p class="status-line status-warning">Erforderlich: Kursbezeichnung, Dokument, Zielgruppe, Vorkenntnisse, gültiger bestätigter Planungsrahmen und konfigurierte OpenAI-Verbindung.</p>' : ''}
+    ${!ready ? '<p class="status-line status-warning">Die Analyse kann noch nicht gestartet werden. Erforderlich sind Kursbezeichnung, mindestens ein Dokument, Zielgruppe, Vorkenntnisse, Tage, UE-Angaben und eine konfigurierte OpenAI-Verbindung.</p>' : ''}
   </article>`;
 }
 
@@ -784,7 +773,7 @@ function renderStructureReviewStep(wizard) {
   if (!draft) return '<article class="tool-card"><h3>Struktur-Review</h3><p class="status-line status-warning">Noch keine KI-Kursstruktur vorhanden.</p></article>';
   return `<article class="tool-card" data-plan-step-content="structureReview">
     <h3>Struktur-Review</h3>
-    <div class="summary-grid"><span>Kurs: ${escapeHtml(project.title)}</span><span>Zielgruppe: ${escapeHtml(project.targetGroup)}</span><span>Tage: ${escapeHtml(draft.planningFrameSnapshot?.totalDays)}</span><span>planbare UE: ${escapeHtml(draft.planningFrameSnapshot?.actuallyPlannableUnits)}</span><span>Planungsversion: ${escapeHtml(draft.planningVersion)}</span><span>KI: ${escapeHtml(draft.provider)} / ${escapeHtml(draft.model)}</span><span>Validierung: ${escapeHtml(draft.validation?.status)}</span></div>
+    <div class="summary-grid"><span>Kurs: ${escapeHtml(project.title)}</span><span>Zielgruppe: ${escapeHtml(project.targetGroup)}</span><span>Tage: ${escapeHtml((draft.structureFrameSnapshot || draft.planningFrameSnapshot)?.totalDays)}</span><span>planbare UE: ${escapeHtml((draft.structureFrameSnapshot || draft.planningFrameSnapshot)?.actuallyPlannableUnits)}</span><span>Planungsversion: ${escapeHtml(draft.planningVersion)}</span><span>KI: ${escapeHtml(draft.provider)} / ${escapeHtml(draft.model)}</span><span>Validierung: ${escapeHtml(draft.validation?.status)}</span></div>
     ${(draft.validation?.errors || []).map((error) => `<p class="status-line status-error">${escapeHtml(error)}</p>`).join('')}
     <div class="course-plan-review-table" role="region" aria-label="Kursstruktur nach Tagen">${(draft.days || []).map((day) => `<details open><summary>Tag ${escapeHtml(day.dayNumber)}: ${escapeHtml(day.title)}</summary><div class="review-table-scroll"><table><thead><tr><th>UE</th><th>Zeit</th><th>Thema</th><th>Inhalt</th><th>Lernziel</th><th>Quelle</th><th>Herkunft</th><th>Confidence</th><th>Status</th></tr></thead><tbody>${(day.units || []).map((unit) => `<tr><td>${escapeHtml(unit.unitNumber)}</td><td>${escapeHtml(unit.startTime || '')}–${escapeHtml(unit.endTime || '')}</td><td><input data-structure-unit="${escapeHtml(unit.id)}" data-unit-field="topic" value="${escapeHtml(unit.topic)}"></td><td><textarea data-structure-unit="${escapeHtml(unit.id)}" data-unit-field="content">${escapeHtml(unit.content)}</textarea></td><td><textarea data-structure-unit="${escapeHtml(unit.id)}" data-unit-field="preliminaryLearningObjective">${escapeHtml(unit.preliminaryLearningObjective)}</textarea></td><td>${escapeHtml((unit.sourceReferences || []).map((ref) => ref.fileName || ref.documentId).join(', ') || '-')}</td><td><span class="status-badge origin-${escapeHtml(unit.originStatus)}">${escapeHtml(unit.originStatus)}</span></td><td>${escapeHtml(Math.round(Number(unit.confidence || 0) * 100))}%</td><td><select data-structure-unit="${escapeHtml(unit.id)}" data-unit-field="reviewStatus">${['open', 'reviewed', 'conflict'].map((value) => `<option value="${value}" ${unit.reviewStatus === value ? 'selected' : ''}>${escapeHtml(value)}</option>`).join('')}</select></td></tr><tr><td colspan="9"><details><summary>UE-Details und Materialbedarf</summary><p><strong>Voraussetzungen:</strong> ${escapeHtml((unit.prerequisites || []).map(formatAnalysisItem).join(', ') || 'keine angegeben')}</p><p><strong>Review-Hinweise:</strong> ${escapeHtml((unit.reviewItems || []).map(formatAnalysisItem).join(', ') || 'keine')}</p><label>Benutzerbemerkung<textarea data-structure-unit="${escapeHtml(unit.id)}" data-unit-field="notes">${escapeHtml(unit.notes || '')}</textarea></label>${renderAnalysisList('Vorgeschlagene Materialarten', unit.materialRequirements)}</details></td></tr>`).join('')}</tbody></table></div></details>`).join('')}</div>
     <div class="button-row"><button class="secondary-button" type="button" data-save-course-structure>Entwurf speichern</button><button class="primary-button" type="button" data-approve-course-structure ${draft.validation?.status === 'failed' ? 'disabled' : ''}>Kursstruktur freigeben und zur Didaktik wechseln</button></div>
@@ -978,6 +967,9 @@ function renderDidacticProfileStep(wizard) {
       </div>
       <label class="checkline"><input data-didactic-check="defaultDemoEnabled" type="checkbox" ${profile.defaultDemoEnabled !== false ? 'checked' : ''}> <span>Demonstrationen standardmäßig erstellen</span></label>
       <label class="checkline"><input data-didactic-check="defaultParticipantDemoVisible" type="checkbox" ${profile.defaultParticipantDemoVisible === true ? 'checked' : ''}> <span>Demonstrationen für Teilnehmende anzeigen</span></label>
+      <label class="checkline"><input data-wizard-audience-check="needsStepByStep" type="checkbox" ${wizard.targetAudience.needsStepByStep ? 'checked' : ''}> <span>Schrittweise Unterstützung vorsehen</span></label>
+      <label class="checkline"><input data-wizard-audience-check="examOrientation" type="checkbox" ${wizard.targetAudience.examOrientation ? 'checked' : ''}> <span>Prüfungsorientierung berücksichtigen</span></label>
+      <label class="checkline"><input data-wizard-audience-check="projectOrientation" type="checkbox" ${wizard.targetAudience.projectOrientation ? 'checked' : ''}> <span>Projektorientierung berücksichtigen</span></label>
       <div class="validation-box">
         <strong>${escapeHtml(profile.label || profile.id)}</strong>
         <p>${escapeHtml(profile.description || '')}</p>
@@ -1272,8 +1264,8 @@ function getPlanWizardStepGates() {
     const gate = { ...step, active: false, done: false, missing: '' };
     if (step.id === 'course') return { ...gate, active: true, done: courseDone, missing: 'Kursname, Kurs-ID und Fachbereich eintragen.' };
     if (step.id === 'anchor') return { ...gate, active: courseDone, done: anchorDone, missing: 'Bitte zuerst Kursdaten vervollständigen.' };
-    if (step.id === 'durationAudience') return { ...gate, active: anchorDone, done: durationDone && wizard.courseProject?.planningFrame?.valid, missing: 'Bitte zuerst mindestens ein Dokument hochladen.' };
-    if (step.id === 'courseStructure') return { ...gate, active: anchorDone && wizard.courseProject?.planningFrame?.valid, done: documentAnalysisDone && structureDone, missing: 'Bitte Dokumente hochladen und Zielgruppe sowie Planungsrahmen vollständig bestätigen.' };
+    if (step.id === 'durationAudience') return { ...gate, active: anchorDone, done: durationDone && wizard.courseProject?.structureFrame?.valid, missing: 'Bitte zuerst mindestens ein Dokument hochladen.' };
+    if (step.id === 'courseStructure') return { ...gate, active: anchorDone && wizard.courseProject?.structureFrame?.valid, done: documentAnalysisDone && structureDone, missing: 'Bitte Dokumente hochladen sowie Dauer und Zielgruppe vollständig bestätigen.' };
     if (step.id === 'structureReview') return { ...gate, active: structureDone, done: approvedDone, missing: 'Bitte zuerst eine KI-Kursstruktur erstellen.' };
     if (step.id === 'didactics') return { ...gate, active: approvedDone, done: didacticDone, missing: 'Bitte zuerst die Kursstruktur prüfen und ausdrücklich freigeben.' };
     if (step.id === 'containerProfile') return { ...gate, active: didacticDone, done: containerProfileDone, missing: 'Bitte zuerst ein didaktisches Profil auswählen.' };
@@ -1364,12 +1356,27 @@ function bindPlanWizardEvents() {
     renderPlanWizard();
   });
   $('[data-document-analyze]')?.addEventListener('click', analyzeWizardDocuments);
+  $('[data-close-wizard-error]')?.addEventListener('click', () => { state.wizard.uiError = null; renderPlanWizard(); });
+  $('[data-retry-wizard-error]')?.addEventListener('click', () => { const retry = state.wizard.uiError?.retry; state.wizard.uiError = null; if (retry) retry(); });
   $('[data-document-analysis-cancel]')?.addEventListener('click', cancelWizardDocumentAnalysis);
-  $all('[data-planning-frame]').forEach((field) => field.addEventListener('input', () => {
-    state.wizard.planningFrame[field.dataset.planningFrame] = field.type === 'number' ? Number(field.value) : field.value;
+  $all('[data-structure-frame]').forEach((field) => field.addEventListener('input', () => {
+    state.wizard.structureFrame[field.dataset.structureFrame] = field.type === 'number' ? Number(field.value) : field.value;
+    state.wizard.structureFrame.totalUnits = Number(state.wizard.structureFrame.totalDays || 0) * Number(state.wizard.structureFrame.unitsPerDay || 0);
+    const total = $('[data-course-scope-total]');
+    if (total) total.value = state.wizard.structureFrame.totalUnits;
   }));
-  $('[data-planning-breaks]')?.addEventListener('input', (event) => { state.wizard.planningFrame.breaksText = event.target.value; });
-  $('[data-save-planning-frame]')?.addEventListener('click', saveWizardPlanningFrame);
+  $all('[data-course-scope-selection]').forEach((field) => field.addEventListener('change', () => {
+    const key = field.dataset.courseScopeSelection;
+    const options = key === 'targetAudience' ? targetAudienceOptions : priorKnowledgeOptions;
+    const selected = options.find((option) => option.value === field.value);
+    state.wizard.structureFrame[key] = selected ? { ...selected, customText: '' } : { value: '', label: '', customText: '' };
+    state.wizard.scopeErrors = {};
+    renderPlanWizard();
+  }));
+  $all('[data-course-scope-custom]').forEach((field) => field.addEventListener('input', () => {
+    state.wizard.structureFrame[field.dataset.courseScopeCustom].customText = field.value;
+  }));
+  $('[data-save-course-scope]')?.addEventListener('click', saveWizardCourseScope);
   $all('[data-retry-document]').forEach((button) => button.addEventListener('click', () => analyzeWizardDocuments(button.dataset.retryDocument)));
   $all('[data-ack-document-failure]').forEach((button) => button.addEventListener('click', () => acknowledgeWizardDocumentFailure(button.dataset.ackDocumentFailure)));
   $all('[data-structure-unit]').forEach((field) => field.addEventListener('input', () => updateStructuredUnit(field.dataset.structureUnit, field.dataset.unitField, field.value)));
@@ -1381,6 +1388,9 @@ function bindPlanWizardEvents() {
   $all('[data-wizard-duration]').forEach((field) => field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', () => {
     state.wizard.duration[field.dataset.wizardDuration] = field.type === 'number' ? Number(field.value) : field.value;
     normalizeDurationAndAudience(state.wizard);
+    state.wizard.structureFrame.totalDays = state.wizard.duration.numberOfDays;
+    state.wizard.structureFrame.unitsPerDay = state.wizard.duration.uePerDay;
+    if (!state.wizard.structureFrame.unitsByDayText.trim()) state.wizard.structureFrame.totalUnits = state.wizard.duration.totalUE;
     const total = $('[data-duration-total-ue]');
     if (total) total.value = state.wizard.duration.totalUE;
   }));
@@ -1720,7 +1730,7 @@ async function parseWizardPlan(event) {
     state.wizard.selectedDayNumber = state.wizard.coursePlan.days[0]?.dayNumber || 1;
     state.wizard.status = 'Unterrichtsplan erkannt.';
   } catch (error) {
-    state.wizard.status = error.message;
+    showWizardError('Dokumentanalyse fehlgeschlagen', error);
   }
   renderPlanWizard();
 }
@@ -1757,8 +1767,8 @@ function wizardProjectInput() {
     title: state.wizard.course.courseName,
     description: state.wizard.course.description,
     subjectArea: state.wizard.course.department,
-    targetGroup: state.wizard.planningFrame.targetGroup,
-    priorKnowledge: state.wizard.planningFrame.priorKnowledge,
+    targetGroup: selectionText(state.wizard.structureFrame.targetAudience),
+    priorKnowledge: selectionText(state.wizard.structureFrame.priorKnowledge),
     uploadedDocuments: state.wizard.anchorFiles.map((file) => ({
       ...file, originalFileName: file.name, storedFilePath: file.path, mimeType: file.type,
       fileSize: file.size, declaredCategory: file.sourceType, sourcePriority: file.sourcePriority || 'high', bindingLevel: file.bindingLevel || 'binding'
@@ -1777,6 +1787,10 @@ async function openSavedCourseProject(event) {
       state.wizard.planningFrame = { ...state.wizard.planningFrame, ...project.planningFrame, targetGroup: project.targetGroup || project.planningFrame.targetGroup || '', priorKnowledge: project.priorKnowledge || project.planningFrame.priorKnowledge || '', breaksText: (project.planningFrame.breaks || []).map((item) => `${item.start}-${item.end}`).join('\n') };
       state.wizard.duration = { ...state.wizard.duration, numberOfDays: project.planningFrame.totalDays, uePerDay: project.planningFrame.unitsPerDay, totalUE: project.planningFrame.totalUnits };
     }
+    if (project.structureFrame) {
+      state.wizard.structureFrame = { ...state.wizard.structureFrame, ...project.structureFrame };
+      state.wizard.duration = { ...state.wizard.duration, numberOfDays: project.structureFrame.totalDays, uePerDay: project.structureFrame.unitsByDay?.[0] || project.structureFrame.unitsPerDay, totalUE: project.structureFrame.totalUnits };
+    }
     state.wizard.targetAudience = { ...state.wizard.targetAudience, ageRange: project.targetGroup || state.wizard.targetAudience.ageRange, priorKnowledge: project.priorKnowledge || state.wizard.targetAudience.priorKnowledge };
     if (project.approvedCoursePlan) state.wizard.approvedCurriculumPlan = structuredPlanToCurriculum(project.approvedCoursePlan);
     state.wizard.status = 'Gespeichertes Kursprojekt geladen.';
@@ -1791,12 +1805,12 @@ async function analyzeWizardDocuments(retryDocumentId = '') {
   renderPlanWizard();
   try {
     const project = wizardProjectInput();
-    const started = await desktop.factory.startDocumentAnalysis({ project: { ...project, planningFrame: state.wizard.courseProject?.planningFrame }, documents: project.uploadedDocuments, retryDocumentId });
+    const started = await desktop.factory.startDocumentAnalysis({ project: { ...project, structureFrame: state.wizard.courseProject?.structureFrame }, documents: project.uploadedDocuments, retryDocumentId });
     state.wizard.analysisProgress = started.progress;
     await pollAnalysisOperation(started.operationId);
   } catch (error) {
     state.wizard.analysisProgress = { status: 'failed', step: 'Analyse fehlgeschlagen', errors: [error.message] };
-    state.wizard.status = error.message;
+    showWizardError('Dokumentanalyse fehlgeschlagen', error);
   } finally {
     if (state.wizard.analysisProgress?.status === 'running') state.wizard.analysisProgress.status = 'failed';
     renderPlanWizard();
@@ -1824,6 +1838,26 @@ function formatProgressError(progress) {
   return typeof error === 'string' ? error : error?.message || 'Analyse und Planung konnten nicht abgeschlossen werden.';
 }
 
+function showWizardError(title, error, retry = null) {
+  const raw = typeof error === 'string' ? error : error?.message || 'Ein unbekannter Fehler ist aufgetreten.';
+  const message = raw.replace(/^Error invoking remote method '[^']+':\s*(Error:\s*)?/i, '').replace(/^Error:\s*/i, '');
+  state.wizard.uiError = { title, message, retry };
+}
+
+function selectionText(selection) { return selection?.customText || selection?.label || ''; }
+
+function validateWizardCourseScope(scope) {
+  const errors = {};
+  if (!Number.isInteger(Number(scope.totalDays)) || Number(scope.totalDays) < 1) errors.totalDays = 'Bitte geben Sie die Kursdauer in ganzen Tagen an.';
+  if (!Number.isInteger(Number(scope.unitsPerDay)) || Number(scope.unitsPerDay) < 1) errors.unitsPerDay = 'Bitte geben Sie die Anzahl der Unterrichtseinheiten je Tag an.';
+  if (!Number.isInteger(Number(scope.unitDurationMinutes)) || Number(scope.unitDurationMinutes) < 1) errors.unitDurationMinutes = 'Bitte geben Sie eine gültige Dauer der Unterrichtseinheit an.';
+  if (!targetAudienceOptions.some((option) => option.value === scope.targetAudience?.value)) errors.targetAudience = 'Bitte wählen Sie eine Zielgruppe aus.';
+  else if (scope.targetAudience.value === 'other_audience' && !scope.targetAudience.customText?.trim()) errors.targetAudienceCustom = 'Bitte beschreiben Sie die sonstige Zielgruppe.';
+  if (!priorKnowledgeOptions.some((option) => option.value === scope.priorKnowledge?.value)) errors.priorKnowledge = 'Bitte wählen Sie die vorhandenen Vorkenntnisse aus.';
+  else if (scope.priorKnowledge.value === 'other_knowledge' && !scope.priorKnowledge.customText?.trim()) errors.priorKnowledgeCustom = 'Bitte beschreiben Sie die sonstigen Vorkenntnisse.';
+  return errors;
+}
+
 async function cancelWizardDocumentAnalysis() {
   const operationId = state.wizard.analysisProgress?.operationId;
   if (operationId) await desktop.factory.cancelAiOperation(operationId);
@@ -1840,27 +1874,19 @@ async function acknowledgeWizardDocumentFailure(documentId) {
   renderPlanWizard();
 }
 
-async function saveWizardPlanningFrame() {
+async function saveWizardCourseScope() {
   try {
     const wizard = state.wizard;
-    const frame = {
-      ...wizard.planningFrame,
-      targetGroup: wizard.planningFrame.targetGroup,
-      priorKnowledge: wizard.planningFrame.priorKnowledge,
-      totalDays: wizard.duration.numberOfDays,
-      unitsPerDay: wizard.duration.uePerDay,
-      totalUnits: wizard.duration.totalUE,
-      breaks: parseBreaks(wizard.planningFrame.breaksText)
-    };
+    const errors = validateWizardCourseScope(wizard.structureFrame);
+    wizard.scopeErrors = errors;
+    if (Object.keys(errors).length) { renderPlanWizard(); return; }
+    const frame = { schemaVersion: 1, totalDays: wizard.structureFrame.totalDays, unitsPerDay: wizard.structureFrame.unitsPerDay, unitDurationMinutes: wizard.structureFrame.unitDurationMinutes, targetAudience: wizard.structureFrame.targetAudience, priorKnowledge: wizard.structureFrame.priorKnowledge };
     if (!wizard.courseProject) wizard.courseProject = await desktop.factory.upsertCourseProject(wizardProjectInput());
-    try {
-      wizard.courseProject = await desktop.factory.savePlanningFrame(wizard.course.courseId, frame);
-    } catch (error) {
-      if (!/Abweichung im Planungsrahmen/.test(error.message) || !window.confirm(`${error.message}\n\nAbweichung dennoch bestätigen?`)) throw error;
-      wizard.courseProject = await desktop.factory.savePlanningFrame(wizard.course.courseId, { ...frame, confirmWarnings: true });
-    }
-    wizard.status = wizard.courseProject.planningFrame.warnings.join(' ') || 'Planungsrahmen ist gültig und gespeichert.';
-  } catch (error) { state.wizard.status = error.message; }
+    wizard.courseProject = await desktop.factory.saveCourseScope(wizard.course.courseId, frame);
+    wizard.structureFrame = { ...wizard.structureFrame, ...wizard.courseProject.structureFrame };
+    wizard.scopeErrors = {};
+    wizard.status = 'Dauer und Zielgruppe wurden gespeichert.';
+  } catch (error) { showWizardError('Dauer und Zielgruppe konnten nicht gespeichert werden', 'Ihre Eingaben konnten nicht gespeichert werden. Die bereits eingegebenen Daten bleiben im Formular erhalten. Bitte prüfen Sie die Angaben und versuchen Sie es erneut.', saveWizardCourseScope); }
   renderPlanWizard();
 }
 

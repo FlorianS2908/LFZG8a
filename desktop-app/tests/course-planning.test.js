@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { createCoursePlanningService, calculatePlanningFrame, validateDocumentAnalysis, validateCoursePlan, normalizeProject } = require('../app/lib/content-factory/course-planning/course-planning-service');
+const { createCoursePlanningService, calculatePlanningFrame, calculateCourseScope, validateDocumentAnalysis, validateCoursePlan, normalizeProject } = require('../app/lib/content-factory/course-planning/course-planning-service');
 const { normalizeDocumentAnalysis } = require('../app/lib/content-factory/course-planning/document-analysis-schema');
 
 const validFrame = {
@@ -61,18 +61,46 @@ test('Altprojekt erhält sichere versionierte Defaultwerte', () => {
   assert.equal(migrated.currentPlanningVersion, 0);
 });
 
+test('Vereinfachter Kursrahmen validiert Auswahlwerte und berechnet Gesamt-UE', () => {
+  const valid = calculateCourseScope({ totalDays: 5, unitsPerDay: 9, unitDurationMinutes: 45, targetAudience: { value: 'trainees', label: 'beliebig' }, priorKnowledge: { value: 'none', label: 'beliebig' } });
+  assert.equal(valid.valid, true);
+  assert.equal(valid.totalUnits, 45);
+  assert.deepEqual(valid.targetAudience, { value: 'trainees', label: 'Auszubildende', customText: '' });
+  assert.deepEqual(valid.priorKnowledge, { value: 'none', label: 'Keine Vorkenntnisse', customText: '' });
+  assert.equal(calculateCourseScope({ totalDays: 5, unitsPerDay: 9, unitDurationMinutes: 45 }).valid, false);
+  assert.match(calculateCourseScope({ totalDays: 5, unitsPerDay: 9, unitDurationMinutes: 45, targetAudience: { value: 'other_audience' }, priorKnowledge: { value: 'other_knowledge' } }).errors.join(' '), /sonstige Zielgruppe.*sonstigen Vorkenntnisse/);
+});
+
+test('Alte Freitexte werden normalisiert und verborgene Daten bleiben beim Speichern erhalten', () => {
+  const known = calculateCourseScope({ totalDays: 2, unitsPerDay: 4, unitDurationMinutes: 45, targetGroup: 'Studierende', priorKnowledge: 'Grundkenntnisse' });
+  assert.equal(known.targetAudience.value, 'students');
+  assert.equal(known.priorKnowledge.value, 'basic');
+  const unknown = calculateCourseScope({ totalDays: 2, unitsPerDay: 4, unitDurationMinutes: 45, targetGroup: 'Eigene Zielgruppe', priorKnowledge: 'Fachspezifischer Stand' });
+  assert.deepEqual(unknown.targetAudience, { value: 'other_audience', label: 'Sonstige Zielgruppe', customText: 'Eigene Zielgruppe' });
+  assert.deepEqual(unknown.priorKnowledge, { value: 'other_knowledge', label: 'Sonstige Vorkenntnisse', customText: 'Fachspezifischer Stand' });
+
+  const factoryDir = fs.mkdtempSync(path.join(os.tmpdir(), 'scope-save-'));
+  const service = createCoursePlanningService({ factoryDir, aiOrchestrator: {} });
+  service.upsertProject({ id: 'alt-scope', title: 'Alt', structureFrame: { bindingTopics: 'Erhalten', unitsByDay: [3, 5] } });
+  const saved = service.saveCourseScope('alt-scope', { totalDays: 2, unitsPerDay: 4, unitDurationMinutes: 45, targetAudience: { value: 'students' }, priorKnowledge: { value: 'basic' } });
+  assert.equal(saved.structureFrame.bindingTopics, 'Erhalten');
+  assert.deepEqual(saved.structureFrame.unitsByDay, [3, 5]);
+  assert.doesNotThrow(() => JSON.stringify(saved.structureFrame));
+  fs.rmSync(factoryDir, { recursive: true, force: true });
+});
+
 test('Neuplanung erzeugt Versionen und freigegebener Snapshot ist geschützt', async () => {
   const factoryDir = fs.mkdtempSync(path.join(os.tmpdir(), 'planning-version-'));
   const provider = {
     name: 'mock-openai', model: 'test-model', isConfigured: () => true,
     async generateStructuredCoursePlan(input) {
-      const count = input.planningFrame.actuallyPlannableUnits;
+      const count = input.structureFrame.actuallyPlannableUnits;
       return { summary: 'Plan', days: [{ dayNumber: 1, title: 'Tag 1', units: Array.from({ length: count }, (_, index) => ({ id: `u${index + 1}`, dayNumber: 1, unitNumber: index + 1, topic: `Thema ${index + 1}`, content: 'Inhalt', preliminaryLearningObjective: 'Ziel', sourceReferences: [{ documentId: 'd1', fileName: 'quelle.md' }], originStatus: 'explicit', confidence: 1, reviewStatus: 'open' })) }], conflicts: [], warnings: [], reviewItems: [] };
     }
   };
   const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: provider } });
   service.upsertProject({ id: 'versioniert', title: 'Versioniert', documentAnalyses: [{ id: 'a1', documentId: 'd1', analysisVersion: 1, summary: 'Quelle', topics: ['Thema'], learningObjectives: [], conflicts: [], missingInformation: [] }], mergedKnowledgeBase: { topics: ['Thema'] } });
-  service.savePlanningFrame('versioniert', { ...validFrame, totalDays: 1, unitsPerDay: 3, totalUnits: 3, repetitionUnits: 0, projectUnits: 0, assessmentUnits: 0, breaks: [], confirmWarnings: true });
+  service.saveCourseScope('versioniert', { targetGroup: 'Erwachsene', priorKnowledge: 'Grundkenntnisse', totalDays: 1, unitsPerDay: 3, totalUnits: 3, unitDurationMinutes: 45 });
   let project = await service.generateCoursePlan({ projectId: 'versioniert' });
   assert.equal(project.currentPlanningVersion, 1);
   project = await service.generateCoursePlan({ projectId: 'versioniert' });

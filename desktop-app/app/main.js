@@ -85,10 +85,15 @@ function handle(channel, method) {
     try { return await getService()[method](...args, standaloneSession); }
     catch (error) {
       const message = String(error?.message || '');
-      const safePlanningError = /^(KI nicht|OpenAI|Der Planungsrahmen|Abweichung im Planungsrahmen|Mindestens eine|Ungültige Dokumentanalyse|Kursstruktur|Blockierende Konflikte|Verbindliche fehlgeschlagene|Eine freigegebene|Datei kann nicht|Pause|Reservierte UE)/.test(message);
+      console.error('[ContentFactory IPC]', { channel, operation: method, errorName: error?.name || 'Error', errorCode: error?.code || null, message: safeLogText(message), stack: safeLogText(error?.stack) });
+      const safePlanningError = error?.code === 'COURSE_SCOPE_VALIDATION' || /^(KI nicht|OpenAI|Der Planungsrahmen|Abweichung im Planungsrahmen|Mindestens eine|Ungültige Dokumentanalyse|Kursstruktur|Blockierende Konflikte|Verbindliche fehlgeschlagene|Eine freigegebene|Datei kann nicht|Pause|Reservierte UE)/.test(message);
       throw new Error(/Verschlüsselung/i.test(message) ? 'Sichere Speicherung ist derzeit nicht verfügbar.' : safePlanningError ? message : 'Die Aktion konnte nicht abgeschlossen werden.');
     }
   });
+}
+
+function safeLogText(value) {
+  return String(value || '').replace(/sk-[A-Za-z0-9_-]+/g, '[geschützt]').replace(/Bearer\s+[^\s]+/gi, 'Bearer [geschützt]').slice(0, 4000);
 }
 
 function registerIpc() {
@@ -111,6 +116,7 @@ function registerIpc() {
     'factory:get-analysis-progress': 'getAnalysisProgress',
     'factory:cancel-ai-operation': 'cancelAiOperation',
     'factory:save-planning-frame': 'savePlanningFrame',
+    'factory:save-course-scope': 'saveCourseScope',
     'factory:generate-structured-course-plan': 'generateStructuredCoursePlan',
     'factory:save-structured-course-plan': 'saveStructuredCoursePlan',
     'factory:acknowledge-document-failure': 'acknowledgeDocumentFailure',

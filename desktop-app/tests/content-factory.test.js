@@ -1182,7 +1182,13 @@ test('duration and audience UI uses day-only calculations and canonical difficul
   assert.match(ui, /<h4 id="audience-heading">Zielgruppe<\/h4>/);
   assert.doesNotMatch(ui, /Dauermodus|data-wizard-duration="durationMode"/);
   assert.doesNotMatch(ui, /Gesamtstunden<input/);
-  assert.match(ui, /data-wizard-duration="numberOfDays"/);
+  assert.match(ui, /data-structure-frame="totalDays"/);
+  assert.match(ui, /data-course-scope-selection="targetAudience"/);
+  assert.match(ui, /data-course-scope-selection="priorKnowledge"/);
+  assert.match(ui, /Bitte Zielgruppe auswählen/);
+  assert.match(ui, /Bitte Vorkenntnisse auswählen/);
+  assert.match(ui, /data-course-scope-total/);
+  assert.doesNotMatch(ui, /Abweichende UE-Verteilung optional|Besondere fachliche Anforderungen|Verbindliche Schwerpunkte|Auszuschließende Themen/);
   assert.match(ui, /totalHours: days \* hoursPerDay, totalUE: days \* uePerDay/);
   assert.match(css, /\.duration-audience-layout \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(css, /\.duration-audience-layout \{ grid-template-columns: 1fr; \}/);
@@ -1229,7 +1235,10 @@ test('content factory plan wizard renders gated single steps with source and ai 
   assert.match(ui, /state\.wizard\.activeStep = target\.id/);
   assert.match(ui, /data-plan-step-content="\$\{escapeHtml\(|data-plan-step-content="anchor"/);
   assert.match(ui, /data-document-analyze/);
-  assert.match(ui, /Dokumente analysieren und UE-Struktur erstellen/);
+  assert.match(ui, /Dokumente analysieren und Themenstruktur erstellen/);
+  assert.match(ui, /data-save-course-scope/);
+  assert.doesNotMatch(ui, /data-save-planning-frame/);
+  assert.doesNotMatch(ui, /desktop\.factory\.savePlanningFrame/);
   assert.match(ui, /formatAnalysisItem/);
   assert.doesNotMatch(ui, /escapeHtml\(analysis\.summary\)|escapeHtml\(analysis\?\.detectedCategory\)/);
   ['Unterrichtsplan', 'Buch / PDF / PowerPoint', 'Textdokument', '.xls', '.xlsx', '.xlsm', '.pdf', '.epub', '.ppt', '.pptx', '.doc', '.docx', '.txt', '.md', '.html', '.htm'].forEach((term) => assert.match(ui, new RegExp(term.replace('.', '\\.')), term));
