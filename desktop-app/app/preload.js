@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 // Sandboxed preloads may only require Electron and a small allow-list of Node
 // built-ins. Keep this explicit mirror in sync with analysis-ipc-contract.js;
@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
     listCurriculumDrafts: invoke('factory:list-curriculum-drafts'), removeCurriculumDraft: invoke('factory:remove-curriculum-draft'),
     parseCoursePlan: invoke('factory:parse-course-plan'), getAiProviderStatus: invoke('factory:get-ai-provider-status'),
     getCourseProject: invoke('factory:get-course-project'), upsertCourseProject: invoke('factory:upsert-course-project'),
+    getPathForFile: (file) => webUtils.getPathForFile(file), importSourceFile: invoke('factory:import-source-file'),
     startDocumentAnalysis: invoke(DOCUMENT_ANALYSIS_CHANNELS.start), getAnalysisProgress: invoke(DOCUMENT_ANALYSIS_CHANNELS.progress),
     cancelAiOperation: invoke(DOCUMENT_ANALYSIS_CHANNELS.cancel), savePlanningFrame: invoke('factory:save-planning-frame'),
     saveCourseScope: invoke('factory:save-course-scope'),

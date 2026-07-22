@@ -693,6 +693,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd(), saf
     coursePlanning,
     getCourseProject: (projectId, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.getProject(projectId); },
     upsertCourseProject: (input, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.upsertProject(input); },
+    importSourceFile: (input, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.importSourceFile(input); },
     startDocumentAnalysis: (input, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.startDocumentAnalysis(input); },
     getAnalysisProgress: (operationId, session) => { assertAdmin(session); return coursePlanning.getAnalysisProgress(operationId); },
     cancelAiOperation: (operationId, session) => { assertAdmin(session); return coursePlanning.cancelAiOperation(operationId); },

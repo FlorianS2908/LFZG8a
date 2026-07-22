@@ -208,6 +208,9 @@ test('content factory extracts safe source outlines from office epub text and pd
     assert.equal(md.sections.some((section) => section.title === 'Datenbanken'), true);
     assert.equal(ppt.sections.length, 1);
     assert.equal(ppt.sections[0].title, 'Normalisierung');
+    assert.equal(ppt.searchable, true);
+    assert.equal(ppt.pageOrSlideCount, 2);
+    assert.ok(ppt.quality.extractedCharacters > 0);
     assert.equal(doc.sections.some((section) => /Netzwerk/.test(section.title)), true);
     assert.equal(epub.sections.some((section) => /Programmierung/.test(section.title)), true);
     assert.equal(pdf.format, 'pdf');

@@ -131,10 +131,9 @@ test('Mehrdokumentlauf normalisiert Einzelfund, bewahrt Erfolge und plant trotz 
     }
   };
   const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: provider } });
-  service.upsertProject({ id: 'multi', title: 'Fachneutral', uploadedDocuments: [
-    { id: 'd1', originalFileName: 'quelle-a.md', storedFilePath: firstPath, bindingLevel: 'binding' },
-    { id: 'd2', originalFileName: 'quelle-b.md', storedFilePath: secondPath, bindingLevel: 'optional' }
-  ] });
+  service.upsertProject({ id: 'multi', title: 'Fachneutral' });
+  service.importSourceFile({ projectId: 'multi', documentId: 'd1', sourcePath: firstPath, originalFileName: 'quelle-a.md', bindingLevel: 'binding' });
+  service.importSourceFile({ projectId: 'multi', documentId: 'd2', sourcePath: secondPath, originalFileName: 'quelle-b.md', bindingLevel: 'optional' });
   service.savePlanningFrame('multi', { ...validFrame, totalDays: 1, unitsPerDay: 1, totalUnits: 1, repetitionUnits: 0, projectUnits: 0, assessmentUnits: 0, breaks: [], confirmWarnings: true });
   const started = service.startDocumentAnalysis({ projectId: 'multi' });
   let progress;
@@ -175,7 +174,8 @@ test('Gemischter Analyselauf beendet terminal und bewahrt Einzelergebnisse', asy
     async generateStructuredCoursePlan() { return { summary: 'Plan', days: [{ dayNumber: 1, title: 'Tag', units: [{ id: 'u1', dayNumber: 1, unitNumber: 1, topic: 'Thema', content: 'Inhalt', preliminaryLearningObjective: 'Ziel', sourceReferences: [{ documentId: 'ok' }], originStatus: 'explicit' }] }] }; }
   };
   const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: provider }, logger: { info() {}, error() {} } });
-  service.upsertProject({ id: 'mixed', title: 'Gemischt', uploadedDocuments: docs });
+  service.upsertProject({ id: 'mixed', title: 'Gemischt' });
+  docs.forEach((document) => service.importSourceFile({ projectId: 'mixed', documentId: document.id, sourcePath: document.storedFilePath, originalFileName: document.originalFileName, bindingLevel: document.bindingLevel }));
   service.saveCourseScope('mixed', { totalDays: 1, unitsPerDay: 1, unitDurationMinutes: 45, targetAudience: { value: 'students' }, priorKnowledge: { value: 'none' } });
   const started = service.startDocumentAnalysis({ projectId: 'mixed', retryDocumentId: { type: 'click' } });
   let progress;
@@ -220,7 +220,8 @@ test('Analyse verwendet gespeicherten Vollkontext und repariert eine formal fals
     }
   };
   const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: provider }, logger: { info() {}, error() {} } });
-  service.upsertProject({ id: 'context', title: 'Netzwerke', description: 'Praxis', subjectArea: 'FISI', courseGoal: 'Sicher planen', expectedOutcome: 'Projekt', audienceProfile: { needsStepByStep: true }, uploadedDocuments: [{ id: 'doc', originalFileName: 'quelle.md', storedFilePath: source, bindingLevel: 'binding' }] });
+  service.upsertProject({ id: 'context', title: 'Netzwerke', description: 'Praxis', subjectArea: 'FISI', courseGoal: 'Sicher planen', expectedOutcome: 'Projekt', audienceProfile: { needsStepByStep: true } });
+  service.importSourceFile({ projectId: 'context', documentId: 'doc', sourcePath: source, originalFileName: 'quelle.md', bindingLevel: 'binding' });
   const saved = service.saveCourseScope('context', { totalDays: 1, unitsPerDay: 2, unitDurationMinutes: 45, targetAudience: { value: 'trainees' }, priorKnowledge: { value: 'basic' }, deliveryMode: 'presence' });
   const started = service.startDocumentAnalysis({ projectId: 'context', structureFrameSnapshot: saved.structureFrame });
   assert.throws(() => service.startDocumentAnalysis({ projectId: 'context', structureFrameSnapshot: saved.structureFrame }), /läuft bereits/);

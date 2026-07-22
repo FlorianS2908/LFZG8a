@@ -198,7 +198,7 @@ function handle(channel, method) {
     catch (error) {
       const message = String(error?.message || '');
       console.error('[ContentFactory IPC]', { channel, operation: method, errorName: error?.name || 'Error', errorCode: error?.code || null, message: safeLogText(message), stack: safeLogText(error?.stack) });
-      const safePlanningError = ['COURSE_SCOPE_VALIDATION', 'DOCUMENT_ANALYSIS_INPUT'].includes(error?.code) || /^(KI nicht|OpenAI|Der Planungsrahmen|Abweichung im Planungsrahmen|Mindestens eine|Ungültige Dokumentanalyse|Kursstruktur|Blockierende Konflikte|Verbindliche fehlgeschlagene|Eine freigegebene|Datei kann nicht|Pause|Reservierte UE)/.test(message);
+      const safePlanningError = ['COURSE_SCOPE_VALIDATION', 'DOCUMENT_ANALYSIS_INPUT'].includes(error?.code) || /^SOURCE_|^EXTRACTION_/.test(error?.code || '') || /^(KI nicht|OpenAI|Der Planungsrahmen|Abweichung im Planungsrahmen|Mindestens eine|Ungültige Dokumentanalyse|Kursstruktur|Blockierende Konflikte|Verbindliche fehlgeschlagene|Eine freigegebene|Datei kann nicht|Pause|Reservierte UE)/.test(message);
       throw new Error(/Verschlüsselung/i.test(message) ? 'Sichere Speicherung ist derzeit nicht verfügbar.' : safePlanningError ? message : 'Die Aktion konnte nicht abgeschlossen werden.');
     }
   });
@@ -224,6 +224,7 @@ function registerIpc() {
     'factory:parse-course-plan': 'parseCoursePlan',
     'factory:get-course-project': 'getCourseProject',
     'factory:upsert-course-project': 'upsertCourseProject',
+    'factory:import-source-file': 'importSourceFile',
     [DOCUMENT_ANALYSIS_CHANNELS.start]: 'startDocumentAnalysis',
     [DOCUMENT_ANALYSIS_CHANNELS.progress]: 'getAnalysisProgress',
     [DOCUMENT_ANALYSIS_CHANNELS.cancel]: 'cancelAiOperation',

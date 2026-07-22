@@ -14,7 +14,7 @@ function detectFormat(filePathOrName = '') {
   }[extension] || 'unknown';
 }
 
-function createOutline({ sourceFile, format, title, sections = [], warnings = [], searchable = true, quality = null }) {
+function createOutline({ sourceFile, format, title, sections = [], warnings = [], searchable = true, quality = null, pageOrSlideCount = null }) {
   const normalizedSections = sections.map((section, index) => ({
     id: section.id || `section-${index + 1}`,
     title: section.title || `Abschnitt ${index + 1}`,
@@ -34,6 +34,7 @@ function createOutline({ sourceFile, format, title, sections = [], warnings = []
     sections: normalizedSections,
     warnings,
     searchable,
+    pageOrSlideCount: pageOrSlideCount == null ? normalizedSections.length : Number(pageOrSlideCount),
     quality: quality || createQuality(normalizedSections, warnings)
   };
 }

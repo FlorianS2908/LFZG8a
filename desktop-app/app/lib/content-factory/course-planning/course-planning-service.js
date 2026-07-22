@@ -4,6 +4,7 @@ const { ensureDir, readJson, writeJson } = require('../../json-store');
 const { readWorkbookXml } = require('../course-plan-parser');
 const { extractSourceOutline } = require('../source-extraction/source-extractor-service');
 const { normalizeDocumentAnalysis, validateDocumentAnalysis } = require('./document-analysis-schema');
+const { createSourceStorageService } = require('./source-storage-service');
 
 const ORIGIN_STATUSES = new Set(['explicit', 'derived', 'generated', 'conflicting', 'needs_review']);
 const TERMINAL_OPERATION_STATUSES = new Set(['completed', 'completed_with_warnings', 'failed', 'cancelled']);
@@ -11,6 +12,7 @@ const TERMINAL_OPERATION_STATUSES = new Set(['completed', 'completed_with_warnin
 function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = console }) {
   const rootDir = path.join(factoryDir, 'course-projects');
   const operations = new Map();
+  const sourceStorage = createSourceStorageService({ factoryDir, logger });
   const ensureStore = () => ensureDir(rootDir);
   const projectPath = (id) => path.join(rootDir, `${safeId(id)}.json`);
 
@@ -34,6 +36,35 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
   function upsertProject(input = {}) {
     const existing = getProject(input.id);
     return saveProject({ ...existing, ...input, id: safeId(input.id), createdAt: existing.createdAt || new Date().toISOString() });
+  }
+
+  function importSourceFile(input = {}) {
+    const imported = sourceStorage.importSourceFile(input);
+    const project = getProject(imported.projectId);
+    const existing = project.uploadedDocuments.find((document) => document.id === imported.documentId);
+    const checksumChanged = Boolean(existing?.checksum && existing.checksum !== imported.checksum);
+    const document = normalizeDocument({
+      ...(existing || {}), ...imported,
+      id: imported.documentId,
+      declaredCategory: input.sourceCategory || existing?.declaredCategory || '',
+      sourcePriority: input.sourcePriority || existing?.sourcePriority || 'high',
+      bindingLevel: input.bindingLevel || existing?.bindingLevel || 'binding',
+      selectedRanges: input.selectedRanges || existing?.selectedRanges || [{ id: 'entire', rangeType: 'entire_document' }],
+      extractionStatus: checksumChanged ? 'queued' : existing?.extractionStatus || 'queued',
+      analysisStatus: checksumChanged ? 'queued' : existing?.analysisStatus || 'queued',
+      extraction: checksumChanged ? null : existing?.extraction,
+      analysisError: null,
+      lastError: null,
+      analyzedChecksum: checksumChanged ? '' : existing?.analyzedChecksum || ''
+    });
+    project.uploadedDocuments = [...project.uploadedDocuments.filter((item) => item.id !== document.id), document];
+    if (checksumChanged) {
+      project.documentAnalyses = project.documentAnalyses.filter((analysis) => analysis.documentId !== document.id);
+      project.coursePlanDrafts = project.coursePlanDrafts.map((draft) => ({ ...draft, status: 'stale', staleReason: 'Eine Hauptquelle wurde ersetzt.', staleAt: new Date().toISOString() }));
+      project.approvedCoursePlan = null;
+    }
+    const saved = saveProject(project);
+    return { ...document, projectUpdatedAt: saved.updatedAt };
   }
 
   function startDocumentAnalysis(input = {}) {
@@ -100,7 +131,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
         progress.status = 'extracting';
         document.extractionStatus = 'extracting';
         saveProject(project);
-        const extraction = extractDocument(document);
+        const extraction = extractDocument(document, { validateStoredSource: sourceStorage.validateStoredSource, projectId: project.id });
         document.extraction = extraction;
         document.extractionStatus = 'extracted';
         document.analysisStatus = 'analyzing';
@@ -126,6 +157,9 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
         document.analysisStatus = analysis.reviewRequired || analysis.warnings.length || analysis.conflicts.length ? 'analyzed_with_warnings' : 'analyzed';
         document.detectedCategory = analysis.detectedCategory;
         document.analysisError = null;
+        document.lastError = null;
+        document.analyzedChecksum = document.checksum || '';
+        document.analysisVersion = version;
         document.endedAt = new Date().toISOString();
         if (document.analysisStatus === 'analyzed_with_warnings') progress.warningCount += 1;
         else progress.completed += 1;
@@ -137,6 +171,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
           if (document.extractionStatus !== 'extracted') document.extractionStatus = 'failed';
           document.analysisStatus = 'failed';
           document.analysisError = { message: safeError(error), code: error.code || 'DOCUMENT_ANALYSIS_FAILED', step: document.processingStep, field: error.field || '', expected: error.expected || '', received: error.received || '' };
+          document.lastError = document.analysisError;
           progress.failed += 1;
           progress.errors.push({ documentId: document.id, fileName: document.originalFileName, ...document.analysisError });
           logger.error?.('[DocumentAnalysis]', { event: 'document_failed', operationId: progress.operationId, projectId: project.id, documentId: document.id, step: document.processingStep, message: safeError(error) });
@@ -281,27 +316,33 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     return saveProject(project);
   }
 
-  return { getProject, listProjects, upsertProject, startDocumentAnalysis, getAnalysisProgress, cancelAiOperation, savePlanningFrame, saveCourseScope, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan };
+  return { getProject, listProjects, upsertProject, importSourceFile, startDocumentAnalysis, getAnalysisProgress, cancelAiOperation, savePlanningFrame, saveCourseScope, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan };
 }
 
 function analysisInputError(message) { const error = new Error(message); error.code = 'DOCUMENT_ANALYSIS_INPUT'; return error; }
 
-function extractDocument(document) {
+function extractDocument(document, options = {}) {
+  if (!document.storedFilePath) throw sourceError('SOURCE_PATH_MISSING', 'Die Quelldatei wurde in einer älteren Version nur als Metadaten gespeichert. Bitte laden Sie die Datei erneut hoch.');
+  if (options.validateStoredSource) options.validateStoredSource(document, options.projectId);
+  else if (!fs.existsSync(document.storedFilePath)) throw sourceError('SOURCE_FILE_NOT_FOUND', 'Die Quelldatei wurde nicht gefunden. Bitte laden Sie die Datei erneut hoch.');
   const extension = path.extname(document.originalFileName || document.storedFilePath || '').toLowerCase();
   if (['.xlsx', '.xlsm'].includes(extension)) {
-    if (!document.storedFilePath || !fs.existsSync(document.storedFilePath)) throw new Error(`Datei kann nicht gelesen werden: ${document.originalFileName}`);
     const workbook = readWorkbookXml(document.storedFilePath);
     const sections = workbook.sheets.map((sheet) => ({
       type: 'sheet', name: sheet.name, hidden: Boolean(sheet.hidden),
       content: sheet.rows.slice(0, 500).map((row, index) => `${index + 1}: ${row.filter(Boolean).join(' | ')}`).filter((line) => !/:\s*$/.test(line)).join('\n').slice(0, 30000),
       locations: sheet.rows.slice(0, 500).map((row, index) => ({ row: index + 1, usedColumns: row.filter(Boolean).length }))
     })).filter((section) => section.content);
-    return { documentId: document.id, fileName: document.originalFileName, documentType: 'spreadsheet', sections, warnings: ['Makros wurden nicht ausgeführt.'] };
+    const extractedCharacters = sections.reduce((sum, section) => sum + section.content.length, 0);
+    if (!extractedCharacters) throw sourceError('EXTRACTION_EMPTY', `Aus „${document.originalFileName}“ konnten keine Tabelleninhalte extrahiert werden.`);
+    return { documentId: document.id, fileName: document.originalFileName, documentType: 'spreadsheet', searchable: true, extractedCharacters, pageOrSlideCount: sections.length, sections, warnings: ['Makros wurden nicht ausgeführt.'], selectedRanges: document.selectedRanges || [] };
   }
-  const outline = extractSourceOutline({ name: document.originalFileName, path: document.storedFilePath });
+  const ranges = (document.selectedRanges || []).filter((range) => range.rangeType === 'slides' || range.type === 'slides').map((range) => ({ from: range.from, to: range.to }));
+  const outline = extractSourceOutline({ name: document.originalFileName, path: document.storedFilePath }, { ranges });
   const extractedCharacters = Number(outline.quality?.extractedCharacters || 0);
-  if (!outline.searchable || extractedCharacters < 1) throw new Error(`Datei kann nicht vollständig analysiert werden, weil kein sicher extrahierter Text verfügbar ist: ${document.originalFileName}`);
-  return { documentId: document.id, fileName: document.originalFileName, documentType: outline.format, sections: outline.sections || [], warnings: outline.warnings || [] };
+  if (outline.quality?.usedFallback && (outline.warnings || []).some((warning) => /konnte nicht gelesen|ZIP|beschädigt/i.test(warning))) throw sourceError('EXTRACTION_FAILED', `„${document.originalFileName}“ konnte nicht extrahiert werden.`);
+  if (!outline.searchable || extractedCharacters < 1) throw sourceError('EXTRACTION_EMPTY', `Aus „${document.originalFileName}“ konnte kein sicherer Text extrahiert werden. Bildbasierte Dateien benötigen gegebenenfalls OCR.`);
+  return { documentId: document.id, fileName: document.originalFileName, documentType: outline.format, searchable: outline.searchable, extractedCharacters, pageOrSlideCount: Number(outline.pageOrSlideCount ?? (outline.sections || []).length), sections: outline.sections || [], warnings: outline.warnings || [], selectedRanges: document.selectedRanges || [] };
 }
 
 function calculatePlanningFrame(frame = {}) {
@@ -409,7 +450,7 @@ function normalizeProject(project, id) {
   normalized.documentAnalyses = (normalized.documentAnalyses || []).map((analysis) => ({ ...analysis, ...normalizeDocumentAnalysis(analysis, { documentId: analysis.documentId, documentType: analysis.documentType }).value }));
   return normalized;
 }
-function normalizeDocument(file = {}, index = 0) { const now = new Date().toISOString(); return { id: file.id || `document-${Date.now()}-${index}`, originalFileName: file.originalFileName || file.name || '', storedFilePath: file.storedFilePath || file.path || '', mimeType: file.mimeType || file.type || '', fileSize: Number(file.fileSize || file.size || 0), declaredCategory: file.declaredCategory || file.sourceType || '', detectedCategory: file.detectedCategory || '', sourcePriority: file.sourcePriority || 'normal', bindingLevel: file.bindingLevel || 'binding', selectedRanges: file.selectedRanges || [{ id: 'entire', rangeType: 'entire_document' }], extractionStatus: file.extractionStatus || 'queued', analysisStatus: file.analysisStatus || (file.excluded ? 'excluded' : 'queued'), processingStep: file.processingStep || '', analysisAttempts: Number(file.analysisAttempts || 0), analysisError: file.analysisError || null, createdAt: file.createdAt || now, updatedAt: now, ...file }; }
+function normalizeDocument(file = {}, index = 0) { const now = new Date().toISOString(); return { id: file.id || file.documentId || `document-${Date.now()}-${index}`, documentId: file.documentId || file.id || '', projectId: file.projectId || '', originalFileName: file.originalFileName || file.name || '', storedFilePath: file.storedFilePath || '', mimeType: file.mimeType || file.type || '', extension: file.extension || path.extname(file.originalFileName || file.name || '').toLowerCase(), fileSize: Number(file.fileSize || file.size || 0), checksum: file.checksum || '', importedAt: file.importedAt || '', storageVersion: Number(file.storageVersion || 0), declaredCategory: file.declaredCategory || file.sourceCategory || file.sourceType || '', detectedCategory: file.detectedCategory || '', sourcePriority: file.sourcePriority || 'normal', bindingLevel: file.bindingLevel || 'binding', selectedRanges: file.selectedRanges || [{ id: 'entire', rangeType: 'entire_document' }], extractionStatus: file.extractionStatus || 'queued', analysisStatus: file.analysisStatus || (file.excluded ? 'excluded' : 'queued'), analysisVersion: Number(file.analysisVersion || 0), analyzedChecksum: file.analyzedChecksum || '', processingStep: file.processingStep || '', analysisAttempts: Number(file.analysisAttempts || 0), analysisError: file.analysisError || null, lastError: file.lastError || file.analysisError || null, createdAt: file.createdAt || now, updatedAt: now, ...file }; }
 function latestAnalyses(items = []) { const map = new Map(); items.forEach((item) => { if (!map.has(item.documentId) || map.get(item.documentId).analysisVersion < item.analysisVersion) map.set(item.documentId, item); }); return [...map.values()]; }
 function mergeAnalyses(items = []) { return { analysisVersions: items.map((item) => ({ documentId: item.documentId, analysisVersion: item.analysisVersion })), topics: items.flatMap((item) => item.topics || []), learningObjectives: items.flatMap((item) => item.learningObjectives || []), conflicts: items.flatMap((item) => item.conflicts || []), missingInformation: items.flatMap((item) => item.missingInformation || []), createdAt: new Date().toISOString() }; }
 function projectContext(project) {
@@ -460,5 +501,6 @@ function positive(value, label, errors) { const number = Number(value); if (!Num
 function positiveInteger(value, label, errors) { const number = Number(value); if (!Number.isInteger(number) || number <= 0) { errors.push(`${label} muss eine positive ganze Zahl sein.`); return 0; } return number; }
 function minutes(value) { const match = /^(\d{1,2}):(\d{2})$/.exec(String(value || '')); if (!match) return null; const result = Number(match[1]) * 60 + Number(match[2]); return result >= 0 && result < 1440 ? result : null; }
 function safeError(error) { return String(error?.message || 'Unbekannter Analysefehler').replace(/sk-[A-Za-z0-9_-]+/g, '[geschützt]').replace(/Bearer\s+[^\s]+/gi, 'Bearer [geschützt]').slice(0, 1000); }
+function sourceError(code, message) { const error = new Error(message); error.code = code; return error; }
 
 module.exports = { createCoursePlanningService, extractDocument, calculatePlanningFrame, calculateCourseScope, validateDocumentAnalysis, validateCoursePlan, normalizeProject, TARGET_AUDIENCES, PRIOR_KNOWLEDGE };

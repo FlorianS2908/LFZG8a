@@ -30,7 +30,8 @@ test('Sandbox-Preload lädt ohne lokale Module und stellt die sichere Factory-Br
   const calls = [];
   const electron = {
     contextBridge: { exposeInMainWorld(name, value) { exposed = { name, value }; } },
-    ipcRenderer: { invoke(channel, ...args) { calls.push({ channel, args }); return Promise.resolve({ ok: true }); } }
+    ipcRenderer: { invoke(channel, ...args) { calls.push({ channel, args }); return Promise.resolve({ ok: true }); } },
+    webUtils: { getPathForFile(file) { return file.__testPath || ''; } }
   };
   vm.runInNewContext(source, {
     require(id) {
@@ -42,11 +43,14 @@ test('Sandbox-Preload lädt ohne lokale Module und stellt die sichere Factory-Br
   assert.equal(exposed.value.apiVersion, 1);
   assert.equal(typeof exposed.value.factory.startDocumentAnalysis, 'function');
   assert.equal(typeof exposed.value.factory.getAnalysisProgress, 'function');
+  assert.equal(exposed.value.factory.getPathForFile({ __testPath: 'C:\\Test\\Quelle.pptx' }), 'C:\\Test\\Quelle.pptx');
+  assert.equal(typeof exposed.value.factory.importSourceFile, 'function');
   assert.equal(exposed.value.invoke, undefined);
   assert.equal(exposed.value.factory.invoke, undefined);
   await exposed.value.factory.startDocumentAnalysis({ projectId: 'test' });
   await exposed.value.factory.getAnalysisProgress('operation-1');
-  assert.deepEqual(calls.map((entry) => entry.channel), ['factory:start-document-analysis', 'factory:get-analysis-progress']);
+  await exposed.value.factory.importSourceFile({ projectId: 'test' });
+  assert.deepEqual(calls.map((entry) => entry.channel), ['factory:start-document-analysis', 'factory:get-analysis-progress', 'factory:import-source-file']);
 });
 
 test('Oberfläche trägt den Produktnamen und keine Plattformnavigation', () => {

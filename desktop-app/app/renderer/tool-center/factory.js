@@ -788,12 +788,13 @@ function renderDocumentAnalysisCard(document, analyses, index) {
   const confidence = Number(analysis?.confidence || analysis?.detectedCategory?.confidence || 0);
   const summary = analysis?.summary?.short || (typeof analysis?.summary === 'string' ? analysis.summary : 'Noch keine Analyse vorhanden.');
   const error = document.analysisError;
+  const needsReupload = ['SOURCE_PATH_MISSING', 'SOURCE_FILE_NOT_FOUND', 'SOURCE_FILE_UNREADABLE', 'SOURCE_FILE_EMPTY', 'SOURCE_OUTSIDE_PROJECT_STORAGE', 'SOURCE_INTEGRITY_MISMATCH'].includes(error?.code);
   return `<article class="mapping-item document-analysis-card">
     <strong>${escapeHtml(document.originalFileName || document.name)}</strong>
-    <small>Kategorie: ${escapeHtml(document.declaredCategory || document.sourceType || '-')} | erkannt: ${escapeHtml(category)} | Confidence: ${escapeHtml(Math.round(confidence * 100))}%</small>
-    <span class="status-badge">${escapeHtml(documentAnalysisStatusLabel(document.analysisStatus || 'queued'))}</span><p>${escapeHtml(summary)}</p>
+    <small>Kategorie: ${escapeHtml(document.declaredCategory || document.sourceType || '-')} | erkannt: ${escapeHtml(category)}${analysis ? ` | Confidence: ${escapeHtml(Math.round(confidence * 100))}%` : ''}${document.extraction?.extractedCharacters ? ` | Zeichen: ${escapeHtml(document.extraction.extractedCharacters)} | Abschnitte: ${escapeHtml(document.extraction.pageOrSlideCount || document.extraction.sections?.length || 0)}` : ''}</small>
+    <span class="status-badge">${escapeHtml(needsReupload ? 'Erneuter Upload erforderlich' : documentAnalysisStatusLabel(document.analysisStatus || 'queued'))}</span><p>${escapeHtml(summary)}</p>
     ${analysis ? `<details><summary>Analysefelder anzeigen</summary>${renderAnalysisList('Themen', analysis.topics)}${renderAnalysisList('Lernziele', analysis.learningObjectives)}${renderAnalysisList('Kompetenzen', analysis.competencies)}${renderAnalysisList('Aufgaben', analysis.exercises)}${renderAnalysisList('Warnungen', analysis.warnings)}${renderAnalysisList('Konflikte', analysis.conflicts)}${renderAnalysisList('Quellen', analysis.sourceReferences)}${renderAnalysisList('Review-Punkte', analysis.reviewItems)}</details>` : ''}
-    ${error ? `<p class="status-line status-error">${escapeHtml(error.message)}</p><details><summary>Technische Details</summary><dl><dt>Fehlercode</dt><dd>${escapeHtml(error.code)}</dd><dt>Schritt</dt><dd>${escapeHtml(error.step)}</dd><dt>Feld</dt><dd>${escapeHtml(error.field)}</dd><dt>Erwartet</dt><dd>${escapeHtml(error.expected)}</dd><dt>Empfangen</dt><dd>${escapeHtml(error.received)}</dd></dl></details><button class="secondary-button" type="button" data-retry-document="${escapeHtml(id)}">Dokument erneut analysieren</button>${document.bindingLevel === 'binding' && !document.failureAcknowledged ? `<button class="secondary-button" type="button" data-ack-document-failure="${escapeHtml(id)}">Als Ausnahme bestätigen</button>` : ''}` : ''}
+    ${error ? `<p class="status-line status-error">${escapeHtml(error.message)}</p><details><summary>Technische Details</summary><dl><dt>Fehlercode</dt><dd>${escapeHtml(error.code)}</dd><dt>Schritt</dt><dd>${escapeHtml(error.step)}</dd><dt>Feld</dt><dd>${escapeHtml(error.field)}</dd><dt>Erwartet</dt><dd>${escapeHtml(error.expected)}</dd><dt>Empfangen</dt><dd>${escapeHtml(error.received)}</dd></dl></details>${needsReupload ? `<label class="secondary-button">Datei erneut auswählen<input type="file" hidden data-reupload-document="${escapeHtml(id)}"></label>` : `<button class="secondary-button" type="button" data-retry-document="${escapeHtml(id)}">Dokument erneut analysieren</button>`}${document.bindingLevel === 'binding' && !document.failureAcknowledged ? `<button class="secondary-button" type="button" data-ack-document-failure="${escapeHtml(id)}">Als Ausnahme bestätigen</button>` : ''}` : ''}
   </article>`;
 }
 
@@ -1403,11 +1404,18 @@ function bindPlanWizardEvents() {
     state.wizard.approvedCurriculumPlan = null;
     renderPlanWizard();
   }));
-  $('[data-wizard-anchor-files]')?.addEventListener('change', (event) => {
-    handleDropZoneFiles('anchor', event.target.files, 'picker');
+  $('[data-wizard-anchor-files]')?.addEventListener('change', async (event) => {
+    await handleDropZoneFiles('anchor', event.target.files, 'picker');
     event.target.value = '';
     renderPlanWizard();
   });
+  $all('[data-reupload-document]').forEach((input) => input.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    await importAnchorFiles([file], 'picker', input.dataset.reuploadDocument);
+    input.value = '';
+    renderPlanWizard();
+  }));
   if (hasDocumentAnalysisWorkflow) documentAnalysisWorkflow.bindDocumentAnalysisControls(document, startWizardDocumentAnalysis);
   $('[data-close-wizard-error]')?.addEventListener('click', () => { state.wizard.uiError = null; renderPlanWizard(); });
   $('[data-retry-wizard-error]')?.addEventListener('click', () => { const retry = state.wizard.uiError?.retry; state.wizard.uiError = null; if (retry) retry(); });
@@ -1553,8 +1561,8 @@ function bindPlanWizardEvents() {
   });
   $('[data-wizard-plan]')?.addEventListener('change', parseWizardPlan);
   $('[data-wizard-sheet]')?.addEventListener('change', parseWizardPlanSheet);
-  $all('[data-wizard-upload]').forEach((input) => input.addEventListener('change', () => {
-    handleDropZoneFiles(input.dataset.wizardUpload, input.files, 'picker');
+  $all('[data-wizard-upload]').forEach((input) => input.addEventListener('change', async () => {
+    await handleDropZoneFiles(input.dataset.wizardUpload, input.files, 'picker');
     input.value = '';
     renderPlanWizard();
   }));
@@ -1650,10 +1658,10 @@ function bindDropZoneEvents() {
       zone.classList.add('dropzone-is-dragover');
     });
     zone.addEventListener('dragleave', () => zone.classList.remove('dropzone-is-dragover'));
-    zone.addEventListener('drop', (event) => {
+    zone.addEventListener('drop', async (event) => {
       event.preventDefault();
       zone.classList.remove('dropzone-is-dragover');
-      handleDropZoneFiles(zone.dataset.dropzone, event.dataTransfer?.files || [], 'drop');
+      await handleDropZoneFiles(zone.dataset.dropzone, event.dataTransfer?.files || [], 'drop');
       renderPlanWizard();
     });
   });
@@ -1692,7 +1700,7 @@ function bindRawImportDropzone() {
   });
 }
 
-function handleDropZoneFiles(zoneId, fileList, source = 'picker') {
+async function handleDropZoneFiles(zoneId, fileList, source = 'picker') {
   const files = Array.from(fileList || []);
   if (!files.length) return;
   const config = getUploadAreaConfig(zoneId, source);
@@ -1703,10 +1711,7 @@ function handleDropZoneFiles(zoneId, fileList, source = 'picker') {
     ? uploadUtils.validateUploadSelection(files, config, existing)
     : { files: files.map((file) => ({ name: file.name, path: file.path || '', size: file.size, type: file.type, lastModified: file.lastModified, uploadArea: zoneId, source, warnings: [] })), blockedFiles: [], warnings: [], errors: [] };
   if (zoneId === 'anchor') {
-    state.wizard.anchorFiles = [
-      ...state.wizard.anchorFiles,
-      ...result.files.map((file) => ({ ...file, uploadArea: undefined, sourceType: getSourceTypeForFile(file) }))
-    ];
+    await importAnchorFiles(files.filter((file) => result.files.some((accepted) => uploadUtils.fileKey(accepted) === uploadUtils.fileKey(file))), source);
   } else {
     state.wizard.uploadFiles = [...state.wizard.uploadFiles, ...result.files];
   }
@@ -1716,6 +1721,46 @@ function handleDropZoneFiles(zoneId, fileList, source = 'picker') {
     ...(result.errors || [])
   ].filter(Boolean);
   state.wizard.status = messages.join(' ');
+}
+
+const sourceImportFlights = new Map();
+async function importAnchorFiles(files, source = 'picker', replacementDocumentId = '') {
+  if (!hasDesktopFactory || typeof desktop.factory.getPathForFile !== 'function' || typeof desktop.factory.importSourceFile !== 'function') {
+    throw new Error('Der sichere Dateiimport ist nur in der Electron-App verfügbar.');
+  }
+  const projectId = String(state.wizard.course.courseId || '').trim();
+  if (!projectId) throw new Error('Bitte geben Sie vor dem Dateiimport eine Kurs-ID an.');
+  for (const file of files) {
+    const key = replacementDocumentId || uploadUtils.fileKey(file);
+    if (sourceImportFlights.has(key)) continue;
+    const flight = (async () => {
+      state.wizard.status = `Datei „${file.name}“ wird sicher übernommen …`;
+      renderPlanWizard();
+      const sourcePath = desktop.factory.getPathForFile(file);
+      if (!sourcePath) throw new Error('Der lokale Dateipfad konnte nicht ermittelt werden. Bitte wählen Sie die Datei erneut aus.');
+      const existing = replacementDocumentId ? state.wizard.anchorFiles.find((item) => item.id === replacementDocumentId) : null;
+      const imported = await desktop.factory.importSourceFile({
+        projectId,
+        documentId: replacementDocumentId || `source-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        sourcePath,
+        originalFileName: file.name,
+        mimeType: file.type,
+        sourceCategory: existing?.sourceType || getSourceTypeForFile({ name: file.name }),
+        sourcePriority: existing?.sourcePriority || 'high',
+        bindingLevel: existing?.bindingLevel || 'binding',
+        selectedRanges: existing?.selectedRanges
+      });
+      const normalized = { ...existing, ...imported, id: imported.documentId, name: imported.originalFileName, path: imported.storedFilePath, type: imported.mimeType, size: imported.fileSize, source, sourceType: imported.declaredCategory || existing?.sourceType || getSourceTypeForFile({ name: file.name }) };
+      state.wizard.anchorFiles = [...state.wizard.anchorFiles.filter((item) => item.id !== normalized.id), normalized];
+      state.wizard.courseProject = await desktop.factory.getCourseProject(projectId);
+      state.wizard.status = `Datei „${file.name}“ wurde sicher im Projekt gespeichert.`;
+    })().catch((error) => {
+      showWizardError('Quelldatei konnte nicht importiert werden', error);
+      state.wizard.status = error.message;
+    }).finally(() => sourceImportFlights.delete(key));
+    sourceImportFlights.set(key, flight);
+    await flight;
+  }
 }
 
 function removeDropZoneFile(zoneId, index) {
@@ -1976,7 +2021,7 @@ async function saveWizardCourseScope() {
       courseGoal: wizard.courseGoal,
       expectedOutcome: wizard.expectedOutcome
     };
-    if (!wizard.courseProject) wizard.courseProject = await desktop.factory.upsertCourseProject(wizardProjectInput());
+    wizard.courseProject = await desktop.factory.upsertCourseProject(wizardProjectInput());
     wizard.courseProject = await desktop.factory.saveCourseScope(wizard.course.courseId, frame);
     wizard.structureFrame = { ...wizard.structureFrame, ...wizard.courseProject.structureFrame };
     wizard.scopeErrors = {};
@@ -2037,7 +2082,8 @@ if (new URLSearchParams(window.location.search).get('coursePlanningSmoke') === '
       state.wizard.course = { courseName: 'Electron Smoke Kurs', courseId: `electron-smoke-${Date.now()}`, department: 'FISI', description: 'Realitätsnaher Electron-Test' };
       state.wizard.courseGoal = 'Netzwerkgrundlagen sicher planen';
       state.wizard.expectedOutcome = 'Praxistauglicher Unterrichtsplan';
-      state.wizard.anchorFiles = [{ id: 'smoke-source', name: 'smoke-source.md', path: sourcePath, type: 'text/markdown', size: 64, sourceType: 'course-plan', sourcePriority: 'high', bindingLevel: 'binding' }];
+      const imported = await desktop.factory.importSourceFile({ projectId: state.wizard.course.courseId, documentId: 'smoke-source', sourcePath, originalFileName: 'smoke-source.md', mimeType: 'text/markdown', sourceCategory: 'course-plan', sourcePriority: 'high', bindingLevel: 'binding' });
+      state.wizard.anchorFiles = [{ ...imported, id: imported.documentId, name: imported.originalFileName, path: imported.storedFilePath, type: imported.mimeType, size: imported.fileSize, sourceType: 'course-plan', sourcePriority: 'high', bindingLevel: 'binding' }];
       state.wizard.structureFrame = { schemaVersion: 1, totalDays: 1, unitsPerDay: 2, totalUnits: 2, unitDurationMinutes: 45, targetAudience: { value: 'trainees', label: 'Auszubildende', customText: '' }, priorKnowledge: { value: 'basic', label: 'Grundkenntnisse', customText: '' }, confirmed: false };
       state.wizard.activeStep = 'durationAudience';
       state.wizard.courseProject = null;

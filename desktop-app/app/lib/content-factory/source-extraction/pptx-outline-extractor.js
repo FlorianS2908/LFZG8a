@@ -15,6 +15,9 @@ function extractPptxOutline(filePath, options = {}) {
   }
   const notesBySlide = new Map(noteEntries.map((entry) => [Number(/notesSlide(\d+)\.xml$/i.exec(entry.FullName)?.[1] || 0), xmlTextRuns(entry.Text).join(' ')]));
   const ranges = normalizeRanges(options.ranges || []);
+  const totalSlideCount = slideEntries.length;
+  const invalidRanges = ranges.filter((range) => range.from > totalSlideCount || range.to > totalSlideCount);
+  if (invalidRanges.length) warnings.push(`Der gewählte Folienbereich überschreitet die Präsentation mit ${totalSlideCount} Folie(n).`);
   const sections = slideEntries
     .map((entry) => {
       const slideNumber = Number(/slide(\d+)\.xml$/i.exec(entry.FullName)?.[1] || 0);
@@ -27,16 +30,19 @@ function extractPptxOutline(filePath, options = {}) {
   if (!sections.length) warnings.push('Keine lesbaren Folien im gewaehlten Bereich gefunden.');
   const lowTextCount = sections.filter((section) => section.wordCount < 4).length;
   if (lowTextCount) warnings.push(`${lowTextCount} Folie(n) enthalten sehr wenig Text.`);
+  const extractedCharacters = sections.reduce((sum, section) => sum + String(section.title === `Folie ${section.slideNumber}` ? '' : section.title || '').length + String(section.textPreview || '').length, 0);
+  if (sections.length && extractedCharacters === 0) warnings.push('Die Präsentation enthält keinen maschinenlesbaren Text. Für bildbasierte Folien ist OCR erforderlich.');
   return createOutline({
     sourceFile,
     format: 'pptx',
     title: path.basename(sourceFile, '.pptx').replace(/[_-]+/g, ' '),
     sections,
     warnings,
-    searchable: sections.length > 0,
+    searchable: extractedCharacters > 0,
+    pageOrSlideCount: totalSlideCount,
     quality: createQuality(sections, warnings, {
-      usedFallback: !sections.length,
-      extractedCharacters: sections.reduce((sum, section) => sum + String(section.textPreview || '').length, 0),
+      usedFallback: extractedCharacters === 0,
+      extractedCharacters,
       reason: sections.length >= 4 ? 'Folienstruktur und Titel erkannt.' : 'Wenige Folien oder wenig Text erkannt.'
     })
   });
