@@ -797,8 +797,20 @@ function renderCourseStructureStep(wizard) {
     <div class="button-row"><button class="primary-button" type="button" data-document-analyze ${ready && !running && !planningRunning ? '' : 'disabled'}>${running ? 'Dokumentanalyse läuft …' : 'Dokumente analysieren'}</button>
     <button class="primary-button" type="button" data-course-plan-start ${analysisComplete && !running && !planningRunning ? '' : 'disabled'}>${planningStatus === 'timed_out' || planningStatus === 'failed' ? 'Planung erneut starten' : planningRunning ? 'Unterrichtsplanung läuft …' : 'Unterrichtsplan aus Analyse erstellen'}</button>
     <button class="secondary-button" type="button" data-document-analysis-cancel ${running || planningRunning ? '' : 'disabled'}>Vorgang abbrechen</button></div>
+    ${analysisComplete ? renderAiUnderstanding(project) : ''}
     ${!ready ? '<p class="status-line status-warning">Die Analyse kann noch nicht gestartet werden. Erforderlich sind Kursbezeichnung, mindestens ein Dokument, Zielgruppe, Vorkenntnisse, Tage, UE-Angaben und eine konfigurierte OpenAI-Verbindung.</p>' : ''}
   </article>`;
+}
+
+function renderAiUnderstanding(project) {
+  const frame = project.structureFrame || {};
+  const conflicts = (project.documentAnalyses || []).flatMap((item) => item.conflicts || []);
+  const missing = (project.documentAnalyses || []).flatMap((item) => item.missingInformation || []);
+  return `<details class="validation-box" data-ai-understanding><summary>Von der KI erkannt</summary>
+    <label>Zusammenarbeit mit der KI<select data-interaction-mode aria-label="Interaktionsmodus"><option value="automatic" ${project.interactionMode === 'automatic' ? 'selected' : ''}>Automatisch</option><option value="guided" ${!project.interactionMode || project.interactionMode === 'guided' ? 'selected' : ''}>Begleitet (empfohlen)</option><option value="strict" ${project.interactionMode === 'strict' ? 'selected' : ''}>Streng kontrolliert</option></select></label>
+    <div class="summary-grid"><span>Kurstage: ${escapeHtml(frame.totalDays || 0)}</span><span>UE gesamt: ${escapeHtml(frame.totalUnits || 0)}</span><span>UE pro Tag: ${escapeHtml(frame.unitsPerDay || 0)}</span><span>UE-Dauer: ${escapeHtml(frame.unitDurationMinutes || 0)} Minuten</span><span>Dokumente: ${escapeHtml(project.uploadedDocuments?.length || 0)}</span><span>Leitquellen: ${escapeHtml((project.uploadedDocuments || []).filter((item) => item.bindingLevel === 'binding').length)}</span></div>
+    ${renderAnalysisList('Wichtigste Themen', (project.topicCatalog?.topics || []).slice(0, 10))}${renderAnalysisList('Offene Widersprüche', conflicts)}${renderAnalysisList('Fehlende Angaben', missing)}
+    <small>Begleitet fragt nur bei fachlich relevanten Alternativen nach. Unwesentliche Annahmen blockieren die Planung nicht.</small></details>`;
 }
 
 function renderDocumentAnalysisCard(document, analyses, index) {
@@ -1447,6 +1459,13 @@ function bindPlanWizardEvents() {
   }));
   if (hasDocumentAnalysisWorkflow) documentAnalysisWorkflow.bindDocumentAnalysisControls(document, startWizardDocumentAnalysis);
   $('[data-course-plan-start]')?.addEventListener('click', startWizardCoursePlanning);
+  $('[data-interaction-mode]')?.addEventListener('change', async (event) => {
+    const projectId = state.wizard.courseProject?.id;
+    if (!projectId) return;
+    try { state.wizard.courseProject = await desktop.factory.updatePlanCollaboration(projectId, { interactionMode: event.target.value }); }
+    catch (error) { showWizardError('Interaktionsmodus konnte nicht gespeichert werden', error); }
+    renderPlanWizard();
+  });
   $('[data-close-wizard-error]')?.addEventListener('click', () => { state.wizard.uiError = null; renderPlanWizard(); });
   $('[data-retry-wizard-error]')?.addEventListener('click', () => { const retry = state.wizard.uiError?.retry; state.wizard.uiError = null; if (retry) retry(); });
   $('[data-document-analysis-cancel]')?.addEventListener('click', cancelWizardDocumentAnalysis);

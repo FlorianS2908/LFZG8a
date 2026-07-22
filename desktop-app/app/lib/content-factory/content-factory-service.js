@@ -707,6 +707,10 @@ function createContentFactoryService({ appData, projectRoot = process.cwd(), saf
     saveStructuredCoursePlan: (projectId, draft, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.saveCoursePlanDraft(projectId, draft); },
     acknowledgeDocumentFailure: (projectId, documentId, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.acknowledgeDocumentFailure(projectId, documentId); },
     approveStructuredCoursePlan: (projectId, version, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.approveCoursePlan(projectId, version); },
+    getAiUnderstanding: (projectId, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.getAiUnderstanding(projectId); },
+    updatePlanCollaboration: (projectId, input, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.updatePlanCollaboration(projectId, input); },
+    revisePlanTarget: (projectId, input, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.reviseTarget(projectId, input); },
+    restorePlanVersion: (projectId, version, session) => { assertAdmin(session); ensureFactory(); return coursePlanning.restorePlanVersion(projectId, version); },
     createCurriculumAnchor: (input, session) => {
       assertAdmin(session);
       ensureFactory();

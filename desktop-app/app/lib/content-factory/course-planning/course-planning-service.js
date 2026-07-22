@@ -6,6 +6,7 @@ const { extractSourceOutline } = require('../source-extraction/source-extractor-
 const { normalizeDocumentAnalysis, validateDocumentAnalysis } = require('./document-analysis-schema');
 const { createSourceStorageService } = require('./source-storage-service');
 const { prepareDocument, cleanupPreparedFiles } = require('../document-processing/document-preparation-service');
+const { normalizeCollaboration, buildAiUnderstanding, validateRanges, revisePlanTarget, diffPlans } = require('./collaboration-model');
 
 const ORIGIN_STATUSES = new Set(['explicit', 'derived', 'generated', 'conflicting', 'needs_review']);
 const TERMINAL_OPERATION_STATUSES = new Set(['completed', 'completed_with_warnings', 'failed', 'cancelled']);
@@ -408,7 +409,47 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     return saveProject(project);
   }
 
-  return { getProject, listProjects, upsertProject, importSourceFile, startDocumentAnalysis, startCoursePlanning, getAnalysisProgress, getOperationStatus, getPlanningResult, cancelAiOperation, savePlanningFrame, saveCourseScope, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan };
+  function getAiUnderstanding(projectId) { return buildAiUnderstanding(getProject(projectId)); }
+
+  function updatePlanCollaboration(projectId, input = {}) {
+    const project = getProject(projectId);
+    if (input.interactionMode) project.interactionMode = input.interactionMode;
+    if (input.structuredRequirements) project.structuredRequirements = { ...project.structuredRequirements, ...input.structuredRequirements };
+    if (input.correction) project.userCorrections = [...project.userCorrections, { ...input.correction, createdAt: new Date().toISOString() }];
+    if (input.feedback) project.feedback = [...project.feedback, { ...input.feedback, id: input.feedback.id || `feedback-${Date.now()}`, createdAt: new Date().toISOString() }];
+    if (input.lock) project.planLocks = [...project.planLocks.filter((item) => !(item.targetType === input.lock.targetType && item.targetId === input.lock.targetId)), { ...input.lock, createdAt: new Date().toISOString() }];
+    if (input.unlock) project.planLocks = project.planLocks.filter((item) => !(item.targetType === input.unlock.targetType && item.targetId === input.unlock.targetId));
+    if (input.documentId && input.document) {
+      const rangeResult = validateRanges(input.document.selectedRanges || [], input.document.maximumRange);
+      if (!rangeResult.valid) throw analysisInputError(rangeResult.errors[0].message);
+      let found = false; project.uploadedDocuments = project.uploadedDocuments.map((document) => document.id === input.documentId ? (found = true, normalizeDocument({ ...document, ...input.document, selectedRanges: rangeResult.ranges })) : document);
+      if (!found) throw analysisInputError('Die Dokument-ID wurde nicht gefunden.');
+    }
+    return saveProject(project);
+  }
+
+  function reviseTarget(projectId, input = {}) {
+    const project = getProject(projectId); const current = project.coursePlanDrafts.find((item) => Number(item.planningVersion) === Number(project.currentPlanningVersion));
+    if (!current) throw new Error('Kursstruktur wurde nicht gefunden.');
+    const nextPlan = revisePlanTarget(current, input, project.planLocks);
+    const planningVersion = Number(project.currentPlanningVersion) + 1; const now = new Date().toISOString();
+    const version = { ...nextPlan, id: `course-plan-${project.id}-${planningVersion}`, planningVersion, status: 'draft', parentPlanningVersion: current.planningVersion, revisionTarget: { targetType: input.targetType, targetId: input.targetId }, diff: diffPlans(current, nextPlan), createdAt: now, updatedAt: now };
+    project.coursePlanDrafts.push(version); project.planVersions.push({ planningVersion, parentPlanningVersion: current.planningVersion, targetType: input.targetType, targetId: input.targetId, diff: version.diff, createdAt: now }); project.currentPlanningVersion = planningVersion;
+    return saveProject(project);
+  }
+
+  function restorePlanVersion(projectId, version) {
+    const project = getProject(projectId); const source = project.coursePlanDrafts.find((item) => Number(item.planningVersion) === Number(version));
+    if (!source) throw new Error('Planversion wurde nicht gefunden.');
+    const current = project.coursePlanDrafts.find((item) => Number(item.planningVersion) === Number(project.currentPlanningVersion));
+    const planningVersion = Number(project.currentPlanningVersion) + 1; const now = new Date().toISOString();
+    const restored = { ...cloneSerializable(source), id: `course-plan-${project.id}-${planningVersion}`, planningVersion, parentPlanningVersion: current?.planningVersion || null, restoredFromPlanningVersion: Number(version), status: 'draft', createdAt: now, updatedAt: now };
+    restored.diff = diffPlans(current || {}, restored); project.coursePlanDrafts.push(restored); project.currentPlanningVersion = planningVersion;
+    project.planVersions.push({ planningVersion, parentPlanningVersion: current?.planningVersion || null, restoredFromPlanningVersion: Number(version), diff: restored.diff, createdAt: now });
+    return saveProject(project);
+  }
+
+  return { getProject, listProjects, upsertProject, importSourceFile, startDocumentAnalysis, startCoursePlanning, getAnalysisProgress, getOperationStatus, getPlanningResult, cancelAiOperation, savePlanningFrame, saveCourseScope, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan, getAiUnderstanding, updatePlanCollaboration, reviseTarget, restorePlanVersion };
 }
 
 function analysisInputError(message) { const error = new Error(message); error.code = 'DOCUMENT_ANALYSIS_INPUT'; return error; }
@@ -563,7 +604,7 @@ function normalizeProject(project, id) {
   normalized.uploadedDocuments = (normalized.uploadedDocuments || []).map(normalizeDocument);
   normalized.documentAnalyses = (normalized.documentAnalyses || []).map((analysis) => ({ ...analysis, ...normalizeDocumentAnalysis(analysis, { documentId: analysis.documentId, documentType: analysis.documentType }).value }));
   normalized.pipelinePhases = { ...defaultPipelinePhases(), ...(normalized.pipelinePhases || {}) };
-  return normalized;
+  return normalizeCollaboration(normalized);
 }
 function normalizeDocument(file = {}, index = 0) { const now = new Date().toISOString(); return { id: file.id || file.documentId || `document-${Date.now()}-${index}`, documentId: file.documentId || file.id || '', projectId: file.projectId || '', originalFileName: file.originalFileName || file.name || '', storedFilePath: file.storedFilePath || '', mimeType: file.mimeType || file.type || '', extension: file.extension || path.extname(file.originalFileName || file.name || '').toLowerCase(), fileSize: Number(file.fileSize || file.size || 0), checksum: file.checksum || '', importedAt: file.importedAt || '', storageVersion: Number(file.storageVersion || 0), declaredCategory: file.declaredCategory || file.sourceCategory || file.sourceType || '', detectedCategory: file.detectedCategory || '', sourcePriority: file.sourcePriority || 'normal', bindingLevel: file.bindingLevel || 'binding', selectedRanges: file.selectedRanges || [{ id: 'entire', rangeType: 'entire_document' }], extractionStatus: file.extractionStatus || 'queued', analysisStatus: file.analysisStatus || (file.excluded ? 'excluded' : 'queued'), analysisVersion: Number(file.analysisVersion || 0), analyzedChecksum: file.analyzedChecksum || '', processingStep: file.processingStep || '', analysisAttempts: Number(file.analysisAttempts || 0), analysisError: file.analysisError || null, lastError: file.lastError || file.analysisError || null, createdAt: file.createdAt || now, updatedAt: now, ...file }; }
 function latestAnalyses(items = []) { const map = new Map(); items.forEach((item) => { if (!map.has(item.documentId) || map.get(item.documentId).analysisVersion < item.analysisVersion) map.set(item.documentId, item); }); return [...map.values()]; }

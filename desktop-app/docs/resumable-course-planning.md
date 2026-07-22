@@ -30,3 +30,22 @@ XLSM-Dateien werden ausschließlich lesend verarbeitet. VBA-Inhalte werden weder
 ## Tests und bekannte Einschränkungen
 
 Standardtests verwenden Provider-Testdoubles und benötigen keinen echten OpenAI-Zugang. Der Electron-Smoke wird mit `pnpm exec electron . --course-planning-smoke` gestartet. Ein echter Provider-Smoke bleibt opt-in. Providerdateien werden derzeit beim bewussten Entfernen eines Kursprojekts nicht automatisch remote gelöscht; ihre kontrollierte Lebenszyklusbereinigung bleibt eine administrative Folgeaufgabe. Die reale Datei `Wochenplan_FIAE_LF-ZQ8A.xlsm` muss separat bereitgestellt werden; ohne sie wird eine makrohaltige, realistische XLSM-Fixture verwendet.
+# Geführte KI-Zusammenarbeit und Workflow-Härtung
+
+Der bestehende Ablauf bleibt unverändert: Kursrahmen, Quellen, Dokumentanalyse, Prüfung, getrennte Unterrichtsplanung und Freigabe. Die Ergänzungen sind evolutionär und vorhandene Projektdateien werden beim Laden mit sicheren Defaults normalisiert.
+
+## Zentrale Verträge und Operationen
+
+`operations/operation-engine.js` definiert ein gemeinsames, persistierbares Operationsmodell, gültige Statusübergänge, Idempotenzschlüssel, Checkpoints und die Rekonstruktion unterbrochener Vorgänge. Die bestehende Analyse-/Planungspipeline bleibt während der schrittweisen Migration aktiv. `analysis-ipc-contract.js` führt API-Version, Allowlist, Berechtigung, Transportart und stabile Fehlercodes zentral; der sandboxed Preload enthält aus Electron-Sicherheitsgründen weiterhin einen expliziten, durch Contract Tests geschützten Spiegel.
+
+## Zusammenarbeit
+
+Neue und migrierte Kurse verwenden standardmäßig „Begleitet“. „Automatisch“ blockiert nur kritische Lücken, „Streng kontrolliert“ verlangt Bestätigung wesentlicher Phasen. Die Ansicht „Von der KI erkannt“ zeigt Kursumfang, Dokumente, Leitquellen, Themen, Konflikte und fehlende Angaben, ohne Dokumentvolltexte zu übertragen.
+
+Dokumentbereiche werden strukturiert validiert. Planbereiche können per `targetType` und stabiler ID gesperrt oder gezielt überarbeitet werden. Jede Überarbeitung und Wiederherstellung erzeugt eine neue Planversion samt kompaktem UE-Diff; gesperrte UEs werden abgelehnt. Feedback, Korrekturen und strukturierte Kursanforderungen werden im Kursprojekt gespeichert.
+
+## Einführung und Grenzen
+
+Feature-Flags besitzen projektlokale Defaults. Mehrstufiger Analysecache, File-ID-Wiederverwendung, atomare JSON-Persistenz und höchstens zwei Segmentworker stammen aus der bestehenden Pipeline. Die getrennte Artefaktpersistenz ist bewusst noch deaktiviert, bis eine wiederholbare Migration bestehender Projektdateien vollständig abgesichert ist. Die neue Operation-Engine ist als zentrale Domäne getestet; die laufende Pipeline wird schrittweise darauf migriert, statt zwei parallele Implementierungen dauerhaft zu betreiben.
+
+Die reale `Wochenplan_FIAE_LF-ZQ8A.xlsm` wird nur getestet, wenn sie außerhalb des Repositories vorhanden ist. Standardtests verwenden eine synthetische makrohaltige Fixture read-only; Makros werden nie ausgeführt.
