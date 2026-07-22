@@ -12,7 +12,7 @@ class OpenAIProvider {
     this.apiKey = keyInfo.value || '';
     const storeStatus = options.aiKeyStore?.getAiProviderSafeStatus?.() || {};
     this.model = options.model || storeStatus.model || process.env.OPENAI_MODEL || 'gpt-5.4-mini';
-    this.timeoutMs = Number(options.timeoutMs || process.env.OPENAI_TIMEOUT_MS || 30000);
+    this.timeoutMs = Number(options.timeoutMs || process.env.OPENAI_TIMEOUT_MS || 90000);
     this.maxRetries = Math.min(3, Math.max(0, Number(options.maxRetries ?? 2)));
     this.keySource = this.apiKey ? keyInfo.source : 'missing';
   }
@@ -95,6 +95,16 @@ class OpenAIProvider {
     return providerFiles.length ? this.requestResponsesJson(payload, providerFiles, options) : this.requestJson(payload, options);
   }
 
+  async analyzeDocumentSegments(input = {}, segments = [], options = {}) {
+    if (segments.length <= 1) return this.analyzeDocument(input, options);
+    const partialAnalyses = [];
+    for (const [index, segment] of segments.entries()) {
+      partialAnalyses.push(await this.analyzeDocument({ ...input, extraction: { ...input.extraction, sections: segment.sections, segment: { index: index + 1, total: segments.length } }, preparation: index === 0 ? input.preparation : { ...input.preparation, providerFiles: [] } }, { ...options, timeoutMs: options.documentTimeoutMs || 90000 }));
+      await options.onSegmentComplete?.({ index: index + 1, total: segments.length, segmentId: segment.id });
+    }
+    return this.requestJson({ schema: 'DocumentAnalysis', rules: ['Führe die Teilanalysen zusammen, ohne Inhalte zu erfinden.', 'Erhalte documentId und Quellenreferenzen.', 'Antworte ausschließlich als JSON.'], input: sanitizeInput({ project: input.project, structureFrame: input.structureFrame, document: input.document, partialAnalyses }) }, { ...options, timeoutMs: options.documentTimeoutMs || 90000 });
+  }
+
   async requestResponsesJson(payload, providerFiles, options = {}) {
     if (!this.isConfigured()) throw new Error('OpenAI ist nicht konfiguriert.');
     const sizes = providerFiles.map((file) => fs.statSync(file.localPath).size);
@@ -108,7 +118,7 @@ class OpenAIProvider {
     ], text: { format: { type: 'json_object' } } });
     let attempt = 0;
     while (true) {
-      try { return await this.performRequest(body, options.signal, '/v1/responses', parseResponsesJson); }
+      try { return await this.performRequest(body, options.signal, '/v1/responses', parseResponsesJson, options.timeoutMs); }
       catch (error) {
         if (options.signal?.aborted) throw error;
         const retryable = error?.statusCode === 429 || error?.statusCode >= 500;
@@ -163,7 +173,7 @@ class OpenAIProvider {
     });
     let attempt = 0;
     while (true) {
-      try { return await this.performRequest(body, options.signal); }
+      try { return await this.performRequest(body, options.signal, '/v1/chat/completions', parseChatJson, options.timeoutMs); }
       catch (error) {
         if (options.signal?.aborted) throw new Error('OpenAI-Anfrage wurde abgebrochen.');
         const retryable = error?.statusCode === 429 || error?.statusCode >= 500;
@@ -174,13 +184,13 @@ class OpenAIProvider {
     }
   }
 
-  performRequest(body, signal, apiPath = '/v1/chat/completions', responseParser = parseChatJson) {
+  performRequest(body, signal, apiPath = '/v1/chat/completions', responseParser = parseChatJson, timeoutMs = this.timeoutMs) {
     return new Promise((resolve, reject) => {
       const request = https.request({
         hostname: 'api.openai.com',
         path: apiPath,
         method: 'POST',
-        timeout: this.timeoutMs,
+        timeout: Number(timeoutMs || this.timeoutMs),
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',

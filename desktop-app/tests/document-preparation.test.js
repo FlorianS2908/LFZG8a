@@ -8,7 +8,7 @@ const { prepareDocument, cleanupPreparedFiles } = require('../app/lib/content-fa
 const { readZipPackage, writeZipPackage } = require('../app/lib/content-factory/document-processing/safe-zip-package');
 const { OpenAIProvider, sanitizeInput } = require('../app/lib/content-factory/ai/openai-provider');
 const { extractReadablePdfText } = require('../app/lib/content-factory/source-extraction/pdf-outline-extractor');
-const { validateCoursePlan } = require('../app/lib/content-factory/course-planning/course-planning-service');
+const { validateCoursePlan, segmentExtraction, withPhaseTimeout, extractDocument } = require('../app/lib/content-factory/course-planning/course-planning-service');
 const { createCoursePlanningService } = require('../app/lib/content-factory/course-planning/course-planning-service');
 
 test('zentrale Formatstrategie stimmt Provider-Direktformate und sichere Konvertierungen ab', () => {
@@ -18,6 +18,37 @@ test('zentrale Formatstrategie stimmt Provider-Direktformate und sichere Konvert
   assert.equal(getDocumentFormatStrategy('folie.pptx').visualPdfUseful, true);
   assert.equal(getDocumentFormatStrategy('schadcode.exe').status, 'unsupported');
   assert.equal(getDocumentFormatStrategy('folie.pptx', 'text/plain').status, 'ready_with_warnings');
+  assert.equal(getDocumentFormatStrategy('daten.csv', 'text/csv').format, 'spreadsheet');
+  assert.equal(getDocumentFormatStrategy('daten.csv').maxBytes, 50 * 1024 * 1024);
+});
+
+test('große Extraktionen werden quellengetreu segmentiert und Phasen haben eigene Timeouts', async () => {
+  const sections = Array.from({ length: 20 }, (_, index) => ({ name: `Blatt ${index + 1}`, sourceRef: `Zeilen ${index * 10 + 1}-${index * 10 + 10}`, content: 'x'.repeat(1000) }));
+  const segments = segmentExtraction({ sections }, 3000, 4);
+  assert.ok(segments.length > 1);
+  assert.equal(segments.flatMap((segment) => segment.sections).length, sections.length);
+  assert.match(segments.flatMap((segment) => segment.sourceReferences).join(' '), /Zeilen 1-10/);
+  await assert.rejects(withPhaseTimeout(new Promise(() => {}), 5, 'PHASE_TIMEOUT', 'zu langsam'), (error) => error.code === 'PHASE_TIMEOUT');
+});
+
+test('CSV wird strukturiert in referenzierbare Zeilenbereiche extrahiert', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'csv-source-'));
+  const source = path.join(root, 'plan.csv'); fs.writeFileSync(source, 'Tag;UE;Thema\n1;1;Routing\n1;2;Subnetting');
+  const extraction = extractDocument({ id: 'csv', originalFileName: 'plan.csv', storedFilePath: source });
+  assert.equal(extraction.documentType, 'spreadsheet');
+  assert.match(extraction.sections[0].content, /Routing/);
+  assert.match(extraction.sections[0].sourceRef, /CSV Zeilen/);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('segmentierte Provideranalyse sendet die Originaldatei nur einmal und meldet Fortschritt', async () => {
+  const provider = new OpenAIProvider({ apiKey: 'test', model: 'test' });
+  const calls = []; const completed = [];
+  provider.analyzeDocument = async (input) => { calls.push(input.preparation.providerFiles.length); return { documentId: 'd1', sourceReferences: [] }; };
+  provider.requestJson = async (payload) => ({ ...payload.input.partialAnalyses[0], schemaVersion: 1 });
+  await provider.analyzeDocumentSegments({ preparation: { providerFiles: [{ localPath: 'x' }] }, extraction: {}, document: { id: 'd1' } }, [{ id: 's1', sections: [] }, { id: 's2', sections: [] }], { onSegmentComplete: (item) => completed.push(item.index) });
+  assert.deepEqual(calls, [1, 0]);
+  assert.deepEqual(completed, [1, 2]);
 });
 
 test('XLSM wird lesend in eine echte makrofreie und validierte XLSX-Arbeitskopie überführt', () => {

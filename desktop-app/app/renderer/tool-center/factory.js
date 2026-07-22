@@ -113,7 +113,7 @@ const uploadAreas = [
 ];
 
 const mainSourceOptions = [
-  { id: 'course-plan', label: 'Unterrichtsplan', formats: ['.xls', '.xlsx', '.xlsm'] },
+  { id: 'course-plan', label: 'Unterrichtsplan', formats: ['.xls', '.xlsx', '.xlsm', '.csv'] },
   { id: 'book-or-presentation', label: 'Buch / PDF / PowerPoint', formats: ['.pdf', '.epub', '.ppt', '.pptx'] },
   { id: 'text-document', label: 'Textdokument', formats: ['.doc', '.docx', '.txt', '.md', '.html', '.htm'] }
 ];
@@ -787,9 +787,9 @@ function renderCourseStructureStep(wizard) {
   return `<article class="tool-card" data-plan-step-content="courseStructure">
     <h3>KI-Analyse und Kursplanung</h3>
     <p class="status-line">Die hochgeladenen Dokumente werden gemeinsam ausgewertet. Anschließend erstellt die KI einen Vorschlag für die Verteilung der Themen auf die vorhandenen Kurstage und Unterrichtseinheiten.</p>
-    ${running ? `<div class="analysis-progress" role="status" aria-live="polite"><span class="indeterminate-spinner" aria-hidden="true"></span><strong>${escapeHtml(wizard.analysisProgress.step)}</strong><span>${escapeHtml(wizard.analysisProgress.currentDocument || '')}</span><progress value="${progressCount.processed}" max="${progressCount.total || 1}" role="progressbar" aria-valuemin="0" aria-valuemax="${progressCount.total}" aria-valuenow="${progressCount.processed}"></progress><small>${progressCount.processed} von ${progressCount.total} Dokumenten verarbeitet | wartend: ${escapeHtml(wizard.analysisProgress.queued || 0)} | erfolgreich: ${escapeHtml(wizard.analysisProgress.completed || 0)} | Warnungen: ${escapeHtml(wizard.analysisProgress.warningCount || 0)} | fehlgeschlagen: ${escapeHtml(wizard.analysisProgress.failed || 0)}</small></div>` : ''}
+    ${running ? `<div class="analysis-progress" role="status" aria-live="polite"><span class="indeterminate-spinner" aria-hidden="true"></span><strong>${escapeHtml(wizard.analysisProgress.step)}</strong><span>${escapeHtml(wizard.analysisProgress.currentDocument || '')}</span><progress value="${progressCount.percentage}" max="100" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressCount.percentage}"></progress><small>${progressCount.percentage}% | ${progressCount.processed} von ${progressCount.total} Dokumenten verarbeitet${progressCount.segmentTotal ? ` | Segment ${progressCount.segmentCompleted} von ${progressCount.segmentTotal}` : ''} | Phase: ${escapeHtml(wizard.analysisProgress.phase || '-')}</small><small>wartend: ${escapeHtml(wizard.analysisProgress.queued || 0)} | erfolgreich: ${escapeHtml(wizard.analysisProgress.completed || 0)} | Warnungen: ${escapeHtml(wizard.analysisProgress.warningCount || 0)} | fehlgeschlagen: ${escapeHtml(wizard.analysisProgress.failed || 0)}</small></div>` : ''}
     <div class="mapping-list">${documents.map((document, index) => renderDocumentAnalysisCard(document, analyses, index)).join('')}</div>
-    <div class="button-row"><button class="primary-button" type="button" data-document-analyze ${ready && !running ? '' : 'disabled'}>${running ? 'Analyse und Planung laufen …' : 'Dokumente analysieren und Themenstruktur erstellen'}</button>
+    <div class="button-row"><button class="primary-button" type="button" data-document-analyze ${ready && !running ? '' : 'disabled'}>${running ? 'Analyse und Planung laufen …' : 'Analysieren und Unterrichtsplan erstellen'}</button>
     <button class="secondary-button" type="button" data-document-analysis-cancel ${running ? '' : 'disabled'}>Vorgang abbrechen</button></div>
     ${!ready ? '<p class="status-line status-warning">Die Analyse kann noch nicht gestartet werden. Erforderlich sind Kursbezeichnung, mindestens ein Dokument, Zielgruppe, Vorkenntnisse, Tage, UE-Angaben und eine konfigurierte OpenAI-Verbindung.</p>' : ''}
   </article>`;

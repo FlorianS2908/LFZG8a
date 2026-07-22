@@ -77,7 +77,7 @@ test('Weiter-Orchestrierung startet bei Validierungs- oder Speicherfehler keine 
 });
 
 test('Fortschritt zählt Erfolge Warnungen und Fehler genau einmal', () => {
-  assert.deepEqual(calculateAnalysisProgress({ total: 4, completed: 1, warningCount: 1, failed: 1 }), { total: 4, processed: 3 });
+  assert.deepEqual(calculateAnalysisProgress({ total: 4, completed: 1, warningCount: 1, failed: 1 }), { total: 4, processed: 3, segmentTotal: 0, segmentCompleted: 0, percentage: 75 });
 });
 
 test('Polling endet terminal, toleriert einen temporären Fehler und läuft in Timeout', async () => {

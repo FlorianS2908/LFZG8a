@@ -24,6 +24,7 @@ const { listDidacticProfiles, applyDidacticProfile, suggestDidacticProfile, reco
 const { evaluateDidacticFit, evaluateAllDidacticFits } = require('./didactics/didactic-fit-service');
 const { createDidacticPreview } = require('./didactics/didactic-preview-service');
 const { createCoursePlanningService } = require('./course-planning/course-planning-service');
+const { createSafeLogger } = require('../safe-logger');
 
 function cloneItems(items, include, transform = (item) => item) {
   return include ? (items || []).map((item) => transform({ ...item })) : [];
@@ -40,7 +41,7 @@ function createContentFactoryService({ appData, projectRoot = process.cwd(), saf
   const aiKeyStore = createAiKeyStoreService({ appData, safeStorage, migrationPath });
   const aiOrchestrator = new AiOrchestrator({ projectRoot, aiKeyStore });
   const curriculumPlanner = createCurriculumPlannerService({ factoryDir, aiOrchestrator });
-  const coursePlanning = createCoursePlanningService({ factoryDir, aiOrchestrator: coursePlanningAiOrchestrator || aiOrchestrator });
+  const coursePlanning = createCoursePlanningService({ factoryDir, aiOrchestrator: coursePlanningAiOrchestrator || aiOrchestrator, logger: createSafeLogger({ logPath: path.join(factoryDir, 'logs', 'course-planning.jsonl') }) });
   const cleanup = createCleanupService({ factoryDir, storage });
 
   function ensureFactory() {

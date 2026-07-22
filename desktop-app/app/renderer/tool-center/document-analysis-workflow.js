@@ -34,7 +34,10 @@
     progress ||= {};
     const total = Math.max(0, Number(progress.total || 0));
     const processed = Math.min(total, Math.max(0, Number(progress.completed || 0) + Number(progress.warningCount || 0) + Number(progress.failed || 0)));
-    return { total, processed };
+    const segmentTotal = Math.max(0, Number(progress.segmentTotal || 0));
+    const segmentCompleted = Math.min(segmentTotal, Math.max(0, Number(progress.segmentCompleted || 0)));
+    const activeShare = total && segmentTotal ? (segmentCompleted / segmentTotal) / total : 0;
+    return { total, processed, segmentTotal, segmentCompleted, percentage: Math.min(100, Math.round(((total ? processed / total : 0) + activeShare) * 100)) };
   }
 
   function isTerminalAnalysisStatus(status) {
@@ -80,7 +83,7 @@
     };
   }
 
-  async function pollAnalysisUntilTerminal({ operationId, getProgress, onProgress = () => {}, intervalMs = 350, timeoutMs = 120000, maxConsecutiveErrors = 3, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
+  async function pollAnalysisUntilTerminal({ operationId, getProgress, onProgress = () => {}, intervalMs = 350, timeoutMs = 900000, maxConsecutiveErrors = 3, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
     const startedAt = Date.now();
     let consecutiveErrors = 0;
     while (Date.now() - startedAt < timeoutMs) {

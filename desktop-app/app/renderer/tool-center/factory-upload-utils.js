@@ -3,7 +3,7 @@
   const LARGE_FILE_BYTES = 250 * 1024 * 1024;
   const MIME_TYPES_BY_EXTENSION = {
     '.xls': ['application/vnd.ms-excel'], '.xlsx': ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
-    '.xlsm': ['application/vnd.ms-excel.sheet.macroenabled.12', 'application/vnd.ms-excel'], '.pdf': ['application/pdf'],
+    '.xlsm': ['application/vnd.ms-excel.sheet.macroenabled.12', 'application/vnd.ms-excel'], '.csv': ['text/csv', 'application/vnd.ms-excel'], '.pdf': ['application/pdf'],
     '.epub': ['application/epub+zip'], '.ppt': ['application/vnd.ms-powerpoint'],
     '.pptx': ['application/vnd.openxmlformats-officedocument.presentationml.presentation'], '.doc': ['application/msword'],
     '.docx': ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'], '.txt': ['text/plain'],

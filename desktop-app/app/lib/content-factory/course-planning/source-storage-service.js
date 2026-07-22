@@ -4,7 +4,7 @@ const path = require('path');
 const { ensureDir } = require('../../json-store');
 
 const MAX_SOURCE_BYTES = 250 * 1024 * 1024;
-const ALLOWED_EXTENSIONS = new Set(['.xls', '.xlsx', '.xlsm', '.pdf', '.epub', '.ppt', '.pptx', '.doc', '.docx', '.md', '.txt', '.html', '.htm', '.json', '.xml', '.ipynb', '.png', '.jpg', '.jpeg']);
+const ALLOWED_EXTENSIONS = new Set(['.xls', '.xlsx', '.xlsm', '.csv', '.pdf', '.epub', '.ppt', '.pptx', '.doc', '.docx', '.md', '.txt', '.html', '.htm', '.json', '.xml', '.ipynb', '.png', '.jpg', '.jpeg']);
 
 function createSourceStorageService({ factoryDir, logger = console }) {
   const projectsRoot = path.resolve(factoryDir, 'course-projects');

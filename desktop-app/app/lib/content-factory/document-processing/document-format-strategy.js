@@ -4,6 +4,7 @@ const STRATEGIES = Object.freeze({
   '.pdf': entry('pdf', 'direct_with_structured_extraction', 'application/pdf', true, true),
   '.xls': entry('spreadsheet', 'direct_with_structured_extraction', 'application/vnd.ms-excel', true),
   '.xlsx': entry('spreadsheet', 'direct_with_structured_extraction', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', true),
+  '.csv': entry('spreadsheet', 'direct_with_structured_extraction', 'text/csv', true),
   '.xlsm': entry('macro_spreadsheet', 'convert_then_analyze', 'application/vnd.ms-excel.sheet.macroEnabled.12', false),
   '.ppt': entry('presentation', 'direct_with_structured_extraction', 'application/vnd.ms-powerpoint', true, true),
   '.pptx': entry('presentation', 'direct_with_structured_extraction', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', true, true),
@@ -23,7 +24,7 @@ const STRATEGIES = Object.freeze({
 });
 
 function entry(format, strategy, canonicalMimeType, providerDirect, visualPdfUseful = false) {
-  return Object.freeze({ format, strategy, canonicalMimeType, providerDirect, visualPdfUseful });
+  return Object.freeze({ format, strategy, canonicalMimeType, providerDirect, visualPdfUseful, maxBytes: 50 * 1024 * 1024, ocrRequired: format === 'image', cleanupTemporaryFiles: true, providerUploadStrategy: providerDirect ? 'original_plus_extraction' : 'prepared_file_plus_extraction' });
 }
 
 function getDocumentFormatStrategy(fileName = '', mimeType = '') {
@@ -39,7 +40,7 @@ function mimeCompatible(extension, received, canonical) {
   const normalized = String(received).toLowerCase().split(';')[0].trim();
   if (!normalized || normalized === 'application/octet-stream') return true;
   if (normalized === canonical.toLowerCase()) return true;
-  if (['.md', '.txt', '.html', '.htm', '.xml', '.json'].includes(extension) && /^(text\/|application\/(json|xml))/.test(normalized)) return true;
+  if (['.md', '.txt', '.csv', '.html', '.htm', '.xml', '.json'].includes(extension) && /^(text\/|application\/(json|xml))/.test(normalized)) return true;
   return false;
 }
 

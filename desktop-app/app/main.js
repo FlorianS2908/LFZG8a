@@ -6,6 +6,7 @@ const { ensureDir } = require('./lib/json-store');
 const { applyAppEnv } = require('./lib/env/env-loader');
 const { DOCUMENT_ANALYSIS_CHANNELS } = require('./lib/content-factory/course-planning/analysis-ipc-contract');
 const { writeZipPackage } = require('./lib/content-factory/document-processing/safe-zip-package');
+const { installBrokenPipeGuards } = require('./lib/safe-logger');
 
 const projectRoot = path.resolve(__dirname, '..', '..');
 const rendererFile = path.join(__dirname, 'renderer', 'tool-center', 'factory.html');
@@ -14,6 +15,7 @@ const iconFile = path.join(__dirname, 'assets', 'icons', process.platform === 'w
 const standaloneSession = Object.freeze({ authenticated: true, user: { id: 'local', email: 'local@contentfactory.invalid', roles: [] } });
 const localMigrationPath = path.join(process.env.USERPROFILE || '', 'OneDrive - Amadeus Fire AG', 'Desktop', 'api_key_ContentFactory.txt');
 const localCacheRoot = path.join(process.env.LOCALAPPDATA || app.getPath('temp'), 'ueTool-ContentFactory', 'Cache');
+installBrokenPipeGuards();
 
 ensureDir(localCacheRoot);
 app.setPath('cache', localCacheRoot);
