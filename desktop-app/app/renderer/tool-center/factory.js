@@ -31,6 +31,16 @@ const containerProfileLabels = {
   generateReadme: 'Projektbeschreibung erstellen',
   generateSetupGuide: 'Einrichtungsanleitung erstellen'
 };
+const didacticCourseOptions = {
+  technology: [['theory', 'Allgemeiner Theoriekurs'], ['html-css', 'HTML und CSS'], ['java', 'Java'], ['java-maven', 'Java mit Maven'], ['python', 'Python'], ['jupyter', 'Python mit Jupyter'], ['sql', 'SQL und Datenbanken'], ['php-xampp', 'PHP mit XAMPP'], ['uml-pap', 'UML und Modellierung'], ['mixed-project', 'Gemischter Technologiekurs'], ['custom', 'Benutzerdefiniert']],
+  courseFormat: [['theory-exercises', 'Theorie mit Übungen'], ['practice', 'Praxisorientierter Kurs'], ['project', 'Projektkurs'], ['exam-preparation', 'Prüfungsvorbereitung'], ['workshop', 'Workshop'], ['blended-learning', 'Blended Learning'], ['custom', 'Individuell']],
+  didacticProfile: [['balanced', 'Ausgewogen'], ['strongly-guided', 'Stark angeleitet'], ['practice-oriented', 'Praxisorientiert'], ['project-oriented', 'Projektorientiert'], ['exam-oriented', 'Prüfungsorientiert'], ['self-directed', 'Selbstgesteuert'], ['custom', 'Individuell']],
+  audience: [['training-retraining', 'Ausbildung/Umschulung'], ['professional-development', 'Berufliche Weiterbildung'], ['school', 'Schule'], ['university', 'Studium'], ['experienced', 'Berufserfahrene'], ['mixed', 'Gemischte Gruppe'], ['custom', 'Benutzerdefiniert']],
+  entryLevel: [['none', 'Keine Vorkenntnisse'], ['basic', 'Grundlagen vorhanden'], ['advanced', 'Fortgeschritten'], ['mixed', 'Gemischtes Niveau']],
+  learningOrganization: [['balanced-mix', 'Ausgewogener Methodenmix'], ['individual', 'Einzelarbeit'], ['pair', 'Partnerarbeit'], ['group', 'Gruppenarbeit'], ['project-teams', 'Projektteams'], ['self-study', 'Selbstlernphase']],
+  differentiationProfile: [['none', 'Keine zusätzliche Differenzierung'], ['basic-regular', 'Grundlagen + reguläre Aufgaben'], ['basic-regular-transfer', 'Grundlagen + regulär + Transfer'], ['full', 'Vollständig differenziert']]
+};
+const successCheckOptions = [['prior-check', 'Vorwissenscheck'], ['comprehension-questions', 'Verständnisfragen'], ['practice-tasks', 'Praxisaufgaben'], ['self-check', 'Selbstkontrolle'], ['day-review', 'Tagesabschluss'], ['quiz', 'Quiz'], ['competency-check', 'Kompetenzcheck'], ['next-day-review', 'Wiederholung am Folgetag'], ['spaced-review', 'Wiederholung nach zwei bis drei Tagen'], ['project-review', 'Wiederholung in späteren Projekten'], ['final-check', 'Abschlusscheck']];
 
 const state = {
   uiMode: 'guided',
@@ -62,7 +72,7 @@ const state = {
     rangesText: '',
     duration: { numberOfDays: 5, hoursPerDay: 8, uePerDay: 9, ueMinutes: 45, totalHours: 40, totalUE: 45, pauseModel: 'default' },
     targetAudience: { ageRange: 'mixed', educationContext: 'umschulung', department: 'ALLGEMEIN', priorKnowledge: 'basic', learningLevel: 'basic', languageLevel: 'normal', practiceLevel: 'medium', difficultyMode: 'medium', needsStepByStep: true, examOrientation: false, projectOrientation: true },
-    containerProfile: { courseType: 'theory', artifactMode: 'web-only', studentWorkspace: true, teacherSolutions: true, generateStarterFiles: true, generateSolutionFiles: true, generateReadme: true, generateSetupGuide: true, generateRunScripts: false, allowExecutableTools: false, allowDatabaseActions: false },
+    containerProfile: { courseType: 'theory', artifactMode: 'web-only', didacticCourse: { schemaVersion: 2, technology: 'theory', selectedTechnologies: ['theory'], courseFormat: 'theory-exercises', didacticProfile: 'balanced', audience: 'training-retraining', entryLevel: 'basic', learningOrganization: 'balanced-mix', differentiationProfile: 'basic-regular', successChecks: ['comprehension-questions', 'practice-tasks', 'day-review'], materialOutputs: ['web', 'handout', 'tasks', 'quiz'], technicalEnvironment: ['participant-workspace'] }, studentWorkspace: true, teacherSolutions: true, generateStarterFiles: true, generateSolutionFiles: true, generateReadme: true, generateSetupGuide: true, generateRunScripts: false, allowExecutableTools: false, allowDatabaseActions: false },
     courseGoal: '',
     expectedOutcome: 'grundlagenkurs',
     didacticStyle: 'guided',
@@ -903,12 +913,12 @@ function renderMaterialsStep(wizard) {
     <article class="tool-card" data-plan-step-content="materials">
       <h3>Materialien</h3>
       <p class="status-line">Optional: Ergaenze Aufgaben, Lösungen, Quiz, Projektdateien, Quellcode, SQL, Assets oder sonstige Dateien. ZIPs werden sicher gestaged.</p>
-      <div class="factory-grid">
+      <div class="upload-grid-container"><div class="factory-grid upload-category-grid">
         ${uploadAreas.map(([area, label, accept, description]) => {
           const files = wizard.uploadFiles.filter((file) => file.uploadArea === area);
           return createDropZoneHtml({ id: area, title: label, description, accept, files, multiple: true, kind: 'upload' });
         }).join('')}
-      </div>
+      </div></div>
       <button class="secondary-button" type="button" data-wizard-import ${wizard.uploadFiles.length ? '' : 'disabled'}>Uploads in Staging importieren</button>
       ${wizard.importBatch ? `<p class="status-line">Import-Batch: ${escapeHtml(wizard.importBatch.id)} (${wizard.importBatch.files.length} Datei(en))</p>` : ''}
     </article>
@@ -989,25 +999,38 @@ function renderDayDraftPreview(draft) {
 
 function renderContainerProfileStep(wizard) {
   const profile = wizard.containerProfile;
-  const types = ['theory', 'html-css', 'java', 'java-maven', 'python', 'jupyter', 'sql', 'php-xampp', 'uml-pap', 'database-project', 'mixed-project'];
+  const course = profile.didacticCourse || {};
   const modes = ['web-only', 'files-only', 'web-and-files'];
   const presets = state.presets || [];
+  const select = (field, label, help = '') => `<label>${label}<select data-didactic-course="${field}">${didacticCourseOptions[field].map(([value, text]) => `<option value="${value}" ${course[field] === value ? 'selected' : ''}>${escapeHtml(text)}</option>`).join('')}</select>${help ? `<small>${escapeHtml(help)}</small>` : ''}</label>`;
   return `
     <article class="tool-card">
       <h3>5. Container-Konfiguration</h3>
+      <h4>Was wird unterrichtet?</h4>
       <div class="factory-form-grid">
         <label>Preset<select data-wizard-preset><option value="">Kein Preset</option>${presets.map((preset) => `<option value="${escapeHtml(preset.id)}" ${wizard.selectedPresetId === preset.id ? 'selected' : ''}>${escapeHtml(preset.label || preset.id)}</option>`).join('')}</select></label>
-        <label>Kurstyp<select data-container-profile="courseType">${types.map((value) => `<option value="${value}" ${profile.courseType === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
-        <label>Art der Kursmaterialien<select data-container-profile="artifactMode">${modes.map((value) => `<option value="${value}" ${profile.artifactMode === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
+        ${select('technology', 'Fachgebiet / Technologie')}
+        ${course.technology === 'custom' ? `<label>Eigene Technologie<input data-didactic-course="customTechnology" value="${escapeHtml(course.customTechnology || '')}" required></label>` : ''}
+        ${course.technology === 'mixed-project' ? `<fieldset class="form-field-wide"><legend>Technologien auswählen</legend><div class="summary-grid">${didacticCourseOptions.technology.filter(([value]) => !['theory', 'mixed-project', 'custom'].includes(value)).map(([value, label]) => `<label class="checkline"><input data-course-array="selectedTechnologies" value="${value}" type="checkbox" ${(course.selectedTechnologies || []).includes(value) ? 'checked' : ''}><span>${escapeHtml(label)}</span></label>`).join('')}</div></fieldset>` : ''}
       </div>
+      <h4>Wie wird gelernt?</h4>
+      <div class="factory-form-grid">${select('courseFormat', 'Kursformat', 'Steuert das Verhältnis von Erklärung, Anwendung und Transfer.')}${select('didacticProfile', 'Didaktisches Profil', 'Ausgewogen ist der Standard für neue Projekte.')}${select('audience', 'Zielgruppe')}${select('entryLevel', 'Einstiegsniveau')}</div>
+      ${course.courseFormat === 'custom' ? `<label>Eigenes Kursformat<input data-didactic-course="customCourseFormat" value="${escapeHtml(course.customCourseFormat || '')}" required></label>` : ''}
+      ${course.didacticProfile === 'custom' ? `<label>Eigenes didaktisches Profil<input data-didactic-course="customDidacticProfile" value="${escapeHtml(course.customDidacticProfile || '')}" required></label>` : ''}
+      ${course.audience === 'custom' ? `<label>Eigene Zielgruppe<input data-didactic-course="customAudience" value="${escapeHtml(course.customAudience || '')}" required></label>` : ''}
+      <details><summary>Didaktische Feineinstellungen</summary><div class="factory-form-grid">${select('learningOrganization', 'Bevorzugte Lernorganisation')}${select('differentiationProfile', 'Differenzierung')}</div><fieldset><legend>Lernerfolg und Wiederholung</legend><div class="summary-grid">${successCheckOptions.map(([value, label]) => `<label class="checkline"><input data-course-array="successChecks" value="${value}" type="checkbox" ${(course.successChecks || []).includes(value) ? 'checked' : ''}><span>${escapeHtml(label)}</span></label>`).join('')}</div></fieldset></details>
+      <div class="validation-box" aria-live="polite"><strong>Kurszusammenfassung</strong><p>${escapeHtml(summarizeWizardCourseConfiguration(course))}</p></div>
       <button class="secondary-button" type="button" data-apply-preset ${wizard.selectedPresetId ? '' : 'disabled'}>Preset anwenden</button>
-      <small>Die Vorlage setzt Vorschläge; alle Werte bleiben manuell anpassbar.</small>
+      <small>${wizard.presetAppliedCount ? `Diese Vorlage hat ${escapeHtml(wizard.presetAppliedCount)} Empfehlungen gesetzt. ` : ''}Die Vorlage setzt Vorschläge; alle Werte bleiben manuell anpassbar.</small>
+      <h4>Welche Materialien entstehen?</h4>
+      <label>Materialausgabe<select data-container-profile="artifactMode">${modes.map((value) => `<option value="${value}" ${profile.artifactMode === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
       <div class="summary-grid">
         ${Object.entries(containerProfileLabels).map(([key, label]) => `<label class="checkline"><input data-container-profile-check="${key}" type="checkbox" ${profile[key] ? 'checked' : ''}> <span>${escapeHtml(label)}</span></label>`).join('')}
         <label class="checkline"><input data-container-profile-check="generateRunScripts" type="checkbox" ${profile.generateRunScripts ? 'checked' : ''}> <span>Skripte zum Starten des Projekts erstellen</span></label>
         <label class="checkline"><input data-container-profile-check="allowExecutableTools" type="checkbox" ${profile.allowExecutableTools ? 'checked' : ''}> <span>Externe Werkzeuge für diesen Kurs erlauben</span></label>
         <label class="checkline"><input data-container-profile-check="allowDatabaseActions" type="checkbox" ${profile.allowDatabaseActions ? 'checked' : ''}> <span>Datenbankaktionen für diesen Kurs erlauben</span></label>
       </div>
+      <h4>Welche technische Umgebung wird benötigt?</h4>
       <p class="status-line status-warning">EXE/BAT/CMD/PS1 werden nie exportiert oder ausgeführt. SQL wird nur als Datei erzeugt.</p>
       <div class="button-row">
         <button class="secondary-button" type="button" data-profile-preset="java-maven">Maven-Projekt erzwingen</button>
@@ -1019,6 +1042,11 @@ function renderContainerProfileStep(wizard) {
       ${wizard.curriculumDraft ? renderArtifactSuggestionPreview(wizard) : '<small>Vorschläge für Kursmaterialien erscheinen nach der Analyse des Unterrichtsplans.</small>'}
     </article>
   `;
+}
+
+function summarizeWizardCourseConfiguration(course = {}) {
+  const text = (field) => didacticCourseOptions[field]?.find(([value]) => value === course[field])?.[1] || course[field] || 'nicht festgelegt';
+  return `${course.customTechnology || text('technology')} für ${course.customAudience || text('audience')} auf dem Niveau „${text('entryLevel')}“. ${text('courseFormat')} mit dem didaktischen Profil „${text('didacticProfile')}“, ${text('learningOrganization')} und ${text('differentiationProfile')}.`;
 }
 
 function getSelectedDidacticProfile() {
@@ -1577,6 +1605,18 @@ function bindPlanWizardEvents() {
     state.wizard.containerProfile[field.dataset.containerProfile] = field.value;
     renderPlanWizard();
   }));
+  $all('[data-didactic-course]').forEach((field) => field.addEventListener('change', () => {
+    state.wizard.containerProfile.didacticCourse ||= {};
+    state.wizard.containerProfile.didacticCourse[field.dataset.didacticCourse] = field.value;
+    if (field.dataset.didacticCourse === 'technology' && field.value !== 'custom') state.wizard.containerProfile.courseType = field.value;
+    renderPlanWizard();
+  }));
+  $all('[data-course-array]').forEach((field) => field.addEventListener('change', () => {
+    const course = state.wizard.containerProfile.didacticCourse ||= {};
+    const key = field.dataset.courseArray; const values = new Set(course[key] || []);
+    if (field.checked) values.add(field.value); else values.delete(field.value);
+    course[key] = [...values]; renderPlanWizard();
+  }));
   $('[data-wizard-preset]')?.addEventListener('change', (event) => {
     state.wizard.selectedPresetId = event.target.value;
     renderPlanWizard();
@@ -1841,6 +1881,7 @@ async function applyWizardPreset() {
     });
     state.wizard.containerProfile = updated.containerProfile;
     state.wizard.targetAudience = updated.targetAudience;
+    state.wizard.presetAppliedCount = Object.keys(updated.containerProfile?.didacticCourse || {}).length;
     state.wizard.status = (updated.presetWarnings || []).join(' ');
   } catch (error) {
     state.wizard.status = error.message;

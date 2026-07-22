@@ -154,12 +154,13 @@
           <strong>${escapeHtml(config.title || config.id)}</strong>
           <span class="status-badge">${escapeHtml(files.length)} Datei(en)</span>
         </div>
-        ${config.description ? `<p>${escapeHtml(config.description)}</p>` : ''}
+        ${config.description ? `<p class="dropzone-purpose">${escapeHtml(config.description)}</p>` : ''}
         <label class="dropzone" data-dropzone="${escapeHtml(config.id)}" tabindex="0" aria-label="${escapeHtml(config.title || config.id)} Uploadzone">
-          <span>Dateien hier ablegen oder durchsuchen</span>
-          <small>${escapeHtml(config.accept || 'alle Dateitypen')} | ${config.multiple === false ? 'Einzeldatei' : 'Mehrfachupload'} | ${formatBytes(totalSize)}</small>
+          <span>Dateien ablegen oder auswählen</span>
+          <small>${config.multiple === false ? 'Einzeldatei' : 'Mehrfachauswahl möglich'} · ${formatBytes(totalSize)}</small>
           <input ${inputAttr} type="file" ${config.multiple === false ? '' : 'multiple'} ${config.accept ? `accept="${escapeHtml(config.accept)}"` : ''}>
         </label>
+        <details class="dropzone-formats"><summary>Weitere Formate</summary><small>${escapeHtml(config.accept || 'Alle unterstützten Dateitypen')}</small></details>
         ${renderFileList(files, escapeHtml)}
       </section>
     `;

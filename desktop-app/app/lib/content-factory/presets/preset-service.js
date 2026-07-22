@@ -10,7 +10,7 @@ function applyPreset(id, state = {}) {
   return {
     ...state,
     selectedPresetId: preset.id,
-    containerProfile: { ...(state.containerProfile || {}), ...preset.containerProfile },
+    containerProfile: { ...(state.containerProfile || {}), ...preset.containerProfile, didacticCourse: { ...(state.containerProfile?.didacticCourse || {}), ...(preset.containerProfile.didacticCourse || {}) } },
     targetAudience: { ...(state.targetAudience || {}), ...preset.targetAudience },
     presetWarnings: [
       'Preset setzt nur Vorschlaege. Alle Werte koennen manuell angepasst werden.',

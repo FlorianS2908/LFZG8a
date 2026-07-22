@@ -15,6 +15,7 @@ function preset(id, label, courseType, audiencePatch) {
     label,
     containerProfile: {
       courseType,
+      didacticCourse: presetDidactics(id, courseType, audiencePatch),
       artifactMode: 'web-and-files',
       studentWorkspace: true,
       teacherSolutions: true,
@@ -30,6 +31,23 @@ function preset(id, label, courseType, audiencePatch) {
       educationContext: 'umschulung',
       ...audiencePatch
     }
+  };
+}
+
+function presetDidactics(id, technology, audience = {}) {
+  const project = /project/.test(id);
+  const exam = /exam/.test(id);
+  return {
+    schemaVersion: 2,
+    technology,
+    selectedTechnologies: technology === 'mixed-project' ? ['html-css', 'sql'] : [technology],
+    courseFormat: exam ? 'exam-preparation' : project ? 'project' : 'practice',
+    didacticProfile: exam ? 'exam-oriented' : project ? 'project-oriented' : audience.needsStepByStep ? 'strongly-guided' : 'balanced',
+    audience: 'training-retraining',
+    entryLevel: ['none', 'intro'].includes(audience.priorKnowledge) ? 'none' : audience.learningLevel === 'advanced' ? 'advanced' : 'basic',
+    learningOrganization: project ? 'project-teams' : 'balanced-mix',
+    differentiationProfile: 'basic-regular-transfer',
+    successChecks: exam ? ['quiz', 'competency-check', 'final-check'] : ['comprehension-questions', 'practice-tasks', 'day-review']
   };
 }
 

@@ -55,3 +55,17 @@ Die reale `Wochenplan_FIAE_LF-ZQ8A.xlsm` wird nur getestet, wenn sie außerhalb 
 Der Schritt „Struktur-Review“ hebt ausschließlich für die breite Planung die allgemeine Inhaltsbegrenzung auf und blendet die kontextuelle Seitenhilfe aus. UE und Zeit bleiben schmal, Thema erhält 15 Prozent, Inhalt und Lernziel jeweils 24 Prozent, Quellen 13 Prozent und Belegstatus 11 Prozent. Ab 900 Pixeln wird jede UE als beschriftete Karte dargestellt; Bearbeitung, Details, Status und Tastaturfokus bleiben erhalten.
 
 Technische Confidence-Werte sind nicht mehr die primäre Nutzerinformation. Die UI normalisiert optionale Zahlen strikt und zeigt stattdessen „Direkt belegt“, „Nachvollziehbar abgeleitet“, „Klärung empfohlen“ oder „Konflikt vorhanden“. Ein Prozentwert erscheint nur ergänzend bei einer endlichen Zahl zwischen 0 und 1; `NaN %` kann nicht gerendert werden. Quellen werden kompakt mit bekanntem Blatt, Seite, Folie oder Fundort dargestellt.
+
+## Didaktische Kurs- und Containerkonfiguration
+
+`containerProfile.didacticCourse` ist ab Schema-Version 2 die strukturierte fachliche Konfiguration. Sie trennt Technologie, Kursformat, Didaktikprofil, Zielgruppe, Einstiegsniveau, Lernorganisation, Differenzierung, Lernerfolg/Wiederholung, Materialausgabe und technische Umgebung. `courseType` bleibt als Legacy-Alias erhalten. Bekannte alte Werte werden migriert; unbekannte Alttypen werden unter `legacyValues` bewahrt. Fehlende Felder erhalten dokumentierte Defaults: allgemeine Theorie, Theorie mit Übungen, ausgewogenes Profil, Ausbildung/Umschulung, Grundlagen, Methodenmix und Grundlagen plus reguläre Aufgaben.
+
+Die Servicegrenze validiert benutzerdefinierte Werte, gemischte Technologien und technische Pflichtkombinationen. Technische Unvereinbarkeiten blockieren mit `CONTAINER_PROFILE_INVALID`; didaktisch ungewöhnliche Kombinationen erzeugen verständliche Warnungen. Presets sind verschachtelte Merge-Empfehlungen und überschreiben nicht unbemerkt unbekannte oder benutzerdefinierte Felder. Die vollständige Konfiguration wird über das bestehende Containerprofil an Planung, Promptaufbereitung und Materialgeneratoren gereicht; UI-Beschriftungen sind keine technischen Schlüssel.
+
+Die Kurszusammenfassung ist ausschließlich abgeleitet und wird nicht als Wahrheitsquelle gespeichert. Vollständige Differenzierung aktiviert Mindestziel, reguläre Aufgabe, Hilfestellung, Transferaufgabe, Zusatzaufgabe und alternative Erklärung. Gemischtes Einstiegsniveau aktiviert ein eigenes Differenzierungsmerkmal.
+
+## Responsive Uploads
+
+Die verpflichtende Hauptquelle bleibt im Quellen-Schritt getrennt. Optionale Materialkategorien verwenden im Materialien-Schritt eine Container Query: ab 57 rem Komponentenbreite drei Spalten, ab 38 rem zwei und darunter eine. Die Mindestkartenbreite beträgt 16,25 rem. Formatlisten liegen unter „Weitere Formate“, während Dropzone, Mehrfachauswahl, Dateizahl, Fehler und Dateiliste sichtbar bleiben. Enter und Leertaste öffnen weiterhin den nativen Dateidialog; Fokus, Drag-and-drop und Entfernen einzelner Dateien bleiben erhalten.
+
+Manuelle Prüfung: Container-Schritt öffnen, Preset anwenden, anschließend Fachgebiet und Didaktik manuell ändern und die Zusammenfassung prüfen. Im Materialien-Schritt Fensterbreite und Browserzoom variieren, Dropzone per Tab fokussieren und mit Enter beziehungsweise Leertaste öffnen. Diese Schritte sind zusätzlich zu den automatisierten Contract-/CSS-Tests erforderlich, wenn keine echte visuelle Testumgebung verfügbar ist.

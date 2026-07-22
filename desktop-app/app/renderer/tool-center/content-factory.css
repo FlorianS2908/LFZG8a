@@ -234,11 +234,22 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .choice-card-copy small { font-size: .8rem; }
 .file-format-list { color: var(--cf-brand-strong); font-size: .9rem; font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
 .dropzone-card { min-width: 0; padding: var(--cf-space-4); border-radius: var(--cf-radius-large); box-shadow: none; }
+.upload-grid-container { container-type: inline-size; min-width: 0; }
+.upload-category-grid { display: grid; grid-template-columns: 1fr; gap: var(--cf-space-4); min-width: 0; }
+.upload-category-grid .dropzone-card { height: 100%; align-content: start; overflow: hidden; }
+.dropzone-purpose { display: -webkit-box; min-height: 3.2em; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.dropzone-formats { min-width: 0; }
+.dropzone-formats summary { min-height: 2.75rem; display: flex; align-items: center; color: var(--cf-brand-strong); font-weight: 700; cursor: pointer; }
+.dropzone-formats small { display: block; overflow-wrap: anywhere; }
 .dropzone { min-height: 8rem; padding: var(--cf-space-6); gap: var(--cf-space-2); border-radius: var(--cf-radius-large); text-align: center; }
 .dropzone > span { font-weight: 750; }
 .upload-summary { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cf-space-2); margin: 0; color: var(--cf-muted); font-size: .9rem; }
 .dropzone-file-chip { min-width: 0; }
 .dropzone-file-chip span { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+.dropzone-file-chip em, .dropzone-card .status-line { max-width: 100%; overflow-wrap: anywhere; word-break: break-word; }
+
+@container (min-width: 38rem) { .upload-category-grid { grid-template-columns: repeat(2, minmax(16.25rem, 1fr)); } }
+@container (min-width: 57rem) { .upload-category-grid { grid-template-columns: repeat(3, minmax(16.25rem, 1fr)); } }
 
 /* Orientierung, Hilfe und Aktionen */
 .workflow-result-card { display: grid; gap: var(--cf-space-2); padding: var(--cf-space-4) var(--cf-space-6); border-left: 4px solid var(--cf-brand); }
