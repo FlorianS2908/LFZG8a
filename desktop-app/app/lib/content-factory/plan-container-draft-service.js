@@ -36,7 +36,7 @@ function createPlanContainerDraft(input = {}, options = {}) {
     curriculumPlan: input.approvedCurriculumPlan || input.curriculumPlan,
     targetAudience: input.approvedCurriculumPlan?.targetAudience || input.targetAudience
   });
-  const files = createVirtualFiles({ courseName, courseId, department, containerId, coursePlan: input.coursePlan, dayResults, aiMode: input.aiMode || 'local', references: input.references || [], profileContext, targetAudience: input.targetAudience || input.approvedCurriculumPlan?.targetAudience || input.curriculumPlan?.targetAudience || {}, didacticProfile: input.didacticProfile || input.approvedCurriculumPlan?.didacticProfile || input.curriculumPlan?.didacticProfile, reviewState: input.reviewState || {} });
+  const files = createVirtualFiles({ courseName, courseId, department, containerId, coursePlan: input.coursePlan, dayResults, aiMode: input.aiMode || 'local', references: input.references || [], profileContext, targetAudience: input.targetAudience || input.approvedCurriculumPlan?.targetAudience || input.curriculumPlan?.targetAudience || {}, didacticProfile: input.didacticProfile || input.approvedCurriculumPlan?.didacticProfile || input.curriculumPlan?.didacticProfile });
   files.forEach((file) => writeFile(rootDir, file.path, file.content));
   const namingReport = createNamingReport(files, { courseName, courseId });
   const protocolInput = createProtocolInput({ courseName, containerId, input, dayResults, files, rootDir, profileContext });
@@ -117,7 +117,7 @@ function readJsonFromFiles(files = [], filePath, fallback) {
   }
 }
 
-function createVirtualFiles({ courseName, courseId, department, containerId, coursePlan, dayResults, aiMode, references, profileContext, targetAudience, didacticProfile: inputDidacticProfile, reviewState }) {
+function createVirtualFiles({ courseName, courseId, department, containerId, coursePlan, dayResults, aiMode, references, profileContext, targetAudience, didacticProfile: inputDidacticProfile }) {
   const artifactFiles = generateArtifactFiles({
     course: { courseName, courseId, department },
     dayResults,
@@ -256,7 +256,6 @@ function createVirtualFiles({ courseName, courseId, department, containerId, cou
     jsonFile('catalog/artifacts.json', artifactMetadata),
     jsonFile('catalog/participant-content.json', participantContent),
     jsonFile('catalog/release-keys.json', releaseKeys),
-    jsonFile('reviews/review-state.json', reviewState || {}),
     jsonFile('platform/adapter.json', adapter),
     jsonFile('platform/route-map.json', days.map((day) => ({ dayNumber: day.dayNumber, route: day.participantWeb }))),
     jsonFile('platform/integration.json', adapter.integration),

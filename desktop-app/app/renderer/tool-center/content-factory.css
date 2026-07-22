@@ -161,32 +161,6 @@ legend { padding: 0 .35rem; font-weight: 800; }
 .compact-form-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--cf-space-4); }
 .compact-form-grid > *, .factory-form-grid > * { min-width: 0; }
 .form-field-wide { grid-column: 1 / -1; }
-
-.review-gates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin: 0 0 1rem; }
-.review-gate { display: flex; justify-content: space-between; gap: .75rem; min-width: 0; padding: .8rem; border: 1px solid var(--border-color); border-radius: .75rem; background: var(--surface-muted); }
-.review-gate.is-passed { border-color: var(--success-color); }
-.review-workspace { display: grid; gap: 1rem; min-width: 0; }
-.review-status-panel { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
-.review-status-panel dl { display: grid; grid-template-columns: repeat(4, minmax(6rem, 1fr)); gap: .5rem; margin: 0; }
-.review-status-panel dl div { padding: .6rem; border: 1px solid var(--border-color); border-radius: .6rem; }
-.review-status-panel dt { font-size: .78rem; color: var(--text-muted); }
-.review-status-panel dd { margin: .2rem 0 0; font-weight: 700; overflow-wrap: anywhere; }
-.review-columns { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(16rem, .8fr); gap: 1rem; }
-.review-finding, .review-summary, .review-artifact-viewer, .review-history { min-width: 0; padding: 1rem; border: 1px solid var(--border-color); border-radius: .75rem; overflow-wrap: anywhere; }
-.review-finding header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; }
-.severity-blocking { border-inline-start: .35rem solid var(--danger-color); }
-.severity-warning { border-inline-start: .35rem solid var(--warning-color); }
-.workflow-step-state { display: grid; gap: .2rem; }
-
-@media (max-width: 900px) {
-  .review-columns { grid-template-columns: 1fr; }
-  .review-status-panel dl { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
-}
-
-@media (max-width: 520px) {
-  .review-gates, .review-status-panel dl { grid-template-columns: 1fr; }
-  .review-gate { align-items: flex-start; flex-direction: column; }
-}
 .factory-form-grid label, .form-group { display: grid; align-content: start; gap: var(--cf-space-2); margin: 0; min-width: 0; }
 .form-group > label { margin: 0; font-weight: 700; }
 input, select, textarea { width: 100%; min-width: 0; padding: .7rem .8rem; line-height: 1.35; }

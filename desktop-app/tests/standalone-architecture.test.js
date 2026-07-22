@@ -150,11 +150,3 @@ test('Altplattform ist entfernt und ContentFactory-Core bleibt eingebunden', () 
   const packageJson = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf8'));
   assert.equal(packageJson.build.extraResources[0].from, '../packages/content-factory-core');
 });
-
-test('modulares Reviewsystem wird vollständig in die Electron-App paketiert', () => {
-  const packageJson = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf8'));
-  assert.ok(packageJson.build.files.includes('app/lib/review-core/**/*'));
-  assert.ok(packageJson.build.files.includes('app/lib/review-ai/**/*'));
-  assert.ok(packageJson.build.files.includes('app/lib/artifact-adapters/**/*'));
-  assert.match(read('renderer/tool-center/factory.html'), /review-core\/index\.js/);
-});
