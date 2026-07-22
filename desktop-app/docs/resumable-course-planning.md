@@ -49,3 +49,9 @@ Dokumentbereiche werden strukturiert validiert. Planbereiche können per `target
 Feature-Flags besitzen projektlokale Defaults. Mehrstufiger Analysecache, File-ID-Wiederverwendung, atomare JSON-Persistenz und höchstens zwei Segmentworker stammen aus der bestehenden Pipeline. Die getrennte Artefaktpersistenz ist bewusst noch deaktiviert, bis eine wiederholbare Migration bestehender Projektdateien vollständig abgesichert ist. Die neue Operation-Engine ist als zentrale Domäne getestet; die laufende Pipeline wird schrittweise darauf migriert, statt zwei parallele Implementierungen dauerhaft zu betreiben.
 
 Die reale `Wochenplan_FIAE_LF-ZQ8A.xlsm` wird nur getestet, wenn sie außerhalb des Repositories vorhanden ist. Standardtests verwenden eine synthetische makrohaltige Fixture read-only; Makros werden nie ausgeführt.
+
+## Planungsreview und Responsive-Verhalten
+
+Der Schritt „Struktur-Review“ hebt ausschließlich für die breite Planung die allgemeine Inhaltsbegrenzung auf und blendet die kontextuelle Seitenhilfe aus. UE und Zeit bleiben schmal, Thema erhält 15 Prozent, Inhalt und Lernziel jeweils 24 Prozent, Quellen 13 Prozent und Belegstatus 11 Prozent. Ab 900 Pixeln wird jede UE als beschriftete Karte dargestellt; Bearbeitung, Details, Status und Tastaturfokus bleiben erhalten.
+
+Technische Confidence-Werte sind nicht mehr die primäre Nutzerinformation. Die UI normalisiert optionale Zahlen strikt und zeigt stattdessen „Direkt belegt“, „Nachvollziehbar abgeleitet“, „Klärung empfohlen“ oder „Konflikt vorhanden“. Ein Prozentwert erscheint nur ergänzend bei einer endlichen Zahl zwischen 0 und 1; `NaN %` kann nicht gerendert werden. Quellen werden kompakt mit bekanntem Blatt, Seite, Folie oder Fundort dargestellt.

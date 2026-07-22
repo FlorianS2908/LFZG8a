@@ -37,6 +37,7 @@
             "app/renderer/tool-center/factory.js",
             "app/renderer/tool-center/factory-upload-utils.js",
             "app/renderer/tool-center/document-analysis-workflow.js",
+            "app/renderer/tool-center/planning-review-view-model.js",
             "app/renderer/tool-center/workspace.css",
             "app/renderer/tool-center/content-factory.css",
             "app/renderer/tool-center/workflow-ui/**/*",
