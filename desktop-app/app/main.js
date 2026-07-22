@@ -51,7 +51,7 @@ function createCoursePlanningSmokeAi() {
       return { documentId: document.id, documentType: extraction.documentType, detectedCategory: 'Testquelle', summary: 'Sicher extrahierte Testquelle', topics: [{ title: 'Netzwerkgrundlagen' }], learningObjectives: [{ title: 'Netzwerke planen' }], sourceReferences: [{ documentId: document.id }], confidence: 1 };
     },
     async generateStructuredCoursePlan({ structureFrame }) {
-      const units = Array.from({ length: structureFrame.totalUnits }, (_, index) => ({ id: `smoke-unit-${index + 1}`, dayNumber: Math.floor(index / structureFrame.unitsPerDay) + 1, unitNumber: index + 1, topic: `Netzwerkthema ${index + 1}`, content: 'Aus der Testquelle abgeleiteter Inhalt', preliminaryLearningObjective: 'Netzwerkgrundlagen anwenden', sourceReferences: [{ documentId: 'smoke-source', fileName: 'smoke-source.md' }], originStatus: 'explicit', confidence: 1, reviewStatus: 'open' }));
+      const units = Array.from({ length: structureFrame.totalUnits }, (_, index) => ({ id: `smoke-unit-${index + 1}`, dayNumber: Math.floor(index / structureFrame.unitsPerDay) + 1, unitNumber: index % structureFrame.unitsPerDay + 1, globalUnitNumber: index + 1, durationMinutes: structureFrame.unitDurationMinutes, topic: `Netzwerkthema ${index + 1}`, content: 'Aus der Testquelle abgeleiteter Inhalt', competencyGoal: 'Netzwerkgrundlagen anwenden', workFormat: { key: 'guided_practice', label: 'Geführte Übung' }, warnings: [], assumptions: [], sourceReferences: [{ documentId: 'smoke-source', fileName: 'smoke-source.md' }], originStatus: 'explicit', confidence: 1, reviewStatus: 'open' }));
       return { summary: 'Smoke-Test-Plan', days: Array.from({ length: structureFrame.totalDays }, (_, dayIndex) => ({ dayNumber: dayIndex + 1, title: `Tag ${dayIndex + 1}`, units: units.filter((unit) => unit.dayNumber === dayIndex + 1) })), conflicts: [], warnings: [], reviewItems: [] };
     }
   };
@@ -249,6 +249,8 @@ function registerIpc() {
     [DOCUMENT_ANALYSIS_CHANNELS.collaboration]: 'updatePlanCollaboration',
     [DOCUMENT_ANALYSIS_CHANNELS.reviseTarget]: 'revisePlanTarget',
     [DOCUMENT_ANALYSIS_CHANNELS.restoreVersion]: 'restorePlanVersion',
+    [DOCUMENT_ANALYSIS_CHANNELS.applyConfiguration]: 'applyCoursePlanConfiguration',
+    [DOCUMENT_ANALYSIS_CHANNELS.classbookModel]: 'getCoursePlanClassbookModel',
     'factory:save-planning-frame': 'savePlanningFrame',
     'factory:save-course-scope': 'saveCourseScope',
     [DOCUMENT_ANALYSIS_CHANNELS.generatePlan]: 'generateStructuredCoursePlan',
@@ -286,6 +288,13 @@ function registerIpc() {
     'factory:archive-container': 'archiveContainer'
   };
   Object.entries(calls).forEach(([channel, method]) => handle(channel, method));
+  ipcMain.handle(DOCUMENT_ANALYSIS_CHANNELS.exportPlan, async (event, projectId, version) => {
+    const project = getService().getCourseProject(projectId, standaloneSession);
+    const safeName = String(project.title || 'Unterrichtsplan').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').slice(0, 80);
+    const result = await dialog.showSaveDialog(mainWindow, { title: 'Unterrichtsplan exportieren', defaultPath: `${safeName}.xlsx`, filters: [{ name: 'Excel-Arbeitsmappe', extensions: ['xlsx'] }] });
+    if (result.canceled || !result.filePath) return { canceled: true };
+    return getService().exportCoursePlanXlsx(projectId, version, result.filePath, standaloneSession, { overwrite: true });
+  });
   ipcMain.handle('factory:publish-container', (event, containerId, options) => getService().publishContainer(containerId, standaloneSession, options));
 
   ipcMain.handle('factory:select-openai-key-txt', async () => {

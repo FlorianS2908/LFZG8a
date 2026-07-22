@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const { readZipPackage } = require('./document-processing/safe-zip-package');
 
 function parseCoursePlan(filePath, options = {}) {
   const fileName = path.basename(filePath || options.fileName || 'unterrichtsplan.xlsx');
@@ -36,23 +36,7 @@ function parseCoursePlan(filePath, options = {}) {
 }
 
 function readWorkbookXml(filePath) {
-  const script = [
-    'Add-Type -AssemblyName System.IO.Compression.FileSystem;',
-    `$zip=[System.IO.Compression.ZipFile]::OpenRead('${escapePowerShell(filePath)}');`,
-    '$entries=@{};',
-    '$zip.Entries | ForEach-Object {',
-    '  if ($_.FullName -match "^xl/(workbook|sharedStrings|worksheets/sheet[0-9]+)\\.xml$") {',
-    '    $reader=New-Object System.IO.StreamReader($_.Open());',
-    '    $entries[$_.FullName]=$reader.ReadToEnd();',
-    '    $reader.Close();',
-    '  }',
-    '};',
-    '$zip.Dispose();',
-    '$entries | ConvertTo-Json -Compress;'
-  ].join(' ');
-  const result = spawnSync('powershell.exe', ['-NoProfile', '-Command', script], { encoding: 'utf8', windowsHide: true });
-  if (result.status !== 0) throw new Error(result.stderr || result.stdout || 'PowerShell konnte XLSX nicht lesen.');
-  const entries = JSON.parse(String(result.stdout || '{}'));
+  const entries = Object.fromEntries(readZipPackage(filePath).filter((entry) => /^xl\/(workbook|sharedStrings|worksheets\/sheet[0-9]+)\.xml$/.test(entry.name)).map((entry) => [entry.name, entry.data.toString('utf8')]));
   const shared = parseSharedStrings(entries['xl/sharedStrings.xml'] || '');
   const workbookSheets = parseWorkbookSheets(entries['xl/workbook.xml'] || '');
   const sheetEntries = Object.entries(entries)

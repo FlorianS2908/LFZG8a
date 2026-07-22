@@ -874,8 +874,8 @@ function renderStructureReviewStep(wizard) {
     <h3>Struktur-Review</h3>
     <div class="summary-grid"><span>Kurs: ${escapeHtml(project.title)}</span><span>Zielgruppe: ${escapeHtml(project.targetGroup)}</span><span>Tage: ${escapeHtml((draft.structureFrameSnapshot || draft.planningFrameSnapshot)?.totalDays)}</span><span>planbare UE: ${escapeHtml((draft.structureFrameSnapshot || draft.planningFrameSnapshot)?.actuallyPlannableUnits)}</span><span>Planungsversion: ${escapeHtml(draft.planningVersion)}</span><span>KI: ${escapeHtml(draft.provider)} / ${escapeHtml(draft.model)}</span><span>Validierung: ${escapeHtml(draft.validation?.status)}</span></div>
     ${(draft.validation?.errors || []).map((error) => `<p class="status-line status-error">${escapeHtml(error)}</p>`).join('')}
-    <div class="course-plan-review-table" role="region" aria-label="Kursstruktur nach Tagen">${(draft.days || []).map((day) => `<details open><summary>Tag ${escapeHtml(day.dayNumber)}: ${escapeHtml(day.title)}</summary><div class="review-table-scroll"><table><colgroup><col class="col-ue"><col class="col-time"><col class="col-topic"><col class="col-content"><col class="col-objective"><col class="col-source"><col class="col-evidence"><col class="col-status"></colgroup><thead><tr><th>UE</th><th>Zeit</th><th>Thema</th><th>Inhalt</th><th>Lernziel</th><th>Quelle</th><th>Belegstatus</th><th>Status</th></tr></thead><tbody>${(day.units || []).map(renderPlanReviewUnit).join('')}</tbody></table></div></details>`).join('')}</div>
-    <div class="button-row"><button class="secondary-button" type="button" data-save-course-structure>Entwurf speichern</button><button class="primary-button" type="button" data-approve-course-structure ${draft.validation?.status === 'failed' ? 'disabled' : ''}>Kursstruktur freigeben und zur Didaktik wechseln</button></div>
+    <div class="course-plan-review-table" role="region" aria-label="Unterrichtsplan nach Tagen">${(draft.days || []).map((day) => `<details open><summary>Tag ${escapeHtml(day.dayNumber)}: ${escapeHtml(day.title)}</summary><div class="review-table-scroll"><table><thead><tr><th>Tag</th><th>UE</th><th>Fortlaufend</th><th>Dauer</th><th>Thema</th><th>Inhalt</th><th>Kompetenzziel</th><th>Arbeitsform</th><th>Quelle</th><th>Warnungen</th><th>Status</th></tr></thead><tbody>${(day.units || []).map(renderPlanReviewUnit).join('')}</tbody></table></div></details>`).join('')}</div>
+    <div class="button-row"><button class="secondary-button" type="button" data-save-course-structure>Entwurf speichern</button><button class="secondary-button" type="button" data-export-course-plan>Als Excel exportieren</button><button class="primary-button" type="button" data-approve-course-structure ${draft.validation?.status === 'failed' ? 'disabled' : ''}>Unterrichtsplan freigeben und zur Didaktik wechseln</button></div>
   </article>`;
 }
 
@@ -883,7 +883,8 @@ function renderPlanReviewUnit(unit) {
   const evidence = planningReviewView.evidenceStatus(unit);
   const sources = (unit.sourceReferences || []).map(planningReviewView.compactSource).filter(Boolean);
   const field = (name) => `data-structure-unit="${escapeHtml(unit.id)}" data-unit-field="${name}"`;
-  return `<tr class="plan-unit-row"><td data-label="UE">${escapeHtml(unit.unitNumber)}</td><td data-label="Zeit">${escapeHtml(unit.startTime || '')}–${escapeHtml(unit.endTime || '')}</td><td data-label="Thema"><input ${field('topic')} value="${escapeHtml(unit.topic)}" aria-label="Thema von UE ${escapeHtml(unit.unitNumber)}"></td><td data-label="Inhalt"><textarea ${field('content')} aria-label="Inhalt von UE ${escapeHtml(unit.unitNumber)}">${escapeHtml(unit.content)}</textarea></td><td data-label="Lernziel"><textarea ${field('preliminaryLearningObjective')} aria-label="Lernziel von UE ${escapeHtml(unit.unitNumber)}">${escapeHtml(unit.preliminaryLearningObjective)}</textarea></td><td data-label="Quelle"><div class="source-pill-list">${sources.length ? sources.map((source) => `<span class="source-pill">${escapeHtml(source)}</span>`).join('') : '<span>–</span>'}</div></td><td data-label="Belegstatus"><span class="evidence-badge evidence-${escapeHtml(evidence.tone)}">${escapeHtml(evidence.label)}</span>${evidence.supplementaryText ? `<small>${escapeHtml(evidence.supplementaryText)}</small>` : ''}</td><td data-label="Status"><select ${field('reviewStatus')} aria-label="Prüfstatus von UE ${escapeHtml(unit.unitNumber)}">${['open', 'reviewed', 'conflict'].map((value) => `<option value="${value}" ${unit.reviewStatus === value ? 'selected' : ''}>${escapeHtml(value)}</option>`).join('')}</select></td></tr><tr class="plan-unit-details"><td colspan="8"><details><summary>UE-Details und Materialbedarf</summary><p><strong>Voraussetzungen:</strong> ${escapeHtml((unit.prerequisites || []).map(formatAnalysisItem).join(', ') || 'keine angegeben')}</p><p><strong>Review-Hinweise:</strong> ${escapeHtml((unit.reviewItems || []).map(formatAnalysisItem).join(', ') || 'keine')}</p><label>Benutzerbemerkung<textarea ${field('notes')}>${escapeHtml(unit.notes || '')}</textarea></label>${renderAnalysisList('Vorgeschlagene Materialarten', unit.materialRequirements)}</details></td></tr>`;
+  const formats = [['lecture','Lehrgespräch'],['demonstration','Demonstration'],['guided_practice','Geführte Übung'],['individual','Einzelarbeit'],['pair','Partnerarbeit'],['group','Gruppenarbeit'],['project','Projektarbeit'],['self_study','Selbstlernphase'],['assessment','Lernstandskontrolle']];
+  return `<tr class="plan-unit-row"><td data-label="Tag">${escapeHtml(unit.dayNumber)}</td><td data-label="UE">${escapeHtml(unit.unitNumber)}</td><td data-label="Fortlaufend">${escapeHtml(unit.globalUnitNumber)}</td><td data-label="Dauer">${escapeHtml(unit.durationMinutes)} min</td><td data-label="Thema"><input ${field('topic')} value="${escapeHtml(unit.topic)}"></td><td data-label="Inhalt"><textarea ${field('content')}>${escapeHtml(unit.content)}</textarea></td><td data-label="Kompetenzziel"><textarea ${field('competencyGoal')}>${escapeHtml(unit.competencyGoal)}</textarea></td><td data-label="Arbeitsform"><select ${field('workFormat.key')}>${formats.map(([key,label]) => `<option value="${key}" ${unit.workFormat?.key === key ? 'selected' : ''}>${label}</option>`).join('')}</select></td><td data-label="Quelle"><div class="source-pill-list">${sources.length ? sources.map((source) => `<span class="source-pill">${escapeHtml(source)}</span>`).join('') : '<span>–</span>'}</div><small>${escapeHtml(evidence.label)}</small></td><td data-label="Warnungen">${escapeHtml((unit.warnings || []).map(formatAnalysisItem).join(' | ') || '–')}</td><td data-label="Status"><select ${field('reviewStatus')}>${['open', 'reviewed', 'conflict'].map((value) => `<option value="${value}" ${unit.reviewStatus === value ? 'selected' : ''}>${escapeHtml(value)}</option>`).join('')}</select></td></tr><tr class="plan-unit-details"><td colspan="11"><details><summary>Didaktische UE-Details</summary><p><strong>Lehrhandlung:</strong> ${escapeHtml(unit.teacherActivity || 'noch nicht angereichert')}</p><p><strong>Lernhandlung:</strong> ${escapeHtml(unit.learnerActivity || 'noch nicht angereichert')}</p><label>Bemerkung<textarea ${field('notes')}>${escapeHtml(unit.notes || '')}</textarea></label>${renderAnalysisList('Materialien', unit.materials || unit.materialRequirements)}${renderAnalysisList('Lernstand', unit.assessments)}${renderAnalysisList('Differenzierung', unit.differentiation)}</details></td></tr>`;
 }
 
 function normalizeDurationAndAudience(wizard) {
@@ -1040,6 +1041,7 @@ function renderContainerProfileStep(wizard) {
         <button class="secondary-button" type="button" data-profile-preset="jupyter">Jupyter hinzufügen</button>
       </div>
       ${wizard.curriculumDraft ? renderArtifactSuggestionPreview(wizard) : '<small>Vorschläge für Kursmaterialien erscheinen nach der Analyse des Unterrichtsplans.</small>'}
+      <div class="button-row"><button class="primary-button" type="button" data-apply-course-plan-configuration>Konfiguration auf Unterrichtsplan anwenden</button></div>
     </article>
   `;
 }
@@ -1527,6 +1529,8 @@ function bindPlanWizardEvents() {
   $all('[data-structure-unit]').forEach((field) => field.addEventListener('input', () => updateStructuredUnit(field.dataset.structureUnit, field.dataset.unitField, field.value)));
   $('[data-save-course-structure]')?.addEventListener('click', saveWizardCourseStructure);
   $('[data-approve-course-structure]')?.addEventListener('click', approveWizardCourseStructure);
+  $('[data-export-course-plan]')?.addEventListener('click', exportWizardCoursePlan);
+  $('[data-apply-course-plan-configuration]')?.addEventListener('click', applyWizardCoursePlanConfiguration);
   $('[data-wizard-ranges]')?.addEventListener('input', (event) => {
     state.wizard.rangesText = event.target.value;
   });
@@ -1976,6 +1980,7 @@ function wizardProjectInput() {
     targetGroup: selectionText(state.wizard.structureFrame.targetAudience),
     priorKnowledge: selectionText(state.wizard.structureFrame.priorKnowledge),
     audienceProfile: { ...state.wizard.targetAudience },
+    containerProfile: { ...state.wizard.containerProfile },
     structureFrame: { ...state.wizard.structureFrame },
     uploadedDocuments: state.wizard.anchorFiles.map((file) => ({
       ...file, originalFileName: file.name, storedFilePath: file.path, mimeType: file.type,
@@ -1989,6 +1994,7 @@ async function openSavedCourseProject(event) {
   try {
     const project = await desktop.factory.getCourseProject(event.target.value);
     state.wizard.courseProject = project;
+    if (project.containerProfile) state.wizard.containerProfile = project.containerProfile;
     state.wizard.course = { ...state.wizard.course, courseName: project.title, courseId: project.id, description: project.description, department: project.subjectArea };
     state.wizard.anchorFiles = (project.uploadedDocuments || []).map((file) => ({ ...file, name: file.originalFileName, path: file.storedFilePath, type: file.mimeType, size: file.fileSize, sourceType: file.declaredCategory }));
     if (project.planningFrame) {
@@ -2247,7 +2253,7 @@ function updateStructuredUnit(unitId, field, value) {
   const draft = currentStructuredDraft();
   for (const day of draft?.days || []) {
     const unit = (day.units || []).find((item) => item.id === unitId);
-    if (unit) { unit[field] = value; unit.reviewStatus = 'edited'; unit.userEdited = true; break; }
+    if (unit) { if (field === 'workFormat.key') { const labels = { lecture: 'Lehrgespräch', demonstration: 'Demonstration', guided_practice: 'Geführte Übung', individual: 'Einzelarbeit', pair: 'Partnerarbeit', group: 'Gruppenarbeit', project: 'Projektarbeit', self_study: 'Selbstlernphase', assessment: 'Lernstandskontrolle' }; unit.workFormat = { key: value, label: labels[value] }; } else unit[field] = value; unit.reviewStatus = 'edited'; unit.userEdited = true; break; }
   }
 }
 
@@ -2256,6 +2262,18 @@ async function saveWizardCourseStructure() {
     state.wizard.courseProject = await desktop.factory.saveStructuredCoursePlan(state.wizard.course.courseId, currentStructuredDraft());
     state.wizard.status = 'Kursstruktur-Entwurf gespeichert.';
   } catch (error) { state.wizard.status = error.message; }
+  renderPlanWizard();
+}
+
+async function exportWizardCoursePlan() {
+  try { const draft = currentStructuredDraft(); const result = await desktop.factory.exportCoursePlanXlsx(state.wizard.course.courseId, draft.planningVersion); state.wizard.status = result.canceled ? 'Export abgebrochen.' : `Unterrichtsplan mit ${result.rowCount} UE exportiert.`; }
+  catch (error) { state.wizard.status = error.message; }
+  renderPlanWizard();
+}
+
+async function applyWizardCoursePlanConfiguration() {
+  try { state.wizard.courseProject = await desktop.factory.applyCoursePlanConfiguration(state.wizard.course.courseId, state.wizard.containerProfile); state.wizard.status = 'Container-Konfiguration wurde deterministisch auf den Unterrichtsplan angewendet.'; }
+  catch (error) { state.wizard.status = error.message; }
   renderPlanWizard();
 }
 

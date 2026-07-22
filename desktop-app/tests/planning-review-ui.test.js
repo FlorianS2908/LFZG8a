@@ -36,7 +36,9 @@ test('Planungsreview nutzt volle Breite, feste Fachproportionen und Kartenansich
   assert.match(css, /overflow-wrap: normal; word-break: normal/);
   assert.match(css, /@media \(max-width: 900px\)/);
   assert.match(css, /content: attr\(data-label\)/);
-  assert.match(ui, /<th>Belegstatus<\/th>/);
+  assert.match(ui, /<th>Kompetenzziel<\/th>/);
+  assert.match(ui, /<th>Arbeitsform<\/th>/);
+  assert.match(ui, /data-export-course-plan/);
   assert.doesNotMatch(ui, /<th>Confidence<\/th>/);
   assert.doesNotMatch(ui, /Math\.round\(Number\(unit\.confidence/);
   assert.match(html, /planning-review-view-model\.js/);

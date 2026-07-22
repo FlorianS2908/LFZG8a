@@ -96,7 +96,7 @@ test('Neuplanung erzeugt Versionen und freigegebener Snapshot ist geschützt', a
     name: 'mock-openai', model: 'test-model', isConfigured: () => true,
     async generateStructuredCoursePlan(input) {
       const count = input.structureFrame.actuallyPlannableUnits;
-      return { summary: 'Plan', days: [{ dayNumber: 1, title: 'Tag 1', units: Array.from({ length: count }, (_, index) => ({ id: `u${index + 1}`, dayNumber: 1, unitNumber: index + 1, topic: `Thema ${index + 1}`, content: 'Inhalt', preliminaryLearningObjective: 'Ziel', sourceReferences: [{ documentId: 'd1', fileName: 'quelle.md' }], originStatus: 'explicit', confidence: 1, reviewStatus: 'open' })) }], conflicts: [], warnings: [], reviewItems: [] };
+      return { summary: 'Plan', days: [{ dayNumber: 1, title: 'Tag 1', units: Array.from({ length: count }, (_, index) => ({ id: `u${index + 1}`, dayNumber: 1, unitNumber: index + 1, globalUnitNumber: index + 1, durationMinutes: 45, topic: `Thema ${index + 1}`, content: 'Inhalt', competencyGoal: 'Ziel', workFormat: { key: 'guided_practice', label: 'Geführte Übung' }, sourceReferences: [{ documentId: 'd1', fileName: 'quelle.md' }], warnings: [], assumptions: [], originStatus: 'explicit', confidence: 1, reviewStatus: 'open' })) }], conflicts: [], warnings: [], reviewItems: [] };
     }
   };
   const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: provider } });
@@ -127,7 +127,7 @@ test('Mehrdokumentlauf normalisiert Einzelfund, bewahrt Erfolge und plant trotz 
       return { documentId: input.document.id, documentType: 'text', detectedCategory: 'Fachquelle', summary: 'Quellenanalyse', topics: [{ title: 'Fachthema' }], learningObjectives: { title: 'Fachziel' }, confidence: 0.9 };
     },
     async generateStructuredCoursePlan() {
-      return { summary: 'Plan', days: [{ dayNumber: 1, title: 'Tag 1', units: [{ id: 'u1', dayNumber: 1, unitNumber: 1, topic: 'Fachthema', content: 'Fachneutraler Inhalt', preliminaryLearningObjective: 'Fachziel', sourceReferences: [{ documentId: 'd1', fileName: 'quelle-a.md' }], originStatus: 'explicit', confidence: 0.9, reviewStatus: 'open', materialRequirements: [{ type: 'handout', action: 'generate', targetFormat: 'pdf', reviewRequired: true }] }] }], conflicts: [], warnings: [], reviewItems: [] };
+      return { summary: 'Plan', days: [{ dayNumber: 1, title: 'Tag 1', units: [{ id: 'u1', dayNumber: 1, unitNumber: 1, globalUnitNumber: 1, durationMinutes: 45, topic: 'Fachthema', content: 'Fachneutraler Inhalt', competencyGoal: 'Fachziel', workFormat: { key: 'guided_practice', label: 'Geführte Übung' }, sourceReferences: [{ documentId: 'd1', fileName: 'quelle-a.md' }], warnings: [], assumptions: [], originStatus: 'explicit', confidence: 0.9, reviewStatus: 'open', materialRequirements: [{ type: 'handout', action: 'generate', targetFormat: 'pdf', reviewRequired: true }] }] }], conflicts: [], warnings: [], reviewItems: [] };
     }
   };
   const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: provider } });
@@ -175,7 +175,7 @@ test('Gemischter Analyselauf beendet terminal und bewahrt Einzelergebnisse', asy
       if (document.id === 'fail' && failShouldThrow) throw new Error('Providerfehler sk-test-secret');
       return { documentId: document.id, documentType: 'markdown', detectedCategory: 'Quelle', summary: 'Zusammenfassung', topics: [{ title: document.id }], learningObjectives: [{ title: 'Ziel' }], warnings: document.id === 'warn' ? [{ message: 'Prüfen' }] : [], confidence: 0.9 };
     },
-    async generateStructuredCoursePlan() { return { summary: 'Plan', days: [{ dayNumber: 1, title: 'Tag', units: [{ id: 'u1', dayNumber: 1, unitNumber: 1, topic: 'Thema', content: 'Inhalt', preliminaryLearningObjective: 'Ziel', sourceReferences: [{ documentId: 'ok' }], originStatus: 'explicit' }] }] }; }
+    async generateStructuredCoursePlan() { return { summary: 'Plan', days: [{ dayNumber: 1, title: 'Tag', units: [{ id: 'u1', dayNumber: 1, unitNumber: 1, globalUnitNumber: 1, durationMinutes: 45, topic: 'Thema', content: 'Inhalt', competencyGoal: 'Ziel', workFormat: { key: 'individual', label: 'Einzelarbeit' }, sourceReferences: [{ documentId: 'ok' }], warnings: [], assumptions: [], originStatus: 'explicit' }] }] }; }
   };
   const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: provider }, logger: { info() {}, error() {} } });
   service.upsertProject({ id: 'mixed', title: 'Gemischt' });
@@ -210,7 +210,7 @@ test('Analyse verwendet gespeicherten Vollkontext und repariert eine formal fals
   fs.writeFileSync(source, '# Netzwerke\nSichere Segmentierung', 'utf8');
   let analysisInput;
   const planningInputs = [];
-  const unit = (number) => ({ id: `u${number}`, dayNumber: 1, unitNumber: number, topic: `Thema ${number}`, content: 'Inhalt', preliminaryLearningObjective: 'Ziel', sourceReferences: [{ documentId: 'doc' }], originStatus: 'explicit' });
+  const unit = (number) => ({ id: `u${number}`, dayNumber: 1, unitNumber: number, globalUnitNumber: number, durationMinutes: 45, topic: `Thema ${number}`, content: 'Inhalt', competencyGoal: 'Ziel', workFormat: { key: 'individual', label: 'Einzelarbeit' }, sourceReferences: [{ documentId: 'doc' }], warnings: [], assumptions: [], originStatus: 'explicit' });
   const provider = {
     name: 'fake', model: 'fake-model', isConfigured: () => true,
     async analyzeDocument(input) {
@@ -329,7 +329,7 @@ test('Planungsprompt und Review bleiben fachneutral und Materialgeneratoren sind
   const generators = fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'content-factory', 'artifact-generators', 'artifact-generator-service.js'), 'utf8');
   assert.match(provider, /Das System ist fachneutral/);
   assert.match(provider, /materialRequirements/);
-  assert.match(renderer, /Vorgeschlagene Materialarten/);
+  assert.match(renderer, /renderAnalysisList\('Materialien'/);
   assert.match(generators, /registerArtifactGenerator/);
 });
 

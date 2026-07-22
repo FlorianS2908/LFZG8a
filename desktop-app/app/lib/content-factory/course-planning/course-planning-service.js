@@ -7,6 +7,8 @@ const { normalizeDocumentAnalysis, validateDocumentAnalysis } = require('./docum
 const { createSourceStorageService } = require('./source-storage-service');
 const { prepareDocument, cleanupPreparedFiles } = require('../document-processing/document-preparation-service');
 const { normalizeCollaboration, buildAiUnderstanding, validateRanges, revisePlanTarget, diffPlans } = require('./collaboration-model');
+const { normalizeCanonicalPlan, validateCanonicalPlan, enrichPlanWithContainerConfiguration, toClassbookModel } = require('./canonical-course-plan');
+const { exportCoursePlanXlsx } = require('./course-plan-xlsx-exporter');
 
 const ORIGIN_STATUSES = new Set(['explicit', 'derived', 'generated', 'conflicting', 'needs_review']);
 const TERMINAL_OPERATION_STATUSES = new Set(['completed', 'completed_with_warnings', 'failed', 'cancelled']);
@@ -353,14 +355,15 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
       course: projectContext(project), structureFrame: cloneSerializable(structureFrame),
       topicCatalog: cloneSerializable(project.topicCatalog || consolidateTopicCatalog(analyses)),
       ueScaffold: cloneSerializable(input.scaffold || project.ueScaffold || buildUeScaffold(structureFrame)),
-      bindingTopics: input.bindingTopics || [], excludedTopics: input.excludedTopics || []
+      bindingTopics: input.bindingTopics || [], excludedTopics: input.excludedTopics || [],
+      planningConfiguration: cloneSerializable(project.containerProfile?.didacticCourse || project.structuredRequirements || {})
     };
     const knownDocumentIds = new Set([...project.uploadedDocuments.map((document) => document.id), ...analyses.map((analysis) => analysis.documentId)]);
-    let raw = deduplicatePlanSources(await provider.generateStructuredCoursePlan(planningInput, { signal: input.signal }));
-    let validation = validateCoursePlan(raw, structureFrame, knownDocumentIds);
+    let raw = normalizeCanonicalPlan(deduplicatePlanSources(await provider.generateStructuredCoursePlan(planningInput, { signal: input.signal })), { ...structureFrame, courseId: project.id, title: project.title });
+    let validation = validateCanonicalPlan(raw, structureFrame, knownDocumentIds);
     if (validation.status === 'failed') {
-      raw = deduplicatePlanSources(await provider.generateStructuredCoursePlan({ ...planningInput, repairAttempt: 1, validationErrors: validation.errors }, { signal: input.signal }));
-      validation = validateCoursePlan(raw, structureFrame, knownDocumentIds);
+      raw = normalizeCanonicalPlan(deduplicatePlanSources(await provider.generateStructuredCoursePlan({ ...planningInput, repairAttempt: 1, validationErrors: validation.errors }, { signal: input.signal })), { ...structureFrame, courseId: project.id, title: project.title });
+      validation = validateCanonicalPlan(raw, structureFrame, knownDocumentIds);
     }
     if (validation.status === 'failed') {
       const error = new Error(`Die KI-Kursstruktur passt auch nach einem Reparaturversuch nicht zum bestätigten Kursrahmen: ${validation.errors.join(' | ')}`);
@@ -373,7 +376,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
       status: 'draft', validation,
       sourceAnalysisVersions: analyses.map((item) => ({ documentId: item.documentId, analysisVersion: item.analysisVersion })),
       structureFrameSnapshot: structureFrame, provider: provider.name, model: provider.model,
-      promptVersion: 'course-plan-v1', createdAt: now, updatedAt: now
+      promptVersion: 'course-plan-v2', planningStage: 'ai_groundwork', classbookModel: toClassbookModel(raw), createdAt: now, updatedAt: now
     };
     project.coursePlanDrafts.push(draft);
     project.currentPlanningVersion = planningVersion;
@@ -383,8 +386,9 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
   function saveCoursePlanDraft(projectId, draft = {}) {
     const project = getProject(projectId);
     if (project.approvedCoursePlan?.planningVersion === draft.planningVersion) throw new Error('Eine freigegebene Kursstruktur darf nicht überschrieben werden.');
-    const validation = validateCoursePlan(draft, draft.structureFrameSnapshot || project.structureFrame);
-    const updated = { ...draft, validation, status: validation.status === 'failed' ? 'needs_review' : 'draft', updatedAt: new Date().toISOString() };
+    const canonical = normalizeCanonicalPlan(draft, { ...(draft.structureFrameSnapshot || project.structureFrame), courseId: project.id, title: project.title });
+    const validation = validateCanonicalPlan(canonical, draft.structureFrameSnapshot || project.structureFrame);
+    const updated = { ...canonical, validation, classbookModel: toClassbookModel(canonical), status: validation.status === 'failed' ? 'needs_review' : 'draft', updatedAt: new Date().toISOString() };
     project.coursePlanDrafts = [...project.coursePlanDrafts.filter((item) => item.id !== updated.id), updated];
     return saveProject(project);
   }
@@ -399,7 +403,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     const project = getProject(projectId);
     const draft = project.coursePlanDrafts.find((item) => Number(item.planningVersion) === Number(version));
     if (!draft) throw new Error('Kursstruktur wurde nicht gefunden.');
-    const validation = validateCoursePlan(draft, draft.structureFrameSnapshot || project.structureFrame);
+    const validation = validateCanonicalPlan(draft, draft.structureFrameSnapshot || project.structureFrame);
     if (validation.status === 'failed') throw new Error('Die Kursstruktur enthält blockierende Validierungsfehler.');
     if (project.uploadedDocuments.some((document) => document.bindingLevel === 'binding' && document.analysisStatus === 'failed' && !document.failureAcknowledged)) throw new Error('Verbindliche fehlgeschlagene Dokumente müssen erneut analysiert oder ausdrücklich als Ausnahme bestätigt werden.');
     if ((draft.conflicts || []).some((item) => item.blocking && !item.confirmed)) throw new Error('Blockierende Konflikte müssen bearbeitet oder bestätigt werden.');
@@ -410,6 +414,36 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
   }
 
   function getAiUnderstanding(projectId) { return buildAiUnderstanding(getProject(projectId)); }
+
+  function applyContainerConfiguration(projectId, containerProfile = {}) {
+    const project = getProject(projectId);
+    const current = project.coursePlanDrafts.find((item) => Number(item.planningVersion) === Number(project.currentPlanningVersion));
+    if (!current) throw new Error('Unterrichtsplan wurde nicht gefunden.');
+    const enriched = enrichPlanWithContainerConfiguration(current, containerProfile);
+    const validation = validateCanonicalPlan(enriched, current.structureFrameSnapshot || project.structureFrame);
+    if (validation.status === 'failed') throw new Error(`Die Konfiguration erzeugt keinen gÃ¼ltigen Unterrichtsplan: ${validation.errors.join(' | ')}`);
+    const planningVersion = Number(project.currentPlanningVersion) + 1; const now = new Date().toISOString();
+    const version = { ...enriched, id: `course-plan-${project.id}-${planningVersion}`, planningVersion, parentPlanningVersion: current.planningVersion, status: 'draft', planningStage: 'container_enriched', validation, containerProfileSnapshot: cloneSerializable(containerProfile), classbookModel: toClassbookModel(enriched), diff: diffPlans(current, enriched), createdAt: now, updatedAt: now };
+    project.containerProfile = cloneSerializable(containerProfile); project.coursePlanDrafts.push(version); project.currentPlanningVersion = planningVersion;
+    project.planVersions.push({ planningVersion, parentPlanningVersion: current.planningVersion, targetType: 'container_configuration', diff: version.diff, createdAt: now });
+    return saveProject(project);
+  }
+
+  function getClassbookModel(projectId, version) {
+    const project = getProject(projectId); const plan = project.coursePlanDrafts.find((item) => Number(item.planningVersion) === Number(version || project.currentPlanningVersion));
+    if (!plan) throw new Error('Unterrichtsplan wurde nicht gefunden.');
+    return toClassbookModel(plan);
+  }
+
+  function exportStoredCoursePlan(projectId, version, outputPath, options = {}) {
+    const project = getProject(projectId); const plan = project.coursePlanDrafts.find((item) => Number(item.planningVersion) === Number(version || project.currentPlanningVersion));
+    if (!plan) throw new Error('Unterrichtsplan wurde nicht gefunden.');
+    const validation = validateCanonicalPlan(plan, plan.structureFrameSnapshot || project.structureFrame);
+    if (validation.status === 'failed') throw new Error('Nur ein vollstÃ¤ndiger, gÃ¼ltiger Unterrichtsplan kann exportiert werden.');
+    const result = exportCoursePlanXlsx(plan, outputPath, { ...options, configuration: plan.containerProfileSnapshot || project.containerProfile || {} });
+    project.exports = [...(project.exports || []), { type: 'course-plan-xlsx', planningVersion: plan.planningVersion, fileName: path.basename(outputPath), rowCount: result.rowCount, exportedAt: result.exportedAt }]; saveProject(project);
+    return result;
+  }
 
   function updatePlanCollaboration(projectId, input = {}) {
     const project = getProject(projectId);
@@ -449,7 +483,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     return saveProject(project);
   }
 
-  return { getProject, listProjects, upsertProject, importSourceFile, startDocumentAnalysis, startCoursePlanning, getAnalysisProgress, getOperationStatus, getPlanningResult, cancelAiOperation, savePlanningFrame, saveCourseScope, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan, getAiUnderstanding, updatePlanCollaboration, reviseTarget, restorePlanVersion };
+  return { getProject, listProjects, upsertProject, importSourceFile, startDocumentAnalysis, startCoursePlanning, getAnalysisProgress, getOperationStatus, getPlanningResult, cancelAiOperation, savePlanningFrame, saveCourseScope, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan, applyContainerConfiguration, getClassbookModel, exportStoredCoursePlan, getAiUnderstanding, updatePlanCollaboration, reviseTarget, restorePlanVersion };
 }
 
 function analysisInputError(message) { const error = new Error(message); error.code = 'DOCUMENT_ANALYSIS_INPUT'; return error; }
@@ -603,6 +637,8 @@ function normalizeProject(project, id) {
   else if (normalized.structureFrame) normalized.structureFrame = { ...normalized.structureFrame, ...calculateCourseScope({ ...normalized.structureFrame, targetAudience: normalized.structureFrame.targetAudience ?? normalized.structureFrame.targetGroup ?? normalized.targetGroup, priorKnowledge: normalized.structureFrame.priorKnowledge ?? normalized.priorKnowledge }) };
   normalized.uploadedDocuments = (normalized.uploadedDocuments || []).map(normalizeDocument);
   normalized.documentAnalyses = (normalized.documentAnalyses || []).map((analysis) => ({ ...analysis, ...normalizeDocumentAnalysis(analysis, { documentId: analysis.documentId, documentType: analysis.documentType }).value }));
+  normalized.coursePlanDrafts = (normalized.coursePlanDrafts || []).map((draft) => { const plan = normalizeCanonicalPlan(draft, { ...(draft.structureFrameSnapshot || normalized.structureFrame || {}), courseId: normalized.id, title: normalized.title }); return { ...plan, classbookModel: toClassbookModel(plan) }; });
+  if (normalized.approvedCoursePlan) normalized.approvedCoursePlan = normalizeCanonicalPlan(normalized.approvedCoursePlan, { ...(normalized.approvedCoursePlan.structureFrameSnapshot || normalized.structureFrame || {}), courseId: normalized.id, title: normalized.title });
   normalized.pipelinePhases = { ...defaultPipelinePhases(), ...(normalized.pipelinePhases || {}) };
   return normalizeCollaboration(normalized);
 }
