@@ -1,4 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
+const { DOCUMENT_ANALYSIS_CHANNELS } = require('./lib/content-factory/course-planning/analysis-ipc-contract');
 
 const invoke = (channel) => (...args) => ipcRenderer.invoke(channel, ...args);
 contextBridge.exposeInMainWorld('lfzq8aDesktop', {
@@ -10,10 +11,10 @@ contextBridge.exposeInMainWorld('lfzq8aDesktop', {
     listCurriculumDrafts: invoke('factory:list-curriculum-drafts'), removeCurriculumDraft: invoke('factory:remove-curriculum-draft'),
     parseCoursePlan: invoke('factory:parse-course-plan'), getAiProviderStatus: invoke('factory:get-ai-provider-status'),
     getCourseProject: invoke('factory:get-course-project'), upsertCourseProject: invoke('factory:upsert-course-project'),
-    startDocumentAnalysis: invoke('factory:start-document-analysis'), getAnalysisProgress: invoke('factory:get-analysis-progress'),
-    cancelAiOperation: invoke('factory:cancel-ai-operation'), savePlanningFrame: invoke('factory:save-planning-frame'),
+    startDocumentAnalysis: invoke(DOCUMENT_ANALYSIS_CHANNELS.start), getAnalysisProgress: invoke(DOCUMENT_ANALYSIS_CHANNELS.progress),
+    cancelAiOperation: invoke(DOCUMENT_ANALYSIS_CHANNELS.cancel), savePlanningFrame: invoke('factory:save-planning-frame'),
     saveCourseScope: invoke('factory:save-course-scope'),
-    generateStructuredCoursePlan: invoke('factory:generate-structured-course-plan'), saveStructuredCoursePlan: invoke('factory:save-structured-course-plan'),
+    generateStructuredCoursePlan: invoke(DOCUMENT_ANALYSIS_CHANNELS.generatePlan), saveStructuredCoursePlan: invoke('factory:save-structured-course-plan'),
     acknowledgeDocumentFailure: invoke('factory:acknowledge-document-failure'),
     approveStructuredCoursePlan: invoke('factory:approve-structured-course-plan'),
     testOpenAiConnection: invoke('factory:test-openai-connection'),

@@ -7,7 +7,7 @@ const { normalizeDocumentAnalysis, validateDocumentAnalysis } = require('./docum
 
 const ORIGIN_STATUSES = new Set(['explicit', 'derived', 'generated', 'conflicting', 'needs_review']);
 
-function createCoursePlanningService({ factoryDir, aiOrchestrator }) {
+function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = console }) {
   const rootDir = path.join(factoryDir, 'course-projects');
   const operations = new Map();
   const ensureStore = () => ensureDir(rootDir);
@@ -36,19 +36,38 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator }) {
   }
 
   function startDocumentAnalysis(input = {}) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) throw analysisInputError('Die Analyseanfrage ist ungültig.');
     const project = upsertProject(input.project || { id: input.projectId });
     const provider = aiOrchestrator.openai;
     if (!provider?.isConfigured()) throw new Error('KI nicht konfiguriert. Bitte OPENAI_API_KEY und OPENAI_MODEL in den KI-Einstellungen konfigurieren.');
     if (!project.structureFrame?.valid || !project.structureFrame?.confirmed) throw new Error('Dauer und Zielgruppe müssen vor der KI-Analyse vollständig bestätigt werden.');
-    const operationId = `analysis-${Date.now()}`;
+    if ([...operations.values()].some((item) => item.projectId === project.id && item.progress.status === 'running')) throw analysisInputError('Für dieses Kursprojekt läuft bereits eine Dokumentanalyse.');
+    const retryDocumentId = typeof input.retryDocumentId === 'string' ? input.retryDocumentId.trim() : '';
+    const sourceDocuments = Array.isArray(input.documents) ? input.documents : project.uploadedDocuments;
+    const seenIds = new Set();
+    sourceDocuments.forEach((document) => {
+      if (!document || typeof document.id !== 'string' || !document.id.trim()) throw analysisInputError('Jedes Dokument benötigt eine gültige ID.');
+      if (seenIds.has(document.id)) throw analysisInputError(`Die Dokument-ID „${document.id}“ ist doppelt vorhanden.`);
+      seenIds.add(document.id);
+    });
+    const selectedDocuments = sourceDocuments.filter((document) => !document.excluded && (!retryDocumentId || document.id === retryDocumentId));
+    if (!selectedDocuments.length) throw analysisInputError(retryDocumentId ? `Das Dokument „${retryDocumentId}“ wurde nicht gefunden oder ist ausgeschlossen.` : 'Es wurden keine analysierbaren Dokumente gefunden.');
+    const operationId = `analysis-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const controller = new AbortController();
-    const total = (input.documents || project.uploadedDocuments || []).filter((item) => !item.excluded && (!input.retryDocumentId || item.id === input.retryDocumentId)).length;
-    const progress = { operationId, status: 'running', step: 'Dokumente werden vorbereitet', currentDocument: '', total, queued: total, completed: 0, warningCount: 0, failed: 0, warnings: [], errors: [] };
+    const total = selectedDocuments.length;
+    const progress = { operationId, projectId: project.id, status: 'running', step: 'Dokumente werden vorbereitet', currentDocument: '', total, queued: total, inProgress: 0, completed: 0, warningCount: 0, failed: 0, warnings: [], errors: [], startedAt: new Date().toISOString(), completedAt: null };
+    const operationInput = { ...input, retryDocumentId, selectedDocumentIds: selectedDocuments.map((document) => document.id) };
     const operation = { controller, progress, projectId: project.id };
     operations.set(operationId, operation);
-    operation.promise = runDocumentAnalysis(input, project, provider, controller, progress).catch((error) => {
+    logger.info?.('[DocumentAnalysis]', { event: 'started', operationId, projectId: project.id, documentCount: total });
+    operation.promise = runDocumentAnalysis(operationInput, project, provider, controller, progress).catch((error) => {
       progress.status = controller.signal.aborted ? 'cancelled' : 'failed';
       progress.errors.push(safeError(error));
+    }).finally(() => {
+      progress.inProgress = 0;
+      progress.currentDocument = '';
+      progress.completedAt = new Date().toISOString();
+      logger.info?.('[DocumentAnalysis]', { event: 'finished', operationId, projectId: project.id, status: progress.status, completed: progress.completed, warnings: progress.warningCount, failed: progress.failed });
     });
     return { operationId, status: 'running', progress };
   }
@@ -58,13 +77,19 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator }) {
     const existingDocuments = new Map((project.uploadedDocuments || []).map((document) => [document.id, document]));
     const uploadedDocuments = (input.documents || project.uploadedDocuments || []).map((document, index) => normalizeDocument({ ...(existingDocuments.get(document.id) || {}), ...document }, index));
     project.uploadedDocuments = uploadedDocuments;
-    for (const [index, document] of uploadedDocuments.filter((item) => !item.excluded && (!input.retryDocumentId || item.id === input.retryDocumentId)).entries()) {
+    const selectedIds = new Set(input.selectedDocumentIds || []);
+    for (const [index, document] of uploadedDocuments.filter((item) => selectedIds.has(item.id)).entries()) {
       if (controller.signal.aborted) break;
       document.startedAt = new Date().toISOString();
       document.analysisAttempts = Number(document.analysisAttempts || 0) + 1;
+      document.analysisError = null;
+      document.extractionStatus = 'queued';
+      document.analysisStatus = 'queued';
       document.processingStep = `Dokument ${index + 1} von ${progress.total} wird gelesen`;
       document.analysisStatus = 'extracting';
+      logger.info?.('[DocumentAnalysis]', { event: 'document_started', operationId: progress.operationId, projectId: project.id, documentId: document.id, step: document.processingStep });
       progress.queued = Math.max(0, progress.total - index - 1);
+      progress.inProgress = 1;
       try {
         progress.currentDocument = document.originalFileName;
         progress.step = document.processingStep;
@@ -95,21 +120,24 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator }) {
         document.detectedCategory = analysis.detectedCategory;
         document.analysisError = null;
         document.endedAt = new Date().toISOString();
-        progress.completed += 1;
         if (document.analysisStatus === 'analyzed_with_warnings') progress.warningCount += 1;
+        else progress.completed += 1;
         saveProject({ ...project, documentAnalyses: analyses });
       } catch (error) {
         if (controller.signal.aborted) {
           document.analysisStatus = 'cancelled';
         } else {
+          if (document.extractionStatus !== 'extracted') document.extractionStatus = 'failed';
           document.analysisStatus = 'failed';
           document.analysisError = { message: safeError(error), code: error.code || 'DOCUMENT_ANALYSIS_FAILED', step: document.processingStep, field: error.field || '', expected: error.expected || '', received: error.received || '' };
           progress.failed += 1;
           progress.errors.push({ documentId: document.id, fileName: document.originalFileName, ...document.analysisError });
+          logger.error?.('[DocumentAnalysis]', { event: 'document_failed', operationId: progress.operationId, projectId: project.id, documentId: document.id, step: document.processingStep, message: safeError(error) });
         }
         document.endedAt = new Date().toISOString();
         saveProject({ ...project, documentAnalyses: analyses, uploadedDocuments });
       }
+      progress.inProgress = 0;
     }
     project.documentAnalyses = analyses;
     project.uploadedDocuments = uploadedDocuments;
@@ -122,7 +150,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator }) {
     progress.step = 'Tage und Unterrichtseinheiten werden geplant';
     await generateCoursePlan({ projectId: project.id, signal: controller.signal });
     progress.step = 'Kursstruktur wird validiert';
-    progress.status = 'completed';
+    progress.status = progress.failed || progress.warningCount ? 'completed_with_warnings' : 'completed';
     progress.step = 'Review wird vorbereitet';
   }
 
@@ -135,6 +163,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator }) {
     if (!operation) return { cancelled: false };
     operation.controller.abort();
     operation.progress.status = 'cancelled';
+    operation.progress.completedAt = new Date().toISOString();
     return { cancelled: true, operationId };
   }
 
@@ -222,6 +251,8 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator }) {
 
   return { getProject, listProjects, upsertProject, startDocumentAnalysis, getAnalysisProgress, cancelAiOperation, savePlanningFrame, saveCourseScope, generateCoursePlan, saveCoursePlanDraft, acknowledgeDocumentFailure, approveCoursePlan };
 }
+
+function analysisInputError(message) { const error = new Error(message); error.code = 'DOCUMENT_ANALYSIS_INPUT'; return error; }
 
 function extractDocument(document) {
   const extension = path.extname(document.originalFileName || document.storedFilePath || '').toLowerCase();
@@ -346,6 +377,6 @@ function safeId(value) { const id = String(value || 'course-project').toLowerCas
 function positive(value, label, errors) { const number = Number(value); if (!Number.isFinite(number) || number <= 0) { errors.push(`${label} muss größer als 0 sein.`); return 0; } return number; }
 function positiveInteger(value, label, errors) { const number = Number(value); if (!Number.isInteger(number) || number <= 0) { errors.push(`${label} muss eine positive ganze Zahl sein.`); return 0; } return number; }
 function minutes(value) { const match = /^(\d{1,2}):(\d{2})$/.exec(String(value || '')); if (!match) return null; const result = Number(match[1]) * 60 + Number(match[2]); return result >= 0 && result < 1440 ? result : null; }
-function safeError(error) { return String(error?.message || 'Unbekannter Analysefehler').replace(/sk-[A-Za-z0-9_-]+/g, '[geschützt]').slice(0, 1000); }
+function safeError(error) { return String(error?.message || 'Unbekannter Analysefehler').replace(/sk-[A-Za-z0-9_-]+/g, '[geschützt]').replace(/Bearer\s+[^\s]+/gi, 'Bearer [geschützt]').slice(0, 1000); }
 
 module.exports = { createCoursePlanningService, extractDocument, calculatePlanningFrame, calculateCourseScope, validateDocumentAnalysis, validateCoursePlan, normalizeProject, TARGET_AUDIENCES, PRIOR_KNOWLEDGE };

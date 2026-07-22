@@ -59,7 +59,8 @@ function readWorkbookXml(filePath) {
     .filter(([name]) => /^xl\/worksheets\/sheet\d+\.xml$/.test(name))
     .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
   const sheets = sheetEntries.map(([entryName, xml], index) => ({
-    name: workbookSheets[index] || `Tabelle${index + 1}`,
+    name: workbookSheets[index]?.name || `Tabelle${index + 1}`,
+    hidden: Boolean(workbookSheets[index]?.hidden),
     entryName,
     rows: parseSheetRows(xml, shared)
   }));
@@ -67,7 +68,10 @@ function readWorkbookXml(filePath) {
 }
 
 function parseWorkbookSheets(xml) {
-  return Array.from(String(xml || '').matchAll(/<sheet\b[^>]*name="([^"]+)"/g)).map((match) => decodeXml(match[1]));
+  return Array.from(String(xml || '').matchAll(/<sheet\b([^>]*)name="([^"]+)"([^>]*)/g)).map((match) => {
+    const attrs = `${match[1]} ${match[3]}`;
+    return { name: decodeXml(match[2]), hidden: /state="(?:hidden|veryHidden)"/i.test(attrs) };
+  });
 }
 
 function parseSharedStrings(xml) {

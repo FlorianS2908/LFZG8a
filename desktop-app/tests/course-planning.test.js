@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { createCoursePlanningService, calculatePlanningFrame, calculateCourseScope, validateDocumentAnalysis, validateCoursePlan, normalizeProject } = require('../app/lib/content-factory/course-planning/course-planning-service');
+const { createCoursePlanningService, extractDocument, calculatePlanningFrame, calculateCourseScope, validateDocumentAnalysis, validateCoursePlan, normalizeProject } = require('../app/lib/content-factory/course-planning/course-planning-service');
+const { readWorkbookXml } = require('../app/lib/content-factory/course-plan-parser');
 const { normalizeDocumentAnalysis } = require('../app/lib/content-factory/course-planning/document-analysis-schema');
 
 const validFrame = {
@@ -139,7 +140,7 @@ test('Mehrdokumentlauf normalisiert Einzelfund, bewahrt Erfolge und plant trotz 
   let progress;
   do { await new Promise((resolve) => setTimeout(resolve, 10)); progress = service.getAnalysisProgress(started.operationId); } while (progress.status === 'running');
   const project = service.getProject('multi');
-  assert.equal(progress.status, 'completed');
+  assert.equal(progress.status, 'completed_with_warnings');
   assert.equal(project.documentAnalyses.length, 1);
   assert.deepEqual(project.documentAnalyses[0].learningObjectives, [{ title: 'Fachziel' }]);
   assert.equal(project.uploadedDocuments.find((item) => item.id === 'd2').analysisStatus, 'failed');
@@ -147,10 +148,110 @@ test('Mehrdokumentlauf normalisiert Einzelfund, bewahrt Erfolge und plant trotz 
   fs.rmSync(factoryDir, { recursive: true, force: true });
 });
 
+test('Analyse-Service lehnt leere, doppelte, unbekannte und ausgeschlossene Auswahlen ab', () => {
+  const factoryDir = fs.mkdtempSync(path.join(os.tmpdir(), 'planning-input-'));
+  const provider = { isConfigured: () => true };
+  const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: provider }, logger: { info() {}, error() {} } });
+  service.upsertProject({ id: 'input', title: 'Input' });
+  service.saveCourseScope('input', { totalDays: 1, unitsPerDay: 1, unitDurationMinutes: 45, targetAudience: { value: 'students' }, priorKnowledge: { value: 'none' } });
+  assert.throws(() => service.startDocumentAnalysis({ projectId: 'input', documents: [] }), /keine analysierbaren Dokumente/);
+  assert.throws(() => service.startDocumentAnalysis({ projectId: 'input', documents: [{ id: 'd1' }, { id: 'd1' }] }), /doppelt/);
+  assert.throws(() => service.startDocumentAnalysis({ projectId: 'input', documents: [{ id: 'd1', excluded: true }], retryDocumentId: 'd1' }), /nicht gefunden oder ist ausgeschlossen/);
+  assert.throws(() => service.startDocumentAnalysis({ projectId: 'input', documents: [{ id: 'd1' }], retryDocumentId: 'unbekannt' }), /nicht gefunden oder ist ausgeschlossen/);
+  assert.throws(() => service.startDocumentAnalysis([]), /ungültig/);
+  fs.rmSync(factoryDir, { recursive: true, force: true });
+});
+
+test('Gemischter Analyselauf beendet terminal und bewahrt Einzelergebnisse', async () => {
+  const factoryDir = fs.mkdtempSync(path.join(os.tmpdir(), 'planning-mixed-'));
+  const docs = ['ok', 'warn', 'fail'].map((id) => { const file = path.join(factoryDir, `${id}.md`); fs.writeFileSync(file, `# ${id}`, 'utf8'); return { id, originalFileName: `${id}.md`, storedFilePath: file, bindingLevel: 'optional' }; });
+  let failShouldThrow = true;
+  const provider = {
+    name: 'fake', model: 'fake-model', isConfigured: () => true,
+    async analyzeDocument({ document }) {
+      if (document.id === 'fail' && failShouldThrow) throw new Error('Providerfehler sk-test-secret');
+      return { documentId: document.id, documentType: 'markdown', detectedCategory: 'Quelle', summary: 'Zusammenfassung', topics: [{ title: document.id }], learningObjectives: [{ title: 'Ziel' }], warnings: document.id === 'warn' ? [{ message: 'Prüfen' }] : [], confidence: 0.9 };
+    },
+    async generateStructuredCoursePlan() { return { summary: 'Plan', days: [{ dayNumber: 1, title: 'Tag', units: [{ id: 'u1', dayNumber: 1, unitNumber: 1, topic: 'Thema', content: 'Inhalt', preliminaryLearningObjective: 'Ziel', sourceReferences: [{ documentId: 'ok' }], originStatus: 'explicit' }] }] }; }
+  };
+  const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: provider }, logger: { info() {}, error() {} } });
+  service.upsertProject({ id: 'mixed', title: 'Gemischt', uploadedDocuments: docs });
+  service.saveCourseScope('mixed', { totalDays: 1, unitsPerDay: 1, unitDurationMinutes: 45, targetAudience: { value: 'students' }, priorKnowledge: { value: 'none' } });
+  const started = service.startDocumentAnalysis({ projectId: 'mixed', retryDocumentId: { type: 'click' } });
+  let progress;
+  do { await new Promise((resolve) => setTimeout(resolve, 10)); progress = service.getAnalysisProgress(started.operationId); } while (progress.status === 'running');
+  const project = service.getProject('mixed');
+  assert.equal(progress.status, 'completed_with_warnings');
+  assert.deepEqual({ completed: progress.completed, warnings: progress.warningCount, failed: progress.failed }, { completed: 1, warnings: 1, failed: 1 });
+  assert.deepEqual(project.uploadedDocuments.map((document) => document.analysisStatus), ['analyzed', 'analyzed_with_warnings', 'failed']);
+  assert.equal(project.documentAnalyses.length, 2);
+  assert.doesNotMatch(JSON.stringify(progress.errors), /sk-test-secret/);
+  assert.ok(progress.completedAt);
+  failShouldThrow = false;
+  const retry = service.startDocumentAnalysis({ projectId: 'mixed', retryDocumentId: 'fail' });
+  let retryProgress;
+  do { await new Promise((resolve) => setTimeout(resolve, 10)); retryProgress = service.getAnalysisProgress(retry.operationId); } while (retryProgress.status === 'running');
+  const retried = service.getProject('mixed');
+  assert.equal(retryProgress.total, 1);
+  assert.equal(retryProgress.status, 'completed');
+  assert.equal(retried.uploadedDocuments.find((document) => document.id === 'fail').analysisAttempts, 2);
+  assert.equal(retried.uploadedDocuments.find((document) => document.id === 'ok').analysisAttempts, 1);
+  assert.equal(retried.documentAnalyses.filter((analysis) => analysis.documentId === 'ok').length, 1);
+  fs.rmSync(factoryDir, { recursive: true, force: true });
+});
+
+test('XLSM-Extraktion liest sichtbare und ausgeblendete Blätter ohne Makroausführung', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'xlsm-fixture-'));
+  const xlsm = path.join(root, 'kurs.xlsm');
+  fs.writeFileSync(xlsm, createStoredZip({
+    'xl/workbook.xml': '<workbook><sheets><sheet name="Plan" sheetId="1"/><sheet name="Intern" state="hidden" sheetId="2"/></sheets></workbook>',
+    'xl/sharedStrings.xml': '<sst><si><t>Thema</t></si><si><t>Verborgener Hinweis</t></si></sst>',
+    'xl/worksheets/sheet1.xml': '<worksheet><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c></row></sheetData></worksheet>',
+    'xl/worksheets/sheet2.xml': '<worksheet><sheetData><row r="1"><c r="A1" t="s"><v>1</v></c></row></sheetData></worksheet>'
+  }));
+  const workbook = readWorkbookXml(xlsm);
+  assert.deepEqual(workbook.sheets.map(({ name, hidden }) => ({ name, hidden })), [{ name: 'Plan', hidden: false }, { name: 'Intern', hidden: true }]);
+  const extracted = extractDocument({ id: 'xlsm', originalFileName: 'kurs.xlsm', storedFilePath: xlsm });
+  assert.match(extracted.sections[0].content, /Thema/);
+  assert.equal(extracted.sections[1].hidden, true);
+  assert.match(extracted.sections[1].content, /Verborgener Hinweis/);
+  assert.match(extracted.warnings.join(' '), /Makros wurden nicht ausgeführt/);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+function createStoredZip(entries) {
+  const locals = [];
+  const central = [];
+  let offset = 0;
+  Object.entries(entries).forEach(([name, value]) => {
+    const fileName = Buffer.from(name);
+    const data = Buffer.from(value);
+    const checksum = crc32(data);
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0); local.writeUInt16LE(20, 4); local.writeUInt32LE(checksum, 14); local.writeUInt32LE(data.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(fileName.length, 26);
+    locals.push(local, fileName, data);
+    const header = Buffer.alloc(46);
+    header.writeUInt32LE(0x02014b50, 0); header.writeUInt16LE(20, 4); header.writeUInt16LE(20, 6); header.writeUInt32LE(checksum, 16); header.writeUInt32LE(data.length, 20); header.writeUInt32LE(data.length, 24); header.writeUInt16LE(fileName.length, 28); header.writeUInt32LE(offset, 42);
+    central.push(header, fileName);
+    offset += local.length + fileName.length + data.length;
+  });
+  const centralBuffer = Buffer.concat(central);
+  const end = Buffer.alloc(22);
+  const count = Object.keys(entries).length;
+  end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(count, 8); end.writeUInt16LE(count, 10); end.writeUInt32LE(centralBuffer.length, 12); end.writeUInt32LE(offset, 16);
+  return Buffer.concat([...locals, centralBuffer, end]);
+}
+
+function crc32(buffer) {
+  let crc = 0xffffffff;
+  for (const byte of buffer) { crc ^= byte; for (let index = 0; index < 8; index += 1) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0); }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
 test('Renderer erhält keine API-Schlüssel über die Preload-Oberfläche', () => {
   const preload = fs.readFileSync(path.join(__dirname, '..', 'app', 'preload.js'), 'utf8');
   assert.doesNotMatch(preload, /OPENAI_API_KEY|getOpenAiKeyForServerUse/);
-  assert.match(preload, /start-document-analysis/);
+  assert.match(preload, /DOCUMENT_ANALYSIS_CHANNELS\.start/);
   assert.match(preload, /approve-structured-course-plan/);
 });
 

@@ -6,6 +6,8 @@ const difficultyLevels = window.ContentFactoryDifficultyLevels || { levels: [{ v
 const workflowRegistry = window.ContentFactoryWorkflowRegistry || {};
 const workflowStatus = window.ContentFactoryWorkflowStatus || {};
 const visibleLabel = window.ContentFactoryWorkflowUtils?.visibleLabel || ((value) => String(value ?? ''));
+const documentAnalysisWorkflow = window.ContentFactoryDocumentAnalysisWorkflow || {};
+const startWizardDocumentAnalysis = documentAnalysisWorkflow.createSingleFlightAnalysisStarter?.(analyzeWizardDocuments) || analyzeWizardDocuments;
 const targetAudienceOptions = [
   ['trainees', 'Auszubildende'], ['retrainees', 'Umschülerinnen und Umschüler'], ['career_starters', 'Berufseinsteigerinnen und Berufseinsteiger'], ['experienced_professionals', 'Berufserfahrene'],
   ['career_changers', 'Quereinsteigerinnen und Quereinsteiger'], ['students', 'Studierende'], ['school_students', 'Schülerinnen und Schüler'], ['managers', 'Führungskräfte'],
@@ -728,10 +730,11 @@ function renderCourseStructureStep(wizard) {
   const running = wizard.analysisProgress?.status === 'running';
   const documents = project?.uploadedDocuments?.length ? project.uploadedDocuments : wizard.anchorFiles;
   const analyses = project?.documentAnalyses || [];
+  const progressCount = documentAnalysisWorkflow.calculateAnalysisProgress?.(wizard.analysisProgress) || { total: 0, processed: 0 };
   return `<article class="tool-card" data-plan-step-content="courseStructure">
     <h3>KI-Analyse und Kursplanung</h3>
     <p class="status-line">Die hochgeladenen Dokumente werden gemeinsam ausgewertet. Anschließend erstellt die KI einen Vorschlag für die Verteilung der Themen auf die vorhandenen Kurstage und Unterrichtseinheiten.</p>
-    ${running ? `<div class="analysis-progress" role="status" aria-live="polite"><span class="indeterminate-spinner" aria-hidden="true"></span><strong>${escapeHtml(wizard.analysisProgress.step)}</strong><span>${escapeHtml(wizard.analysisProgress.currentDocument || '')}</span><small>wartend: ${escapeHtml(wizard.analysisProgress.queued || 0)} | erfolgreich: ${escapeHtml(wizard.analysisProgress.completed || 0)} | Warnungen: ${escapeHtml(wizard.analysisProgress.warningCount || 0)} | fehlgeschlagen: ${escapeHtml(wizard.analysisProgress.failed || 0)}</small></div>` : ''}
+    ${running ? `<div class="analysis-progress" role="status" aria-live="polite"><span class="indeterminate-spinner" aria-hidden="true"></span><strong>${escapeHtml(wizard.analysisProgress.step)}</strong><span>${escapeHtml(wizard.analysisProgress.currentDocument || '')}</span><progress value="${progressCount.processed}" max="${progressCount.total || 1}" role="progressbar" aria-valuemin="0" aria-valuemax="${progressCount.total}" aria-valuenow="${progressCount.processed}"></progress><small>${progressCount.processed} von ${progressCount.total} Dokumenten verarbeitet | wartend: ${escapeHtml(wizard.analysisProgress.queued || 0)} | erfolgreich: ${escapeHtml(wizard.analysisProgress.completed || 0)} | Warnungen: ${escapeHtml(wizard.analysisProgress.warningCount || 0)} | fehlgeschlagen: ${escapeHtml(wizard.analysisProgress.failed || 0)}</small></div>` : ''}
     <div class="mapping-list">${documents.map((document, index) => renderDocumentAnalysisCard(document, analyses, index)).join('')}</div>
     <div class="button-row"><button class="primary-button" type="button" data-document-analyze ${ready && !running ? '' : 'disabled'}>${running ? 'Analyse und Planung laufen …' : 'Dokumente analysieren und Themenstruktur erstellen'}</button>
     <button class="secondary-button" type="button" data-document-analysis-cancel ${running ? '' : 'disabled'}>Vorgang abbrechen</button></div>
@@ -749,7 +752,7 @@ function renderDocumentAnalysisCard(document, analyses, index) {
   return `<article class="mapping-item document-analysis-card">
     <strong>${escapeHtml(document.originalFileName || document.name)}</strong>
     <small>Kategorie: ${escapeHtml(document.declaredCategory || document.sourceType || '-')} | erkannt: ${escapeHtml(category)} | Confidence: ${escapeHtml(Math.round(confidence * 100))}%</small>
-    <span class="status-badge">${escapeHtml(document.analysisStatus || 'queued')}</span><p>${escapeHtml(summary)}</p>
+    <span class="status-badge">${escapeHtml(documentAnalysisStatusLabel(document.analysisStatus || 'queued'))}</span><p>${escapeHtml(summary)}</p>
     ${analysis ? `<details><summary>Analysefelder anzeigen</summary>${renderAnalysisList('Themen', analysis.topics)}${renderAnalysisList('Lernziele', analysis.learningObjectives)}${renderAnalysisList('Kompetenzen', analysis.competencies)}${renderAnalysisList('Aufgaben', analysis.exercises)}${renderAnalysisList('Warnungen', analysis.warnings)}${renderAnalysisList('Konflikte', analysis.conflicts)}${renderAnalysisList('Quellen', analysis.sourceReferences)}${renderAnalysisList('Review-Punkte', analysis.reviewItems)}</details>` : ''}
     ${error ? `<p class="status-line status-error">${escapeHtml(error.message)}</p><details><summary>Technische Details</summary><dl><dt>Fehlercode</dt><dd>${escapeHtml(error.code)}</dd><dt>Schritt</dt><dd>${escapeHtml(error.step)}</dd><dt>Feld</dt><dd>${escapeHtml(error.field)}</dd><dt>Erwartet</dt><dd>${escapeHtml(error.expected)}</dd><dt>Empfangen</dt><dd>${escapeHtml(error.received)}</dd></dl></details><button class="secondary-button" type="button" data-retry-document="${escapeHtml(id)}">Dokument erneut analysieren</button>${document.bindingLevel === 'binding' && !document.failureAcknowledged ? `<button class="secondary-button" type="button" data-ack-document-failure="${escapeHtml(id)}">Als Ausnahme bestätigen</button>` : ''}` : ''}
   </article>`;
@@ -765,6 +768,10 @@ function formatAnalysisItem(item) {
   if (item === null || item === undefined) return '';
   if (typeof item !== 'object') return String(item);
   return String(item.title || item.value || item.name || item.description || item.text || item.summary || item.message || item.fileName || item.documentId || 'Strukturierter Eintrag');
+}
+
+function documentAnalysisStatusLabel(status) {
+  return ({ queued: 'Wartet auf Analyse', extracting: 'Dokument wird ausgelesen', extracted: 'Dokument wurde ausgelesen', analyzing: 'KI analysiert das Dokument', analyzed: 'Analyse abgeschlossen', analyzed_with_warnings: 'Analyse mit Warnungen abgeschlossen', failed: 'Analyse fehlgeschlagen', cancelled: 'Analyse abgebrochen', excluded: 'Von der Analyse ausgeschlossen' })[status] || status;
 }
 
 function renderStructureReviewStep(wizard) {
@@ -1355,7 +1362,7 @@ function bindPlanWizardEvents() {
     event.target.value = '';
     renderPlanWizard();
   });
-  $('[data-document-analyze]')?.addEventListener('click', analyzeWizardDocuments);
+  documentAnalysisWorkflow.bindDocumentAnalysisControls?.(document, startWizardDocumentAnalysis);
   $('[data-close-wizard-error]')?.addEventListener('click', () => { state.wizard.uiError = null; renderPlanWizard(); });
   $('[data-retry-wizard-error]')?.addEventListener('click', () => { const retry = state.wizard.uiError?.retry; state.wizard.uiError = null; if (retry) retry(); });
   $('[data-document-analysis-cancel]')?.addEventListener('click', cancelWizardDocumentAnalysis);
@@ -1377,7 +1384,6 @@ function bindPlanWizardEvents() {
     state.wizard.structureFrame[field.dataset.courseScopeCustom].customText = field.value;
   }));
   $('[data-save-course-scope]')?.addEventListener('click', saveWizardCourseScope);
-  $all('[data-retry-document]').forEach((button) => button.addEventListener('click', () => analyzeWizardDocuments(button.dataset.retryDocument)));
   $all('[data-ack-document-failure]').forEach((button) => button.addEventListener('click', () => acknowledgeWizardDocumentFailure(button.dataset.ackDocumentFailure)));
   $all('[data-structure-unit]').forEach((field) => field.addEventListener('input', () => updateStructuredUnit(field.dataset.structureUnit, field.dataset.unitField, field.value)));
   $('[data-save-course-structure]')?.addEventListener('click', saveWizardCourseStructure);
@@ -1800,16 +1806,24 @@ async function openSavedCourseProject(event) {
 
 async function analyzeWizardDocuments(retryDocumentId = '') {
   if (state.wizard.analysisProgress?.status === 'running') return;
-  state.wizard.analysisProgress = { status: 'running', step: 'Dokumente werden vorbereitet', currentDocument: '', queued: state.wizard.anchorFiles.length, completed: 0, warningCount: 0, failed: 0 };
+  const normalizedRetryDocumentId = documentAnalysisWorkflow.normalizeRetryDocumentId?.(retryDocumentId) || '';
+  const documents = (state.wizard.anchorFiles || []).filter((document) => !document.excluded);
+  if (!state.wizard.courseProject?.id) { showWizardError('Dokumentanalyse konnte nicht gestartet werden', 'Bitte speichern Sie zuerst Dauer und Zielgruppe.'); renderPlanWizard(); return; }
+  if (!documents.length) { showWizardError('Dokumentanalyse konnte nicht gestartet werden', 'Es wurden keine analysierbaren Dokumente gefunden.'); renderPlanWizard(); return; }
+  if (normalizedRetryDocumentId && !documents.some((document) => document.id === normalizedRetryDocumentId)) { showWizardError('Dokumentanalyse konnte nicht gestartet werden', `Das Dokument „${normalizedRetryDocumentId}“ wurde nicht gefunden oder ist ausgeschlossen.`); renderPlanWizard(); return; }
+  if (!state.aiStatus?.providers?.openai?.configured) { showWizardError('Die KI-Analyse konnte nicht gestartet werden', 'Bitte prüfen Sie den OpenAI-Schlüssel, das ausgewählte Modell und den Verbindungstest in den KI-Einstellungen.'); renderPlanWizard(); return; }
+  const selectedCount = normalizedRetryDocumentId ? 1 : documents.length;
+  state.wizard.analysisProgress = { status: 'running', step: 'Dokumente werden vorbereitet', currentDocument: '', total: selectedCount, queued: selectedCount, completed: 0, warningCount: 0, failed: 0, errors: [] };
   state.wizard.status = 'Echte KI-Analyse und UE-Planung wurden gestartet.';
   renderPlanWizard();
   try {
     const project = wizardProjectInput();
-    const started = await desktop.factory.startDocumentAnalysis({ project: { ...project, structureFrame: state.wizard.courseProject?.structureFrame }, documents: project.uploadedDocuments, retryDocumentId });
+    const payload = documentAnalysisWorkflow.createDocumentAnalysisPayload({ project: { ...project, structureFrame: state.wizard.courseProject.structureFrame }, documents: project.uploadedDocuments, retryDocumentId: normalizedRetryDocumentId });
+    const started = await desktop.factory.startDocumentAnalysis(payload);
     state.wizard.analysisProgress = started.progress;
     await pollAnalysisOperation(started.operationId);
   } catch (error) {
-    state.wizard.analysisProgress = { status: 'failed', step: 'Analyse fehlgeschlagen', errors: [error.message] };
+    state.wizard.analysisProgress = { ...state.wizard.analysisProgress, status: 'failed', step: state.wizard.analysisProgress?.step || 'Analyse fehlgeschlagen', errors: [...(state.wizard.analysisProgress?.errors || []), error.message] };
     showWizardError('Dokumentanalyse fehlgeschlagen', error);
   } finally {
     if (state.wizard.analysisProgress?.status === 'running') state.wizard.analysisProgress.status = 'failed';
@@ -1818,19 +1832,21 @@ async function analyzeWizardDocuments(retryDocumentId = '') {
 }
 
 async function pollAnalysisOperation(operationId) {
-  while (state.wizard.analysisProgress?.status === 'running') {
-    await new Promise((resolve) => setTimeout(resolve, 350));
-    const progress = await desktop.factory.getAnalysisProgress(operationId);
+  const progress = await documentAnalysisWorkflow.pollAnalysisUntilTerminal({
+    operationId,
+    getProgress: desktop.factory.getAnalysisProgress,
+    timeoutMs: 120000,
+    onProgress: (progress) => {
     state.wizard.analysisProgress = progress;
     if (progress.project) state.wizard.courseProject = progress.project;
     renderPlanWizard();
-    if (progress.status !== 'running') {
-      state.wizard.courseProject = await desktop.factory.getCourseProject(state.wizard.course.courseId);
-      const failed = state.wizard.courseProject.uploadedDocuments.filter((document) => document.analysisStatus === 'failed').length;
-      state.wizard.status = progress.status === 'completed' ? `Analyse und UE-Planung abgeschlossen.${failed ? ` ${failed} Dokument(e) sind fehlgeschlagen und können erneut analysiert werden.` : ''}` : progress.status === 'cancelled' ? 'Analyse wurde abgebrochen.' : formatProgressError(progress);
-      if (progress.status === 'completed') state.wizard.activeStep = 'structureReview';
     }
-  }
+  });
+  state.wizard.courseProject = await desktop.factory.getCourseProject(state.wizard.course.courseId);
+  const failed = state.wizard.courseProject.uploadedDocuments.filter((document) => document.analysisStatus === 'failed').length;
+  const completed = progress.status === 'completed' || progress.status === 'completed_with_warnings';
+  state.wizard.status = completed ? `Analyse und UE-Planung abgeschlossen.${failed ? ` ${failed} Dokument(e) sind fehlgeschlagen und können erneut analysiert werden.` : ''}` : progress.status === 'cancelled' ? 'Analyse wurde abgebrochen.' : formatProgressError(progress);
+  if (completed) state.wizard.activeStep = 'structureReview';
 }
 
 function formatProgressError(progress) {

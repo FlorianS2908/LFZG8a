@@ -4,6 +4,7 @@ const path = require('path');
 const { createContentFactoryService } = require('./lib/content-factory/content-factory-service');
 const { ensureDir } = require('./lib/json-store');
 const { applyAppEnv } = require('./lib/env/env-loader');
+const { DOCUMENT_ANALYSIS_CHANNELS } = require('./lib/content-factory/course-planning/analysis-ipc-contract');
 
 const projectRoot = path.resolve(__dirname, '..', '..');
 const rendererFile = path.join(__dirname, 'renderer', 'tool-center', 'factory.html');
@@ -86,7 +87,7 @@ function handle(channel, method) {
     catch (error) {
       const message = String(error?.message || '');
       console.error('[ContentFactory IPC]', { channel, operation: method, errorName: error?.name || 'Error', errorCode: error?.code || null, message: safeLogText(message), stack: safeLogText(error?.stack) });
-      const safePlanningError = error?.code === 'COURSE_SCOPE_VALIDATION' || /^(KI nicht|OpenAI|Der Planungsrahmen|Abweichung im Planungsrahmen|Mindestens eine|Ungültige Dokumentanalyse|Kursstruktur|Blockierende Konflikte|Verbindliche fehlgeschlagene|Eine freigegebene|Datei kann nicht|Pause|Reservierte UE)/.test(message);
+      const safePlanningError = ['COURSE_SCOPE_VALIDATION', 'DOCUMENT_ANALYSIS_INPUT'].includes(error?.code) || /^(KI nicht|OpenAI|Der Planungsrahmen|Abweichung im Planungsrahmen|Mindestens eine|Ungültige Dokumentanalyse|Kursstruktur|Blockierende Konflikte|Verbindliche fehlgeschlagene|Eine freigegebene|Datei kann nicht|Pause|Reservierte UE)/.test(message);
       throw new Error(/Verschlüsselung/i.test(message) ? 'Sichere Speicherung ist derzeit nicht verfügbar.' : safePlanningError ? message : 'Die Aktion konnte nicht abgeschlossen werden.');
     }
   });
@@ -112,12 +113,12 @@ function registerIpc() {
     'factory:parse-course-plan': 'parseCoursePlan',
     'factory:get-course-project': 'getCourseProject',
     'factory:upsert-course-project': 'upsertCourseProject',
-    'factory:start-document-analysis': 'startDocumentAnalysis',
-    'factory:get-analysis-progress': 'getAnalysisProgress',
-    'factory:cancel-ai-operation': 'cancelAiOperation',
+    [DOCUMENT_ANALYSIS_CHANNELS.start]: 'startDocumentAnalysis',
+    [DOCUMENT_ANALYSIS_CHANNELS.progress]: 'getAnalysisProgress',
+    [DOCUMENT_ANALYSIS_CHANNELS.cancel]: 'cancelAiOperation',
     'factory:save-planning-frame': 'savePlanningFrame',
     'factory:save-course-scope': 'saveCourseScope',
-    'factory:generate-structured-course-plan': 'generateStructuredCoursePlan',
+    [DOCUMENT_ANALYSIS_CHANNELS.generatePlan]: 'generateStructuredCoursePlan',
     'factory:save-structured-course-plan': 'saveStructuredCoursePlan',
     'factory:acknowledge-document-failure': 'acknowledgeDocumentFailure',
     'factory:approve-structured-course-plan': 'approveStructuredCoursePlan',
