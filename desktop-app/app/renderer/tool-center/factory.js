@@ -609,7 +609,11 @@ function renderPlanWizard() {
   const currentIndex = gates.findIndex((gate) => gate.id === wizard.activeStep);
   const previousGate = [...gates].slice(0, currentIndex).reverse().find((gate) => gate.active);
   const nextGate = gates[currentIndex + 1];
-  const canContinue = activeGate.id === 'durationAudience' ? Boolean(state.wizard.anchorFiles.length) : Boolean(nextGate?.active);
+  const canContinue = activeGate.id === 'course'
+    ? Object.keys(validateCourseFields(wizard.course)).length === 0
+    : activeGate.id === 'durationAudience'
+      ? Boolean(state.wizard.anchorFiles.length)
+      : Boolean(nextGate?.active);
   const activeStep = workflow.steps.find((step) => step.id === wizard.activeStep) || workflow.steps[0];
   const headerStatus = workflowStatus.getWorkflowStatus?.(gates) || 'active';
   const contentHtml = renderCurrentPlanWizardStep(wizard, activeGate);
@@ -1542,12 +1546,15 @@ function bindPlanWizardEvents() {
     state.wizard.targetAudience.department = state.wizard.course.department || state.wizard.targetAudience.department;
     if (field.dataset.wizardCourse === 'courseName' && !state.wizard.course.courseId) {
       state.wizard.course.courseId = field.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const courseIdField = $('[data-wizard-course="courseId"]');
+      if (courseIdField) courseIdField.value = state.wizard.course.courseId;
     }
     if (Object.keys(state.wizard.courseErrors || {}).length) {
       const errors = validateCourseFields(state.wizard.course);
       state.wizard.courseErrors = errors;
       updateFieldError(field, errors[field.dataset.wizardCourse], `course-${field.dataset.wizardCourse}-error`);
     }
+    syncCourseStepContinueState();
   }));
   $('[data-open-course-project]')?.addEventListener('change', openSavedCourseProject);
   $('[data-workflow-help-toggle]')?.addEventListener('click', () => {
@@ -1872,6 +1879,15 @@ function validateCourseFields(course = {}) {
   else if (!/^(?=.{1,80}$)(?!-)(?!.*--)(?!.*-$)[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/.test(id)) errors.courseId = 'Erlaubt sind Buchstaben, Zahlen und Bindestriche – ohne Leerzeichen.';
   if (!String(course.department || '').trim()) errors.department = 'Bitte Fachbereich auswählen.';
   return errors;
+}
+
+function syncCourseStepContinueState() {
+  if (state.wizard.activeStep !== 'course') return;
+  const button = $('[data-wizard-next]');
+  if (!button) return;
+  const canContinue = Object.keys(validateCourseFields(state.wizard.course)).length === 0;
+  button.disabled = !canContinue;
+  button.setAttribute('aria-disabled', String(!canContinue));
 }
 
 function validateAndShowCourseFields() {
