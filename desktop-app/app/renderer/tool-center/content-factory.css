@@ -321,33 +321,58 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
   position: fixed;
   inset: 0;
   z-index: 900;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-4);
   width: 100vw;
   max-width: none;
   height: 100vh;
   margin: 0;
   padding: clamp(1rem, 2vw, 2rem);
   border-radius: 0;
-  overflow: auto;
+  overflow: hidden;
   background: var(--cf-canvas);
 }
 .table-workspace .topic-review-header {
-  position: sticky;
-  top: 0;
+  flex: 0 0 auto;
   z-index: 6;
-  padding: var(--cf-space-3) 0;
+  padding: 0;
   background: var(--cf-canvas);
 }
 .table-workspace .topic-review-table,
-.table-workspace .course-plan-review-table { width: max-content; min-width: 100%; overflow: visible; }
-.table-workspace .topic-review-table table { min-width: max(100%, 105rem); }
-.table-workspace .course-plan-review-table table { min-width: 130rem; }
+.table-workspace .course-plan-review-table {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.table-workspace .topic-review-table table {
+  width: 112rem;
+  min-width: 112rem;
+  table-layout: fixed;
+}
+.table-workspace .course-plan-review-table > details { width: 130rem; min-width: 130rem; }
+.table-workspace .course-plan-review-table table { width: 130rem; min-width: 130rem; }
 .table-workspace textarea { field-sizing: content; min-height: 5rem; max-height: none; overflow-y: hidden; resize: vertical; }
-.table-workspace thead th { position: sticky; top: 6.5rem; z-index: 4; }
+.table-workspace thead th { position: sticky; top: 0; z-index: 4; }
+.table-workspace .topic-review-mode,
+.table-workspace .summary-grid,
+.table-workspace .workflow-actionbar,
+.table-workspace > .button-row,
+.table-workspace > .status-line,
+.table-workspace > .review-hints,
+.table-workspace > .conflict-review-list { flex: 0 0 auto; }
 .table-workspace .topic-review-table th:nth-child(1),
 .table-workspace .topic-review-table td:nth-child(1) { position: sticky; left: 0; z-index: 3; background: var(--cf-surface); }
 .table-workspace .topic-review-table th:nth-child(2),
-.table-workspace .topic-review-table td:nth-child(2) { position: sticky; left: 3rem; z-index: 3; background: var(--cf-surface); }
-.course-plan-workspace .review-table-scroll { overflow: visible; }
+.table-workspace .topic-review-table td:nth-child(2) { position: sticky; left: 4rem; z-index: 3; background: var(--cf-surface); }
+.table-workspace .topic-review-table thead th:nth-child(-n+2),
+.course-plan-workspace thead th:nth-child(-n+3) { z-index: 5; }
+.course-plan-workspace .review-table-scroll { width: 130rem; overflow: visible; }
 .course-plan-workspace .plan-unit-row > :nth-child(1),
 .course-plan-workspace thead th:nth-child(1) { position: sticky; left: 0; z-index: 3; background: var(--cf-surface); }
 .course-plan-workspace .plan-unit-row > :nth-child(2),
@@ -368,6 +393,14 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .topic-review-table th:nth-child(6) { width: 8rem; }
 .topic-review-table th:nth-child(7) { width: 9rem; }
 .topic-review-table th:nth-child(8) { width: 12rem; }
+.table-workspace .topic-review-table col:nth-child(1) { width: 4rem; }
+.table-workspace .topic-review-table col:nth-child(2) { width: 17rem; }
+.table-workspace .topic-review-table col:nth-child(3) { width: 22rem; }
+.table-workspace .topic-review-table col:nth-child(4) { width: 22rem; }
+.table-workspace .topic-review-table col:nth-child(5) { width: 22rem; }
+.table-workspace .topic-review-table col:nth-child(6) { width: 8rem; }
+.table-workspace .topic-review-table col:nth-child(7) { width: 9rem; }
+.table-workspace .topic-review-table col:nth-child(8) { width: 8rem; }
 .topic-review-table input, .topic-review-table textarea, .topic-review-table select { min-width: 0; font-size: 1rem; }
 .topic-review-table textarea { min-height: 7rem; }
 .topic-review-table :disabled { opacity: 1; color: var(--cf-ink); background: var(--cf-surface-soft); }

@@ -102,6 +102,12 @@ test('Themen und Unterrichtsplan verwenden einen gemeinsamen Vollbild-Arbeitsber
   assert.match(css, /\.table-workspace \{/);
   assert.match(css, /position: fixed/);
   assert.match(css, /height: 100vh/);
+  assert.match(css, /overflow: hidden/);
+  assert.match(css, /width: 112rem/);
+  assert.match(css, /overflow: auto/);
+  assert.doesNotMatch(css, /\.table-workspace \.topic-review-table,\s*\.table-workspace \.course-plan-review-table \{ width: max-content/);
+  assert.match(ui, /class="topic-review-table" role="region" aria-label="Erkannte Themen" tabindex="0"/);
+  assert.match(ui, /<colgroup><col><col><col><col><col><col><col><col><\/colgroup>/);
 });
 
 test('Analyseanzeige entfernt exakte Anzeige-Duplikate und leere Platzhalter', () => {
