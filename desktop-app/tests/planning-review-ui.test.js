@@ -59,12 +59,25 @@ test('Kurserstellung verwendet eine zentrale Zustandsaktion, Tabellen und korrek
   assert.match(ui, /Number\(item\.planningVersion\) === Number\(project\.currentPlanningVersion\)/);
   assert.match(ui, /if \(kind === 'planning'\) return startWizardCoursePlanning\(\)/);
   assert.match(ui, /if \(kind === 'analysis'\) return startWizardDocumentAnalysis\(\)/);
-  assert.match(ui, /data-ai-understanding open/);
+  assert.match(ui, /data-open-topic-review/);
+  assert.match(ui, /function renderTopicReviewView/);
   assert.match(ui, /scrollTop = scrollTop/);
-  assert.match(ui, /class="topic-review-table review-table-scroll"/);
+  assert.match(ui, /class="topic-review-table"/);
   assert.match(ui, /class="course-plan-review-table"/);
   assert.match(css, /\.course-data-grid \{ grid-template-columns:/);
   assert.match(css, /@media \(max-width: 1279px\)/);
   assert.match(css, /\.topic-has-conflict td/);
   assert.match(layout, /data-workflow-help-toggle/);
+});
+
+test('Feldvalidierung bleibt fokussiert und Zielgruppenfehler werden getrennt aktualisiert', () => {
+  const root = path.join(__dirname, '..', 'app', 'renderer', 'tool-center');
+  const ui = fs.readFileSync(path.join(root, 'factory.js'), 'utf8');
+  const courseBinding = ui.slice(ui.indexOf("$all('[data-wizard-course]')"), ui.indexOf("$('[data-open-course-project]')"));
+  const scopeBinding = ui.slice(ui.indexOf("$all('[data-course-scope-selection]')"), ui.indexOf("$all('[data-course-scope-custom]')"));
+  assert.match(courseBinding, /updateFieldError\(field, errors\[field\.dataset\.wizardCourse\]/);
+  assert.doesNotMatch(courseBinding, /renderPlanWizard\(\)/);
+  assert.match(scopeBinding, /state\.wizard\.scopeErrors = errors/);
+  assert.doesNotMatch(scopeBinding, /scopeErrors = \{\}/);
+  assert.match(ui, /function updateFieldError/);
 });

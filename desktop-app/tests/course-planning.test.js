@@ -87,6 +87,15 @@ test('Vereinfachter Kursrahmen validiert Auswahlwerte und berechnet Gesamt-UE', 
   assert.match(calculateCourseScope({ totalDays: 5, unitsPerDay: 9, unitDurationMinutes: 45, targetAudience: { value: 'other_audience' }, priorKnowledge: { value: 'other_knowledge' } }).errors.join(' '), /sonstige Zielgruppe.*sonstigen Vorkenntnisse/);
 });
 
+test('Kursdauer bleibt dynamisch und unterstützt zwei Tage mit 18 UE', () => {
+  const short = calculateCourseScope({ totalDays: 2, unitsPerDay: 9, unitDurationMinutes: 45, targetAudience: { value: 'trainees' }, priorKnowledge: { value: 'basic' } });
+  assert.equal(short.valid, true);
+  assert.equal(short.totalDays, 2);
+  assert.equal(short.totalUnits, 18);
+  assert.deepEqual(short.unitsByDay, [9, 9]);
+  assert.notEqual(short.totalDays, validFrame.totalDays);
+});
+
 test('Alte Freitexte werden normalisiert und verborgene Daten bleiben beim Speichern erhalten', () => {
   const known = calculateCourseScope({ totalDays: 2, unitsPerDay: 4, unitDurationMinutes: 45, targetGroup: 'Studierende', priorKnowledge: 'Grundkenntnisse' });
   assert.equal(known.targetAudience.value, 'students');

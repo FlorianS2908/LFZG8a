@@ -346,7 +346,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
 
   function saveCourseScope(projectId, input = {}) {
     const project = getProject(projectId);
-    const structureFrame = calculateCourseScope(input);
+    const structureFrame = calculateCourseScope({ ...(project.structureFrame || {}), ...input });
     if (!structureFrame.valid) {
       const error = new Error(structureFrame.errors.join(' | '));
       error.code = 'COURSE_SCOPE_VALIDATION';
@@ -633,8 +633,12 @@ function calculateCourseScope(input = {}) {
   const totalDays = positiveInteger(input.totalDays ?? input.courseDurationDays, 'Kursdauer in Tagen', errors);
   const unitDurationMinutes = positiveInteger(input.unitDurationMinutes || 45, 'Dauer einer UE', errors);
   const unitsPerDay = positiveInteger(input.unitsPerDay, 'Unterrichtseinheiten je Tag', errors);
-  const totalUnits = totalDays * unitsPerDay;
-  return { schemaVersion: 1, valid: errors.length === 0, errors, totalDays, unitsPerDay, totalUnits, unitDurationMinutes, targetAudience, priorKnowledge, actuallyPlannableUnits: totalUnits };
+  const suppliedUnitsByDay = Array.isArray(input.unitsByDay) ? input.unitsByDay.map(Number) : [];
+  const unitsByDay = suppliedUnitsByDay.length === totalDays && suppliedUnitsByDay.every((value) => Number.isInteger(value) && value > 0)
+    ? suppliedUnitsByDay
+    : Array.from({ length: totalDays }, () => unitsPerDay);
+  const totalUnits = unitsByDay.reduce((sum, value) => sum + value, 0);
+  return { schemaVersion: 1, valid: errors.length === 0, errors, totalDays, unitsPerDay, unitsByDay, totalUnits, unitDurationMinutes, targetAudience, priorKnowledge, actuallyPlannableUnits: totalUnits };
 }
 
 const TARGET_AUDIENCES = [
@@ -703,7 +707,12 @@ function normalizeProject(project, id) {
   const now = new Date().toISOString();
   const normalized = { id: safeId(project?.id || id), title: '', description: '', subjectArea: '', targetGroup: '', priorKnowledge: '', planningFrame: null, structureFrame: null, uploadedDocuments: [], documentAnalyses: [], mergedKnowledgeBase: null, coursePlanDrafts: [], approvedCoursePlan: null, currentPlanningVersion: 0, didacticProfile: null, createdAt: now, updatedAt: now, ...(project || {}) };
   if (!normalized.structureFrame && normalized.planningFrame?.valid) normalized.structureFrame = { ...calculateCourseScope({ targetGroup: normalized.targetGroup || normalized.planningFrame.targetGroup, priorKnowledge: normalized.priorKnowledge || normalized.planningFrame.priorKnowledge, totalDays: normalized.planningFrame.totalDays, unitsPerDay: normalized.planningFrame.unitsPerDay, unitDurationMinutes: normalized.planningFrame.unitDurationMinutes }), confirmed: true };
-  else if (normalized.structureFrame) normalized.structureFrame = { ...normalized.structureFrame, ...calculateCourseScope({ ...normalized.structureFrame, targetAudience: normalized.structureFrame.targetAudience ?? normalized.structureFrame.targetGroup ?? normalized.targetGroup, priorKnowledge: normalized.structureFrame.priorKnowledge ?? normalized.priorKnowledge }) };
+  else if (normalized.structureFrame) {
+    const legacyUnitsByDay = normalized.structureFrame.unitsByDay;
+    const calculated = calculateCourseScope({ ...normalized.structureFrame, targetAudience: normalized.structureFrame.targetAudience ?? normalized.structureFrame.targetGroup ?? normalized.targetGroup, priorKnowledge: normalized.structureFrame.priorKnowledge ?? normalized.priorKnowledge });
+    normalized.structureFrame = { ...normalized.structureFrame, ...calculated };
+    if (!calculated.valid && Array.isArray(legacyUnitsByDay)) normalized.structureFrame.unitsByDay = legacyUnitsByDay;
+  }
   normalized.uploadedDocuments = (normalized.uploadedDocuments || []).map(normalizeDocument);
   normalized.documentAnalyses = (normalized.documentAnalyses || []).map((analysis) => ({ ...analysis, ...normalizeDocumentAnalysis(analysis, { documentId: analysis.documentId, documentType: analysis.documentType }).value }));
   if (!normalized.topicReview && normalized.topicCatalog?.topics?.length) normalized.topicReview = createTopicReview(normalized.topicCatalog, latestAnalyses(normalized.documentAnalyses));

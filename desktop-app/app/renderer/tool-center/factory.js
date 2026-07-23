@@ -697,6 +697,7 @@ function renderPlanWizardStepStatus(gate) {
 }
 
 function renderCurrentPlanWizardStep(wizard, gate) {
+  if (wizard.topicReviewOpen) return renderTopicReviewView(wizard);
   switch (gate.id) {
     case 'course':
       return renderCourseStep(wizard);
@@ -841,13 +842,12 @@ function getCurrentValidCoursePlanDraft(project) {
 
 function renderCourseStructureActionBar({ ready, running, planningRunning, planningStatus, analysisComplete, topicReviewConfirmed, currentPlan }) {
   let primary = `<button class="primary-button" type="button" data-document-analyze ${ready && !running ? '' : 'disabled'}>${running ? 'Dokumentanalyse läuft …' : 'Dokumente analysieren'}</button>`;
-  if (analysisComplete && !topicReviewConfirmed) primary = '<button class="primary-button" type="button" data-topic-confirm>Themenbasis bestätigen</button>';
+  if (analysisComplete && !topicReviewConfirmed) primary = '<button class="primary-button" type="button" data-open-topic-review>Analyseergebnis prüfen und bearbeiten</button>';
   if (analysisComplete && topicReviewConfirmed && !currentPlan) primary = `<button class="primary-button" type="button" data-course-plan-start ${planningRunning ? 'disabled' : ''}>${planningRunning ? 'Unterrichtsplan wird erstellt …' : ['failed', 'timed_out'].includes(planningStatus) ? 'Unterrichtsplan erneut erstellen' : 'Unterrichtsplan erstellen'}</button>`;
   if (currentPlan) primary = '<button class="primary-button" type="button" data-open-structure-review>Weiter zum Struktur-Review</button>';
   const secondary = [
     analysisComplete ? '<button class="secondary-button" type="button" data-document-analyze>Analyse erneut ausführen</button>' : '',
-    analysisComplete && !topicReviewConfirmed ? '<button class="secondary-button" type="button" data-topic-add>Thema hinzufügen</button><button class="secondary-button" type="button" data-topic-save>Änderungen speichern</button>' : '',
-    topicReviewConfirmed ? '<button class="secondary-button" type="button" data-topic-reopen>Bearbeitung wieder öffnen</button>' : '',
+    topicReviewConfirmed ? '<button class="secondary-button" type="button" data-open-topic-review>Bestätigte Themen ansehen</button>' : '',
     currentPlan ? '<button class="secondary-button" type="button" data-course-plan-start>Unterrichtsplan neu erstellen</button>' : '',
     running || planningRunning ? '<button class="secondary-button" type="button" data-document-analysis-cancel>Vorgang abbrechen</button>' : ''
   ].join('');
@@ -860,21 +860,36 @@ function renderAiUnderstanding(project) {
   const missing = (project.documentAnalyses || []).flatMap((item) => item.missingInformation || []);
   const review = project.topicReview || { status: 'pending', topics: project.topicCatalog?.topics || [] };
   const confirmed = review.status === 'confirmed';
-  return `<details class="validation-box" data-ai-understanding open><summary>Erkannte Themen und Analyseergebnisse prüfen</summary>
-    <p>Die KI hat aus den analysierten Dokumenten folgende Themenbasis ermittelt. Prüfe und bearbeite diese Angaben, bevor daraus der Unterrichtsplan erstellt wird.</p>
-    <label>Zusammenarbeit mit der KI<select data-interaction-mode aria-label="Interaktionsmodus"><option value="automatic" ${project.interactionMode === 'automatic' ? 'selected' : ''}>Automatisch</option><option value="guided" ${!project.interactionMode || project.interactionMode === 'guided' ? 'selected' : ''}>Begleitet (empfohlen)</option><option value="strict" ${project.interactionMode === 'strict' ? 'selected' : ''}>Streng kontrolliert</option></select></label>
+  return `<section class="validation-box analysis-review-launcher" data-ai-understanding>
+    <div><h4>Erkannte Themen und Analyseergebnisse</h4><p>Prüfe und bearbeite die Themenbasis in einer eigenen, breiten Ansicht.</p></div>
     <div class="summary-grid"><span>Kurstage: ${escapeHtml(frame.totalDays || 0)}</span><span>UE gesamt: ${escapeHtml(frame.totalUnits || 0)}</span><span>UE pro Tag: ${escapeHtml(frame.unitsPerDay || 0)}</span><span>UE-Dauer: ${escapeHtml(frame.unitDurationMinutes || 0)} Minuten</span><span>Dokumente: ${escapeHtml(project.uploadedDocuments?.length || 0)}</span><span>Leitquellen: ${escapeHtml((project.uploadedDocuments || []).filter((item) => item.bindingLevel === 'binding').length)}</span></div>
     <p class="compact-review-status ${confirmed ? 'status-confirmed' : ''}" role="status">${confirmed ? '✓ Themenbasis bestätigt' : 'Themenbasis zur Prüfung'} · Version ${escapeHtml(review.version || 1)}</p>
-    <div class="topic-review-table review-table-scroll" role="region" aria-label="Erkannte Themen"><table><thead><tr><th scope="col">Nr.</th><th scope="col">Titel</th><th scope="col">Unterthemen/Inhalte</th><th scope="col">Lernziele</th><th scope="col">Kompetenzen</th><th scope="col">Niveau</th><th scope="col">Quellen</th><th scope="col">Prüfstatus</th><th scope="col">Aktionen</th></tr></thead><tbody>${(review.topics || []).map((topic, index) => renderTopicReviewItem(topic, index, review.topics.length, confirmed, conflicts)).join('')}</tbody></table></div>
+    <button class="primary-button" type="button" data-open-topic-review>Analyseergebnis prüfen und bearbeiten</button>
+    ${conflicts.length || missing.length ? `<small>${escapeHtml(conflicts.length + missing.length)} Prüfhinweis(e) vorhanden.</small>` : ''}
+  </section>`;
+}
+
+function renderTopicReviewView(wizard) {
+  const project = wizard.courseProject;
+  const review = project?.topicReview || { status: 'pending', topics: project?.topicCatalog?.topics || [] };
+  const confirmed = review.status === 'confirmed';
+  const conflicts = (project?.documentAnalyses || []).flatMap((item) => item.conflicts || []);
+  const missing = (project?.documentAnalyses || []).flatMap((item) => item.missingInformation || []);
+  return `<article class="tool-card topic-review-view" data-plan-step-content="topicReview">
+    <header class="topic-review-header"><div><p class="eyebrow">Analyseergebnis</p><h3>Erkannte Themen prüfen und bearbeiten</h3><p>Bearbeite die Themenbasis übersichtlich. Änderungen bleiben beim Zurückgehen erhalten.</p></div><button class="secondary-button" type="button" data-close-topic-review>Zurück zur Kursplanung</button></header>
+    <label class="topic-review-mode">Zusammenarbeit mit der KI<select data-interaction-mode aria-label="Interaktionsmodus"><option value="automatic" ${project?.interactionMode === 'automatic' ? 'selected' : ''}>Automatisch</option><option value="guided" ${!project?.interactionMode || project.interactionMode === 'guided' ? 'selected' : ''}>Begleitet (empfohlen)</option><option value="strict" ${project?.interactionMode === 'strict' ? 'selected' : ''}>Streng kontrolliert</option></select></label>
+    <div class="topic-review-table" role="region" aria-label="Erkannte Themen"><table><thead><tr><th scope="col">Nr.</th><th scope="col">Titel</th><th scope="col">Unterthemen/Inhalte</th><th scope="col">Lernziele</th><th scope="col">Kompetenzen</th><th scope="col">Niveau</th><th scope="col">Prüfstatus</th><th scope="col">Aktionen</th></tr></thead><tbody>${(review.topics || []).map((topic, index) => renderTopicReviewItem(topic, index, review.topics.length, confirmed, conflicts)).join('')}</tbody></table></div>
     ${renderReviewHints(conflicts, missing)}
-    <small>Begleitet fragt nur bei fachlich relevanten Alternativen nach. Unwesentliche Annahmen blockieren die Planung nicht.</small></details>`;
+    <div class="workflow-actionbar topic-review-actions"><button class="secondary-button" type="button" data-topic-add ${confirmed ? 'disabled' : ''}>Thema hinzufügen</button><button class="secondary-button" type="button" data-topic-save ${confirmed ? 'disabled' : ''}>Änderungen speichern</button>${confirmed ? '<button class="secondary-button" type="button" data-topic-reopen>Bearbeitung wieder öffnen</button>' : '<button class="primary-button" type="button" data-topic-confirm>Themenbasis bestätigen</button>'}</div>
+  </article>`;
 }
 
 function renderTopicReviewItem(topic, index, count, readonly, conflicts = []) {
   const field = (name) => `data-topic-index="${index}" data-topic-field="${name}" ${readonly ? 'disabled' : ''}`;
   const related = conflicts.filter((item) => item.topicId === topic.id || item.affectedTopicIds?.includes(topic.id));
   const conflict = related.length > 0;
-  return `<tr class="topic-review-item ${conflict ? 'topic-has-conflict' : ''}"><td data-label="Nr.">${index + 1}</td><td data-label="Titel"><input aria-label="Titel Thema ${index + 1}" ${field('title')} value="${escapeHtml(topic.title || '')}"></td><td data-label="Unterthemen/Inhalte"><textarea rows="4" ${field('subtopics')}>${escapeHtml((topic.subtopics || []).join('\n'))}</textarea></td><td data-label="Lernziele"><textarea rows="4" ${field('learningObjectives')}>${escapeHtml((topic.learningObjectives || []).map(formatAnalysisItem).join('\n'))}</textarea></td><td data-label="Kompetenzen"><textarea rows="4" ${field('competencies')}>${escapeHtml((topic.competencies || []).map(formatAnalysisItem).join('\n'))}</textarea></td><td data-label="Niveau"><select ${field('difficulty')}>${['introductory','basic','intermediate','advanced'].map((value) => `<option value="${value}" ${topic.difficulty === value ? 'selected' : ''}>${({ introductory: 'Einstieg', basic: 'Grundlagen', intermediate: 'Mittel', advanced: 'Fortgeschritten' })[value]}</option>`).join('')}</select></td><td data-label="Quellen"><div class="source-pill-list">${(topic.sourceReferences || []).map((source) => `<span class="source-pill">${escapeHtml(planningReviewView.compactSource(source))}</span>`).join('') || '–'}</div></td><td data-label="Prüfstatus"><span class="review-state ${conflict ? 'is-conflict' : readonly ? 'is-reviewed' : 'is-open'}">${conflict ? 'Widerspruch' : readonly ? 'Geprüft' : 'Offen'}</span>${related.map((item) => `<small>⚠ ${escapeHtml(formatAnalysisItem(item))}</small>`).join('')}</td><td data-label="Aktionen"><div class="topic-row-actions"><button type="button" class="tertiary-button" aria-label="Thema nach oben" data-topic-move="up" data-topic-index="${index}" ${readonly || index === 0 ? 'disabled' : ''}>↑</button><button type="button" class="tertiary-button" aria-label="Thema nach unten" data-topic-move="down" data-topic-index="${index}" ${readonly || index === count - 1 ? 'disabled' : ''}>↓</button><button type="button" class="secondary-button" data-topic-remove="${index}" ${readonly ? 'disabled' : ''}>Löschen</button></div></td></tr>`;
+  const sources = (topic.sourceReferences || []).map((source) => planningReviewView.compactSource(source)).filter(Boolean);
+  return `<tr class="topic-review-item ${conflict ? 'topic-has-conflict' : ''}"><td data-label="Nr."><span class="topic-drag-handle" aria-hidden="true">⠿</span>${index + 1}</td><td data-label="Titel"><input aria-label="Titel Thema ${index + 1}" ${field('title')} value="${escapeHtml(topic.title || '')}"><details class="topic-source-meta"><summary>Quellen (${sources.length})</summary>${sources.length ? `<ul>${sources.map((source) => `<li>${escapeHtml(source)}</li>`).join('')}</ul>` : '<p>Keine Quelle zugeordnet.</p>'}</details></td><td data-label="Unterthemen/Inhalte"><textarea rows="4" ${field('subtopics')}>${escapeHtml((topic.subtopics || []).join('\n'))}</textarea></td><td data-label="Lernziele"><textarea rows="4" ${field('learningObjectives')}>${escapeHtml((topic.learningObjectives || []).map(formatAnalysisItem).join('\n'))}</textarea></td><td data-label="Kompetenzen"><textarea rows="4" ${field('competencies')}>${escapeHtml((topic.competencies || []).map(formatAnalysisItem).join('\n'))}</textarea></td><td data-label="Niveau"><select ${field('difficulty')}>${['introductory','basic','intermediate','advanced'].map((value) => `<option value="${value}" ${topic.difficulty === value ? 'selected' : ''}>${({ introductory: 'Einstieg', basic: 'Grundlagen', intermediate: 'Mittel', advanced: 'Fortgeschritten' })[value]}</option>`).join('')}</select></td><td data-label="Prüfstatus"><span class="review-state ${conflict ? 'is-conflict' : readonly ? 'is-reviewed' : 'is-open'}">${conflict ? 'Widerspruch' : readonly ? 'Geprüft' : 'Offen'}</span>${related.map((item) => `<small>⚠ ${escapeHtml(formatAnalysisItem(item))}</small>`).join('')}</td><td data-label="Aktionen"><div class="topic-row-actions"><label>Verschieben<select data-topic-move-menu data-topic-index="${index}" ${readonly ? 'disabled' : ''}><option value="">Aktion wählen</option>${index > 0 ? '<option value="up">Nach oben</option><option value="first">An den Anfang</option>' : ''}${index < count - 1 ? '<option value="down">Nach unten</option><option value="last">Ans Ende</option>' : ''}</select></label><button type="button" class="secondary-button topic-delete-button" data-topic-remove="${index}" ${readonly ? 'disabled' : ''}>Löschen</button></div></td></tr>`;
 }
 
 function renderReviewHints(conflicts, missing) {
@@ -1530,11 +1545,9 @@ function bindPlanWizardEvents() {
     }
     if (Object.keys(state.wizard.courseErrors || {}).length) {
       const errors = validateCourseFields(state.wizard.course);
-      const corrected = !errors[field.dataset.wizardCourse];
       state.wizard.courseErrors = errors;
-      if (corrected) renderPlanWizard();
+      updateFieldError(field, errors[field.dataset.wizardCourse], `course-${field.dataset.wizardCourse}-error`);
     }
-    if (field.tagName === 'SELECT') renderPlanWizard();
   }));
   $('[data-open-course-project]')?.addEventListener('change', openSavedCourseProject);
   $('[data-workflow-help-toggle]')?.addEventListener('click', () => {
@@ -1578,11 +1591,14 @@ function bindPlanWizardEvents() {
   }));
   if (hasDocumentAnalysisWorkflow) documentAnalysisWorkflow.bindDocumentAnalysisControls(document, startWizardDocumentAnalysis);
   $('[data-course-plan-start]')?.addEventListener('click', startWizardCoursePlanning);
+  $('[data-open-topic-review]')?.addEventListener('click', () => { state.wizard.topicReviewOpen = true; state.wizard.helpCollapsed = true; renderPlanWizard(); });
+  $('[data-close-topic-review]')?.addEventListener('click', () => { state.wizard.topicReviewOpen = false; renderPlanWizard(); });
   $('[data-open-structure-review]')?.addEventListener('click', () => { state.wizard.activeStep = 'structureReview'; renderPlanWizard(); });
   $all('[data-topic-field]').forEach((field) => field.addEventListener('input', () => updateTopicReviewField(field)));
   $('[data-topic-add]')?.addEventListener('click', () => { const review = state.wizard.courseProject.topicReview; review.topics.push({ id: `topic-user-${Date.now()}`, title: '', subtopics: [], learningObjectives: [], competencies: [], sourceReferences: [], difficulty: 'basic', reviewStatus: 'edited' }); review.status = 'edited'; renderPlanWizard(); });
   $all('[data-topic-remove]').forEach((button) => button.addEventListener('click', () => { state.wizard.courseProject.topicReview.topics.splice(Number(button.dataset.topicRemove), 1); state.wizard.courseProject.topicReview.status = 'edited'; renderPlanWizard(); }));
   $all('[data-topic-move]').forEach((button) => button.addEventListener('click', () => moveTopicReview(Number(button.dataset.topicIndex), button.dataset.topicMove)));
+  $all('[data-topic-move-menu]').forEach((select) => select.addEventListener('change', () => { if (select.value) moveTopicReview(Number(select.dataset.topicIndex), select.value); }));
   $('[data-topic-save]')?.addEventListener('click', saveTopicReview);
   $('[data-topic-confirm]')?.addEventListener('click', confirmTopicReview);
   $('[data-topic-reopen]')?.addEventListener('click', () => { state.wizard.courseProject.topicReview.status = 'edited'; state.wizard.status = 'Bearbeitung der Themenbasis wieder geöffnet.'; renderPlanWizard(); });
@@ -1610,8 +1626,11 @@ function bindPlanWizardEvents() {
     const options = key === 'targetAudience' ? targetAudienceOptions : priorKnowledgeOptions;
     const selected = options.find((option) => option.value === field.value);
     state.wizard.structureFrame[key] = selected ? { ...selected, customText: '' } : { value: '', label: '', customText: '' };
-    state.wizard.scopeErrors = {};
-    renderPlanWizard();
+    const errors = validateWizardCourseScope(state.wizard.structureFrame);
+    state.wizard.scopeErrors = errors;
+    updateFieldError(field, errors[key], key === 'targetAudience' ? 'scope-audience-error' : 'scope-knowledge-error');
+    const needsConditionalField = ['other_audience', 'other_knowledge'].includes(field.value);
+    if (needsConditionalField) renderPlanWizard();
   }));
   $all('[data-course-scope-custom]').forEach((field) => field.addEventListener('input', () => {
     state.wizard.structureFrame[field.dataset.courseScopeCustom].customText = field.value;
@@ -1862,6 +1881,28 @@ function validateAndShowCourseFields() {
   renderPlanWizard();
   requestAnimationFrame(() => $('[data-plan-step-content="course"] [aria-invalid="true"]')?.focus());
   return false;
+}
+
+function updateFieldError(field, message, errorId) {
+  if (!field) return;
+  const label = field.closest('label');
+  let error = label?.querySelector(`#${errorId}`);
+  field.classList.toggle('field-invalid', Boolean(message));
+  field.setAttribute('aria-invalid', String(Boolean(message)));
+  if (message) {
+    field.setAttribute('aria-describedby', errorId);
+    if (!error && label) {
+      error = document.createElement('small');
+      error.id = errorId;
+      error.className = 'field-error';
+      error.setAttribute('role', 'alert');
+      label.append(error);
+    }
+    if (error) error.textContent = message;
+  } else {
+    error?.remove();
+    if (field.getAttribute('aria-describedby') === errorId) field.removeAttribute('aria-describedby');
+  }
 }
 
 function bindDropZoneEvents() {
@@ -2220,7 +2261,15 @@ async function startWizardCoursePlanning() {
 }
 
 function updateTopicReviewField(field) { const topic = state.wizard.courseProject?.topicReview?.topics?.[Number(field.dataset.topicIndex)]; if (!topic) return; topic[field.dataset.topicField] = ['subtopics','learningObjectives','competencies'].includes(field.dataset.topicField) ? field.value.split(/\r?\n/).map((value) => value.trim()).filter(Boolean) : field.value; topic.reviewStatus = 'edited'; state.wizard.courseProject.topicReview.status = 'edited'; }
-function moveTopicReview(index, direction) { const topics = state.wizard.courseProject.topicReview.topics; const target = direction === 'up' ? index - 1 : index + 1; if (target < 0 || target >= topics.length) return; [topics[index], topics[target]] = [topics[target], topics[index]]; state.wizard.courseProject.topicReview.status = 'edited'; renderPlanWizard(); }
+function moveTopicReview(index, direction) {
+  const topics = state.wizard.courseProject.topicReview.topics;
+  const target = direction === 'first' ? 0 : direction === 'last' ? topics.length - 1 : direction === 'up' ? index - 1 : index + 1;
+  if (target < 0 || target >= topics.length || target === index) return;
+  const [topic] = topics.splice(index, 1);
+  topics.splice(target, 0, topic);
+  state.wizard.courseProject.topicReview.status = 'edited';
+  renderPlanWizard();
+}
 async function saveTopicReview(render = true) { try { state.wizard.courseProject = await desktop.factory.updateTopicReview(state.wizard.course.courseId, { topics: state.wizard.courseProject.topicReview.topics }); state.wizard.status = 'Themenbasis gespeichert.'; } catch (error) { state.wizard.status = error.message; } if (render) renderPlanWizard(); }
 async function confirmTopicReview() {
   const scroller = $('.factory-layout');
