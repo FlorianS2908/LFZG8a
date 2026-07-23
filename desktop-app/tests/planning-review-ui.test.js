@@ -81,3 +81,33 @@ test('Feldvalidierung bleibt fokussiert und Zielgruppenfehler werden getrennt ak
   assert.doesNotMatch(scopeBinding, /scopeErrors = \{\}/);
   assert.match(ui, /function updateFieldError/);
 });
+
+test('Kurstitel und Kurs-ID bleiben getrennt und Zurück bleibt verfügbar', () => {
+  const root = path.join(__dirname, '..', 'app', 'renderer', 'tool-center');
+  const ui = fs.readFileSync(path.join(root, 'factory.js'), 'utf8');
+  const courseBinding = ui.slice(ui.indexOf("$all('[data-wizard-course]')"), ui.indexOf("$('[data-open-course-project]')"));
+  assert.doesNotMatch(courseBinding, /courseName.*courseId/s);
+  assert.match(ui, /canBack: true/);
+  assert.match(ui, /\[data-wizard-prev\].*data-close-table-workspace/);
+});
+
+test('Themen und Unterrichtsplan verwenden einen gemeinsamen Vollbild-Arbeitsbereich', () => {
+  const root = path.join(__dirname, '..', 'app', 'renderer', 'tool-center');
+  const ui = fs.readFileSync(path.join(root, 'factory.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'content-factory.css'), 'utf8');
+  assert.match(ui, /table-workspace topic-review-view/);
+  assert.match(ui, /table-workspace course-plan-workspace/);
+  assert.match(ui, /data-open-course-plan-workspace/);
+  assert.match(ui, /data-close-table-workspace/);
+  assert.match(css, /\.table-workspace \{/);
+  assert.match(css, /position: fixed/);
+  assert.match(css, /height: 100vh/);
+});
+
+test('Analyseanzeige entfernt exakte Anzeige-Duplikate und leere Platzhalter', () => {
+  const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8');
+  assert.match(ui, /function deduplicateAnalysisItems/);
+  assert.match(ui, /key === 'strukturierter eintrag'/);
+  assert.match(ui, /const list = deduplicateAnalysisItems\(values\)/);
+  assert.match(ui, /function deduplicateDisplayedSources/);
+});

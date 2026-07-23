@@ -109,6 +109,7 @@ const state = {
     cleanupReport: null,
     status: '',
     activeStep: 'course',
+    tableWorkspace: '',
     expertMode: false,
     skippedSteps: {}
   }
@@ -632,7 +633,7 @@ function renderPlanWizard() {
         contentHtml,
         statusHtml: renderPlanWizardStepStatus(activeGate),
         actionsHtml: activeGate.id === 'courseStructure' ? '' : workflowLayout.renderWorkflowActionBar({
-          canBack: Boolean(previousGate),
+          canBack: true,
           canNext: canContinue,
           canSkip: Boolean(activeGate.optional),
           canCheck: activeGate.id === 'analysis' || activeGate.id === 'preflight',
@@ -667,7 +668,7 @@ function setAnalysisUiBusy(busy) {
   root?.setAttribute('aria-busy', String(busy));
   const controls = [...$all('[data-plan-wizard] button, [data-plan-wizard] input, [data-plan-wizard] select, [data-plan-wizard] textarea, [data-factory-tab], [data-open-factory-section]')];
   controls.forEach((control) => {
-    if (control.matches('[data-document-analysis-cancel]')) return;
+    if (control.matches('[data-document-analysis-cancel], [data-wizard-prev], [data-close-table-workspace], [data-close-topic-review]')) return;
     if (busy) { control.dataset.analysisLocked = control.disabled ? 'already-disabled' : 'locked'; control.disabled = true; control.setAttribute('aria-disabled', 'true'); }
     else if (control.dataset.analysisLocked === 'locked') { control.disabled = false; control.removeAttribute('aria-disabled'); delete control.dataset.analysisLocked; }
   });
@@ -879,7 +880,7 @@ function renderTopicReviewView(wizard) {
   const confirmed = review.status === 'confirmed';
   const conflicts = (project?.documentAnalyses || []).flatMap((item) => item.conflicts || []);
   const missing = (project?.documentAnalyses || []).flatMap((item) => item.missingInformation || []);
-  return `<article class="tool-card topic-review-view" data-plan-step-content="topicReview">
+  return `<article class="tool-card table-workspace topic-review-view" data-plan-step-content="topicReview">
     <header class="topic-review-header"><div><p class="eyebrow">Analyseergebnis</p><h3>Erkannte Themen prüfen und bearbeiten</h3><p>Bearbeite die Themenbasis übersichtlich. Änderungen bleiben beim Zurückgehen erhalten.</p></div><button class="secondary-button" type="button" data-close-topic-review>Zurück zur Kursplanung</button></header>
     <label class="topic-review-mode">Zusammenarbeit mit der KI<select data-interaction-mode aria-label="Interaktionsmodus"><option value="automatic" ${project?.interactionMode === 'automatic' ? 'selected' : ''}>Automatisch</option><option value="guided" ${!project?.interactionMode || project.interactionMode === 'guided' ? 'selected' : ''}>Begleitet (empfohlen)</option><option value="strict" ${project?.interactionMode === 'strict' ? 'selected' : ''}>Streng kontrolliert</option></select></label>
     <div class="topic-review-table" role="region" aria-label="Erkannte Themen"><table><thead><tr><th scope="col">Nr.</th><th scope="col">Titel</th><th scope="col">Unterthemen/Inhalte</th><th scope="col">Lernziele</th><th scope="col">Kompetenzen</th><th scope="col">Niveau</th><th scope="col">Prüfstatus</th><th scope="col">Aktionen</th></tr></thead><tbody>${(review.topics || []).map((topic, index) => renderTopicReviewItem(topic, index, review.topics.length, confirmed, conflicts)).join('')}</tbody></table></div>
@@ -892,12 +893,15 @@ function renderTopicReviewItem(topic, index, count, readonly, conflicts = []) {
   const field = (name) => `data-topic-index="${index}" data-topic-field="${name}" ${readonly ? 'disabled' : ''}`;
   const related = conflicts.filter((item) => item.topicId === topic.id || item.affectedTopicIds?.includes(topic.id));
   const conflict = related.length > 0;
-  const sources = (topic.sourceReferences || []).map((source) => planningReviewView.compactSource(source)).filter(Boolean);
+  const sources = deduplicateAnalysisItems((topic.sourceReferences || []).map((source) => typeof source === 'string' ? source : planningReviewView.compactSource(source))).map(formatAnalysisItem);
   return `<tr class="topic-review-item ${conflict ? 'topic-has-conflict' : ''}"><td data-label="Nr."><span class="topic-drag-handle" aria-hidden="true">⠿</span>${index + 1}</td><td data-label="Titel"><input aria-label="Titel Thema ${index + 1}" ${field('title')} value="${escapeHtml(topic.title || '')}"><details class="topic-source-meta"><summary>Quellen (${sources.length})</summary>${sources.length ? `<ul>${sources.map((source) => `<li>${escapeHtml(source)}</li>`).join('')}</ul>` : '<p>Keine Quelle zugeordnet.</p>'}</details></td><td data-label="Unterthemen/Inhalte"><textarea rows="4" ${field('subtopics')}>${escapeHtml((topic.subtopics || []).join('\n'))}</textarea></td><td data-label="Lernziele"><textarea rows="4" ${field('learningObjectives')}>${escapeHtml((topic.learningObjectives || []).map(formatAnalysisItem).join('\n'))}</textarea></td><td data-label="Kompetenzen"><textarea rows="4" ${field('competencies')}>${escapeHtml((topic.competencies || []).map(formatAnalysisItem).join('\n'))}</textarea></td><td data-label="Niveau"><select ${field('difficulty')}>${['introductory','basic','intermediate','advanced'].map((value) => `<option value="${value}" ${topic.difficulty === value ? 'selected' : ''}>${({ introductory: 'Einstieg', basic: 'Grundlagen', intermediate: 'Mittel', advanced: 'Fortgeschritten' })[value]}</option>`).join('')}</select></td><td data-label="Prüfstatus"><span class="review-state ${conflict ? 'is-conflict' : readonly ? 'is-reviewed' : 'is-open'}">${conflict ? 'Widerspruch' : readonly ? 'Geprüft' : 'Offen'}</span>${related.map((item) => `<small>⚠ ${escapeHtml(formatAnalysisItem(item))}</small>`).join('')}</td><td data-label="Aktionen"><div class="topic-row-actions"><label>Verschieben<select data-topic-move-menu data-topic-index="${index}" ${readonly ? 'disabled' : ''}><option value="">Aktion wählen</option>${index > 0 ? '<option value="up">Nach oben</option><option value="first">An den Anfang</option>' : ''}${index < count - 1 ? '<option value="down">Nach unten</option><option value="last">Ans Ende</option>' : ''}</select></label><button type="button" class="secondary-button topic-delete-button" data-topic-remove="${index}" ${readonly ? 'disabled' : ''}>Löschen</button></div></td></tr>`;
 }
 
 function renderReviewHints(conflicts, missing) {
-  const items = [...conflicts.map((item) => ({ type: 'Widerspruch', item })), ...missing.map((item) => ({ type: 'Fehlende Angabe', item }))];
+  const items = deduplicateAnalysisItems([
+    ...conflicts.map((item) => ({ type: 'Widerspruch', item, text: `Widerspruch ${formatAnalysisItem(item)}` })),
+    ...missing.map((item) => ({ type: 'Fehlende Angabe', item, text: `Fehlende Angabe ${formatAnalysisItem(item)}` }))
+  ]);
   if (!items.length) return '';
   return `<details class="review-hints"><summary>Prüfhinweise (${items.length})</summary><ul>${items.map(({ type, item }) => `<li><strong>${escapeHtml(type)}</strong> · ${escapeHtml(formatAnalysisItem(item))}</li>`).join('')}</ul></details>`;
 }
@@ -924,7 +928,7 @@ function renderDocumentAnalysisCard(document, analyses, index) {
 }
 
 function renderAnalysisList(title, values) {
-  const list = Array.isArray(values) ? values : [];
+  const list = deduplicateAnalysisItems(values);
   if (!list.length) return `<section><strong>${escapeHtml(title)}</strong><p class="dropzone-empty">Keine Einträge erkannt.</p></section>`;
   return `<section><strong>${escapeHtml(title)}</strong><ul>${list.map((item) => `<li>${escapeHtml(formatAnalysisItem(item))}</li>`).join('')}</ul></section>`;
 }
@@ -932,11 +936,38 @@ function renderAnalysisList(title, values) {
 function formatAnalysisItem(item) {
   if (item === null || item === undefined) return '';
   if (typeof item !== 'object') return String(item);
-  return String(item.title || item.value || item.name || item.description || item.text || item.summary || item.message || item.fileName || item.documentId || 'Strukturierter Eintrag');
+  return String(item.title || item.value || item.name || item.description || item.text || item.summary || item.message || item.fileName || item.documentId || '');
+}
+
+function normalizeAnalysisItem(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/[.!?;:,]+$/g, '')
+    .toLocaleLowerCase('de-DE');
+}
+
+function deduplicateAnalysisItems(values = []) {
+  const seen = new Set();
+  return (Array.isArray(values) ? values : []).filter((item) => {
+    const label = formatAnalysisItem(item);
+    const key = normalizeAnalysisItem(label);
+    if (!key || key === 'strukturierter eintrag' || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function deduplicateDisplayedSources(references = []) {
-  return [...new Map(references.filter((reference) => reference?.documentId).map((reference) => [`${reference.documentId}|${reference.location || reference.sourceRef || reference.page || reference.section || ''}`, reference])).values()];
+  const seen = new Set();
+  return references.filter((reference) => {
+    const label = typeof reference === 'string' ? reference : planningReviewView.compactSource(reference);
+    const key = normalizeAnalysisItem(label);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function documentAnalysisStatusLabel(status) {
@@ -948,8 +979,17 @@ function renderStructureReviewStep(wizard) {
   const draft = getCurrentValidCoursePlanDraft(project);
   if (!draft) return '<article class="tool-card"><h3>Struktur-Review</h3><p class="status-line status-warning">Noch keine KI-Kursstruktur vorhanden.</p></article>';
   (draft.days || []).forEach((day) => (day.units || []).forEach((unit) => { unit.sourceReferences = deduplicateDisplayedSources(unit.sourceReferences); }));
-  return `<article class="tool-card" data-plan-step-content="structureReview">
-    <h3>Struktur-Review</h3>
+  if (wizard.tableWorkspace !== 'coursePlan') {
+    const unitCount = (draft.days || []).reduce((sum, day) => sum + (day.units || []).length, 0);
+    return `<article class="tool-card analysis-review-launcher" data-plan-step-content="structureReview">
+      <h3>Struktur-Review</h3>
+      <p>Der Unterrichtsplan wird in einem großen Tabellen-Arbeitsbereich bearbeitet. Änderungen bleiben beim Schließen und Zurückgehen erhalten.</p>
+      <div class="summary-grid"><span>${escapeHtml((draft.days || []).length)} Kurstage</span><span>${escapeHtml(unitCount)} Unterrichtseinheiten</span><span>Planungsversion ${escapeHtml(draft.planningVersion)}</span></div>
+      <button class="primary-button" type="button" data-open-course-plan-workspace>Unterrichtsplan bearbeiten</button>
+    </article>`;
+  }
+  return `<article class="tool-card table-workspace course-plan-workspace" data-plan-step-content="structureReview">
+    <header class="topic-review-header"><div><p class="eyebrow">Tabellen-Arbeitsbereich</p><h3>Unterrichtsplan prüfen und bearbeiten</h3><p>Alle Änderungen werden direkt im aktuellen Entwurf gehalten.</p></div><button class="secondary-button" type="button" data-close-table-workspace>Zurück zur Übersicht</button></header>
     <div class="summary-grid"><span>Kurs: ${escapeHtml(project.title)}</span><span>Zielgruppe: ${escapeHtml(project.targetGroup)}</span><span>Tage: ${escapeHtml((draft.structureFrameSnapshot || draft.planningFrameSnapshot)?.totalDays)}</span><span>planbare UE: ${escapeHtml((draft.structureFrameSnapshot || draft.planningFrameSnapshot)?.actuallyPlannableUnits)}</span><span>Planungsversion: ${escapeHtml(draft.planningVersion)}</span><span>KI: ${escapeHtml(draft.provider)} / ${escapeHtml(draft.model)}</span><span>Validierung: ${escapeHtml(draft.validation?.status)}</span></div>
     ${(draft.validation?.errors || []).map((error) => `<p class="status-line status-error">${escapeHtml(error)}</p>`).join('')}
     ${renderConflictOverview(draft)}
@@ -1528,6 +1568,14 @@ function bindPlanWizardEvents() {
     renderPlanWizard();
   }));
   $('[data-wizard-prev]')?.addEventListener('click', () => moveWizardStep(-1));
+  $('[data-open-course-plan-workspace]')?.addEventListener('click', () => {
+    state.wizard.tableWorkspace = 'coursePlan';
+    renderPlanWizard();
+  });
+  $('[data-close-table-workspace]')?.addEventListener('click', () => {
+    state.wizard.tableWorkspace = '';
+    renderPlanWizard();
+  });
   $('[data-wizard-next]')?.addEventListener('click', async () => {
     if (state.wizard.activeStep === 'course' && !validateAndShowCourseFields()) return;
     if (state.wizard.activeStep === 'durationAudience') {
@@ -1544,11 +1592,6 @@ function bindPlanWizardEvents() {
   $all('[data-wizard-course]').forEach((field) => field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', () => {
     state.wizard.course[field.dataset.wizardCourse] = field.value;
     state.wizard.targetAudience.department = state.wizard.course.department || state.wizard.targetAudience.department;
-    if (field.dataset.wizardCourse === 'courseName' && !state.wizard.course.courseId) {
-      state.wizard.course.courseId = field.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-      const courseIdField = $('[data-wizard-course="courseId"]');
-      if (courseIdField) courseIdField.value = state.wizard.course.courseId;
-    }
     if (Object.keys(state.wizard.courseErrors || {}).length) {
       const errors = validateCourseFields(state.wizard.course);
       state.wizard.courseErrors = errors;

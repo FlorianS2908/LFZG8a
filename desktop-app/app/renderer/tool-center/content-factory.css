@@ -317,6 +317,43 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .compact-review-status.status-confirmed { color: var(--cf-success); background: var(--cf-review-confirmed-bg); }
 .topic-review-table { max-width: 100%; overflow-x: auto; border: 1px solid var(--cf-line); border-radius: var(--cf-radius-small); }
 .topic-review-view { width: 100%; }
+.table-workspace {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  margin: 0;
+  padding: clamp(1rem, 2vw, 2rem);
+  border-radius: 0;
+  overflow: auto;
+  background: var(--cf-canvas);
+}
+.table-workspace .topic-review-header {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  padding: var(--cf-space-3) 0;
+  background: var(--cf-canvas);
+}
+.table-workspace .topic-review-table,
+.table-workspace .course-plan-review-table { width: max-content; min-width: 100%; overflow: visible; }
+.table-workspace .topic-review-table table { min-width: max(100%, 105rem); }
+.table-workspace .course-plan-review-table table { min-width: 130rem; }
+.table-workspace textarea { field-sizing: content; min-height: 5rem; max-height: none; overflow-y: hidden; resize: vertical; }
+.table-workspace thead th { position: sticky; top: 6.5rem; z-index: 4; }
+.table-workspace .topic-review-table th:nth-child(1),
+.table-workspace .topic-review-table td:nth-child(1) { position: sticky; left: 0; z-index: 3; background: var(--cf-surface); }
+.table-workspace .topic-review-table th:nth-child(2),
+.table-workspace .topic-review-table td:nth-child(2) { position: sticky; left: 3rem; z-index: 3; background: var(--cf-surface); }
+.course-plan-workspace .review-table-scroll { overflow: visible; }
+.course-plan-workspace .plan-unit-row > :nth-child(1),
+.course-plan-workspace thead th:nth-child(1) { position: sticky; left: 0; z-index: 3; background: var(--cf-surface); }
+.course-plan-workspace .plan-unit-row > :nth-child(2),
+.course-plan-workspace thead th:nth-child(2) { position: sticky; left: 5rem; z-index: 3; background: var(--cf-surface); }
+.course-plan-workspace .plan-unit-row > :nth-child(3),
+.course-plan-workspace thead th:nth-child(3) { position: sticky; left: 10rem; z-index: 3; background: var(--cf-surface); }
 .topic-review-header { display: flex; justify-content: space-between; gap: var(--cf-space-6); align-items: flex-start; }
 .topic-review-header .eyebrow { margin: 0 0 .35rem; color: var(--cf-brand-strong); font-size: .8rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .topic-review-mode { max-width: 28rem; }
