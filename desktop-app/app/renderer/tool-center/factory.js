@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 54529)
-Total output lines: 3258
-
 const desktop = window.courseForgeDesktop || window.lfzq8aDesktop;
 const hasDesktopFactory = Boolean(desktop?.factory);
 const appNavigation = window.CourseForgeAppNavigation || window.ContentFactoryAppNavigation;
@@ -877,7 +874,1260 @@ function renderTopicReviewItem(topic, index, count, readonly, conflicts = []) {
   const field = (name) => `data-topic-index="${index}" data-topic-field="${name}" ${readonly ? 'disabled' : ''}`;
   const related = conflicts.filter((item) => item.topicId === topic.id || item.affectedTopicIds?.includes(topic.id));
   const conflict = related.length > 0;
-  return `<tr class="topic-review-item ${conflict ? 'topic-has-conflict' : ''}"><td data-label="Nr.">${index + 1}</td><td data-label="Titel"><input aria-label="Titel Thema ${index + 1}" ${field('title')} value="${escapeHtml(topic.title || '')}"></td><td data-label="Unterthemen/Inhalte"><textarea rows="4" ${field('subtopics')}>${escapeHtml((topic.subtopics || []).join('\n'))}</textarea></td><td data-label="Lernziele"><textarea rows="4" ${field('learningObjectives')}>${escapeHtml((topic.learningObjectives || []).map(formatAnalysisItem).join('\n'))}</textarea></td><td data-label="Kompetenzen"><textarea rows="4" ${field('competencies')}>${escapeHtml((topic.competencies || []).map(formatAnalysisItem).join('\n'))}</textarea></td><td data-label="Niveau"><select ${field('difficulty')}>${['introductory','basic','intermediate','advanced'].map((value) => `<option value="${value}" ${topic.difficulty === value ? 'selected' : ''}>${({ introductory: 'Einstieg', basic: 'Grundlagen', intermediate: 'Mittel', advanced: 'Fortgeschritten' })[value]}</option>`).join('')}</select></td><td data-label="Quellen"><div class="source-pill-list">${(topic.sourceReferences || []).map((source) => `<span class="source-pill">${escapeHtml(planningReviewView.compactSource(source))}</span>`).join('') || '–'}</div></td><td data-label="Prüfstatus"><span class="review-state ${conflict ? 'is-conflict' : readonly ? 'is-reviewed' : 'is-open'}">${conflict ? 'Widerspruch' : readonly ? 'Geprüft' : 'Offen'}</span>${related.map((item) => `<sm…24529 tokens truncated…Gespeichertes Kursprojekt geladen.';
+  return `<tr class="topic-review-item ${conflict ? 'topic-has-conflict' : ''}"><td data-label="Nr.">${index + 1}</td><td data-label="Titel"><input aria-label="Titel Thema ${index + 1}" ${field('title')} value="${escapeHtml(topic.title || '')}"></td><td data-label="Unterthemen/Inhalte"><textarea rows="4" ${field('subtopics')}>${escapeHtml((topic.subtopics || []).join('\n'))}</textarea></td><td data-label="Lernziele"><textarea rows="4" ${field('learningObjectives')}>${escapeHtml((topic.learningObjectives || []).map(formatAnalysisItem).join('\n'))}</textarea></td><td data-label="Kompetenzen"><textarea rows="4" ${field('competencies')}>${escapeHtml((topic.competencies || []).map(formatAnalysisItem).join('\n'))}</textarea></td><td data-label="Niveau"><select ${field('difficulty')}>${['introductory','basic','intermediate','advanced'].map((value) => `<option value="${value}" ${topic.difficulty === value ? 'selected' : ''}>${({ introductory: 'Einstieg', basic: 'Grundlagen', intermediate: 'Mittel', advanced: 'Fortgeschritten' })[value]}</option>`).join('')}</select></td><td data-label="Quellen"><div class="source-pill-list">${(topic.sourceReferences || []).map((source) => `<span class="source-pill">${escapeHtml(planningReviewView.compactSource(source))}</span>`).join('') || '–'}</div></td><td data-label="Prüfstatus"><span class="review-state ${conflict ? 'is-conflict' : readonly ? 'is-reviewed' : 'is-open'}">${conflict ? 'Widerspruch' : readonly ? 'Geprüft' : 'Offen'}</span>${related.map((item) => `<small>⚠ ${escapeHtml(formatAnalysisItem(item))}</small>`).join('')}</td><td data-label="Aktionen"><div class="topic-row-actions"><button type="button" class="tertiary-button" aria-label="Thema nach oben" data-topic-move="up" data-topic-index="${index}" ${readonly || index === 0 ? 'disabled' : ''}>↑</button><button type="button" class="tertiary-button" aria-label="Thema nach unten" data-topic-move="down" data-topic-index="${index}" ${readonly || index === count - 1 ? 'disabled' : ''}>↓</button><button type="button" class="secondary-button" data-topic-remove="${index}" ${readonly ? 'disabled' : ''}>Löschen</button></div></td></tr>`;
+}
+
+function renderReviewHints(conflicts, missing) {
+  const items = [...conflicts.map((item) => ({ type: 'Widerspruch', item })), ...missing.map((item) => ({ type: 'Fehlende Angabe', item }))];
+  if (!items.length) return '';
+  return `<details class="review-hints"><summary>Prüfhinweise (${items.length})</summary><ul>${items.map(({ type, item }) => `<li><strong>${escapeHtml(type)}</strong> · ${escapeHtml(formatAnalysisItem(item))}</li>`).join('')}</ul></details>`;
+}
+
+function renderDocumentAnalysisCard(document, analyses, index) {
+  const id = document.id || `document-${index}`;
+  const analysis = [...analyses].reverse().find((item) => item.documentId === id);
+  const category = analysis?.detectedCategory?.value || document.detectedCategory?.value || document.detectedCategory || '-';
+  const evidence = planningReviewView.evidenceStatus({ originStatus: analysis?.conflicts?.length ? 'conflicting' : analysis?.reviewRequired ? 'needs_review' : 'derived', confidence: analysis?.confidence ?? analysis?.detectedCategory?.confidence });
+  const summary = analysis?.summary?.short || (typeof analysis?.summary === 'string' ? analysis.summary : 'Noch keine Analyse vorhanden.');
+  const error = document.analysisError;
+  const needsReupload = ['SOURCE_PATH_MISSING', 'SOURCE_FILE_NOT_FOUND', 'SOURCE_FILE_UNREADABLE', 'SOURCE_FILE_EMPTY', 'SOURCE_OUTSIDE_PROJECT_STORAGE', 'SOURCE_INTEGRITY_MISMATCH'].includes(error?.code);
+  const preparation = document.preparation || {};
+  const strategyLabel = ({ direct: 'Direkt analysierbar', direct_with_structured_extraction: 'Originaldatei und strukturierte Extraktion', convert_then_analyze: 'Sicher konvertiert und analysiert', extract_then_analyze: 'Sicher extrahiert und analysiert' })[preparation.strategy] || 'Wird sicher vorbereitet';
+  return `<article class="mapping-item document-analysis-card">
+    <strong>${escapeHtml(document.originalFileName || document.name)}</strong>
+    <small>Kategorie: ${escapeHtml(document.declaredCategory || document.sourceType || '-')} | erkannt: ${escapeHtml(category)}${analysis ? ` | Belegstatus: ${escapeHtml(evidence.label)}${evidence.supplementaryText ? ` (${escapeHtml(evidence.supplementaryText)})` : ''}` : ''}${document.extraction?.extractedCharacters ? ` | Zeichen: ${escapeHtml(document.extraction.extractedCharacters)} | Abschnitte: ${escapeHtml(document.extraction.pageOrSlideCount || document.extraction.sections?.length || 0)}` : ''}</small>
+    <small>Format: ${escapeHtml(preparation.detectedFormat || document.extension || '-')} | Strategie: ${escapeHtml(strategyLabel)} | Vorbereitung: ${escapeHtml(preparation.status || 'bereit')}</small>
+    ${(preparation.securityActions || []).map((message) => `<p class="status-line">${escapeHtml(message)}</p>`).join('')}${(preparation.warnings || []).map((message) => `<p class="status-line status-warning">${escapeHtml(message)}</p>`).join('')}
+    <span class="status-badge">${escapeHtml(needsReupload ? 'Erneuter Upload erforderlich' : documentAnalysisStatusLabel(document.analysisStatus || 'queued'))}</span><p>${escapeHtml(summary)}</p>
+    ${analysis ? `<details><summary>Analysefelder anzeigen</summary>${renderAnalysisList('Themen', analysis.topics)}${renderAnalysisList('Lernziele', analysis.learningObjectives)}${renderAnalysisList('Kompetenzen', analysis.competencies)}${renderAnalysisList('Aufgaben', analysis.exercises)}${renderAnalysisList('Warnungen', analysis.warnings)}${renderAnalysisList('Konflikte', analysis.conflicts)}${renderAnalysisList('Quellen', analysis.sourceReferences)}${renderAnalysisList('Review-Punkte', analysis.reviewItems)}</details>` : ''}
+    ${error ? `<p class="status-line status-error">${escapeHtml(error.message)}</p><details><summary>Technische Details</summary><dl><dt>Fehlercode</dt><dd>${escapeHtml(error.code)}</dd><dt>Schritt</dt><dd>${escapeHtml(error.step)}</dd><dt>Feld</dt><dd>${escapeHtml(error.field)}</dd><dt>Erwartet</dt><dd>${escapeHtml(error.expected)}</dd><dt>Empfangen</dt><dd>${escapeHtml(error.received)}</dd></dl></details>${needsReupload ? `<label class="secondary-button">Datei erneut auswählen<input type="file" hidden data-reupload-document="${escapeHtml(id)}"></label>` : `<button class="secondary-button" type="button" data-retry-document="${escapeHtml(id)}">Dokument erneut analysieren</button>`}${document.bindingLevel === 'binding' && !document.failureAcknowledged ? `<button class="secondary-button" type="button" data-ack-document-failure="${escapeHtml(id)}">Als Ausnahme bestätigen</button>` : ''}` : ''}
+  </article>`;
+}
+
+function renderAnalysisList(title, values) {
+  const list = Array.isArray(values) ? values : [];
+  if (!list.length) return `<section><strong>${escapeHtml(title)}</strong><p class="dropzone-empty">Keine Einträge erkannt.</p></section>`;
+  return `<section><strong>${escapeHtml(title)}</strong><ul>${list.map((item) => `<li>${escapeHtml(formatAnalysisItem(item))}</li>`).join('')}</ul></section>`;
+}
+
+function formatAnalysisItem(item) {
+  if (item === null || item === undefined) return '';
+  if (typeof item !== 'object') return String(item);
+  return String(item.title || item.value || item.name || item.description || item.text || item.summary || item.message || item.fileName || item.documentId || 'Strukturierter Eintrag');
+}
+
+function deduplicateDisplayedSources(references = []) {
+  return [...new Map(references.filter((reference) => reference?.documentId).map((reference) => [`${reference.documentId}|${reference.location || reference.sourceRef || reference.page || reference.section || ''}`, reference])).values()];
+}
+
+function documentAnalysisStatusLabel(status) {
+  return ({ queued: 'Wartet auf Analyse', extracting: 'Dokument wird ausgelesen', extracted: 'Dokument wurde ausgelesen', analyzing: 'KI analysiert das Dokument', analyzed: 'Analyse abgeschlossen', analyzed_with_warnings: 'Analyse mit Warnungen abgeschlossen', failed: 'Analyse fehlgeschlagen', cancelled: 'Analyse abgebrochen', excluded: 'Von der Analyse ausgeschlossen' })[status] || status;
+}
+
+function renderStructureReviewStep(wizard) {
+  const project = wizard.courseProject;
+  const draft = getCurrentValidCoursePlanDraft(project);
+  if (!draft) return '<article class="tool-card"><h3>Struktur-Review</h3><p class="status-line status-warning">Noch keine KI-Kursstruktur vorhanden.</p></article>';
+  (draft.days || []).forEach((day) => (day.units || []).forEach((unit) => { unit.sourceReferences = deduplicateDisplayedSources(unit.sourceReferences); }));
+  return `<article class="tool-card" data-plan-step-content="structureReview">
+    <h3>Struktur-Review</h3>
+    <div class="summary-grid"><span>Kurs: ${escapeHtml(project.title)}</span><span>Zielgruppe: ${escapeHtml(project.targetGroup)}</span><span>Tage: ${escapeHtml((draft.structureFrameSnapshot || draft.planningFrameSnapshot)?.totalDays)}</span><span>planbare UE: ${escapeHtml((draft.structureFrameSnapshot || draft.planningFrameSnapshot)?.actuallyPlannableUnits)}</span><span>Planungsversion: ${escapeHtml(draft.planningVersion)}</span><span>KI: ${escapeHtml(draft.provider)} / ${escapeHtml(draft.model)}</span><span>Validierung: ${escapeHtml(draft.validation?.status)}</span></div>
+    ${(draft.validation?.errors || []).map((error) => `<p class="status-line status-error">${escapeHtml(error)}</p>`).join('')}
+    ${renderConflictOverview(draft)}
+    <div class="course-plan-review-table" role="region" aria-label="Unterrichtsplan nach Tagen">${(draft.days || []).map((day) => `<details open><summary>Tag ${escapeHtml(day.dayNumber)}: ${escapeHtml(day.title)}</summary><div class="review-table-scroll"><table><thead><tr><th>Tag</th><th>UE</th><th>Fortlaufend</th><th>Dauer</th><th>Thema</th><th>Inhalt</th><th>Kompetenzziel</th><th>Arbeitsform</th><th>Quellen</th><th>Konflikte und Hinweise</th><th>Prüfstatus</th></tr></thead><tbody>${(day.units || []).map((unit) => renderPlanReviewUnit(unit, draft.conflicts || [])).join('')}</tbody></table></div></details>`).join('')}</div>
+    <div class="button-row"><button class="secondary-button" type="button" data-save-course-structure>Alle Entscheidungen speichern</button><button class="secondary-button" type="button" data-export-course-plan>Als Excel exportieren</button><button class="secondary-button" type="button" data-confirm-course-plan ${canConfirmPlan(draft) ? '' : 'disabled'}>Prüfung abschließen</button><button class="primary-button" type="button" data-accept-course-plan ${draft.reviewState?.confirmed ? '' : 'disabled'}>Unterrichtsplan freigeben und weiter</button></div>
+    ${!canConfirmPlan(draft) ? `<p class="status-line status-warning">${escapeHtml(reviewBlockingMessage(draft))}</p>` : ''}
+  </article>`;
+}
+
+function renderPlanReviewUnit(unit, conflicts = []) {
+  const evidence = planningReviewView.evidenceStatus(unit);
+  const sources = (unit.sourceReferences || []).map(planningReviewView.compactSource).filter(Boolean);
+  const field = (name) => `data-structure-unit="${escapeHtml(unit.id)}" data-unit-field="${name}"`;
+  const formats = [['lecture','Lehrgespräch'],['demonstration','Demonstration'],['guided_practice','Geführte Übung'],['individual','Einzelarbeit'],['pair','Partnerarbeit'],['group','Gruppenarbeit'],['project','Projektarbeit'],['self_study','Selbstlernphase'],['assessment','Lernstandskontrolle']]; const related = conflicts.filter((item) => item.affectedUnitIds?.includes(unit.id)); const open = related.find((item) => ['blocking','review_required'].includes(item.relevance) && !['accepted_ai_proposal','kept_original','manually_resolved','marked_not_relevant'].includes(item.resolutionStatus)); const rowClass = open ? `plan-conflict-${open.relevance}` : related.length ? 'plan-conflict-resolved' : '';
+  const edit = (name, value, rows = 3) => `<label>${fieldLabel(name)}<textarea rows="${rows}" ${field(name)}>${escapeHtml(typeof value === 'string' ? value : JSON.stringify(value || [], null, 2))}</textarea></label>`;
+  return `<tr id="plan-unit-${escapeHtml(unit.id)}" class="plan-unit-row ${rowClass}"><td data-label="Tag"><input type="number" ${field('dayNumber')} value="${escapeHtml(unit.dayNumber)}"></td><td data-label="UE"><input type="number" ${field('unitNumber')} value="${escapeHtml(unit.unitNumber)}"></td><td data-label="Fortlaufend"><input type="number" ${field('globalUnitNumber')} value="${escapeHtml(unit.globalUnitNumber)}"></td><td data-label="Dauer"><input type="number" ${field('durationMinutes')} value="${escapeHtml(unit.durationMinutes)}"></td><td data-label="Thema"><textarea ${field('topic')}>${escapeHtml(unit.topic)}</textarea></td><td data-label="Inhalt"><textarea ${field('content')}>${escapeHtml(unit.content)}</textarea></td><td data-label="Kompetenzziel"><textarea ${field('competencyGoal')}>${escapeHtml(unit.competencyGoal)}</textarea></td><td data-label="Arbeitsform"><select ${field('workFormat.key')}>${formats.map(([key,label]) => `<option value="${key}" ${unit.workFormat?.key === key ? 'selected' : ''}>${label}</option>`).join('')}</select></td><td data-label="Quellen"><div class="source-pill-list">${sources.length ? sources.map((source) => `<span class="source-pill">${escapeHtml(source)}</span>`).join('') : '<span>–</span>'}</div><small>${escapeHtml(evidence.label)}</small></td><td data-label="Konflikte und Hinweise">${related.length ? related.map(renderConflictBadge).join('') : 'Keine'}</td><td data-label="Prüfstatus"><select ${field('status')}>${['draft', 'reviewed', 'conflict'].map((value) => `<option value="${value}" ${unit.status === value ? 'selected' : ''}>${value === 'draft' ? 'Entwurf' : value === 'reviewed' ? 'Geprüft' : 'Konflikt'}</option>`).join('')}</select></td></tr><tr class="plan-unit-details"><td colspan="11"><details><summary>Alle UE-Felder redaktionell bearbeiten</summary><div class="editable-detail-grid">${edit('didacticPhase', unit.didacticPhase, 2)}${edit('teacherActivity', unit.teacherActivity)}${edit('learnerActivity', unit.learnerActivity)}${edit('tasks', unit.tasks)}${edit('materials', unit.materials)}${edit('assessments', unit.assessments)}${edit('differentiation', unit.differentiation)}${edit('expectedOutcome', unit.expectedOutcome)}${edit('evaluation', unit.evaluation)}${edit('notes', unit.notes)}${edit('sourceReferences', unit.sourceReferences)}${edit('warnings', unit.warnings)}</div></details></td></tr>`;
+}
+
+function fieldLabel(name) { return ({ didacticPhase: 'Reservierte Phase', teacherActivity: 'Lehrhandlung', learnerActivity: 'Lernhandlung', tasks: 'Aufgaben (JSON)', materials: 'Materialien (JSON)', assessments: 'Lernstandprüfung (JSON)', differentiation: 'Differenzierung (JSON)', expectedOutcome: 'Erwartetes Ergebnis', evaluation: 'Evaluation', notes: 'Bemerkungen', sourceReferences: 'Quellenbezug (JSON)', warnings: 'Warnungen (JSON)' })[name] || name; }
+function resolvedConflict(item) { return ['accepted_ai_proposal','kept_original','manually_resolved','marked_not_relevant'].includes(item.resolutionStatus); }
+function renderConflictBadge(item) { const tone = resolvedConflict(item) ? 'resolved' : item.relevance === 'blocking' ? 'blocking' : item.relevance === 'ignored_as_extraction_noise' ? 'noise' : item.proposedValue !== null ? 'proposal' : 'review'; return `<button type="button" class="conflict-status conflict-status-${tone}" data-focus-conflict="${escapeHtml(item.conflictId)}" title="${escapeHtml(item.description)}">${escapeHtml(item.title)}</button>`; }
+function renderConflictOverview(draft) { const items = draft.conflicts || []; if (!items.length) return '<p class="status-line status-success">Keine offenen Widersprüche erkannt.</p>'; return `<section class="conflict-review-list" aria-label="Offene Widersprüche"><h4>Offene Widersprüche und Prüfhinweise (${items.length})</h4>${items.map((item) => `<article class="conflict-review-item" data-conflict-id="${escapeHtml(item.conflictId)}">${renderConflictBadge(item)}<p>${escapeHtml(item.description)}</p>${item.aiRecommendation ? `<p><strong>KI-Lösungsvorschlag:</strong> ${escapeHtml(item.aiRecommendation)}</p>` : ''}<p><strong>Betroffene Unterrichtseinheit:</strong> ${escapeHtml((item.affectedUnitIds || []).join(', ') || 'keine konkrete UE')} · <strong>Feld:</strong> ${escapeHtml((item.affectedFields || []).map(fieldLabel).join(', ') || 'allgemein')}</p><div class="button-row"><button type="button" class="secondary-button" data-conflict-decision="accepted_ai_proposal" data-conflict="${escapeHtml(item.conflictId)}" ${item.proposedValue === null ? 'disabled' : ''}>Vorschlag übernehmen</button><button type="button" class="secondary-button" data-conflict-decision="kept_original" data-conflict="${escapeHtml(item.conflictId)}">Ursprünglichen Wert behalten</button><button type="button" class="secondary-button" data-conflict-decision="manually_resolved" data-conflict="${escapeHtml(item.conflictId)}">Manuell auflösen</button><button type="button" class="secondary-button" data-conflict-decision="marked_not_relevant" data-conflict="${escapeHtml(item.conflictId)}">Nicht relevant</button><button type="button" class="tertiary-button" data-show-conflict-unit="${escapeHtml(item.affectedUnitIds?.[0] || '')}">Im Unterrichtsplan anzeigen</button></div></article>`).join('')}</section>`; }
+function canConfirmPlan(draft) { return draft.validation?.status !== 'failed' && !(draft.conflicts || []).some((item) => ['blocking','review_required'].includes(item.relevance) && !resolvedConflict(item)); }
+function reviewBlockingMessage(draft) { const open = (draft.conflicts || []).filter((item) => ['blocking','review_required'].includes(item.relevance) && !resolvedConflict(item)); return draft.validation?.status === 'failed' ? `Planvalidierung: ${(draft.validation.errors || []).join(' · ')}` : `Noch ${open.length} prüfpflichtige Widersprüche bearbeiten.`; }
+
+function normalizeDurationAndAudience(wizard) {
+  const days = Math.max(1, Math.round(Number(wizard.duration.numberOfDays || 1)));
+  const hoursPerDay = Math.max(0.5, Number(wizard.duration.hoursPerDay || 8));
+  const uePerDay = Math.max(1, Math.round(Number(wizard.duration.uePerDay || 9)));
+  wizard.duration = { ...wizard.duration, numberOfDays: days, hoursPerDay, uePerDay, totalHours: days * hoursPerDay, totalUE: days * uePerDay };
+  delete wizard.duration.durationMode;
+  wizard.targetAudience.difficultyMode = difficultyLevels.normalizeDifficulty(wizard.targetAudience.difficultyMode);
+  return wizard;
+}
+
+function renderAnalysisStep(wizard) {
+  return `
+    <article class="tool-card" data-plan-step-content="analysis">
+      <h3>Analyse</h3>
+      <p class="status-line">Die Hauptquelle wird in einen Unterrichtsplan mit Tagen, Themen, Lernzielen und Quellenangaben übersetzt.</p>
+      <p class="status-line">Die Container-Konfiguration steuert sichere Artefaktvorschlaege. Code, SQL und externe Tools werden nie automatisch ausgeführt.</p>
+      <button class="primary-button" type="button" data-wizard-analyze ${wizard.anchorFiles.length ? '' : 'disabled'}>Curriculum analysieren</button>
+      ${!wizard.anchorFiles.length ? '<p class="status-line status-warning">Analyse ist erst aktiv, wenn eine Hauptquelle vorhanden ist.</p>' : ''}
+    </article>
+  `;
+}
+
+function renderMaterialsStep(wizard) {
+  return `
+    <article class="tool-card" data-plan-step-content="materials">
+      <h3>Materialien</h3>
+      <p class="status-line">Optional: Ergaenze Aufgaben, Lösungen, Quiz, Projektdateien, Quellcode, SQL, Assets oder sonstige Dateien. ZIPs werden sicher gestaged.</p>
+      <div class="upload-grid-container"><div class="factory-grid upload-category-grid">
+        ${uploadAreas.map(([area, label, accept, description]) => {
+          const files = wizard.uploadFiles.filter((file) => file.uploadArea === area);
+          return createDropZoneHtml({ id: area, title: label, description, accept, files, multiple: true, kind: 'upload' });
+        }).join('')}
+      </div></div>
+      <button class="secondary-button" type="button" data-wizard-import ${wizard.uploadFiles.length ? '' : 'disabled'}>Uploads in Staging importieren</button>
+      ${wizard.importBatch ? `<p class="status-line">Import-Batch: ${escapeHtml(wizard.importBatch.id)} (${wizard.importBatch.files.length} Datei(en))</p>` : ''}
+    </article>
+  `;
+}
+
+function renderAiModeStep(wizard) {
+  return `
+    <article class="tool-card" data-plan-step-content="aiMode">
+      <h3>KI/Fallback</h3>
+      <div class="factory-form-grid">
+        <label>KI-Modus<select data-wizard-ai-mode>${['local', 'openai', 'openai-review', 'openai-review-repair'].map((mode) => `<option value="${mode}" ${wizard.aiMode === mode ? 'selected' : ''}>${escapeHtml(visibleLabel(mode))}</option>`).join('')}</select></label>
+      </div>
+      <div class="summary-grid">
+        <span><strong>local</strong>: lokale heuristische Erstellung ohne API-Kosten</span>
+        <span><strong>openai</strong>: OpenAI wird verwendet, wenn API-Key eingerichtet ist</span>
+        <span><strong>openai-review</strong>: OpenAI plus interne Review-Prüfung</span>
+        <span><strong>openai-review-repair</strong>: OpenAI plus Review und Reparaturversuch bei Schemafehlern</span>
+      </div>
+      <div class="summary-grid">
+        <span>OpenAI konfiguriert: ${state.aiStatus?.providers?.openai?.configured ? 'ja' : 'nein'}</span>
+        <span>Fallback aktiv: ja</span>
+        <span>Auswahl: ${escapeHtml(wizard.aiMode || 'local')}</span>
+        <span>Kostenabschaetzung: ${wizard.costEstimate ? `${escapeHtml(wizard.costEstimate.estimatedCostUsd)} USD` : '-'}</span>
+      </div>
+    </article>
+    ${renderAiSettings(wizard)}
+    ${renderPromptQualityGate(wizard)}
+  `;
+}
+
+function renderGenerationStep(wizard) {
+  const selectedDay = wizard.approvedCurriculumPlan?.days?.find((day) => day.dayNumber === Number(wizard.selectedDayNumber)) || wizard.approvedCurriculumPlan?.days?.[0];
+  return `
+    <article class="tool-card" data-plan-step-content="generation">
+      <h3>Tagesentwürfe</h3>
+      <div class="factory-form-grid">
+        <label>Tag<select data-wizard-day>${(wizard.approvedCurriculumPlan?.days || []).map((day) => `<option value="${day.dayNumber}" ${Number(wizard.selectedDayNumber) === day.dayNumber ? 'selected' : ''}>Tag ${day.dayNumber}: ${escapeHtml(day.title)}</option>`).join('')}</select></label>
+      </div>
+      <button class="primary-button" type="button" data-wizard-generate-all ${selectedDay && wizard.approvedCurriculumPlan?.status === 'approved' ? '' : 'disabled'}>Alle Tage generieren</button>
+      <button class="secondary-button" type="button" data-wizard-generate ${selectedDay && wizard.approvedCurriculumPlan?.status === 'approved' ? '' : 'disabled'}>Ausgewaehlten Tag neu generieren</button>
+      ${!wizard.approvedCurriculumPlan ? '<p class="status-line status-warning">Tagesentwurf erst nach Freigabe des Unterrichtsplans möglich.</p>' : ''}
+      ${wizard.dayResults.length ? `<p class="status-line">${wizard.dayResults.length} Tagesentwurf/Tagesentwürfe erzeugt.</p>` : ''}
+      ${wizard.dayResults.length ? renderDayResultList(wizard.dayResults) : ''}
+      ${wizard.dayDraft ? renderDayDraftPreview(wizard.dayDraft) : '<p class="status-line">Noch kein Tagesentwurf erzeugt.</p>'}
+      <label>Korrekturhinweis<textarea data-wizard-corrections>${escapeHtml(wizard.corrections)}</textarea></label>
+      <button class="secondary-button" type="button" data-wizard-revise ${wizard.dayDraft ? '' : 'disabled'}>Tagesentwurf mit Korrektur neu erzeugen</button>
+      <button class="primary-button" type="button" data-wizard-create-draft ${wizard.dayResults.length || wizard.dayDraft ? '' : 'disabled'}>Dual-Mode-Container-Draft erzeugen</button>
+      ${wizard.generatedDraft ? renderGeneratedDraft(wizard.generatedDraft) : ''}
+    </article>
+  `;
+}
+
+function renderContainerDraftStep(wizard) {
+  return `
+    <article class="tool-card" data-plan-step-content="containerDraft">
+      <h3>Container-Draft</h3>
+      <p class="status-line">Ein Kursentwurf kann lokal getestet und später veröffentlicht werden.</p>
+      <button class="primary-button" type="button" data-wizard-create-draft ${wizard.dayResults.length || wizard.dayDraft ? '' : 'disabled'}>Dual-Mode-Container-Draft erzeugen</button>
+      ${wizard.generatedDraft ? renderGeneratedDraft(wizard.generatedDraft) : '<p class="status-line">Noch kein Container-Draft erzeugt.</p>'}
+    </article>
+  `;
+}
+
+function renderDayDraftPreview(draft) {
+  return `
+    <div class="validation-box">
+      <strong>${escapeHtml(draft.title)}</strong>
+      <h4>Teilnehmer-Vorschau</h4>
+      ${(draft.webvariant?.participantHtmlSections || []).map((section) => `<section><strong>${escapeHtml(section.title)}</strong>${section.content}</section>`).join('')}
+      <h4>Aufgaben</h4><ul>${(draft.tasks || []).map((task) => `<li>${escapeHtml(task.title)}: ${escapeHtml(task.text)}</li>`).join('')}</ul>
+      <h4>Quiz</h4><ul>${(draft.quiz || []).map((quiz) => `<li>${escapeHtml(quiz.text)}</li>`).join('')}</ul>
+      <details><summary>Dozentenlösungen</summary><ul>${(draft.solutions || []).map((solution) => `<li>${escapeHtml(solution.title)}: ${escapeHtml(solution.text)}</li>`).join('')}</ul></details>
+      ${(draft.warnings || []).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
+    </div>
+  `;
+}
+
+function renderContainerProfileStep(wizard) {
+  const profile = wizard.containerProfile;
+  const course = profile.didacticCourse || {};
+  const modes = ['web-only', 'files-only', 'web-and-files'];
+  const presets = state.presets || [];
+  const select = (field, label, help = '') => `<label>${label}<select data-didactic-course="${field}">${didacticCourseOptions[field].map(([value, text]) => `<option value="${value}" ${course[field] === value ? 'selected' : ''}>${escapeHtml(text)}</option>`).join('')}</select>${help ? `<small>${escapeHtml(help)}</small>` : ''}</label>`;
+  return `
+    <article class="tool-card">
+      <h3>5. Container-Konfiguration</h3>
+      <h4>Was wird unterrichtet?</h4>
+      <div class="factory-form-grid">
+        <label>Preset<select data-wizard-preset><option value="">Kein Preset</option>${presets.map((preset) => `<option value="${escapeHtml(preset.id)}" ${wizard.selectedPresetId === preset.id ? 'selected' : ''}>${escapeHtml(preset.label || preset.id)}</option>`).join('')}</select></label>
+        ${select('technology', 'Fachgebiet / Technologie')}
+        ${course.technology === 'custom' ? `<label>Eigene Technologie<input data-didactic-course="customTechnology" value="${escapeHtml(course.customTechnology || '')}" required></label>` : ''}
+        ${course.technology === 'mixed-project' ? `<fieldset class="form-field-wide"><legend>Technologien auswählen</legend><div class="summary-grid">${didacticCourseOptions.technology.filter(([value]) => !['theory', 'mixed-project', 'custom'].includes(value)).map(([value, label]) => `<label class="checkline"><input data-course-array="selectedTechnologies" value="${value}" type="checkbox" ${(course.selectedTechnologies || []).includes(value) ? 'checked' : ''}><span>${escapeHtml(label)}</span></label>`).join('')}</div></fieldset>` : ''}
+      </div>
+      <h4>Wie wird gelernt?</h4>
+      <div class="factory-form-grid">${select('courseFormat', 'Kursformat', 'Steuert das Verhältnis von Erklärung, Anwendung und Transfer.')}${select('didacticProfile', 'Didaktisches Profil', 'Ausgewogen ist der Standard für neue Projekte.')}${select('audience', 'Zielgruppe')}${select('entryLevel', 'Einstiegsniveau')}</div>
+      ${course.courseFormat === 'custom' ? `<label>Eigenes Kursformat<input data-didactic-course="customCourseFormat" value="${escapeHtml(course.customCourseFormat || '')}" required></label>` : ''}
+      ${course.didacticProfile === 'custom' ? `<label>Eigenes didaktisches Profil<input data-didactic-course="customDidacticProfile" value="${escapeHtml(course.customDidacticProfile || '')}" required></label>` : ''}
+      ${course.audience === 'custom' ? `<label>Eigene Zielgruppe<input data-didactic-course="customAudience" value="${escapeHtml(course.customAudience || '')}" required></label>` : ''}
+      <details><summary>Didaktische Feineinstellungen</summary><div class="factory-form-grid">${select('learningOrganization', 'Bevorzugte Lernorganisation')}${select('differentiationProfile', 'Differenzierung')}</div><fieldset><legend>Lernerfolg und Wiederholung</legend><div class="summary-grid">${successCheckOptions.map(([value, label]) => `<label class="checkline"><input data-course-array="successChecks" value="${value}" type="checkbox" ${(course.successChecks || []).includes(value) ? 'checked' : ''}><span>${escapeHtml(label)}</span></label>`).join('')}</div></fieldset></details>
+      <div class="validation-box" aria-live="polite"><strong>Kurszusammenfassung</strong><p>${escapeHtml(summarizeWizardCourseConfiguration(course))}</p></div>
+      <button class="secondary-button" type="button" data-apply-preset ${wizard.selectedPresetId ? '' : 'disabled'}>Preset anwenden</button>
+      <small>${wizard.presetAppliedCount ? `Diese Vorlage hat ${escapeHtml(wizard.presetAppliedCount)} Empfehlungen gesetzt. ` : ''}Die Vorlage setzt Vorschläge; alle Werte bleiben manuell anpassbar.</small>
+      <h4>Welche Materialien entstehen?</h4>
+      <label>Materialausgabe<select data-container-profile="artifactMode">${modes.map((value) => `<option value="${value}" ${profile.artifactMode === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
+      <div class="summary-grid">
+        ${Object.entries(containerProfileLabels).map(([key, label]) => `<label class="checkline"><input data-container-profile-check="${key}" type="checkbox" ${profile[key] ? 'checked' : ''}> <span>${escapeHtml(label)}</span></label>`).join('')}
+        <label class="checkline"><input data-container-profile-check="generateRunScripts" type="checkbox" ${profile.generateRunScripts ? 'checked' : ''}> <span>Skripte zum Starten des Projekts erstellen</span></label>
+        <label class="checkline"><input data-container-profile-check="allowExecutableTools" type="checkbox" ${profile.allowExecutableTools ? 'checked' : ''}> <span>Externe Werkzeuge für diesen Kurs erlauben</span></label>
+        <label class="checkline"><input data-container-profile-check="allowDatabaseActions" type="checkbox" ${profile.allowDatabaseActions ? 'checked' : ''}> <span>Datenbankaktionen für diesen Kurs erlauben</span></label>
+      </div>
+      <h4>Welche technische Umgebung wird benötigt?</h4>
+      <p class="status-line status-warning">EXE/BAT/CMD/PS1 werden nie exportiert oder ausgeführt. SQL wird nur als Datei erzeugt.</p>
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-profile-preset="java-maven">Maven-Projekt erzwingen</button>
+        <button class="secondary-button" type="button" data-profile-preset="java">nur einfache Java-Dateien</button>
+        <button class="secondary-button" type="button" data-profile-preset="uml-pap">Diagramm hinzufügen</button>
+        <button class="secondary-button" type="button" data-profile-preset="sql">SQL-Skripte hinzufügen</button>
+        <button class="secondary-button" type="button" data-profile-preset="jupyter">Jupyter hinzufügen</button>
+      </div>
+      ${wizard.curriculumDraft ? renderArtifactSuggestionPreview(wizard) : '<small>Vorschläge für Kursmaterialien erscheinen nach der Analyse des Unterrichtsplans.</small>'}
+      <div class="button-row"><button class="primary-button" type="button" data-apply-course-plan-configuration>Konfiguration auf Unterrichtsplan anwenden</button></div>
+    </article>
+  `;
+}
+
+function summarizeWizardCourseConfiguration(course = {}) {
+  const text = (field) => didacticCourseOptions[field]?.find(([value]) => value === course[field])?.[1] || course[field] || 'nicht festgelegt';
+  return `${course.customTechnology || text('technology')} für ${course.customAudience || text('audience')} auf dem Niveau „${text('entryLevel')}“. ${text('courseFormat')} mit dem didaktischen Profil „${text('didacticProfile')}“, ${text('learningOrganization')} und ${text('differentiationProfile')}.`;
+}
+
+function getSelectedDidacticProfile() {
+  if (state.wizard.didacticProfile?.customized) return state.wizard.didacticProfile;
+  const selectedId = state.wizard.didacticProfile?.id || 'explain-demo-practice';
+  return (state.didacticProfiles || []).find((profile) => profile.id === selectedId)
+    || (state.didacticProfiles || [])[0]
+    || state.wizard.didacticProfile
+    || { id: 'explain-demo-practice', label: 'Erklären, zeigen und üben', lessonFlow: [] };
+}
+
+function renderDidacticProfileStep(wizard) {
+  const profiles = state.didacticProfiles || [];
+  const selected = getSelectedDidacticProfile();
+  const profile = selected || {};
+  const recommendation = wizard.didacticRecommendation;
+  const preview = wizard.didacticPreview;
+  const fit = recommendation?.recommended?.fit;
+  const scoreClass = fit?.level === 'weak' ? 'status-error' : fit?.level === 'usable' ? 'status-warning' : '';
+  const options = {
+    demoStrategy: ['none', 'teacher-demo', 'live-coding', 'error-demo', 'worked-example', 'before-after'],
+    releaseStrategy: ['manual-by-teacher', 'after-quiz', 'after-analysis', 'after-previous-task', 'station-wise'],
+    taskProgression: ['normal-to-hard', 'easy-normal-hard', 'worked-guided-faded-free', 'analysis-correction-transfer', 'stations-easy-to-challenge', 'timed-normal-to-hard', 'project-increment', 'code-along-extension'],
+    supportLevel: ['step-by-step', 'guided', 'coaching', 'self-directed', 'exam-focused', 'high-to-low']
+  };
+  return `
+    <article class="tool-card">
+      <h3>4. Didaktisches Kursprofil</h3>
+      ${fit ? `<p class="status-line ${scoreClass}">Empfohlen: ${escapeHtml(recommendation.recommended.profile?.label || '-')} | Fit Score ${escapeHtml(fit.score)} (${escapeHtml(fit.level)})</p>` : '<p class="status-line">Empfehlung wird nach Kursdaten berechnet.</p>'}
+      <div class="factory-form-grid">
+        <label>Profil<select data-wizard-didactic-profile>
+          ${profiles.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === profile.id ? 'selected' : ''}>${escapeHtml(item.label || item.id)}</option>`).join('')}
+        </select></label>
+        <label>Unterrichtsmodell<input value="${escapeHtml(profile.teachingModel || '-')}" readonly></label>
+        <label>Art der Demonstration<select data-didactic-field="demoStrategy">${options.demoStrategy.map((value) => `<option value="${value}" ${profile.demoStrategy === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
+        <label>Freigabe<select data-didactic-field="releaseStrategy">${options.releaseStrategy.map((value) => `<option value="${value}" ${profile.releaseStrategy === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
+        <label>Progression<select data-didactic-field="taskProgression">${options.taskProgression.map((value) => `<option value="${value}" ${profile.taskProgression === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
+        <label>Unterstützung<select data-didactic-field="supportLevel">${options.supportLevel.map((value) => `<option value="${value}" ${profile.supportLevel === value ? 'selected' : ''}>${escapeHtml(visibleLabel(value))}</option>`).join('')}</select></label>
+        <label>Assessment<input data-didactic-field="assessmentMode" value="${escapeHtml(profile.assessmentMode || '')}"></label>
+        <label>Reflexion<input data-didactic-field="reflectionMode" value="${escapeHtml(profile.reflectionMode || '')}"></label>
+        <label>Sozialform<input data-didactic-field="socialForm" value="${escapeHtml(profile.socialForm || '')}"></label>
+      </div>
+      <label class="checkline"><input data-didactic-check="defaultDemoEnabled" type="checkbox" ${profile.defaultDemoEnabled !== false ? 'checked' : ''}> <span>Demonstrationen standardmäßig erstellen</span></label>
+      <label class="checkline"><input data-didactic-check="defaultParticipantDemoVisible" type="checkbox" ${profile.defaultParticipantDemoVisible === true ? 'checked' : ''}> <span>Demonstrationen für Teilnehmende anzeigen</span></label>
+      <label class="checkline"><input data-wizard-audience-check="needsStepByStep" type="checkbox" ${wizard.targetAudience.needsStepByStep ? 'checked' : ''}> <span>Schrittweise Unterstützung vorsehen</span></label>
+      <label class="checkline"><input data-wizard-audience-check="examOrientation" type="checkbox" ${wizard.targetAudience.examOrientation ? 'checked' : ''}> <span>Prüfungsorientierung berücksichtigen</span></label>
+      <label class="checkline"><input data-wizard-audience-check="projectOrientation" type="checkbox" ${wizard.targetAudience.projectOrientation ? 'checked' : ''}> <span>Projektorientierung berücksichtigen</span></label>
+      <div class="validation-box">
+        <strong>${escapeHtml(profile.label || profile.id)}</strong>
+        <p>${escapeHtml(profile.description || '')}</p>
+        <div class="summary-grid">
+          <span>Progression: ${escapeHtml(profile.taskProgression || '-')}</span>
+          <span>Support: ${escapeHtml(profile.supportLevel || '-')}</span>
+          <span>Assessment: ${escapeHtml(profile.assessmentMode || '-')}</span>
+          <span>Reflexion: ${escapeHtml(profile.reflectionMode || '-')}</span>
+        </div>
+        <small>Lesson Flow: ${(profile.lessonFlow || []).map((phase) => escapeHtml(phase)).join(' -> ') || '-'}</small>
+      </div>
+      ${recommendation ? `<div class="validation-box"><strong>Warum empfohlen?</strong>${(recommendation.recommended.fit?.reasons || []).slice(0, 4).map((item) => `<p>${escapeHtml(item)}</p>`).join('')}${(recommendation.warnings || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}<strong>Alternative Profile</strong><ul>${(recommendation.alternatives || []).slice(0, 4).map((item) => `<li>${escapeHtml(item.profile?.label || item.profile?.id)} (${escapeHtml(item.score)}): ${escapeHtml(item.reason)}</li>`).join('')}</ul></div>` : ''}
+      ${preview ? `<div class="validation-box"><strong>Was wird dieses Profil erzeugen?</strong><p>Demo: ${escapeHtml(preview.demoType)} | Assessment: ${escapeHtml(preview.assessment)} | Reflexion: ${escapeHtml(preview.reflection?.mode || '-')}</p><p>Unterricht: ${(preview.expectedDayFlow || []).map((item) => escapeHtml(item.title)).join(' -> ')}</p><p>Aufgaben: ${(preview.taskTypes || []).map((item) => escapeHtml(item)).join(' | ')}</p><p>Freigabe: ${(preview.releasePlan || []).slice(0, 3).map((item) => escapeHtml(item.releaseHint)).join(' | ')}</p>${(preview.risks || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}</div>` : ''}
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-didactic-refresh>Empfehlung neu berechnen</button>
+        <button class="primary-button" type="button" data-didactic-apply-recommendation ${recommendation?.recommended?.profile?.id ? '' : 'disabled'}>Empfehlung übernehmen</button>
+      </div>
+      <p class="status-line">Das Profil steuert Tagesaufbau, Aufgabenfolge, Vorschläge für Demonstrationen, Dozentenhinweise und Freigaben.</p>
+    </article>
+  `;
+}
+
+function renderPreflightTestRun(wizard) {
+  const preflight = wizard.preflight;
+  const testRun = wizard.testRun;
+  const storage = state.storageUsage || {};
+  const canPreflight = Boolean(wizard.course.courseName && wizard.course.courseId && wizard.approvedCurriculumPlan?.status === 'approved');
+  const canTest = canPreflight && (wizard.dayResults.length || wizard.dayDraft || wizard.approvedCurriculumPlan?.days?.length);
+  return `
+    <article class="tool-card">
+      <h3>13. Testlauf / Preflight</h3>
+      <div class="summary-grid">
+        <span>Preflight: ${escapeHtml(preflight?.status || 'offen')}</span>
+        <span>Score: ${escapeHtml(preflight?.score ?? '-')}</span>
+        <span>Staging: ${formatBytes(storage.stagingBytes || 0)}</span>
+        <span>Drafts: ${formatBytes(storage.draftsBytes || 0)}</span>
+        <span>Referenzen: ${formatBytes(storage.referenceLibraryBytes || 0)}</span>
+      </div>
+      ${preflight ? renderPreflightResult(preflight) : '<p class="status-line">Prüft Kursdaten, freigegebenen Unterrichtsplan, Profil, lokalen Ersatzmodus und Exportschutz.</p>'}
+      ${testRun ? renderTestRunResult(testRun) : ''}
+      ${wizard.cleanupReport ? `<p class="status-line">${escapeHtml(wizard.cleanupReport.action)}: ${(wizard.cleanupReport.deleted || []).length} gelöscht.</p>` : ''}
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-wizard-preflight ${canPreflight ? '' : 'disabled'}>Preflight prüfen</button>
+        <button class="primary-button" type="button" data-wizard-test-run ${canTest ? '' : 'disabled'}>Testlauf erzeugen</button>
+        <button class="secondary-button" type="button" data-wizard-test-run-confirm ${preflight?.status === 'yellow' && canTest ? '' : 'disabled'}>Testlauf trotz Warnungen</button>
+        <button class="secondary-button" type="button" data-wizard-delete-last-test>Letzten Test-Draft loeschen</button>
+        <button class="secondary-button" type="button" data-wizard-clear-staging>Staging leeren</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderPreflightResult(preflight) {
+  const css = preflight.status === 'red' ? 'status-error' : preflight.status === 'yellow' ? 'status-warning' : '';
+  return `
+    <div class="validation-box">
+      <strong class="${css}">Preflight ${escapeHtml(preflight.status)} (${escapeHtml(preflight.score)}/100)</strong>
+      ${(preflight.errors || []).map((item) => `<p class="status-line status-error">${escapeHtml(item)}</p>`).join('')}
+      ${(preflight.warnings || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}
+      ${(preflight.recommendations || []).slice(0, 4).map((item) => `<p class="status-line">${escapeHtml(item)}</p>`).join('')}
+    </div>
+  `;
+}
+
+function renderTestRunResult(result) {
+  const css = result.status === 'failed' ? 'status-error' : result.status === 'warning' ? 'status-warning' : '';
+  return `
+    <div class="validation-box">
+      <strong class="${css}">Testlauf: ${escapeHtml(result.status)}</strong>
+      ${result.requiresConfirmation ? '<p class="status-line status-warning">Warnungen müssen für den Testlauf bestätigt werden.</p>' : ''}
+      ${result.containerId ? `<p>Container: ${escapeHtml(result.containerId)}</p><p>Pfad: ${escapeHtml(result.storagePath)}</p>` : ''}
+      ${result.testProtocol ? renderTestProtocolSummary(result.testProtocol) : ''}
+      ${(result.errors || []).map((item) => `<p class="status-line status-error">${escapeHtml(item)}</p>`).join('')}
+      ${(result.warnings || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}
+    </div>
+  `;
+}
+
+function renderPromptQualityGate(wizard) {
+  const quality = wizard.promptQuality;
+  const golden = state.goldenPromptResult;
+  return `
+    <article class="tool-card">
+      <h3>Prompt-Präzision</h3>
+      <div class="summary-grid">
+        <span>Zweck: ${escapeHtml(quality?.purpose || 'generateDayDraft')}</span>
+        <span>Prompt: ${escapeHtml(quality?.promptId || '-')}</span>
+        <span>Version: ${escapeHtml(quality?.promptVersion || '-')}</span>
+        <span>Schema: ${escapeHtml(quality?.expectedSchema || 'DayGenerationResult')}</span>
+        <span>Prompt Score: ${escapeHtml(quality?.totalScore ?? quality?.score ?? '-')}</span>
+        <span>Safety Score: ${escapeHtml(quality?.safetyScore ?? '-')}</span>
+        <span>Didaktik Score: ${escapeHtml(quality?.didacticScore ?? '-')}</span>
+        <span>Artefakt Score: ${escapeHtml(quality?.artifactScore ?? '-')}</span>
+        <span>Status: ${escapeHtml(quality?.status || 'offen')}</span>
+        <span>Golden Tests: ${escapeHtml(golden ? `${golden.status} (${golden.passed}/${golden.total})` : '-')}</span>
+        <span>Provider erlaubt: ${quality ? (quality.maySendToProvider ? 'ja' : 'nein') : '-'}</span>
+      </div>
+      ${(quality?.errors || []).map((item) => `<p class="status-line status-error">${escapeHtml(item)}</p>`).join('')}
+      ${(quality?.warnings || []).map((item) => `<p class="status-line status-warning">${escapeHtml(item)}</p>`).join('')}
+      ${wizard.promptRulesVisible && quality?.rules ? `<div class="validation-box"><strong>Prompt-Regeln</strong><ul>${quality.rules.map((rule) => `<li>${escapeHtml(rule)}</li>`).join('')}</ul></div>` : ''}
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-prompt-preview>Prompt-Vorschau anzeigen</button>
+        <button class="secondary-button" type="button" data-prompt-quality>Prompt prüfen</button>
+        <button class="secondary-button" type="button" data-prompt-golden>Golden Tests ausfuehren</button>
+        <button class="secondary-button" type="button" data-prompt-rules>Prompt-Regeln anzeigen</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderAiSettings(wizard) {
+  const openai = state.aiStatus?.providers?.openai || {};
+  const estimate = wizard.costEstimate;
+  const test = state.aiTestResult;
+  const adminStore = state.aiStatus?.adminKeyStore || {};
+  const importResult = state.aiImportResult;
+  return `
+    <article class="tool-card">
+      <h3>KI-Einstellungen</h3>
+      <div class="factory-form-grid">
+        <label>Provider-Auswahl<select data-wizard-ai-mode-settings>${['local', 'openai', 'openai-review', 'openai-review-repair'].map((mode) => `<option value="${mode}" ${wizard.aiMode === mode ? 'selected' : ''}>${mode}</option>`).join('')}</select></label>
+        <label>Modellfeld<input data-ai-model value="${escapeHtml(openai.model || adminStore.model || 'gpt-5.4-mini')}"></label>
+        <label>Kostenwarnung USD<input data-ai-cost-warning type="number" min="0" step="0.01" value="${escapeHtml(state.aiStatus?.costWarningUsd || 1)}" disabled></label>
+      </div>
+      <div class="summary-grid">
+        <span>Provider: ${escapeHtml(state.aiStatus?.defaultProvider || wizard.aiMode || 'local')}</span>
+        <span>OpenAI konfiguriert: ${openai.configured ? 'ja' : 'nein'}</span>
+        <span>Modell: ${escapeHtml(openai.model || '-')}</span>
+        <span>Key-Quelle: ${escapeHtml(openai.keySource || 'missing')}</span>
+        <span>Verbindungstest: ${escapeHtml(openai.connectionTestStatus || adminStore.connectionTestStatus || 'unknown')}</span>
+        <span>Windows-Verschlüsselung: ${adminStore.encryptionAvailable ? 'verfügbar' : 'nicht verfügbar'}</span>
+        <span>Zuletzt erfolgreich getestet: ${escapeHtml(adminStore.lastSuccessfulTestAt || '-')}</span>
+        <span>Timeout: ${escapeHtml(state.aiStatus?.timeoutMs || 30000)} ms</span>
+        <span>Local/Fallback aktiv: ja</span>
+        <span>Kostenwarnung: ${state.aiStatus?.costWarningUsd ? 'ja' : 'nein'}</span>
+      </div>
+      ${estimate ? `<p class="status-line ${estimate.warning ? 'status-warning' : ''}">Geschätzte Kosten: ca. ${escapeHtml(estimate.estimatedCostUsd)} USD | Eingabe ${escapeHtml(estimate.inputTokens)} Token | Ausgabe ${escapeHtml(estimate.outputTokens)} Token</p>` : ''}
+      ${test ? `<p class="status-line ${test.status === 'failed' ? 'status-error' : test.status === 'warning' ? 'status-warning' : ''}">Testanfrage: ${escapeHtml(test.status)} - ${escapeHtml(test.message)}</p>` : ''}
+      ${importResult ? `<p class="status-line ${importResult.success === false ? 'status-error' : ''}">${escapeHtml(importResult.message || importResult.status || '')}</p>` : ''}
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-ai-status-check>KI-Status prüfen</button>
+        <button class="secondary-button" type="button" data-ai-model-save>Modell speichern</button>
+        <button class="secondary-button" type="button" data-ai-import-select>API-Schlüssel aus Datei importieren</button>
+        <button class="secondary-button" type="button" data-ai-replace-key>API-Schlüssel eingeben/ersetzen</button>
+        <button class="secondary-button" type="button" data-ai-test-request>Verbindung testen</button>
+        <button class="secondary-button" type="button" data-ai-clear-key>Gespeicherten Schlüssel entfernen</button>
+        <button class="secondary-button" type="button" data-ai-setup-guide>Setup-Anleitung öffnen</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderArtifactSuggestionPreview(wizard) {
+  const topics = (wizard.curriculumDraft?.days || []).flatMap((day) => (day.topics || []).slice(0, 2).map((topic) => ({ dayNumber: day.dayNumber, title: topic.title }))).slice(0, 8);
+  return `<div class="validation-box"><strong>Vorschläge für Kursmaterialien prüfen</strong>${topics.map((topic) => `<p>Tag ${escapeHtml(topic.dayNumber)} - ${escapeHtml(topic.title)}: ${escapeHtml(visibleLabel(wizard.containerProfile.courseType))} / ${escapeHtml(visibleLabel(wizard.containerProfile.artifactMode))}</p>`).join('')}<small>Details, Zielpfade und Begründungen werden im Analysebericht dokumentiert. Sichere Voreinstellungen werden verwendet, wenn nichts manuell geändert wird.</small></div>`;
+}
+
+function renderDayResultList(results) {
+  return `
+    <div class="summary-grid">
+      ${results.map((result) => {
+        const hasFallback = (result.warnings || []).some((warning) => /Fallback|nicht konfiguriert/i.test(warning));
+        const status = hasFallback ? 'fallback' : (result.warnings || []).length ? 'warning' : 'generated';
+        return `<button class="secondary-button" type="button" data-preview-day="${result.dayNumber}">Tag ${escapeHtml(result.dayNumber)}: ${escapeHtml(status)}</button>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderCurriculumReview(draft) {
+  const quality = draft.quality || { score: 0, level: 'weak', recommendations: [] };
+  const totalTopics = (draft.days || []).reduce((sum, day) => sum + (day.topics || []).length, 0);
+  const totalUE = (draft.days || []).reduce((sum, day) => sum + Number(day.estimatedUE || 0), 0);
+  const sourceQualities = Array.from(new Map((draft.extractedSourceOutline || []).map((item) => [item.sourceFile || item.sourceRef, item.quality]).filter((item) => item[1])).entries());
+  return `
+    <article class="tool-card">
+      <h3>6-7. Curriculum prüfen und freigeben</h3>
+      <div class="summary-grid">
+        <span>Status: ${escapeHtml(draft.status)}</span>
+        <span>Tage: ${escapeHtml(draft.days?.length || 0)}</span>
+        <span>Themen: ${escapeHtml(totalTopics)}</span>
+        <span>Gesamt-UE: ${escapeHtml(totalUE)}</span>
+        <span>Anchor: ${escapeHtml(draft.anchor?.type || '')}</span>
+        <span>Dauer: ${escapeHtml(draft.duration?.totalUE || 0)} UE</span>
+      </div>
+      <div class="validation-box">
+        <strong>Quality Score: ${escapeHtml(quality.score)} / 100 (${escapeHtml(quality.level)})</strong>
+        ${(quality.recommendations || []).slice(0, 5).map((item) => `<p class="status-line ${quality.level === 'weak' ? 'status-error' : 'status-warning'}">${escapeHtml(item)}</p>`).join('')}
+        ${sourceQualities.length ? `<small>Extraktion: ${sourceQualities.map(([file, item]) => `${escapeHtml(file)} ${escapeHtml(item.level)} (${escapeHtml(Math.round(item.score * 100))}%)`).join(' | ')}</small>` : ''}
+      </div>
+      ${(draft.validation?.errors || []).map((error) => `<p class="status-line status-error">${escapeHtml(error)}</p>`).join('')}
+      ${(draft.validation?.warnings || draft.warnings || []).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
+      <div class="factory-grid curriculum-board">
+        ${(draft.days || []).map((day) => `
+          <section class="factory-card curriculum-day" data-curriculum-day="${day.dayNumber}">
+            <strong>Tag ${day.dayNumber}: ${escapeHtml(day.mainTopic || day.title)}</strong>
+            <small>${escapeHtml(day.estimatedUE || 0)} UE | ${(day.topics || []).length} Thema/Themen</small>
+            <label>Tagesname<input data-day-field="${day.dayNumber}" data-day-prop="title" value="${escapeHtml(day.title || '')}"></label>
+            <label>Tagesziel<textarea data-day-field="${day.dayNumber}" data-day-prop="learningGoal">${escapeHtml((day.learningGoals || [])[0] || '')}</textarea></label>
+            ${(day.warnings || []).map((warning) => `<p class="status-line status-warning">${escapeHtml(warning)}</p>`).join('')}
+            ${(day.topics || []).map((topic) => `
+              <article class="mapping-item curriculum-topic" draggable="true" data-topic-id="${escapeHtml(topic.id)}">
+                <strong>${escapeHtml(topic.title)}</strong>
+                <label>Titel<input data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="title" value="${escapeHtml(topic.title)}"></label>
+                <label>Summary<textarea data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="summary">${escapeHtml(topic.summary)}</textarea></label>
+                <label>UE<input data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="estimatedUE" type="number" min="0" value="${escapeHtml(topic.estimatedUE)}"></label>
+                <label>Schwierigkeit<select data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="difficulty">${difficultyLevels.levels.map(({ value, label }) => `<option value="${value}" ${difficultyLevels.normalizeDifficulty(topic.difficulty) === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
+                <label class="checkline"><input data-topic-field="${escapeHtml(topic.id)}" data-topic-prop="active" type="checkbox" ${topic.active !== false ? 'checked' : ''}> aktiv</label>
+                <small>${escapeHtml(topic.depth)} | ${escapeHtml(topic.practiceType)}</small>
+                <div class="button-row">
+                  <button class="secondary-button" type="button" data-topic-move="${escapeHtml(topic.id)}" data-target-day="${Math.max(1, day.dayNumber - 1)}">Tag -</button>
+                  <button class="secondary-button" type="button" data-topic-move="${escapeHtml(topic.id)}" data-target-day="${day.dayNumber + 1}">Tag +</button>
+                  <button class="secondary-button" type="button" data-topic-duplicate="${escapeHtml(topic.id)}">duplizieren</button>
+                  <button class="secondary-button" type="button" data-topic-new-after="${escapeHtml(topic.id)}">neues Thema darunter</button>
+                </div>
+              </article>
+            `).join('')}
+            <button class="secondary-button" type="button" data-day-new-topic="${day.dayNumber}">Neues Thema</button>
+          </section>
+        `).join('')}
+      </div>
+      <button class="primary-button" type="button" data-wizard-approve ${draft.validation?.canApprove === false ? 'disabled' : ''}>Plan freigeben</button>
+      <button class="secondary-button" type="button" data-day-add>Tag hinzufügen</button>
+      <button class="secondary-button" type="button" data-day-remove ${draft.days?.length > 1 ? '' : 'disabled'}>Letzten Tag loeschen</button>
+    </article>
+  `;
+}
+
+function renderGeneratedDraft(draft) {
+  return `
+    <div class="validation-box">
+      <strong>Draft erzeugt: ${escapeHtml(draft.containerId)}</strong>
+      <p>Pfad: ${escapeHtml(draft.storagePath)}</p>
+      <dl class="factory-meta">
+        <div><dt>Tage</dt><dd>${escapeHtml(draft.analysisReport?.recognizedDays || 0)}</dd></div>
+        <div><dt>Warnungen</dt><dd>${escapeHtml((draft.analysisReport?.warnings || []).length)}</dd></div>
+        <div><dt>Validierung</dt><dd>${draft.validation?.isValid ? 'ok' : 'prüfen'}</dd></div>
+        <div><dt>Testprotokoll</dt><dd>${escapeHtml(draft.testProtocol?.overallStatus || draft.analysisReport?.testProtocol?.overallStatus || 'offen')}</dd></div>
+      </dl>
+      ${renderTestProtocolSummary(draft.testProtocol || draft.analysisReport?.testProtocol)}
+      ${renderDemoSummary(draft)}
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-wizard-open="standalone">Standalone öffnen</button>
+        <button class="secondary-button" type="button" data-wizard-open="folder">Ordner öffnen</button>
+        <button class="secondary-button" type="button" data-wizard-open="report">Analysebericht öffnen</button>
+        <button class="secondary-button" type="button" data-wizard-open="test-protocol">Testprotokoll öffnen</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderDemoSummary(draft) {
+  const demos = draft.analysisReport?.demoTargets || [];
+  if (!demos.length) return '<p class="status-line">Demo-Dateien: keine erzeugt.</p>';
+  return `
+    <section class="mapping-list">
+      <strong>Demo-Dateien</strong>
+      ${demos.map((demo) => `
+        <article class="mapping-item">
+          <span>${escapeHtml(demo.title)}</span>
+          <small>${escapeHtml(demo.tool)} | ${escapeHtml(demo.filePath)} | Teilnehmer: ${demo.visibleForParticipants ? 'ja' : 'nein'}</small>
+          <button class="secondary-button" type="button" data-demo-test="${escapeHtml(demo.id)}">Demo testen</button>
+        </article>
+      `).join('')}
+    </section>
+  `;
+}
+
+function renderTestProtocolSummary(protocol) {
+  const summary = protocol?.summary || {};
+  if (!protocol) return '<p class="status-line">Testprotokoll wird beim nächsten Draft/Testlauf erzeugt.</p>';
+  return `<p class="status-line">Testprotokoll: ${escapeHtml(protocol.overallStatus || 'offen')} | passed ${escapeHtml(summary.passed || 0)} | warning ${escapeHtml(summary.warnings || 0)} | failed ${escapeHtml(summary.failed || 0)} | manuell ${escapeHtml(summary.manualChecks || 0)}</p>`;
+}
+
+function getPlanWizardStepGates() {
+  const wizard = state.wizard;
+  const courseDone = Boolean(wizard.course.courseName && wizard.course.courseId && wizard.course.department);
+  const anchorDone = Boolean(wizard.anchorFiles.length);
+  const currentDraft = getCurrentValidCoursePlanDraft(wizard.courseProject);
+  const documentAnalysisDone = Boolean(wizard.courseProject?.documentAnalyses?.length);
+  const durationDone = Boolean(wizard.courseProject?.structureFrame?.valid && wizard.courseProject?.structureFrame?.confirmed);
+  const didacticDone = Boolean(wizard.didacticConfirmed && (getSelectedDidacticProfile()?.id || wizard.didacticProfile?.id));
+  const containerProfileDone = Boolean(wizard.containerProfile?.courseType && wizard.containerProfile?.artifactMode);
+  const curriculumDone = Boolean(wizard.curriculumDraft?.days?.length);
+  const structureDone = Boolean(currentDraft && currentDraft.validation?.status !== 'failed' && currentDraft.status !== 'stale');
+  const approvedDone = wizard.courseProject?.approvedCoursePlan?.status === 'approved' || wizard.approvedCurriculumPlan?.status === 'approved';
+  const materialsDone = Boolean(wizard.uploadFiles.length || wizard.skippedSteps?.materials);
+  const aiDone = Boolean(wizard.aiMode);
+  const generationDone = Boolean(wizard.dayResults.length || wizard.dayDraft);
+  const preflightDone = Boolean(wizard.preflight || wizard.testRun);
+  const draftDone = Boolean(wizard.generatedDraft);
+  return planWizardSteps.map((step) => {
+    const gate = { ...step, active: false, done: false, missing: '' };
+    if (step.id === 'course') return { ...gate, active: true, done: courseDone, missing: 'Kursname, Kurs-ID und Fachbereich eintragen.' };
+    if (step.id === 'anchor') return { ...gate, active: courseDone, done: anchorDone, missing: 'Bitte zuerst Kursdaten vervollständigen.' };
+    if (step.id === 'durationAudience') return { ...gate, active: anchorDone, done: durationDone && wizard.courseProject?.structureFrame?.valid, missing: 'Bitte zuerst mindestens ein Dokument hochladen.' };
+    if (step.id === 'courseStructure') return { ...gate, active: anchorDone && wizard.courseProject?.structureFrame?.valid, done: documentAnalysisDone && structureDone, missing: 'Bitte Dokumente hochladen sowie Dauer und Zielgruppe vollständig bestätigen.' };
+    if (step.id === 'structureReview') return { ...gate, active: structureDone, done: approvedDone, missing: 'Bitte zuerst eine KI-Kursstruktur erstellen.' };
+    if (step.id === 'didactics') return { ...gate, active: approvedDone, done: didacticDone, missing: 'Bitte zuerst die Kursstruktur prüfen und ausdrücklich freigeben.' };
+    if (step.id === 'containerProfile') return { ...gate, active: approvedDone && didacticDone, done: containerProfileDone, missing: 'Bitte zuerst die Kursstruktur freigeben und ein didaktisches Profil auswählen.' };
+    if (step.id === 'materials') return { ...gate, active: approvedDone, done: materialsDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
+    if (step.id === 'aiMode') return { ...gate, active: approvedDone, done: aiDone, missing: 'Bitte zuerst das Curriculum freigeben.' };
+    if (step.id === 'generation') return { ...gate, active: approvedDone && aiDone && containerProfileDone, done: generationDone, missing: 'Bitte zuerst Plan, Containerprofil und KI-Modus bestätigen.' };
+    if (step.id === 'preflight') return { ...gate, active: generationDone, done: preflightDone, missing: 'Bitte zuerst Tagesentwürfe erzeugen.' };
+    if (step.id === 'containerDraft') return { ...gate, active: preflightDone, done: draftDone, missing: 'Bitte zuerst den Preflight beziehungsweise Testlauf abschließen.' };
+    return gate;
+  });
+}
+
+function getWizardGates() {
+  const wizard = state.wizard;
+  const courseDone = Boolean(wizard.course.courseName && wizard.course.courseId && wizard.course.department);
+  const anchorDone = Boolean(wizard.anchorFiles.length);
+  const curriculumDone = Boolean(wizard.curriculumDraft?.days?.length);
+  const approvedDone = wizard.approvedCurriculumPlan?.status === 'approved';
+  const draftDone = Boolean(wizard.dayDraft || wizard.dayResults.length);
+  const containerDone = Boolean(wizard.generatedDraft);
+  const didacticDone = Boolean(getSelectedDidacticProfile()?.id);
+  return [
+    { label: 'Kursdaten', done: courseDone, active: !courseDone },
+    { label: 'Hauptquelle', done: anchorDone, active: courseDone && !anchorDone },
+    { label: 'Didaktik', done: didacticDone, active: courseDone },
+    { label: 'Curriculum', done: curriculumDone, active: anchorDone && !curriculumDone },
+    { label: 'Freigabe', done: approvedDone, active: curriculumDone && !approvedDone },
+    { label: 'Uploads/Referenzen', done: Boolean(wizard.importBatch || wizard.uploadFiles.length || wizard.useReferences), active: approvedDone },
+    { label: 'KI/Fallback', done: draftDone, active: approvedDone && !draftDone },
+    { label: 'Draft/Standalone', done: containerDone, active: draftDone && !containerDone }
+  ];
+}
+
+function bindPlanWizardEvents() {
+  $all('[data-plan-step]').forEach((button) => button.addEventListener('click', () => {
+    const gates = getPlanWizardStepGates();
+    const gate = gates.find((item) => item.id === button.dataset.planStep);
+    if (!gate?.active) {
+      state.wizard.status = `Dieser Schritt ist noch gesperrt. Bitte zuerst: ${gate?.missing || 'vorherige Schritte abschließen.'}`;
+      renderPlanWizard();
+      return;
+    }
+    state.wizard.activeStep = gate.id;
+    state.wizard.status = '';
+    renderPlanWizard();
+  }));
+  $('[data-wizard-prev]')?.addEventListener('click', () => moveWizardStep(-1));
+  $('[data-wizard-next]')?.addEventListener('click', async () => {
+    if (state.wizard.activeStep === 'course' && !validateAndShowCourseFields()) return;
+    if (state.wizard.activeStep === 'durationAudience') {
+      await continueFromDurationAudienceToAiAnalysis();
+      return;
+    }
+    moveWizardStep(1);
+  });
+  $('[data-wizard-skip-step]')?.addEventListener('click', () => {
+    state.wizard.skippedSteps[state.wizard.activeStep] = true;
+    state.wizard.status = 'Optionaler Schritt uebersprungen.';
+    moveWizardStep(1);
+  });
+  $all('[data-wizard-course]').forEach((field) => field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', () => {
+    state.wizard.course[field.dataset.wizardCourse] = field.value;
+    state.wizard.targetAudience.department = state.wizard.course.department || state.wizard.targetAudience.department;
+    if (field.dataset.wizardCourse === 'courseName' && !state.wizard.course.courseId) {
+      state.wizard.course.courseId = field.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+    if (Object.keys(state.wizard.courseErrors || {}).length) {
+      const errors = validateCourseFields(state.wizard.course);
+      const corrected = !errors[field.dataset.wizardCourse];
+      state.wizard.courseErrors = errors;
+      if (corrected) renderPlanWizard();
+    }
+    if (field.tagName === 'SELECT') renderPlanWizard();
+  }));
+  $('[data-open-course-project]')?.addEventListener('change', openSavedCourseProject);
+  $('[data-workflow-help-toggle]')?.addEventListener('click', () => {
+    if (window.innerWidth < 1280) state.wizard.helpMobileOpen = !state.wizard.helpMobileOpen;
+    else state.wizard.helpCollapsed = !state.wizard.helpCollapsed;
+    renderPlanWizard();
+  });
+  $all('[data-wizard-anchor-type]').forEach((field) => field.addEventListener('change', (event) => {
+    const type = event.target.value;
+    const selected = getAnchorTypes();
+    if (!event.target.checked) {
+      const related = state.wizard.anchorFiles.filter((file) => (file.sourceType || getSourceTypeForFile(file)) === type);
+      if (related.length) {
+        const remove = window.confirm(`${related.length} Datei(en) gehören zu dieser Quellenart. OK entfernt die Dateien; Abbrechen behält Auswahl und Dateien.`);
+        if (!remove) { renderPlanWizard(); return; }
+        state.wizard.anchorFiles = state.wizard.anchorFiles.filter((file) => (file.sourceType || getSourceTypeForFile(file)) !== type);
+      }
+    }
+    const next = event.target.checked ? [...selected, type] : selected.filter((item) => item !== type);
+    if (!next.length) {
+      state.wizard.status = 'Bitte mindestens eine Art der Hauptquelle auswählen.';
+      renderPlanWizard();
+      return;
+    }
+    state.wizard.anchorTypes = normalizeAnchorTypes(next);
+    state.wizard.curriculumDraft = null;
+    state.wizard.approvedCurriculumPlan = null;
+    renderPlanWizard();
+  }));
+  $('[data-wizard-anchor-files]')?.addEventListener('change', async (event) => {
+    await handleDropZoneFiles('anchor', event.target.files, 'picker');
+    event.target.value = '';
+    renderPlanWizard();
+  });
+  $all('[data-reupload-document]').forEach((input) => input.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    await importAnchorFiles([file], 'picker', input.dataset.reuploadDocument);
+    input.value = '';
+    renderPlanWizard();
+  }));
+  if (hasDocumentAnalysisWorkflow) documentAnalysisWorkflow.bindDocumentAnalysisControls(document, startWizardDocumentAnalysis);
+  $('[data-course-plan-start]')?.addEventListener('click', startWizardCoursePlanning);
+  $('[data-open-structure-review]')?.addEventListener('click', () => { state.wizard.activeStep = 'structureReview'; renderPlanWizard(); });
+  $all('[data-topic-field]').forEach((field) => field.addEventListener('input', () => updateTopicReviewField(field)));
+  $('[data-topic-add]')?.addEventListener('click', () => { const review = state.wizard.courseProject.topicReview; review.topics.push({ id: `topic-user-${Date.now()}`, title: '', subtopics: [], learningObjectives: [], competencies: [], sourceReferences: [], difficulty: 'basic', reviewStatus: 'edited' }); review.status = 'edited'; renderPlanWizard(); });
+  $all('[data-topic-remove]').forEach((button) => button.addEventListener('click', () => { state.wizard.courseProject.topicReview.topics.splice(Number(button.dataset.topicRemove), 1); state.wizard.courseProject.topicReview.status = 'edited'; renderPlanWizard(); }));
+  $all('[data-topic-move]').forEach((button) => button.addEventListener('click', () => moveTopicReview(Number(button.dataset.topicIndex), button.dataset.topicMove)));
+  $('[data-topic-save]')?.addEventListener('click', saveTopicReview);
+  $('[data-topic-confirm]')?.addEventListener('click', confirmTopicReview);
+  $('[data-topic-reopen]')?.addEventListener('click', () => { state.wizard.courseProject.topicReview.status = 'edited'; state.wizard.status = 'Bearbeitung der Themenbasis wieder geöffnet.'; renderPlanWizard(); });
+  $('[data-interaction-mode]')?.addEventListener('change', async (event) => {
+    const projectId = state.wizard.courseProject?.id;
+    if (!projectId) return;
+    try { state.wizard.courseProject = await desktop.factory.updatePlanCollaboration(projectId, { interactionMode: event.target.value }); }
+    catch (error) { showWizardError('Interaktionsmodus konnte nicht gespeichert werden', error); }
+    renderPlanWizard();
+  });
+  $('[data-close-wizard-error]')?.addEventListener('click', () => { state.wizard.uiError = null; renderPlanWizard(); });
+  $('[data-retry-wizard-error]')?.addEventListener('click', () => { const retry = state.wizard.uiError?.retry; state.wizard.uiError = null; if (retry) retry(); });
+  $('[data-document-analysis-cancel]')?.addEventListener('click', cancelWizardDocumentAnalysis);
+  $('[data-progress-continue]')?.addEventListener('click', () => { state.wizard.analysisProgress = null; renderPlanWizard(); });
+  $('[data-progress-back]')?.addEventListener('click', () => { state.wizard.analysisProgress = null; renderPlanWizard(); });
+  $('[data-progress-retry]')?.addEventListener('click', retryCurrentOperation);
+  $all('[data-structure-frame]').forEach((field) => field.addEventListener('input', () => {
+    state.wizard.structureFrame[field.dataset.structureFrame] = field.type === 'number' ? Number(field.value) : field.value;
+    state.wizard.structureFrame.totalUnits = Number(state.wizard.structureFrame.totalDays || 0) * Number(state.wizard.structureFrame.unitsPerDay || 0);
+    const total = $('[data-course-scope-total]');
+    if (total) total.value = state.wizard.structureFrame.totalUnits;
+  }));
+  $all('[data-course-scope-selection]').forEach((field) => field.addEventListener('change', () => {
+    const key = field.dataset.courseScopeSelection;
+    const options = key === 'targetAudience' ? targetAudienceOptions : priorKnowledgeOptions;
+    const selected = options.find((option) => option.value === field.value);
+    state.wizard.structureFrame[key] = selected ? { ...selected, customText: '' } : { value: '', label: '', customText: '' };
+    state.wizard.scopeErrors = {};
+    renderPlanWizard();
+  }));
+  $all('[data-course-scope-custom]').forEach((field) => field.addEventListener('input', () => {
+    state.wizard.structureFrame[field.dataset.courseScopeCustom].customText = field.value;
+  }));
+  $('[data-save-course-scope]')?.addEventListener('click', saveWizardCourseScope);
+  $all('[data-ack-document-failure]').forEach((button) => button.addEventListener('click', () => acknowledgeWizardDocumentFailure(button.dataset.ackDocumentFailure)));
+  $all('[data-structure-unit]').forEach((field) => field.addEventListener('input', () => updateStructuredUnit(field.dataset.structureUnit, field.dataset.unitField, field.value)));
+  $all('[data-structure-unit]').forEach((field) => field.addEventListener('change', () => persistStructuredUnitField(field)));
+  $('[data-save-course-structure]')?.addEventListener('click', saveWizardCourseStructure);
+  $('[data-approve-course-structure]')?.addEventListener('click', approveWizardCourseStructure);
+  $('[data-confirm-course-plan]')?.addEventListener('click', confirmWizardCoursePlan);
+  $('[data-accept-course-plan]')?.addEventListener('click', acceptWizardCoursePlan);
+  $all('[data-conflict-decision]').forEach((button) => button.addEventListener('click', () => decideWizardConflict(button)));
+  $all('[data-show-conflict-unit]').forEach((button) => button.addEventListener('click', () => { const row = document.getElementById(`plan-unit-${button.dataset.showConflictUnit}`); row?.scrollIntoView({ behavior: 'smooth', block: 'center' }); row?.querySelector('input,textarea,select')?.focus(); }));
+  $('[data-export-course-plan]')?.addEventListener('click', exportWizardCoursePlan);
+  $('[data-apply-course-plan-configuration]')?.addEventListener('click', applyWizardCoursePlanConfiguration);
+  $('[data-wizard-ranges]')?.addEventListener('input', (event) => {
+    state.wizard.rangesText = event.target.value;
+  });
+  $all('[data-wizard-duration]').forEach((field) => field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', () => {
+    state.wizard.duration[field.dataset.wizardDuration] = field.type === 'number' ? Number(field.value) : field.value;
+    normalizeDurationAndAudience(state.wizard);
+    state.wizard.structureFrame.totalDays = state.wizard.duration.numberOfDays;
+    state.wizard.structureFrame.unitsPerDay = state.wizard.duration.uePerDay;
+    if (!state.wizard.structureFrame.unitsByDayText.trim()) state.wizard.structureFrame.totalUnits = state.wizard.duration.totalUE;
+    const total = $('[data-duration-total-ue]');
+    if (total) total.value = state.wizard.duration.totalUE;
+  }));
+  $all('[data-wizard-audience]').forEach((field) => field.addEventListener('change', () => {
+    state.wizard.targetAudience[field.dataset.wizardAudience] = field.dataset.wizardAudience === 'difficultyMode' ? difficultyLevels.normalizeDifficulty(field.value) : field.value;
+  }));
+  $all('[data-wizard-audience-check]').forEach((field) => field.addEventListener('change', () => {
+    state.wizard.targetAudience[field.dataset.wizardAudienceCheck] = field.checked;
+  }));
+  $('[data-wizard-goal]')?.addEventListener('input', (event) => {
+    state.wizard.courseGoal = event.target.value;
+  });
+  $('[data-wizard-outcome]')?.addEventListener('change', (event) => {
+    state.wizard.expectedOutcome = event.target.value;
+  });
+  $('[data-wizard-style]')?.addEventListener('change', (event) => {
+    state.wizard.didacticStyle = event.target.value;
+  });
+  $('[data-wizard-didactic-profile]')?.addEventListener('change', (event) => {
+    state.wizard.didacticProfile = (state.didacticProfiles || []).find((profile) => profile.id === event.target.value) || { id: event.target.value };
+    state.wizard.didacticConfirmed = true;
+    state.wizard.curriculumDraft = null;
+    state.wizard.approvedCurriculumPlan = null;
+    state.wizard.status = 'Didaktik geaendert. Curriculum bitte neu analysieren.';
+    refreshDidacticRecommendation().then(renderPlanWizard);
+  });
+  $('[data-didactic-refresh]')?.addEventListener('click', () => refreshDidacticRecommendation().then(renderPlanWizard));
+  $('[data-didactic-apply-recommendation]')?.addEventListener('click', () => {
+    const recommended = state.wizard.didacticRecommendation?.recommended?.profile;
+    if (!recommended) return;
+    state.wizard.didacticProfile = { ...recommended };
+    state.wizard.didacticConfirmed = true;
+    state.wizard.curriculumDraft = null;
+    state.wizard.approvedCurriculumPlan = null;
+    state.wizard.status = 'Empfohlenes didaktisches Profil uebernommen. Curriculum bitte neu prüfen.';
+    refreshDidacticRecommendation().then(renderPlanWizard);
+  });
+  $all('[data-didactic-field]').forEach((field) => field.addEventListener(field.tagName === 'SELECT' ? 'change' : 'input', () => {
+    const base = getSelectedDidacticProfile();
+    state.wizard.didacticProfile = {
+      ...base,
+      [field.dataset.didacticField]: field.value,
+      customized: true,
+      baseProfileId: base.baseProfileId || base.id
+    };
+    state.wizard.didacticConfirmed = true;
+    state.wizard.curriculumDraft = null;
+    state.wizard.approvedCurriculumPlan = null;
+    state.wizard.status = 'Didaktisches Profil angepasst. Curriculum bitte neu prüfen.';
+    refreshDidacticRecommendation().then(renderPlanWizard);
+  }));
+  $all('[data-didactic-check]').forEach((field) => field.addEventListener('change', () => {
+    const base = getSelectedDidacticProfile();
+    state.wizard.didacticProfile = {
+      ...base,
+      [field.dataset.didacticCheck]: field.checked,
+      customized: true,
+      baseProfileId: base.baseProfileId || base.id
+    };
+    state.wizard.didacticConfirmed = true;
+    state.wizard.curriculumDraft = null;
+    state.wizard.approvedCurriculumPlan = null;
+    state.wizard.status = 'Didaktisches Profil angepasst. Curriculum bitte neu prüfen.';
+    refreshDidacticRecommendation().then(renderPlanWizard);
+  }));
+  $all('[data-container-profile]').forEach((field) => field.addEventListener('change', () => {
+    state.wizard.containerProfile[field.dataset.containerProfile] = field.value;
+    renderPlanWizard();
+  }));
+  $all('[data-didactic-course]').forEach((field) => field.addEventListener('change', () => {
+    state.wizard.containerProfile.didacticCourse ||= {};
+    state.wizard.containerProfile.didacticCourse[field.dataset.didacticCourse] = field.value;
+    if (field.dataset.didacticCourse === 'technology' && field.value !== 'custom') state.wizard.containerProfile.courseType = field.value;
+    renderPlanWizard();
+  }));
+  $all('[data-course-array]').forEach((field) => field.addEventListener('change', () => {
+    const course = state.wizard.containerProfile.didacticCourse ||= {};
+    const key = field.dataset.courseArray; const values = new Set(course[key] || []);
+    if (field.checked) values.add(field.value); else values.delete(field.value);
+    course[key] = [...values]; renderPlanWizard();
+  }));
+  $('[data-wizard-preset]')?.addEventListener('change', (event) => {
+    state.wizard.selectedPresetId = event.target.value;
+    renderPlanWizard();
+  });
+  $('[data-apply-preset]')?.addEventListener('click', applyWizardPreset);
+  $all('[data-container-profile-check]').forEach((field) => field.addEventListener('change', () => {
+    state.wizard.containerProfile[field.dataset.containerProfileCheck] = field.checked;
+  }));
+  $all('[data-profile-preset]').forEach((button) => button.addEventListener('click', () => {
+    state.wizard.containerProfile.courseType = button.dataset.profilePreset;
+    state.wizard.containerProfile.artifactMode = button.dataset.profilePreset === 'theory' ? 'web-only' : 'web-and-files';
+    renderPlanWizard();
+  }));
+  $('[data-wizard-analyze]')?.addEventListener('click', analyzeWizardCurriculum);
+  $('[data-wizard-approve]')?.addEventListener('click', approveWizardCurriculum);
+  $all('[data-topic-move]').forEach((button) => button.addEventListener('click', () => moveWizardTopic(button.dataset.topicMove, Number(button.dataset.targetDay), 1)));
+  $all('[data-topic-field]').forEach((field) => field.addEventListener('change', () => {
+    const value = field.type === 'checkbox' ? field.checked : field.type === 'number' ? Number(field.value) : field.value;
+    updateWizardTopic(field.dataset.topicField, { [field.dataset.topicProp]: value });
+  }));
+  $all('[data-day-field]').forEach((field) => field.addEventListener('change', () => {
+    updateWizardDay(Number(field.dataset.dayField), field.dataset.dayProp, field.value);
+  }));
+  $all('[data-topic-duplicate]').forEach((button) => button.addEventListener('click', () => duplicateWizardTopic(button.dataset.topicDuplicate)));
+  $all('[data-topic-new-after]').forEach((button) => button.addEventListener('click', () => addWizardTopicAfter(button.dataset.topicNewAfter)));
+  $all('[data-day-new-topic]').forEach((button) => button.addEventListener('click', () => addWizardTopicToDay(Number(button.dataset.dayNewTopic))));
+  $('[data-day-add]')?.addEventListener('click', addWizardDay);
+  $('[data-day-remove]')?.addEventListener('click', removeLastWizardDay);
+  $all('[data-topic-id]').forEach((topic) => topic.addEventListener('dragstart', (event) => {
+    event.dataTransfer.setData('text/plain', topic.dataset.topicId);
+  }));
+  $all('[data-curriculum-day]').forEach((day) => {
+    day.addEventListener('dragover', (event) => event.preventDefault());
+    day.addEventListener('drop', (event) => {
+      event.preventDefault();
+      const topicId = event.dataTransfer.getData('text/plain');
+      if (topicId) moveWizardTopic(topicId, Number(day.dataset.curriculumDay), 999);
+    });
+  });
+  $('[data-wizard-plan]')?.addEventListener('change', parseWizardPlan);
+  $('[data-wizard-sheet]')?.addEventListener('change', parseWizardPlanSheet);
+  $all('[data-wizard-upload]').forEach((input) => input.addEventListener('change', async () => {
+    await handleDropZoneFiles(input.dataset.wizardUpload, input.files, 'picker');
+    input.value = '';
+    renderPlanWizard();
+  }));
+  bindDropZoneEvents();
+  $('[data-wizard-import]')?.addEventListener('click', importWizardUploads);
+  $('[data-wizard-references]')?.addEventListener('change', (event) => {
+    state.wizard.useReferences = event.target.checked;
+    renderPlanWizard();
+  });
+  $('[data-wizard-ai-mode]')?.addEventListener('change', (event) => {
+    state.wizard.aiMode = event.target.value;
+    renderPlanWizard();
+  });
+  $('[data-wizard-day]')?.addEventListener('change', (event) => {
+    state.wizard.selectedDayNumber = Number(event.target.value);
+    state.wizard.dayDraft = state.wizard.dayResults.find((result) => result.dayNumber === state.wizard.selectedDayNumber) || state.wizard.dayDraft;
+    renderPlanWizard();
+  });
+  $all('[data-preview-day]').forEach((button) => button.addEventListener('click', () => {
+    state.wizard.selectedDayNumber = Number(button.dataset.previewDay);
+    state.wizard.dayDraft = state.wizard.dayResults.find((result) => result.dayNumber === state.wizard.selectedDayNumber) || state.wizard.dayDraft;
+    renderPlanWizard();
+  }));
+  $('[data-wizard-generate]')?.addEventListener('click', generateWizardDayDraft);
+  $('[data-wizard-generate-all]')?.addEventListener('click', generateAllWizardDayDrafts);
+  $('[data-wizard-corrections]')?.addEventListener('input', (event) => {
+    state.wizard.corrections = event.target.value;
+  });
+  $('[data-wizard-create-draft]')?.addEventListener('click', createWizardDraft);
+  $('[data-wizard-revise]')?.addEventListener('click', reviseWizardDayDraft);
+  $('[data-prompt-preview]')?.addEventListener('click', previewWizardPromptQuality);
+  $('[data-prompt-quality]')?.addEventListener('click', previewWizardPromptQuality);
+  $('[data-prompt-golden]')?.addEventListener('click', runPromptGoldenTests);
+  $('[data-prompt-rules]')?.addEventListener('click', () => {
+    state.wizard.promptRulesVisible = !state.wizard.promptRulesVisible;
+    renderPlanWizard();
+  });
+  $('[data-ai-status-check]')?.addEventListener('click', refreshAiStatus);
+  $('[data-wizard-ai-mode-settings]')?.addEventListener('change', (event) => {
+    state.wizard.aiMode = event.target.value;
+    renderPlanWizard();
+  });
+  $('[data-ai-model-save]')?.addEventListener('click', updateAiModel);
+  $('[data-ai-import-select]')?.addEventListener('click', importAiKeyFromSelectedTxt);
+  $('[data-ai-replace-key]')?.addEventListener('click', replaceAiKey);
+  $('[data-ai-test-request]')?.addEventListener('click', testAiConnection);
+  $('[data-ai-clear-key]')?.addEventListener('click', clearAiKey);
+  $('[data-ai-setup-guide]')?.addEventListener('click', () => desktop.factory.openOpenAiSetupGuide());
+  $('[data-wizard-preflight]')?.addEventListener('click', runWizardPreflight);
+  $('[data-wizard-test-run]')?.addEventListener('click', () => runWizardTestDraft(false));
+  $('[data-wizard-test-run-confirm]')?.addEventListener('click', () => runWizardTestDraft(true));
+  $('[data-wizard-delete-last-test]')?.addEventListener('click', deleteLastWizardTestDraft);
+  $('[data-wizard-clear-staging]')?.addEventListener('click', clearWizardStaging);
+  $all('[data-wizard-open]').forEach((button) => button.addEventListener('click', () => desktop.factory.openGeneratedDraft(state.wizard.generatedDraft.containerId, button.dataset.wizardOpen)));
+  $all('[data-demo-test]').forEach((button) => button.addEventListener('click', async () => {
+    if (!state.wizard.generatedDraft?.containerId || !desktop.demo?.openTarget) return;
+    const result = await desktop.demo.openTarget(button.dataset.demoTest, state.wizard.generatedDraft.containerId);
+    state.wizard.status = result.message || 'Demo geprüft.';
+    renderPlanWizard();
+  }));
+  if (!hasDesktopFactory) disableDesktopOnlyControls();
+}
+
+function moveWizardStep(direction) {
+  const gates = getPlanWizardStepGates();
+  const currentIndex = gates.findIndex((gate) => gate.id === state.wizard.activeStep);
+  const target = direction > 0 ? gates[currentIndex + 1] : gates.slice(0, currentIndex).reverse().find((gate) => gate.active);
+  if (!target) {
+    state.wizard.status = direction > 0 ? 'Der nächste Schritt ist noch gesperrt.' : 'Du bist bereits am ersten Schritt.';
+    renderPlanWizard();
+    return;
+  }
+  if (!target.active) {
+    state.wizard.status = `Der nächste Pflichtschritt ist noch gesperrt. ${target.missing || ''}`.trim();
+    renderPlanWizard();
+    return;
+  }
+  state.wizard.activeStep = target.id;
+  state.wizard.status = '';
+  renderPlanWizard();
+}
+
+function validateCourseFields(course = {}) {
+  const errors = {};
+  const title = String(course.courseName || '');
+  const id = String(course.courseId || '');
+  if (!title.trim()) errors.courseName = 'Bitte Kurstitel eingeben.';
+  else if (!/^(?=.{1,160}$)(?![- ])(?!.*--)(?!.*[- ]$)[A-Za-zÄÖÜäöüß0-9]+(?:[ -][A-Za-zÄÖÜäöüß0-9]+)*$/.test(title)) errors.courseName = 'Erlaubt sind Buchstaben, Zahlen, Leerzeichen und Bindestriche.';
+  if (!id.trim()) errors.courseId = 'Bitte Kurs-ID eingeben.';
+  else if (!/^(?=.{1,80}$)(?!-)(?!.*--)(?!.*-$)[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/.test(id)) errors.courseId = 'Erlaubt sind Buchstaben, Zahlen und Bindestriche – ohne Leerzeichen.';
+  if (!String(course.department || '').trim()) errors.department = 'Bitte Fachbereich auswählen.';
+  return errors;
+}
+
+function validateAndShowCourseFields() {
+  state.wizard.courseErrors = validateCourseFields(state.wizard.course);
+  if (!Object.keys(state.wizard.courseErrors).length) return true;
+  state.wizard.status = 'Bitte korrigiere die markierten Pflichtfelder.';
+  renderPlanWizard();
+  requestAnimationFrame(() => $('[data-plan-step-content="course"] [aria-invalid="true"]')?.focus());
+  return false;
+}
+
+function bindDropZoneEvents() {
+  $all('[data-dropzone]').forEach((zone) => {
+    zone.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        zone.querySelector('input[type="file"]')?.click();
+      }
+    });
+    zone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      zone.classList.add('dropzone-is-dragover');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dropzone-is-dragover'));
+    zone.addEventListener('drop', async (event) => {
+      event.preventDefault();
+      zone.classList.remove('dropzone-is-dragover');
+      await handleDropZoneFiles(zone.dataset.dropzone, event.dataTransfer?.files || [], 'drop');
+      renderPlanWizard();
+    });
+  });
+  $all('[data-dropzone-remove]').forEach((button) => button.addEventListener('click', () => {
+    const [zoneId, index] = String(button.dataset.dropzoneRemove || '').split(':');
+    removeDropZoneFile(zoneId, Number(index));
+    renderPlanWizard();
+  }));
+}
+
+function bindRawImportDropzone() {
+  const zone = $('[data-raw-import-dropzone]');
+  if (!zone) return;
+  const input = $('[data-import-files]');
+  const status = $('[data-import-status]');
+  zone.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      input?.click();
+    }
+  });
+  zone.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    zone.classList.add('dropzone-is-dragover');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dropzone-is-dragover'));
+  zone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    zone.classList.remove('dropzone-is-dragover');
+    state.rawImportFiles = Array.from(event.dataTransfer?.files || []);
+    if (status) status.textContent = `${state.rawImportFiles.length} Datei(en) für Expertenimport vorgemerkt.`;
+  });
+  input?.addEventListener('change', () => {
+    state.rawImportFiles = [];
+    if (status && input.files?.length) status.textContent = `${input.files.length} Datei(en) ausgewählt.`;
+  });
+}
+
+async function handleDropZoneFiles(zoneId, fileList, source = 'picker') {
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  const config = getUploadAreaConfig(zoneId, source);
+  const existing = zoneId === 'anchor'
+    ? state.wizard.anchorFiles.map((file) => ({ ...file, uploadArea: 'anchor' }))
+    : state.wizard.uploadFiles.filter((file) => file.uploadArea === zoneId);
+  const result = uploadUtils.validateUploadSelection
+    ? uploadUtils.validateUploadSelection(files, config, existing)
+    : { files: files.map((file) => ({ name: file.name, path: file.path || '', size: file.size, type: file.type, lastModified: file.lastModified, uploadArea: zoneId, source, warnings: [] })), blockedFiles: [], warnings: [], errors: [] };
+  if (zoneId === 'anchor') {
+    await importAnchorFiles(files.filter((file) => result.files.some((accepted) => uploadUtils.fileKey(accepted) === uploadUtils.fileKey(file))), source);
+  } else {
+    state.wizard.uploadFiles = [...state.wizard.uploadFiles, ...result.files];
+  }
+  const messages = [
+    result.files.length ? `${result.files.length} Datei(en) hinzugefuegt.` : '',
+    result.blockedFiles?.length ? `${result.blockedFiles.length} Datei(en) blockiert.` : '',
+    ...(result.errors || [])
+  ].filter(Boolean);
+  state.wizard.status = messages.join(' ');
+}
+
+const sourceImportFlights = new Map();
+async function importAnchorFiles(files, source = 'picker', replacementDocumentId = '') {
+  if (!hasDesktopFactory || typeof desktop.factory.getPathForFile !== 'function' || typeof desktop.factory.importSourceFile !== 'function') {
+    throw new Error('Der sichere Dateiimport ist nur in der Electron-App verfügbar.');
+  }
+  const projectId = String(state.wizard.course.courseId || '').trim();
+  if (!projectId) throw new Error('Bitte geben Sie vor dem Dateiimport eine Kurs-ID an.');
+  for (const file of files) {
+    const key = replacementDocumentId || uploadUtils.fileKey(file);
+    if (sourceImportFlights.has(key)) continue;
+    const flight = (async () => {
+      state.wizard.status = `Datei „${file.name}“ wird sicher übernommen …`;
+      renderPlanWizard();
+      const sourcePath = desktop.factory.getPathForFile(file);
+      if (!sourcePath) throw new Error('Der lokale Dateipfad konnte nicht ermittelt werden. Bitte wählen Sie die Datei erneut aus.');
+      const existing = replacementDocumentId ? state.wizard.anchorFiles.find((item) => item.id === replacementDocumentId) : null;
+      const imported = await desktop.factory.importSourceFile({
+        projectId,
+        documentId: replacementDocumentId || `source-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        sourcePath,
+        originalFileName: file.name,
+        mimeType: file.type,
+        sourceCategory: existing?.sourceType || getSourceTypeForFile({ name: file.name }),
+        sourcePriority: existing?.sourcePriority || 'high',
+        bindingLevel: existing?.bindingLevel || 'binding',
+        selectedRanges: existing?.selectedRanges
+      });
+      const normalized = { ...existing, ...imported, id: imported.documentId, name: imported.originalFileName, path: imported.storedFilePath, type: imported.mimeType, size: imported.fileSize, source, sourceType: imported.declaredCategory || existing?.sourceType || getSourceTypeForFile({ name: file.name }) };
+      state.wizard.anchorFiles = [...state.wizard.anchorFiles.filter((item) => item.id !== normalized.id), normalized];
+      state.wizard.courseProject = await desktop.factory.getCourseProject(projectId);
+      state.wizard.status = `Datei „${file.name}“ wurde sicher im Projekt gespeichert.`;
+    })().catch((error) => {
+      showWizardError('Quelldatei konnte nicht importiert werden', error);
+      state.wizard.status = error.message;
+    }).finally(() => sourceImportFlights.delete(key));
+    sourceImportFlights.set(key, flight);
+    await flight;
+  }
+}
+
+function removeDropZoneFile(zoneId, index) {
+  if (zoneId === 'anchor') {
+    state.wizard.anchorFiles = state.wizard.anchorFiles.filter((_, fileIndex) => fileIndex !== Number(index));
+    state.wizard.status = 'Hauptquell-Datei entfernt.';
+    return;
+  }
+  state.wizard.uploadFiles = uploadUtils.removeDropZoneFile
+    ? uploadUtils.removeDropZoneFile(state.wizard.uploadFiles, zoneId, index)
+    : state.wizard.uploadFiles.filter((file, fileIndex) => !(file.uploadArea === zoneId && fileIndex === Number(index)));
+  state.wizard.status = 'Upload-Datei entfernt.';
+}
+
+async function applyWizardPreset() {
+  if (!state.wizard.selectedPresetId) return;
+  try {
+    const updated = await desktop.factory.applyPreset(state.wizard.selectedPresetId, {
+      containerProfile: state.wizard.containerProfile,
+      targetAudience: state.wizard.targetAudience
+    });
+    state.wizard.containerProfile = updated.containerProfile;
+    state.wizard.targetAudience = updated.targetAudience;
+    state.wizard.presetAppliedCount = Object.keys(updated.containerProfile?.didacticCourse || {}).length;
+    state.wizard.status = (updated.presetWarnings || []).join(' ');
+  } catch (error) {
+    state.wizard.status = error.message;
+  }
+  renderPlanWizard();
+}
+
+function buildDidacticRecommendationInput() {
+  return {
+    course: state.wizard.course,
+    duration: state.wizard.duration,
+    targetAudience: state.wizard.targetAudience,
+    courseGoal: state.wizard.courseGoal,
+    expectedOutcome: state.wizard.expectedOutcome,
+    containerProfile: state.wizard.containerProfile,
+    courseType: state.wizard.containerProfile?.courseType,
+    didacticProfile: getSelectedDidacticProfile()
+  };
+}
+
+async function refreshDidacticRecommendation() {
+  if (!desktop?.factory?.recommendDidacticProfiles) return;
+  try {
+    const input = buildDidacticRecommendationInput();
+    state.wizard.didacticRecommendation = await desktop.factory.recommendDidacticProfiles(input);
+    state.wizard.didacticPreview = await desktop.factory.createDidacticPreview({
+      didacticProfile: getSelectedDidacticProfile(),
+      courseType: state.wizard.containerProfile?.courseType,
+      targetAudience: state.wizard.targetAudience,
+      duration: state.wizard.duration,
+      courseGoal: state.wizard.courseGoal || state.wizard.course.courseName
+    });
+  } catch (error) {
+    state.wizard.didacticRecommendation = null;
+    state.wizard.didacticPreview = null;
+  }
+}
+
+async function parseWizardPlan(event) {
+  const file = Array.from(event.target.files || [])[0];
+  if (!file) return;
+  state.wizard.planFile = { name: file.name, path: file.path || '', size: file.size, type: file.type };
+  state.wizard.status = 'Unterrichtsplan wird gelesen ...';
+  renderPlanWizard();
+  try {
+    state.wizard.coursePlan = await desktop.factory.parseCoursePlan({
+      files: [state.wizard.planFile],
+      courseTitle: state.wizard.course.courseName
+    });
+    state.wizard.selectedDayNumber = state.wizard.coursePlan.days[0]?.dayNumber || 1;
+    state.wizard.status = 'Unterrichtsplan erkannt.';
+  } catch (error) {
+    showWizardError('Dokumentanalyse fehlgeschlagen', error);
+  }
+  renderPlanWizard();
+}
+
+async function parseWizardPlanSheet(event) {
+  if (!state.wizard.planFile) return;
+  state.wizard.coursePlan = await desktop.factory.parseCoursePlan({
+    files: [state.wizard.planFile],
+    selectedSheet: event.target.value,
+    courseTitle: state.wizard.course.courseName
+  });
+  renderPlanWizard();
+}
+
+async function importWizardUploads() {
+  state.wizard.status = 'Uploads werden sicher in Staging importiert ...';
+  renderPlanWizard();
+  try {
+    state.wizard.importBatch = await desktop.factory.importFiles({
+      name: `${state.wizard.course.courseName || 'Plan'} Uploads`,
+      files: state.wizard.uploadFiles
+    });
+    state.wizard.status = 'Uploads importiert und klassifiziert.';
+    await loadState();
+  } catch (error) {
+    state.wizard.status = error.message;
+    renderPlanWizard();
+  }
+}
+
+function wizardProjectInput() {
+  return {
+    id: state.wizard.course.courseId,
+    title: state.wizard.course.courseName,
+    description: state.wizard.course.description,
+    subjectArea: state.wizard.course.department,
+    courseGoal: state.wizard.courseGoal,
+    expectedOutcome: state.wizard.expectedOutcome,
+    targetGroup: selectionText(state.wizard.structureFrame.targetAudience),
+    priorKnowledge: selectionText(state.wizard.structureFrame.priorKnowledge),
+    audienceProfile: { ...state.wizard.targetAudience },
+    containerProfile: { ...state.wizard.containerProfile },
+    selectedCoursePlanSheet: state.wizard.coursePlan?.selectedSheet || state.wizard.courseProject?.selectedCoursePlanSheet || '',
+    structureFrame: { ...state.wizard.structureFrame },
+    uploadedDocuments: state.wizard.anchorFiles.map((file) => ({
+      ...file, originalFileName: file.name, storedFilePath: file.path, mimeType: file.type,
+      fileSize: file.size, declaredCategory: file.sourceType, sourcePriority: file.sourcePriority || 'high', bindingLevel: file.bindingLevel || 'binding'
+    }))
+  };
+}
+
+async function openSavedCourseProject(event) {
+  if (!event.target.value) return;
+  try {
+    const project = await desktop.factory.getCourseProject(event.target.value);
+    state.wizard.courseProject = project;
+    if (project.containerProfile) state.wizard.containerProfile = project.containerProfile;
+    if (project.selectedCoursePlanSheet && state.wizard.coursePlan) state.wizard.coursePlan.selectedSheet = project.selectedCoursePlanSheet;
+    state.wizard.course = { ...state.wizard.course, courseName: project.title, courseId: project.id, description: project.description, department: project.subjectArea };
+    state.wizard.anchorFiles = (project.uploadedDocuments || []).map((file) => ({ ...file, name: file.originalFileName, path: file.storedFilePath, type: file.mimeType, size: file.fileSize, sourceType: file.declaredCategory }));
+    if (project.planningFrame) {
+      state.wizard.planningFrame = { ...state.wizard.planningFrame, ...project.planningFrame, targetGroup: project.targetGroup || project.planningFrame.targetGroup || '', priorKnowledge: project.priorKnowledge || project.planningFrame.priorKnowledge || '', breaksText: (project.planningFrame.breaks || []).map((item) => `${item.start}-${item.end}`).join('\n') };
+      state.wizard.duration = { ...state.wizard.duration, numberOfDays: project.planningFrame.totalDays, uePerDay: project.planningFrame.unitsPerDay, totalUE: project.planningFrame.totalUnits };
+    }
+    if (project.structureFrame) {
+      state.wizard.structureFrame = { ...state.wizard.structureFrame, ...project.structureFrame };
+      state.wizard.duration = { ...state.wizard.duration, numberOfDays: project.structureFrame.totalDays, uePerDay: project.structureFrame.unitsByDay?.[0] || project.structureFrame.unitsPerDay, totalUE: project.structureFrame.totalUnits };
+    }
+    state.wizard.targetAudience = { ...state.wizard.targetAudience, ageRange: project.targetGroup || state.wizard.targetAudience.ageRange, priorKnowledge: project.priorKnowledge || state.wizard.targetAudience.priorKnowledge };
+    if (project.approvedCoursePlan) state.wizard.approvedCurriculumPlan = structuredPlanToCurriculum(project.approvedCoursePlan);
+    state.wizard.status = 'Gespeichertes Kursprojekt geladen.';
     const activeOperation = [project.planningOperation, project.analysisOperation].find((operation) => operation?.operationId && !documentAnalysisWorkflow.isTerminalAnalysisStatus?.(operation.status));
     if (activeOperation) {
       state.wizard.analysisProgress = activeOperation;
