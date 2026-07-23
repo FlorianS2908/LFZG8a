@@ -99,7 +99,7 @@ class OpenAIProvider {
   async analyzeDocumentSegments(input = {}, segments = [], options = {}) {
     if (segments.length <= 1) return this.analyzeDocument(input, options);
     const partialAnalyses = new Array(segments.length);
-    const cached = input.document?.segmentResults || {};
+    const cached = { ...(input.document?.segmentResults || {}) };
     const analyzeAt = async (index) => {
       const segment = segments[index];
       const cacheHit = cached[segment.id]?.status === 'completed' && cached[segment.id]?.checksum === input.document?.checksum && cached[segment.id]?.promptVersion === 'document-analysis-v1';
@@ -108,14 +108,13 @@ class OpenAIProvider {
         partialAnalyses[index] = await this.analyzeDocument({ ...input, extraction: { ...input.extraction, sections: segment.sections, segment: { index: index + 1, total: segments.length } }, preparation: index === 0 ? input.preparation : { ...input.preparation, providerFiles: [] } }, { ...options, timeoutMs: options.documentTimeoutMs || 90000 });
         cached[segment.id] = { status: 'completed', checksum: input.document?.checksum || '', promptVersion: 'document-analysis-v1', result: partialAnalyses[index], completedAt: new Date().toISOString() };
       }
-      if (input.document) input.document.segmentResults = cached;
       await options.onSegmentComplete?.({ index: index + 1, total: segments.length, segmentId: segment.id, cacheHit });
     };
     await analyzeAt(0);
     let next = 1;
     const worker = async () => { while (next < segments.length) { const index = next++; await analyzeAt(index); } };
     await Promise.all(Array.from({ length: Math.min(Number(options.segmentWorkers || 2), segments.length - 1) }, worker));
-    return this.requestJson({ schema: 'DocumentAnalysis', rules: ['Führe die Teilanalysen zusammen, ohne Inhalte zu erfinden.', 'Erhalte documentId und Quellenreferenzen.', 'Antworte ausschließlich als JSON.'], input: sanitizeInput({ project: input.project, structureFrame: input.structureFrame, document: input.document, partialAnalyses }) }, { ...options, timeoutMs: options.documentTimeoutMs || 90000 });
+    return this.requestJson({ schema: 'DocumentAnalysis', rules: ['Führe die Teilanalysen zusammen, ohne Inhalte zu erfinden.', 'Erhalte documentId und Quellenreferenzen.', 'Antworte ausschließlich als JSON.'], input: sanitizeInput({ project: input.project, structureFrame: input.structureFrame, document: { ...input.document, segmentResults: cached }, partialAnalyses }) }, { ...options, timeoutMs: options.documentTimeoutMs || 90000 });
   }
 
   async requestResponsesJson(payload, providerFiles, options = {}) {
@@ -152,24 +151,24 @@ class OpenAIProvider {
   async generateStructuredCoursePlan(input = {}, options = {}) {
     return this.requestJson({
       schema: 'CoursePlanDraft',
-      rules: [
-        'Erstelle ausschließlich einen zeitlich und chronologisch geordneten Kursstrukturentwurf.',
-        'Halte Tage und tatsächlich planbare Unterrichtseinheiten exakt ein.',
-        'Fülle ausschließlich das übergebene ueScaffold. IDs, Tagesnummern, lokale und globale UE-Nummern sowie Dauer dürfen nicht verändert werden.',
-        'Jede Einheit benötigt unverändert id, dayNumber, unitNumber, globalUnitNumber und durationMinutes sowie topic, content, competencyGoal, workFormat, sourceReferences, warnings, assumptions, originStatus, confidence und reviewStatus.',
-        'workFormat ist ein Objekt {key,label}; key ist lecture, demonstration, guided_practice, individual, pair, group, project, self_study oder assessment.',
-        'Ein Thema allein ist kein Unterrichtsplan: Inhalt, Kompetenzziel und Arbeitsform müssen konkret und voneinander unterscheidbar sein.',
-        'Jede Einheit darf fachneutral materialRequirements mit Materialart, Herkunft (reuse/adapt/generate), Zielformat, Werkzeugbedarf, Automatisierbarkeit und Prüfbedarf vorschlagen.',
-        'Keinen einzelnen Fachbereich und keine bestimmte Werkzeugklasse als Standard voraussetzen.',
-        'originStatus ist explicit, derived, generated, conflicting oder needs_review.',
-        'Kennzeichne Ergänzungen als generated und löse Konflikte nicht stillschweigend.',
-        'Klassifiziere Auffälligkeiten als extraction_issue, source_conflict, internal_source_conflict, planning_conflict, missing_information oder informational_note.',
-        'Jeder relevante Konflikt benötigt conflictId, type, severity, relevance, title, description, affectedSourceReferences, affectedDayNumbers, affectedUnitIds, affectedFields, conflictingValues, evidence, aiRecommendation, proposedValue, confidence und resolutionStatus.',
-        'Allgemeine Hinweise ohne konkrete UE- oder Feldreferenz dürfen nicht blockieren. Technisches OCR- oder Extraktionsrauschen ist extraction_issue und nicht fachlicher Konflikt.',
-        'Gib summary, days, excludedTopics, unscheduledTopics, conflicts, missingInformation, warnings und reviewItems als JSON zurück.'
-      ],
       input: sanitizeInput(input)
     }, options);
+  }
+
+  async execute(request = {}) {
+    if (!this.isConfigured()) throw new Error('OpenAI ist nicht konfiguriert.');
+    const body = JSON.stringify({
+      model: request.model || this.model,
+      response_format: { type: 'json_object' },
+      messages: (request.messages || []).map((message) => ({
+        role: message.role,
+        content: String(message.content || '')
+      }))
+    });
+    return this.requestBodyWithRetry(body, {
+      signal: request.abortSignal,
+      timeoutMs: request.timeout
+    });
   }
 
   uploadProviderFile(file, options = {}) {
@@ -212,6 +211,10 @@ class OpenAIProvider {
         { role: 'user', content: JSON.stringify(payload) }
       ]
     });
+    return this.requestBodyWithRetry(body, options);
+  }
+
+  async requestBodyWithRetry(body, options = {}) {
     let attempt = 0;
     while (true) {
       try { return await this.performRequest(body, options.signal, '/v1/chat/completions', parseChatJson, options.timeoutMs); }

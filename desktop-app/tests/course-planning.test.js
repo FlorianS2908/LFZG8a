@@ -418,10 +418,13 @@ test('Renderer erhält keine API-Schlüssel über die Preload-Oberfläche', () =
 
 test('Planungsprompt und Review bleiben fachneutral und Materialgeneratoren sind erweiterbar', () => {
   const provider = fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'content-factory', 'ai', 'openai-provider.js'), 'utf8');
+  const promptRegistry = fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'content-factory', 'course-intelligence', 'prompts', 'prompt-registry.js'), 'utf8');
   const renderer = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8');
   const generators = fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'content-factory', 'artifact-generators', 'artifact-generator-service.js'), 'utf8');
   assert.match(provider, /Das System ist fachneutral/);
-  assert.match(provider, /materialRequirements/);
+  assert.match(provider, /async execute\(request/);
+  assert.match(promptRegistry, /materialRequirements/);
+  assert.match(promptRegistry, /fachneutral/);
   assert.match(renderer, /edit\('materials'/);
   assert.match(generators, /registerArtifactGenerator/);
 });

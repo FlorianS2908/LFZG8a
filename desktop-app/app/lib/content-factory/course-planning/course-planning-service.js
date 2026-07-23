@@ -10,6 +10,9 @@ const { normalizeCollaboration, buildAiUnderstanding, validateRanges, revisePlan
 const { normalizeCanonicalPlan, validateCanonicalPlan, enrichPlanWithContainerConfiguration, toClassbookModel } = require('./canonical-course-plan');
 const { exportCoursePlanXlsx } = require('./course-plan-xlsx-exporter');
 const { normalizePlanReview, validatePlanReview, applyConflictDecision, editUnit, confirmPlanReview, acceptPlanReview } = require('./plan-review-model');
+const { createGenerationPipeline } = require('../course-intelligence/orchestration/generation-pipeline');
+const { createCourseGenerationService } = require('../course-intelligence/application/course-generation-service');
+const { createLegacyProviderAdapter } = require('../course-intelligence/providers/provider-contract');
 
 const ORIGIN_STATUSES = new Set(['explicit', 'derived', 'generated', 'conflicting', 'needs_review']);
 const TERMINAL_OPERATION_STATUSES = new Set(['completed', 'completed_with_warnings', 'failed', 'cancelled', 'timed_out']);
@@ -383,7 +386,17 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     const knownDocumentIds = new Set([...project.uploadedDocuments.map((document) => document.id), ...analyses.map((analysis) => analysis.documentId)]);
     input.onPhase?.('provider_wait', 'Auf KI-Ergebnis warten', 0.25);
     const providerOptions = { signal: input.signal, timeoutMs: Number(input.providerTimeoutMs || PLANNING_PROVIDER_TIMEOUT_MS) };
-    const providerResult = await provider.generateStructuredCoursePlan(planningInput, providerOptions);
+    const generationService = createCourseGenerationService({
+      pipeline: createGenerationPipeline({
+        provider: createLegacyProviderAdapter(provider),
+        logger
+      })
+    });
+    const providerResultEnvelope = await generationService.generateCoursePlan(planningInput, {
+      ...providerOptions,
+      model: provider.model
+    });
+    const providerResult = providerResultEnvelope.result;
     if (input.signal?.aborted) throw sourceError('OPERATION_CANCELLED', 'Die Unterrichtsplanung wurde abgebrochen.');
     input.onPhase?.('provider_response', 'KI-Antwort wurde empfangen', 0.65);
     input.onPhase?.('result_parsing', 'KI-Antwort wird verarbeitet', 0.72);
@@ -391,7 +404,11 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     input.onPhase?.('plan_validation', 'Unterrichtsplan wird validiert', 0.8);
     let validation = validateCanonicalPlan(raw, structureFrame, knownDocumentIds);
     if (validation.status === 'failed') {
-      const repaired = await provider.generateStructuredCoursePlan({ ...planningInput, repairAttempt: 1, validationErrors: validation.errors }, providerOptions);
+      const repairedEnvelope = await generationService.generateCoursePlan(
+        { ...planningInput, repairAttempt: 1, validationErrors: validation.errors },
+        { ...providerOptions, model: provider.model }
+      );
+      const repaired = repairedEnvelope.result;
       if (input.signal?.aborted) throw sourceError('OPERATION_CANCELLED', 'Die Unterrichtsplanung wurde abgebrochen.');
       raw = normalizeCanonicalPlan(deduplicatePlanSources(repaired), { ...structureFrame, courseId: project.id, title: project.title });
       validation = validateCanonicalPlan(raw, structureFrame, knownDocumentIds);
