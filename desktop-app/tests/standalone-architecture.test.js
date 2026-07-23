@@ -82,8 +82,8 @@ test('Kurserstellung zeigt sechs verständliche Phasen mit Textstatus', () => {
     assert.match(layout, new RegExp(phase));
   }
   assert.match(layout, /aria-current="step"/);
-  assert.match(layout, /✓ Erledigt/);
-  for (const state of ['Aktiv', 'Optional', 'Erledigt', 'Gesperrt']) assert.match(layout, new RegExp(state));
+  assert.match(layout, /✓ Vollständig/);
+  for (const state of ['Aktion erforderlich', 'Optional', 'Vollständig', 'Noch nicht verfügbar']) assert.match(layout, new RegExp(state));
 });
 
 test('Wizard trennt interne Werte von deutschen Beschriftungen', () => {

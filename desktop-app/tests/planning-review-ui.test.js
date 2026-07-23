@@ -30,7 +30,7 @@ test('Planungsreview nutzt volle Breite, feste Fachproportionen und Kartenansich
   const css = fs.readFileSync(path.join(root, 'content-factory.css'), 'utf8');
   const ui = fs.readFileSync(path.join(root, 'factory.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'factory.html'), 'utf8');
-  assert.match(css, /--cf-content-width: 100rem/);
+  assert.match(css, /--cf-content-width: 112\.5rem/);
   assert.match(css, /factory-panel:has\(\[data-plan-step-content="structureReview"\]\) \{ max-width: var\(--cf-content-width\)/);
   assert.match(css, /\.col-content \{ width: 24%/);
   assert.match(css, /\.col-objective \{ width: 24%/);
@@ -45,4 +45,26 @@ test('Planungsreview nutzt volle Breite, feste Fachproportionen und Kartenansich
   assert.doesNotMatch(ui, /<th>Confidence<\/th>/);
   assert.doesNotMatch(ui, /Math\.round\(Number\(unit\.confidence/);
   assert.match(html, /planning-review-view-model\.js/);
+});
+
+test('Kurserstellung verwendet eine zentrale Zustandsaktion, Tabellen und korrekten Retry', () => {
+  const root = path.join(__dirname, '..', 'app', 'renderer', 'tool-center');
+  const css = fs.readFileSync(path.join(root, 'content-factory.css'), 'utf8');
+  const ui = fs.readFileSync(path.join(root, 'factory.js'), 'utf8');
+  const layout = fs.readFileSync(path.join(root, 'workflow-ui', 'workflow-layout.js'), 'utf8');
+  assert.match(ui, /data-central-actionbar/);
+  assert.match(ui, /Themenbasis bestätigen/);
+  assert.match(ui, /Unterrichtsplan erstellen/);
+  assert.match(ui, /Weiter zum Struktur-Review/);
+  assert.match(ui, /Number\(item\.planningVersion\) === Number\(project\.currentPlanningVersion\)/);
+  assert.match(ui, /if \(kind === 'planning'\) return startWizardCoursePlanning\(\)/);
+  assert.match(ui, /if \(kind === 'analysis'\) return startWizardDocumentAnalysis\(\)/);
+  assert.match(ui, /data-ai-understanding open/);
+  assert.match(ui, /scrollTop = scrollTop/);
+  assert.match(ui, /class="topic-review-table review-table-scroll"/);
+  assert.match(ui, /class="course-plan-review-table"/);
+  assert.match(css, /\.course-data-grid \{ grid-template-columns:/);
+  assert.match(css, /@media \(max-width: 1279px\)/);
+  assert.match(css, /\.topic-has-conflict td/);
+  assert.match(layout, /data-workflow-help-toggle/);
 });

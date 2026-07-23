@@ -51,7 +51,7 @@
           return `
             <button class="${classes}" type="button" data-plan-step="${escapeHtml(phaseActive ? activeStep : selectableGate.id)}" ${selectableGate.active ? '' : 'disabled'} ${phaseActive ? 'aria-current="step"' : ''} aria-label="Phase ${phaseIndex + 1}: ${escapeHtml(phase.label)}${phaseDone ? ', abgeschlossen' : phaseActive ? ', aktuell' : selectableGate.active ? '' : `, gesperrt: ${escapeHtml(missing)}`}">
               <span class="workflow-step-label">${phaseIndex + 1}. ${escapeHtml(phase.label)}</span>
-              <span class="workflow-step-state">${escapeHtml(phaseDone ? '✓ Erledigt' : phaseActive ? '● Aktiv' : selectableGate.active ? 'Optional' : 'Gesperrt')}</span>
+              <span class="workflow-step-state">${escapeHtml(phaseDone ? '✓ Vollständig' : phaseActive ? 'Aktion erforderlich' : selectableGate.active ? 'Optional' : 'Noch nicht verfügbar')}</span>
             </button>
           `;
         }).join('')}
@@ -105,6 +105,7 @@
   function renderWorkflowStepShell({ workflow, step, contentHtml = '', helpHtml = '', statusHtml = '', actionsHtml = '' }) {
     return `
       <section class="workflow-shell" data-workflow="${escapeHtml(workflow.id)}" data-workflow-step="${escapeHtml(step.id)}">
+        <button class="secondary-button workflow-help-toggle" type="button" data-workflow-help-toggle aria-expanded="true">Hilfe ein-/ausblenden</button>
         <div class="workflow-body">
           <main class="workflow-main">
             ${statusHtml}

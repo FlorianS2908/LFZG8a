@@ -67,6 +67,8 @@ const state = {
     anchorFiles: [],
     courseProject: null,
     analysisProgress: null,
+    helpCollapsed: false,
+    helpMobileOpen: false,
     planningFrame: { targetGroup: '', priorKnowledge: '', totalDays: 5, unitsPerDay: 9, totalUnits: 45, unitDurationMinutes: 45, dailyStartTime: '08:30', dailyEndTime: '16:30', breaksText: '10:00-10:15\n11:45-12:15\n13:45-14:00\n15:30-15:45', repetitionUnits: 0, projectUnits: 0, assessmentUnits: 0, bufferUnits: 0, deliveryMode: 'presence' },
     structureFrame: { schemaVersion: 1, targetAudience: { value: '', label: '', customText: '' }, priorKnowledge: { value: '', label: '', customText: '' }, totalDays: 5, unitsPerDay: 9, totalUnits: 45, unitDurationMinutes: 45, confirmed: false },
     scopeErrors: {},
@@ -623,7 +625,7 @@ function renderPlanWizard() {
         step: activeStep,
         contentHtml,
         statusHtml: renderPlanWizardStepStatus(activeGate),
-        actionsHtml: workflowLayout.renderWorkflowActionBar({
+        actionsHtml: activeGate.id === 'courseStructure' ? '' : workflowLayout.renderWorkflowActionBar({
           canBack: Boolean(previousGate),
           canNext: canContinue,
           canSkip: Boolean(activeGate.optional),
@@ -633,6 +635,9 @@ function renderPlanWizard() {
       })
       : contentHtml}
   `;
+  root.classList.toggle('help-collapsed', wizard.helpCollapsed);
+  root.classList.toggle('help-mobile-open', wizard.helpMobileOpen);
+  root.querySelector('[data-workflow-help-toggle]')?.setAttribute('aria-expanded', String(window.innerWidth < 1280 ? wizard.helpMobileOpen : !wizard.helpCollapsed));
   bindPlanWizardEvents();
   setAnalysisUiBusy(analysisRunning);
   renderFactoryNavigationGates($('[data-factory-panel].is-active')?.dataset.factoryPanel || 'plan-wizard');
@@ -672,15 +677,8 @@ function createFallbackPlanWorkflow() {
 }
 
 function renderPlanWizardStepStatus(gate) {
-  const nextAction = getNextRecommendedAction();
-  return workflowLayout.renderWorkflowResultCard
-    ? workflowLayout.renderWorkflowResultCard({
-      title: gate.done ? 'Schritt erledigt' : gate.active ? 'Aktueller Schritt' : 'Gesperrt',
-      result: gate.done ? 'Die Voraussetzung ist erfüllt.' : gate.active ? 'Bearbeite diesen Schritt und nutze danach Weiter.' : gate.missing,
-      warnings: gate.active || gate.done ? [] : [gate.missing],
-      nextAction: nextAction.label
-    })
-    : '';
+  const label = gate.done ? `✓ ${gate.label} vollständig` : gate.active ? `${gate.label} · Aktion erforderlich` : `${gate.label} · Noch nicht verfügbar`;
+  return `<p class="workflow-step-summary ${gate.done ? 'is-complete' : ''}" role="status">${escapeHtml(label)}</p>`;
 }
 
 function renderCurrentPlanWizardStep(wizard, gate) {
@@ -726,7 +724,7 @@ function renderCourseStep(wizard) {
       <fieldset>
       <legend>Allgemeine Kursangaben</legend>
       ${state.courseProjects.length ? `<label>Gespeichertes Kursprojekt öffnen<select data-open-course-project><option value="">Neues Projekt</option>${state.courseProjects.map((project) => `<option value="${escapeHtml(project.id)}">${escapeHtml(project.title || project.id)}${project.approved ? ' (freigegeben)' : ''}</option>`).join('')}</select></label>` : ''}
-      <div class="factory-form-grid">
+      <div class="factory-form-grid course-data-grid">
         <label>Kurstitel <span class="field-requirement">erforderlich</span><input data-wizard-course="courseName" value="${escapeHtml(wizard.course.courseName)}" aria-describedby="course-required-help" required></label>
         <label>Kurs-ID <span class="field-requirement">erforderlich</span><input data-wizard-course="courseId" value="${escapeHtml(wizard.course.courseId)}" aria-describedby="course-id-help" required><small id="course-id-help">Eine eindeutige Kurzbezeichnung, zum Beispiel „lf08-netzwerke“.</small></label>
         <label>Fachbereich <span class="field-requirement">erforderlich</span><select data-wizard-course="department" aria-describedby="course-required-help" required>${['', 'FIAE', 'FISI', 'KABUE', 'KITS', 'ALLGEMEIN'].map((value) => `<option value="${value}" ${wizard.course.department === value ? 'selected' : ''}>${value || 'Bitte wählen'}</option>`).join('')}</select></label>
@@ -800,6 +798,7 @@ function renderCourseStructureStep(wizard) {
   const planningStatus = project?.planningOperation?.status || '';
   const planningRunning = ['planning', 'validating', 'preparing', 'running'].includes(planningStatus);
   const topicReviewConfirmed = project?.topicReview?.status === 'confirmed';
+  const currentPlan = getCurrentValidCoursePlanDraft(project);
   const hasStalePlan = Boolean(project?.coursePlanDrafts?.some((draft) => draft.status === 'stale'));
   return `<article class="tool-card" data-plan-step-content="courseStructure">
     <h3>KI-Analyse und Kursplanung</h3>
@@ -807,14 +806,33 @@ function renderCourseStructureStep(wizard) {
     <div class="mapping-list">${documents.map((document, index) => renderDocumentAnalysisCard(document, analyses, index)).join('')}</div>
     ${analysisComplete ? `<p class="status-line status-success">Dokumentanalyse abgeschlossen. ${escapeHtml(project.topicCatalog?.topics?.length || 0)} konsolidierte Themen stehen für die Planung bereit.</p>` : ''}
     ${planningStatus === 'timed_out' ? '<p class="status-line status-warning">Die Planung hat ihr Phasenzeitlimit erreicht. Die Dokumentanalyse bleibt vollständig erhalten.</p>' : ''}
-    <div class="button-row"><button class="primary-button" type="button" data-document-analyze ${ready && !running && !planningRunning ? '' : 'disabled'}>${running ? 'Dokumentanalyse läuft …' : 'Dokumente analysieren'}</button>
-    <button class="primary-button" type="button" data-course-plan-start ${analysisComplete && topicReviewConfirmed && !running && !planningRunning ? '' : 'disabled'}>${planningStatus === 'timed_out' || planningStatus === 'failed' || hasStalePlan ? 'Unterrichtsplan neu erstellen' : planningRunning ? 'Unterrichtsplanung läuft …' : 'Unterrichtsplan erstellen'}</button>
-    <button class="secondary-button" type="button" data-document-analysis-cancel ${running || planningRunning ? '' : 'disabled'}>Vorgang abbrechen</button></div>
     ${analysisComplete ? renderAiUnderstanding(project) : ''}
     ${analysisComplete ? `<p class="status-line ${topicReviewConfirmed ? 'status-success' : 'status-warning'}">${topicReviewConfirmed ? 'Themenbasis bestätigt. Der Unterrichtsplan kann jetzt erstellt werden.' : 'Prüfe und bestätige zuerst die erkannten Themen und Analyseergebnisse.'}</p>` : ''}
     ${hasStalePlan ? '<p class="status-line status-warning">Die bestätigte Themenbasis wurde verändert. Der vorhandene Unterrichtsplan basiert auf einer älteren Version und muss neu erstellt werden.</p>' : ''}
     ${!ready ? '<p class="status-line status-warning">Die Analyse kann noch nicht gestartet werden. Erforderlich sind Kursbezeichnung, mindestens ein Dokument, Zielgruppe, Vorkenntnisse, Tage, UE-Angaben und eine konfigurierte OpenAI-Verbindung.</p>' : ''}
+    ${renderCourseStructureActionBar({ ready, running, planningRunning, planningStatus, analysisComplete, topicReviewConfirmed, currentPlan })}
   </article>`;
+}
+
+function getCurrentValidCoursePlanDraft(project) {
+  const draft = project?.coursePlanDrafts?.find((item) => Number(item.planningVersion) === Number(project.currentPlanningVersion));
+  if (!draft || draft.status === 'stale' || draft.validation?.status === 'failed' || !(draft.days || []).length) return null;
+  return draft;
+}
+
+function renderCourseStructureActionBar({ ready, running, planningRunning, planningStatus, analysisComplete, topicReviewConfirmed, currentPlan }) {
+  let primary = `<button class="primary-button" type="button" data-document-analyze ${ready && !running ? '' : 'disabled'}>${running ? 'Dokumentanalyse läuft …' : 'Dokumente analysieren'}</button>`;
+  if (analysisComplete && !topicReviewConfirmed) primary = '<button class="primary-button" type="button" data-topic-confirm>Themenbasis bestätigen</button>';
+  if (analysisComplete && topicReviewConfirmed && !currentPlan) primary = `<button class="primary-button" type="button" data-course-plan-start ${planningRunning ? 'disabled' : ''}>${planningRunning ? 'Unterrichtsplan wird erstellt …' : ['failed', 'timed_out'].includes(planningStatus) ? 'Unterrichtsplan erneut erstellen' : 'Unterrichtsplan erstellen'}</button>`;
+  if (currentPlan) primary = '<button class="primary-button" type="button" data-open-structure-review>Weiter zum Struktur-Review</button>';
+  const secondary = [
+    analysisComplete ? '<button class="secondary-button" type="button" data-document-analyze>Analyse erneut ausführen</button>' : '',
+    analysisComplete && !topicReviewConfirmed ? '<button class="secondary-button" type="button" data-topic-add>Thema hinzufügen</button><button class="secondary-button" type="button" data-topic-save>Änderungen speichern</button>' : '',
+    topicReviewConfirmed ? '<button class="secondary-button" type="button" data-topic-reopen>Bearbeitung wieder öffnen</button>' : '',
+    currentPlan ? '<button class="secondary-button" type="button" data-course-plan-start>Unterrichtsplan neu erstellen</button>' : '',
+    running || planningRunning ? '<button class="secondary-button" type="button" data-document-analysis-cancel>Vorgang abbrechen</button>' : ''
+  ].join('');
+  return `<div class="workflow-actionbar course-structure-actions" data-central-actionbar><button class="secondary-button" type="button" data-wizard-prev>Zurück</button><div class="secondary-actions">${secondary}</div>${primary}</div>`;
 }
 
 function renderAiUnderstanding(project) {
@@ -822,18 +840,29 @@ function renderAiUnderstanding(project) {
   const conflicts = (project.documentAnalyses || []).flatMap((item) => item.conflicts || []);
   const missing = (project.documentAnalyses || []).flatMap((item) => item.missingInformation || []);
   const review = project.topicReview || { status: 'pending', topics: project.topicCatalog?.topics || [] };
+  const confirmed = review.status === 'confirmed';
   return `<details class="validation-box" data-ai-understanding open><summary>Erkannte Themen und Analyseergebnisse prüfen</summary>
     <p>Die KI hat aus den analysierten Dokumenten folgende Themenbasis ermittelt. Prüfe und bearbeite diese Angaben, bevor daraus der Unterrichtsplan erstellt wird.</p>
     <label>Zusammenarbeit mit der KI<select data-interaction-mode aria-label="Interaktionsmodus"><option value="automatic" ${project.interactionMode === 'automatic' ? 'selected' : ''}>Automatisch</option><option value="guided" ${!project.interactionMode || project.interactionMode === 'guided' ? 'selected' : ''}>Begleitet (empfohlen)</option><option value="strict" ${project.interactionMode === 'strict' ? 'selected' : ''}>Streng kontrolliert</option></select></label>
     <div class="summary-grid"><span>Kurstage: ${escapeHtml(frame.totalDays || 0)}</span><span>UE gesamt: ${escapeHtml(frame.totalUnits || 0)}</span><span>UE pro Tag: ${escapeHtml(frame.unitsPerDay || 0)}</span><span>UE-Dauer: ${escapeHtml(frame.unitDurationMinutes || 0)} Minuten</span><span>Dokumente: ${escapeHtml(project.uploadedDocuments?.length || 0)}</span><span>Leitquellen: ${escapeHtml((project.uploadedDocuments || []).filter((item) => item.bindingLevel === 'binding').length)}</span></div>
-    <div class="topic-review-list">${(review.topics || []).map((topic, index) => renderTopicReviewItem(topic, index, review.topics.length)).join('')}</div>
-    <div class="button-row"><button type="button" class="secondary-button" data-topic-add>Thema hinzufügen</button><button type="button" class="secondary-button" data-topic-save>Änderungen speichern</button><button type="button" class="primary-button" data-topic-confirm ${review.topics?.length ? '' : 'disabled'}>Themenbasis bestätigen</button></div>
-    <p><strong>Status:</strong> ${review.status === 'confirmed' ? 'Bestätigt' : review.status === 'edited' ? 'Bearbeitet' : 'KI-Vorschlag'} · Version ${escapeHtml(review.version || 1)}</p>
-    ${renderAnalysisList('Offene Widersprüche', conflicts)}${renderAnalysisList('Fehlende Angaben', missing)}
+    <p class="compact-review-status ${confirmed ? 'status-confirmed' : ''}" role="status">${confirmed ? '✓ Themenbasis bestätigt' : 'Themenbasis zur Prüfung'} · Version ${escapeHtml(review.version || 1)}</p>
+    <div class="topic-review-table review-table-scroll" role="region" aria-label="Erkannte Themen"><table><thead><tr><th scope="col">Nr.</th><th scope="col">Titel</th><th scope="col">Unterthemen/Inhalte</th><th scope="col">Lernziele</th><th scope="col">Kompetenzen</th><th scope="col">Niveau</th><th scope="col">Quellen</th><th scope="col">Prüfstatus</th><th scope="col">Aktionen</th></tr></thead><tbody>${(review.topics || []).map((topic, index) => renderTopicReviewItem(topic, index, review.topics.length, confirmed, conflicts)).join('')}</tbody></table></div>
+    ${renderReviewHints(conflicts, missing)}
     <small>Begleitet fragt nur bei fachlich relevanten Alternativen nach. Unwesentliche Annahmen blockieren die Planung nicht.</small></details>`;
 }
 
-function renderTopicReviewItem(topic, index, count) { const field = (name) => `data-topic-index="${index}" data-topic-field="${name}"`; return `<article class="mapping-item topic-review-item"><label>Titel<input ${field('title')} value="${escapeHtml(topic.title || '')}"></label><label>Unterthemen<textarea ${field('subtopics')}>${escapeHtml((topic.subtopics || []).join('\n'))}</textarea></label><label>Lernziele<textarea ${field('learningObjectives')}>${escapeHtml((topic.learningObjectives || []).map(formatAnalysisItem).join('\n'))}</textarea></label><label>Kompetenzen<textarea ${field('competencies')}>${escapeHtml((topic.competencies || []).map(formatAnalysisItem).join('\n'))}</textarea></label><label>Schwierigkeitsgrad<select ${field('difficulty')}>${['introductory','basic','intermediate','advanced'].map((value) => `<option value="${value}" ${topic.difficulty === value ? 'selected' : ''}>${({ introductory: 'Einstieg', basic: 'Grundlagen', intermediate: 'Mittel', advanced: 'Fortgeschritten' })[value]}</option>`).join('')}</select></label><p><strong>Quellenbelege:</strong> ${escapeHtml((topic.sourceReferences || []).map(planningReviewView.compactSource).join(' · ') || 'keine')}</p><div class="button-row"><button type="button" class="tertiary-button" data-topic-move="up" data-topic-index="${index}" ${index === 0 ? 'disabled' : ''}>Nach oben</button><button type="button" class="tertiary-button" data-topic-move="down" data-topic-index="${index}" ${index === count - 1 ? 'disabled' : ''}>Nach unten</button><button type="button" class="secondary-button" data-topic-remove="${index}">Thema löschen</button></div></article>`; }
+function renderTopicReviewItem(topic, index, count, readonly, conflicts = []) {
+  const field = (name) => `data-topic-index="${index}" data-topic-field="${name}" ${readonly ? 'disabled' : ''}`;
+  const related = conflicts.filter((item) => item.topicId === topic.id || item.affectedTopicIds?.includes(topic.id));
+  const conflict = related.length > 0;
+  return `<tr class="topic-review-item ${conflict ? 'topic-has-conflict' : ''}"><td data-label="Nr.">${index + 1}</td><td data-label="Titel"><input aria-label="Titel Thema ${index + 1}" ${field('title')} value="${escapeHtml(topic.title || '')}"></td><td data-label="Unterthemen/Inhalte"><textarea rows="4" ${field('subtopics')}>${escapeHtml((topic.subtopics || []).join('\n'))}</textarea></td><td data-label="Lernziele"><textarea rows="4" ${field('learningObjectives')}>${escapeHtml((topic.learningObjectives || []).map(formatAnalysisItem).join('\n'))}</textarea></td><td data-label="Kompetenzen"><textarea rows="4" ${field('competencies')}>${escapeHtml((topic.competencies || []).map(formatAnalysisItem).join('\n'))}</textarea></td><td data-label="Niveau"><select ${field('difficulty')}>${['introductory','basic','intermediate','advanced'].map((value) => `<option value="${value}" ${topic.difficulty === value ? 'selected' : ''}>${({ introductory: 'Einstieg', basic: 'Grundlagen', intermediate: 'Mittel', advanced: 'Fortgeschritten' })[value]}</option>`).join('')}</select></td><td data-label="Quellen"><div class="source-pill-list">${(topic.sourceReferences || []).map((source) => `<span class="source-pill">${escapeHtml(planningReviewView.compactSource(source))}</span>`).join('') || '–'}</div></td><td data-label="Prüfstatus"><span class="review-state ${conflict ? 'is-conflict' : readonly ? 'is-reviewed' : 'is-open'}">${conflict ? 'Widerspruch' : readonly ? 'Geprüft' : 'Offen'}</span>${related.map((item) => `<small>⚠ ${escapeHtml(formatAnalysisItem(item))}</small>`).join('')}</td><td data-label="Aktionen"><div class="topic-row-actions"><button type="button" class="tertiary-button" aria-label="Thema nach oben" data-topic-move="up" data-topic-index="${index}" ${readonly || index === 0 ? 'disabled' : ''}>↑</button><button type="button" class="tertiary-button" aria-label="Thema nach unten" data-topic-move="down" data-topic-index="${index}" ${readonly || index === count - 1 ? 'disabled' : ''}>↓</button><button type="button" class="secondary-button" data-topic-remove="${index}" ${readonly ? 'disabled' : ''}>Löschen</button></div></td></tr>`;
+}
+
+function renderReviewHints(conflicts, missing) {
+  const items = [...conflicts.map((item) => ({ type: 'Widerspruch', item })), ...missing.map((item) => ({ type: 'Fehlende Angabe', item }))];
+  if (!items.length) return '';
+  return `<details class="review-hints"><summary>Prüfhinweise (${items.length})</summary><ul>${items.map(({ type, item }) => `<li><strong>${escapeHtml(type)}</strong> · ${escapeHtml(formatAnalysisItem(item))}</li>`).join('')}</ul></details>`;
+}
 
 function renderDocumentAnalysisCard(document, analyses, index) {
   const id = document.id || `document-${index}`;
@@ -878,7 +907,7 @@ function documentAnalysisStatusLabel(status) {
 
 function renderStructureReviewStep(wizard) {
   const project = wizard.courseProject;
-  const draft = project?.coursePlanDrafts?.find((item) => item.planningVersion === project.currentPlanningVersion);
+  const draft = getCurrentValidCoursePlanDraft(project);
   if (!draft) return '<article class="tool-card"><h3>Struktur-Review</h3><p class="status-line status-warning">Noch keine KI-Kursstruktur vorhanden.</p></article>';
   (draft.days || []).forEach((day) => (day.units || []).forEach((unit) => { unit.sourceReferences = deduplicateDisplayedSources(unit.sourceReferences); }));
   return `<article class="tool-card" data-plan-step-content="structureReview">
@@ -1395,7 +1424,7 @@ function getPlanWizardStepGates() {
   const wizard = state.wizard;
   const courseDone = Boolean(wizard.course.courseName && wizard.course.courseId && wizard.course.department);
   const anchorDone = Boolean(wizard.anchorFiles.length);
-  const currentDraft = wizard.courseProject?.coursePlanDrafts?.find((item) => item.planningVersion === wizard.courseProject.currentPlanningVersion);
+  const currentDraft = getCurrentValidCoursePlanDraft(wizard.courseProject);
   const documentAnalysisDone = Boolean(wizard.courseProject?.documentAnalyses?.length);
   const durationDone = Boolean(wizard.courseProject?.structureFrame?.valid && wizard.courseProject?.structureFrame?.confirmed);
   const didacticDone = Boolean(wizard.didacticConfirmed && (getSelectedDidacticProfile()?.id || wizard.didacticProfile?.id));
@@ -1482,6 +1511,11 @@ function bindPlanWizardEvents() {
     if (field.tagName === 'SELECT') renderPlanWizard();
   }));
   $('[data-open-course-project]')?.addEventListener('change', openSavedCourseProject);
+  $('[data-workflow-help-toggle]')?.addEventListener('click', () => {
+    if (window.innerWidth < 1280) state.wizard.helpMobileOpen = !state.wizard.helpMobileOpen;
+    else state.wizard.helpCollapsed = !state.wizard.helpCollapsed;
+    renderPlanWizard();
+  });
   $all('[data-wizard-anchor-type]').forEach((field) => field.addEventListener('change', (event) => {
     const type = event.target.value;
     const selected = getAnchorTypes();
@@ -1518,12 +1552,14 @@ function bindPlanWizardEvents() {
   }));
   if (hasDocumentAnalysisWorkflow) documentAnalysisWorkflow.bindDocumentAnalysisControls(document, startWizardDocumentAnalysis);
   $('[data-course-plan-start]')?.addEventListener('click', startWizardCoursePlanning);
+  $('[data-open-structure-review]')?.addEventListener('click', () => { state.wizard.activeStep = 'structureReview'; renderPlanWizard(); });
   $all('[data-topic-field]').forEach((field) => field.addEventListener('input', () => updateTopicReviewField(field)));
   $('[data-topic-add]')?.addEventListener('click', () => { const review = state.wizard.courseProject.topicReview; review.topics.push({ id: `topic-user-${Date.now()}`, title: '', subtopics: [], learningObjectives: [], competencies: [], sourceReferences: [], difficulty: 'basic', reviewStatus: 'edited' }); review.status = 'edited'; renderPlanWizard(); });
   $all('[data-topic-remove]').forEach((button) => button.addEventListener('click', () => { state.wizard.courseProject.topicReview.topics.splice(Number(button.dataset.topicRemove), 1); state.wizard.courseProject.topicReview.status = 'edited'; renderPlanWizard(); }));
   $all('[data-topic-move]').forEach((button) => button.addEventListener('click', () => moveTopicReview(Number(button.dataset.topicIndex), button.dataset.topicMove)));
   $('[data-topic-save]')?.addEventListener('click', saveTopicReview);
   $('[data-topic-confirm]')?.addEventListener('click', confirmTopicReview);
+  $('[data-topic-reopen]')?.addEventListener('click', () => { state.wizard.courseProject.topicReview.status = 'edited'; state.wizard.status = 'Bearbeitung der Themenbasis wieder geöffnet.'; renderPlanWizard(); });
   $('[data-interaction-mode]')?.addEventListener('change', async (event) => {
     const projectId = state.wizard.courseProject?.id;
     if (!projectId) return;
@@ -1536,7 +1572,7 @@ function bindPlanWizardEvents() {
   $('[data-document-analysis-cancel]')?.addEventListener('click', cancelWizardDocumentAnalysis);
   $('[data-progress-continue]')?.addEventListener('click', () => { state.wizard.analysisProgress = null; renderPlanWizard(); });
   $('[data-progress-back]')?.addEventListener('click', () => { state.wizard.analysisProgress = null; renderPlanWizard(); });
-  $('[data-progress-retry]')?.addEventListener('click', () => { state.wizard.analysisProgress = null; startWizardDocumentAnalysis(); });
+  $('[data-progress-retry]')?.addEventListener('click', retryCurrentOperation);
   $all('[data-structure-frame]').forEach((field) => field.addEventListener('input', () => {
     state.wizard.structureFrame[field.dataset.structureFrame] = field.type === 'number' ? Number(field.value) : field.value;
     state.wizard.structureFrame.totalUnits = Number(state.wizard.structureFrame.totalDays || 0) * Number(state.wizard.structureFrame.unitsPerDay || 0);
@@ -2138,8 +2174,27 @@ async function startWizardCoursePlanning() {
 
 function updateTopicReviewField(field) { const topic = state.wizard.courseProject?.topicReview?.topics?.[Number(field.dataset.topicIndex)]; if (!topic) return; topic[field.dataset.topicField] = ['subtopics','learningObjectives','competencies'].includes(field.dataset.topicField) ? field.value.split(/\r?\n/).map((value) => value.trim()).filter(Boolean) : field.value; topic.reviewStatus = 'edited'; state.wizard.courseProject.topicReview.status = 'edited'; }
 function moveTopicReview(index, direction) { const topics = state.wizard.courseProject.topicReview.topics; const target = direction === 'up' ? index - 1 : index + 1; if (target < 0 || target >= topics.length) return; [topics[index], topics[target]] = [topics[target], topics[index]]; state.wizard.courseProject.topicReview.status = 'edited'; renderPlanWizard(); }
-async function saveTopicReview() { try { state.wizard.courseProject = await desktop.factory.updateTopicReview(state.wizard.course.courseId, { topics: state.wizard.courseProject.topicReview.topics }); state.wizard.status = 'Themenbasis gespeichert.'; } catch (error) { state.wizard.status = error.message; } renderPlanWizard(); }
-async function confirmTopicReview() { try { if (state.wizard.courseProject.topicReview.status === 'edited') await saveTopicReview(); state.wizard.courseProject = await desktop.factory.confirmTopicReview(state.wizard.course.courseId); state.wizard.status = 'Themenbasis bestätigt. Der Unterrichtsplan kann jetzt erstellt werden.'; } catch (error) { state.wizard.status = error.message; } renderPlanWizard(); }
+async function saveTopicReview(render = true) { try { state.wizard.courseProject = await desktop.factory.updateTopicReview(state.wizard.course.courseId, { topics: state.wizard.courseProject.topicReview.topics }); state.wizard.status = 'Themenbasis gespeichert.'; } catch (error) { state.wizard.status = error.message; } if (render) renderPlanWizard(); }
+async function confirmTopicReview() {
+  const scroller = $('.factory-layout');
+  const scrollTop = scroller?.scrollTop || 0;
+  try {
+    if (state.wizard.courseProject.topicReview.status === 'edited') await saveTopicReview(false);
+    state.wizard.courseProject = await desktop.factory.confirmTopicReview(state.wizard.course.courseId);
+    state.wizard.status = `✓ Themenbasis bestätigt · Version ${state.wizard.courseProject.topicReview?.version || 1}`;
+  } catch (error) { state.wizard.status = error.message; }
+  renderPlanWizard();
+  requestAnimationFrame(() => { if (scroller) scroller.scrollTop = scrollTop; $('[data-ai-understanding] summary')?.focus(); });
+}
+
+function retryCurrentOperation() {
+  const kind = state.wizard.analysisProgress?.kind;
+  state.wizard.analysisProgress = null;
+  if (kind === 'planning') return startWizardCoursePlanning();
+  if (kind === 'analysis') return startWizardDocumentAnalysis();
+  showWizardError('Vorgang konnte nicht erneut gestartet werden', 'Der fehlgeschlagene Vorgang konnte nicht eindeutig bestimmt werden.');
+  renderPlanWizard();
+}
 
 function formatProgressError(progress) {
   const error = (progress.errors || [])[0];
@@ -2311,7 +2366,7 @@ if (new URLSearchParams(window.location.search).get('coursePlanningSmoke') === '
 
 function currentStructuredDraft() {
   const project = state.wizard.courseProject;
-  return project?.coursePlanDrafts?.find((item) => item.planningVersion === project.currentPlanningVersion);
+  return getCurrentValidCoursePlanDraft(project);
 }
 
 function updateStructuredUnit(unitId, field, value) {

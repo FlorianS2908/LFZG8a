@@ -13,6 +13,10 @@
   --cf-success: #166534;
   --cf-warning: #92400e;
   --cf-danger: #b91c1c;
+  --cf-review-open-bg: #fff8df;
+  --cf-review-confirmed-bg: #edf9f2;
+  --cf-review-conflict-bg: #fff0f0;
+  --cf-review-missing-bg: #fff4e5;
   --cf-ink: #10232d;
   --cf-muted: #536b76;
   --cf-line: #cfe0e6;
@@ -21,7 +25,7 @@
   --cf-surface-soft: #f7fafb;
   --cf-focus: #b45309;
   --cf-shadow: 0 10px 28px rgba(6, 25, 35, .08);
-  --cf-content-width: 100rem;
+  --cf-content-width: 112.5rem;
   --cf-transition: 160ms ease;
   --cf-radius: .625rem;
   --cf-space-1: .25rem;
@@ -80,6 +84,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .factory-layout { display: block; min-width: 0; overflow-y: auto; padding: var(--cf-page-padding); scroll-padding-top: 1rem; }
 .factory-layout > .sr-status:not([hidden]) { margin: 0 auto var(--cf-space-6); max-width: var(--cf-content-width); }
 .factory-panel { width: 100%; max-width: var(--cf-content-width); margin: 0 auto; gap: var(--cf-section-gap); }
+.factory-panel:has([data-plan-wizard]) { max-width: none; margin: 0; }
 .page-heading { max-width: 52rem; margin: 0 0 1.5rem; }
 .page-heading h2 { margin: .2rem 0 .5rem; font-size: clamp(1.5rem, 2vw, 2rem); }
 .page-heading p { color: var(--cf-muted); }
@@ -120,7 +125,7 @@ legend { padding: 0 .35rem; font-weight: 800; }
 .workflow-result-card, .validation-box, .workflow-help { padding: var(--cf-space-4); background: var(--cf-surface-soft); box-shadow: none; }
 .workflow-header { grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
 .workflow-header .workflow-status-strip { grid-column: 1 / -1; }
-.workflow-body { grid-template-columns: minmax(0, 1fr) minmax(20rem, var(--cf-help-width)); gap: var(--cf-space-8); align-items: start; }
+.workflow-body { grid-template-columns: minmax(0, 1fr) minmax(16rem, 18.75rem); gap: var(--cf-space-6); align-items: start; }
 .workflow-main, .workflow-help { min-width: 0; gap: var(--cf-space-3); }
 .workflow-stepper { display: grid; grid-template-columns: repeat(6, minmax(7.5rem, 1fr)); gap: var(--cf-space-2); overflow-x: auto; padding: .2rem .1rem .75rem; }
 .workflow-step {
@@ -180,6 +185,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { border-color
 .tool-card fieldset { display: grid; gap: var(--cf-space-4); margin: 0; padding: var(--cf-space-6); background: var(--cf-surface-soft); border-color: #d8e1eb; }
 .tool-card fieldset .factory-form-grid { margin: 0; }
 .factory-form-grid { gap: var(--cf-space-6); }
+.course-data-grid { grid-template-columns: minmax(17.5rem, 1.5fr) minmax(13.75rem, .8fr) minmax(13.75rem, .8fr); }
 .duration-audience-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--cf-space-6); align-items: start; }
 .form-section { display: grid; gap: var(--cf-space-4); min-width: 0; padding: var(--cf-space-6); background: var(--cf-surface-soft); border-radius: var(--cf-radius-large); }
 .form-section h4 { margin: 0; font-size: 1.1rem; }
@@ -293,6 +299,37 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .workflow-result-card p { margin: 0; line-height: 1.5; }
 .workflow-result-card .workflow-next-action { margin-top: var(--cf-space-2); padding: var(--cf-space-3); background: var(--cf-brand-soft); border: 0; border-radius: var(--cf-radius-small); }
 .workflow-help { width: 100%; max-width: var(--cf-help-width); padding: var(--cf-space-6); gap: var(--cf-space-4); position: sticky; top: var(--cf-space-4); }
+.workflow-help-toggle { justify-self: end; }
+.help-collapsed .workflow-help { display: none; }
+.help-collapsed .workflow-body { grid-template-columns: minmax(0, 1fr); }
+.workflow-step-summary { margin: 0; padding: .65rem .85rem; color: var(--cf-brand-strong); background: var(--cf-brand-soft); border-left: 3px solid var(--cf-brand); border-radius: var(--cf-radius-small); font-weight: 750; }
+.workflow-step-summary.is-complete { color: var(--cf-success); background: var(--cf-review-confirmed-bg); border-left-color: var(--cf-success); }
+.course-structure-actions { z-index: 4; align-items: center; }
+.course-structure-actions .secondary-actions { display: flex; flex-wrap: wrap; gap: var(--cf-space-2); }
+.compact-review-status { padding: .65rem .8rem; background: var(--cf-review-open-bg); border-radius: var(--cf-radius-small); font-weight: 800; }
+.compact-review-status.status-confirmed { color: var(--cf-success); background: var(--cf-review-confirmed-bg); }
+.topic-review-table { max-width: 100%; overflow-x: auto; border: 1px solid var(--cf-line); border-radius: var(--cf-radius-small); }
+.topic-review-table table { min-width: 86rem; table-layout: fixed; }
+.topic-review-table th { position: sticky; top: 0; z-index: 1; padding: .65rem; background: #eaf3f6; border: 1px solid var(--cf-line); text-align: left; }
+.topic-review-table td { padding: .5rem; border: 1px solid var(--cf-line); vertical-align: top; }
+.topic-review-table th:nth-child(1) { width: 3rem; }
+.topic-review-table th:nth-child(2) { width: 13%; }
+.topic-review-table th:nth-child(3), .topic-review-table th:nth-child(4), .topic-review-table th:nth-child(5) { width: 17%; }
+.topic-review-table th:nth-child(6) { width: 8rem; }
+.topic-review-table th:nth-child(7) { width: 11%; }
+.topic-review-table th:nth-child(8) { width: 10rem; }
+.topic-review-table th:nth-child(9) { width: 9rem; }
+.topic-review-table input, .topic-review-table textarea, .topic-review-table select { min-width: 0; font-size: 1rem; }
+.topic-review-table textarea { min-height: 7rem; }
+.topic-review-table :disabled { opacity: 1; color: var(--cf-ink); background: var(--cf-surface-soft); }
+.topic-has-conflict td { background: var(--cf-review-conflict-bg); }
+.topic-has-conflict textarea, .topic-has-conflict input, .topic-has-conflict select { border-color: var(--cf-danger); }
+.review-state { display: inline-block; padding: .25rem .5rem; border-radius: 999px; font-weight: 800; }
+.review-state.is-reviewed { color: var(--cf-success); background: var(--cf-review-confirmed-bg); }
+.review-state.is-open { color: var(--cf-warning); background: var(--cf-review-open-bg); }
+.review-state.is-conflict { color: var(--cf-danger); background: var(--cf-review-conflict-bg); }
+.topic-row-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
+.review-hints { padding: var(--cf-space-3); background: var(--cf-review-missing-bg); border: 1px solid #efc982; border-radius: var(--cf-radius-small); }
 .workflow-help section { gap: var(--cf-space-2); }
 .workflow-help p, .workflow-help li { margin: 0; color: var(--cf-muted); font-size: .9rem; line-height: 1.55; overflow-wrap: anywhere; }
 .workflow-help ul { margin: 0; padding-left: 1.2rem; display: grid; gap: var(--cf-space-1); }
@@ -316,6 +353,14 @@ th, td { padding: var(--cf-space-3); text-align: left; overflow-wrap: anywhere; 
   .duration-audience-layout { grid-template-columns: 1fr; }
   .courseforge-hero { grid-template-columns: minmax(0, 1fr) 12rem; }
 }
+@media (max-width: 1399px) and (min-width: 900px) {
+  .course-data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 1279px) {
+  .workflow-body { grid-template-columns: minmax(0, 1fr); }
+  .workflow-help { display: none; position: static; max-width: none; }
+  .help-mobile-open .workflow-help { display: grid; }
+}
 @media (max-width: 800px) {
   .factory-brand-text small, .project-context { display: none; }
   .factory-brand-logo { width: 7.5rem; }
@@ -330,6 +375,13 @@ th, td { padding: var(--cf-space-3); text-align: left; overflow-wrap: anywhere; 
   .factory-action-bar { display: none; }
 }
 @media (max-width: 900px) {
+  .course-data-grid { grid-template-columns: 1fr; }
+  .topic-review-table table, .topic-review-table tbody, .topic-review-table tr, .topic-review-table td { display: block; width: 100%; min-width: 0; }
+  .topic-review-table thead { display: none; }
+  .topic-review-table tr { margin-bottom: var(--cf-space-4); border: 1px solid var(--cf-line); }
+  .topic-review-table td { display: grid; grid-template-columns: minmax(7rem, 32%) minmax(0, 1fr); gap: var(--cf-space-2); border: 0; border-bottom: 1px solid var(--cf-line); }
+  .topic-review-table td::before { content: attr(data-label); color: var(--cf-muted); font-weight: 800; }
+  .course-structure-actions, .course-structure-actions .secondary-actions { display: grid; grid-template-columns: 1fr; width: 100%; }
   .review-table-scroll { overflow: visible; }
   .course-plan-review-table table, .course-plan-review-table tbody, .course-plan-review-table tr, .course-plan-review-table td { display: block; width: 100%; min-width: 0; }
   .course-plan-review-table colgroup, .course-plan-review-table thead { display: none; }
