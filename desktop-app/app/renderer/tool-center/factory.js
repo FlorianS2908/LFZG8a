@@ -1567,7 +1567,13 @@ function bindPlanWizardEvents() {
     state.wizard.status = '';
     renderPlanWizard();
   }));
-  $('[data-wizard-prev]')?.addEventListener('click', () => moveWizardStep(-1));
+  $('[data-wizard-prev]')?.addEventListener('click', () => {
+    if (state.wizard.activeStep === 'course') {
+      returnFromCourseStepToFactoryStart();
+      return;
+    }
+    moveWizardStep(-1);
+  });
   $('[data-open-course-plan-workspace]')?.addEventListener('click', () => {
     state.wizard.tableWorkspace = 'coursePlan';
     renderPlanWizard();
@@ -1910,6 +1916,13 @@ function moveWizardStep(direction) {
   state.wizard.activeStep = target.id;
   state.wizard.status = '';
   renderPlanWizard();
+}
+
+function returnFromCourseStepToFactoryStart() {
+  state.wizard.status = '';
+  state.wizard.tableWorkspace = '';
+  showPanel('home');
+  renderNextRecommendedAction();
 }
 
 function validateCourseFields(course = {}) {
