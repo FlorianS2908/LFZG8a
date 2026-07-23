@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { createCoursePlanningService, extractDocument, calculatePlanningFrame, calculateCourseScope, validateDocumentAnalysis, validateCoursePlan, normalizeProject } = require('../app/lib/content-factory/course-planning/course-planning-service');
-const { readWorkbookXml, selectCoursePlanSheet } = require('../app/lib/content-factory/course-plan-parser');
+const { createCoursePlanningService, extractDocument, calculatePlanningFrame, calculateCourseScope, validateDocumentAnalysis, validateCoursePlan, normalizeProject, PLANNING_PROVIDER_TIMEOUT_MS } = require('../app/lib/content-factory/course-planning/course-planning-service');
+const { parseCoursePlan, readWorkbookXml, selectCoursePlanSheet } = require('../app/lib/content-factory/course-plan-parser');
 const { normalizeDocumentAnalysis } = require('../app/lib/content-factory/course-planning/document-analysis-schema');
 
 const validFrame = {
@@ -17,6 +17,18 @@ const validFrame = {
 
 test('Blattauswahl bevorzugt fachlichen Wochenplan statt Änderungshistorie', () => { const sheets = [{ name: 'Änderungshistorie', hidden: false, rows: [['Version', 'Änderung']] }, { name: 'Template Wochenplanung', hidden: false, rows: [['Tag', 'UE', 'Thema', 'Lernziel', 'Dauer', 'Arbeitsform']] }]; const selection = selectCoursePlanSheet(sheets); assert.equal(selection.sheet.name, 'Template Wochenplanung'); assert.ok(selection.scores[1].score > selection.scores[0].score); });
 test('fehlendes geeignetes Blatt verlangt manuelle Prüfung', () => { const selection = selectCoursePlanSheet([{ name: 'Hinweise', hidden: false, rows: [['Allgemeine Hinweise']] }]); assert.equal(selection.sheet, null); assert.match(selection.message, /manuell auswählen/); });
+
+test('reale LF-ZQ8A-XLSM ergibt exakt fünf Tage und 45 UE ohne Phantomwerte', (t) => {
+  const fixture = process.env.COURSEFORGE_REGRESSION_XLSM || path.resolve(__dirname, '../../../project_sources/01-Wochenplan_FIAE_LF-ZQ8A.xlsm');
+  if (!fs.existsSync(fixture)) return t.skip('Reale, nicht im Repository gespeicherte XLSM über COURSEFORGE_REGRESSION_XLSM bereitstellen.');
+  const result = parseCoursePlan(fixture);
+  assert.equal(result.selectedSheet, 'Template Wochenplanung');
+  assert.equal(result.totalDays, 5);
+  assert.equal(result.totalUE, 45);
+  assert.equal(result.days.length, 5);
+  assert.deepEqual(result.days.map((day) => day.ueBlocks.length), [9, 9, 9, 9, 9]);
+  assert.doesNotMatch(JSON.stringify(result), /\bUE 135\b|SAP/i);
+});
 
 test('Planungsrahmen berechnet Nettozeit und reservierte UE deterministisch', () => {
   const result = calculatePlanningFrame(validFrame);
@@ -319,6 +331,72 @@ test('Analysecache bleibt bei Planungstimeout erhalten und Planung sendet nur Ka
   assert.equal(progress.status, 'timed_out'); assert.equal(project.pipelinePhases.document_analysis.status, 'completed'); assert.equal(project.documentAnalyses.length, 1);
   assert.ok(planningInput.topicCatalog.topics.length); assert.equal('documentAnalyses' in planningInput, false); assert.equal(planningInput.ueScaffold.days.length, 2);
   const result = service.getPlanningResult(operation.operationId); assert.equal(JSON.stringify(result).includes('extraction'), false);
+  fs.rmSync(factoryDir, { recursive: true, force: true });
+});
+
+test('Unterrichtsplanung reicht ein Provider-Zeitlimit oberhalb von 30 Sekunden durch', async () => {
+  const factoryDir = fs.mkdtempSync(path.join(os.tmpdir(), 'planning-provider-timeout-'));
+  const source = path.join(factoryDir, 'quelle.md');
+  fs.writeFileSync(source, '# HTML und CSS\nSemantische Struktur und Gestaltung');
+  let receivedOptions;
+  const provider = {
+    name: 'fake',
+    model: 'fake',
+    isConfigured: () => true,
+    async analyzeDocument(input) {
+      return {
+        documentId: input.document.id,
+        documentType: 'markdown',
+        detectedCategory: 'Quelle',
+        summary: 'HTML und CSS',
+        topics: [{ title: 'HTML und CSS', difficulty: 'basic' }],
+        learningObjectives: [{ title: 'Webseiten strukturieren' }],
+        sourceReferences: [{ documentId: input.document.id, location: 'Abschnitt 1' }],
+        confidence: 1
+      };
+    },
+    async generateStructuredCoursePlan(input, options) {
+      receivedOptions = options;
+      return {
+        summary: 'Plan',
+        days: input.ueScaffold.days.map((day) => ({
+          ...day,
+          units: day.units.map((unit) => ({
+            ...unit,
+            topic: 'HTML und CSS',
+            content: 'Semantische Struktur',
+            competencyGoal: 'Strukturen erstellen',
+            workFormat: { key: 'guided_practice', label: 'Angeleitete Übung' },
+            sourceReferences: [{ documentId: 'doc', fileName: 'quelle.md' }],
+            warnings: [],
+            assumptions: [],
+            originStatus: 'explicit',
+            confidence: 1,
+            reviewStatus: 'open'
+          }))
+        })),
+        excludedTopics: [],
+        unscheduledTopics: [],
+        conflicts: [],
+        missingInformation: [],
+        warnings: [],
+        reviewItems: []
+      };
+    }
+  };
+  const service = createCoursePlanningService({ factoryDir, aiOrchestrator: { openai: provider }, logger: { info() {}, error() {} } });
+  service.upsertProject({ id: 'slow-plan', title: 'Slow Plan' });
+  service.importSourceFile({ projectId: 'slow-plan', documentId: 'doc', sourcePath: source, originalFileName: 'quelle.md' });
+  service.saveCourseScope('slow-plan', { totalDays: 1, unitsPerDay: 1, unitDurationMinutes: 45, targetAudience: { value: 'students' }, priorKnowledge: { value: 'none' } });
+  let operation = service.startDocumentAnalysis({ projectId: 'slow-plan' });
+  let progress;
+  do { await new Promise((resolve) => setTimeout(resolve, 5)); progress = service.getOperationStatus(operation.operationId); } while (!['completed', 'failed'].includes(progress.status));
+  service.confirmTopicReview('slow-plan');
+  operation = service.startCoursePlanning({ projectId: 'slow-plan' });
+  do { await new Promise((resolve) => setTimeout(resolve, 5)); progress = service.getOperationStatus(operation.operationId); } while (!['completed', 'failed', 'timed_out'].includes(progress.status));
+  assert.equal(progress.status, 'completed');
+  assert.equal(receivedOptions.timeoutMs, PLANNING_PROVIDER_TIMEOUT_MS);
+  assert.ok(receivedOptions.timeoutMs > 30000);
   fs.rmSync(factoryDir, { recursive: true, force: true });
 });
 

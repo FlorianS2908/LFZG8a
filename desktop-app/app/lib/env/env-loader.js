@@ -11,7 +11,7 @@ function loadAppEnv(projectRoot = process.cwd()) {
   const provider = read('AI_PROVIDER', 'local');
   const apiKey = read('OPENAI_API_KEY', '');
   const model = read('OPENAI_MODEL', 'gpt-5.4-mini');
-  const timeout = read('OPENAI_TIMEOUT_MS', '30000');
+  const timeout = read('OPENAI_TIMEOUT_MS', '90000');
   const maxPrompt = read('OPENAI_MAX_PROMPT_CHARS', '40000');
   const costWarning = readWithLegacy(read, 'COURSEFORGE_COST_WARNING_USD', 'CONTENT_FACTORY_COST_WARNING_USD', '1.00');
   const review = readWithLegacy(read, 'COURSEFORGE_AI_REVIEW', 'CONTENT_FACTORY_AI_REVIEW', 'false');
@@ -20,7 +20,7 @@ function loadAppEnv(projectRoot = process.cwd()) {
     openAiConfigured: Boolean(apiKey.value),
     openAiModel: model.value || 'gpt-5.4-mini',
     openAiKeySource: apiKey.value ? apiKey.source : 'missing',
-    timeoutMs: numberOr(timeout.value, 30000),
+    timeoutMs: numberOr(timeout.value, 90000),
     maxPromptChars: numberOr(maxPrompt.value, 40000),
     costWarningUsd: numberOr(costWarning.value, 1),
     aiReview: /^true$/i.test(String(review.value || 'false')),

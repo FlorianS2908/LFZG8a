@@ -92,6 +92,8 @@ function parseSheetRows(xml, shared) {
 }
 
 function parseRows(rows, options) {
+  const blockPlan = parseBlockCoursePlan(rows, options);
+  if (blockPlan) return blockPlan;
   const headerIndex = rows.findIndex((row) => row.some((cell) => /tag|day|datum|ue|thema|lernziel/i.test(cell)));
   const header = rows[Math.max(headerIndex, 0)] || [];
   const dataRows = rows.slice(Math.max(headerIndex + 1, 1));
@@ -160,6 +162,86 @@ function parseRows(rows, options) {
     days,
     warnings: options.warnings || []
   };
+}
+
+function parseBlockCoursePlan(rows, options) {
+  const findControlValue = (label) => {
+    const row = rows.find((entry) => normalize(entry[0]) === normalize(label));
+    const value = Number(String(row?.[1] || '').replace(',', '.'));
+    return Number.isFinite(value) ? value : 0;
+  };
+  const totalDays = Math.round(findControlValue('Anzahl Tage'));
+  const totalUE = Math.round(findControlValue('Anzahl UE'));
+  const durationHeader = rows.findIndex((row) => normalize(row[0]) === normalize('Dauer in UE'));
+  const contentRow = rows.slice(durationHeader + 1).find((row) => Number(row[0]) === totalUE && String(row[1] || '').trim());
+  if (durationHeader < 0 || !contentRow || totalDays < 1 || totalUE < totalDays) return null;
+
+  const courseTitle = String(rows.find((row) => normalize(row[0]) === normalize('Lernfeldtitel'))?.[1] || options.courseTitle || path.basename(options.fileName, path.extname(options.fileName))).trim();
+  const learningGoals = rows
+    .filter((row) => /^lernziele?:?$/i.test(String(row[0] || '').trim()))
+    .flatMap((row) => String(row[1] || '').split(/\r?\n/))
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const topics = splitNumberedTopics(String(contentRow[1] || ''));
+  const groupedTopics = distributeTopics(topics, totalDays);
+  const unitsByDay = Array.from({ length: totalDays }, (_, index) => Math.floor(totalUE / totalDays) + (index < totalUE % totalDays ? 1 : 0));
+  const days = groupedTopics.map((dayTopics, index) => {
+    const mainTopic = dayTopics[0] || courseTitle;
+    const unitCount = unitsByDay[index];
+    return {
+      dayNumber: index + 1,
+      title: `Tag ${index + 1} - ${mainTopic}`,
+      mainTopic,
+      subTopics: dayTopics.slice(1),
+      learningGoals: learningGoals.length ? [...learningGoals] : [`Die Inhalte von ${mainTopic} fachgerecht anwenden.`],
+      ueBlocks: Array.from({ length: unitCount }, (_, unitIndex) => ({
+        ue: unitIndex + 1,
+        time: '',
+        learningFormat: '',
+        topic: dayTopics[unitIndex % dayTopics.length] || mainTopic,
+        teacherTask: '',
+        learnerTask: '',
+        evaluation: '',
+        resources: '',
+        notes: '',
+        isBreak: false
+      })),
+      pauses: [],
+      warnings: []
+    };
+  });
+  return {
+    courseTitle,
+    selectedSheet: options.selectedSheet,
+    availableSheets: options.availableSheets || [options.selectedSheet || 'Tabelle1'],
+    totalDays,
+    totalUE,
+    sourceFile: options.fileName,
+    sheetSelection: options.sheetSelection || null,
+    parseStatus: 'parsed',
+    days,
+    warnings: options.warnings || []
+  };
+}
+
+function splitNumberedTopics(text) {
+  const normalized = String(text || '').replace(/\r\n/g, '\n').trim();
+  const matches = Array.from(normalized.matchAll(/(?:^|\n)(\d+(?:\.\d+)*)\.\s+([^\n]+)/g));
+  if (!matches.length) return normalized.split(/\n+/).map((value) => value.trim()).filter(Boolean);
+  return matches.map((match, index) => {
+    const start = match.index + match[0].indexOf(match[2]);
+    const end = matches[index + 1]?.index ?? normalized.length;
+    return normalized.slice(start, end).replace(/\s+/g, ' ').trim();
+  }).filter(Boolean);
+}
+
+function distributeTopics(topics, dayCount) {
+  const groups = Array.from({ length: dayCount }, () => []);
+  topics.forEach((topic, index) => groups[Math.min(dayCount - 1, Math.floor(index * dayCount / Math.max(topics.length, 1)))].push(topic));
+  for (let index = 0; index < groups.length; index += 1) {
+    if (!groups[index].length) groups[index].push(topics[Math.min(index, topics.length - 1)] || `Tag ${index + 1}`);
+  }
+  return groups;
 }
 
 function fallbackPlan(fileName, options = {}, warnings = []) {

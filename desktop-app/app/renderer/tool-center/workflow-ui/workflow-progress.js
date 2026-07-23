@@ -9,7 +9,7 @@
     const total = Number(progress.total || 0); const done = Number(progress.completed || 0) + Number(progress.warningCount || 0) + Number(progress.failed || 0);
     return total > 0 ? { percent: clamp(Math.round(done / total * 100)), done, total } : null;
   }
-  function formatElapsed(progress) { const ms = Number(progress.elapsedMs) || Math.max(0, Date.now() - Date.parse(progress.startedAt || new Date().toISOString())); const seconds = Math.floor(ms / 1000); return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; }
+  function formatElapsed(progress) { const ms = Number(progress.elapsedMs) || Math.max(0, Date.now() - Date.parse(progress.startedAt || new Date().toISOString())); const seconds = Math.floor(ms / 1000); const hours = Math.floor(seconds / 3600); const minutes = Math.floor(seconds % 3600 / 60); return hours ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}` : `${String(minutes).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; }
   function renderSteps(progress, terminal) {
     const history = [...new Map((progress.history || []).map((item) => [item.phase, item])).values()];
     if (!history.length) history.push({ phase: progress.phase, step: progress.message || progress.step });
@@ -22,19 +22,16 @@
     }).join('');
   }
   function render(progress = {}) {
-    const planning = progress.kind === 'planning'; const terminal = terminalStatuses.has(progress.status); const measure = measurable(progress); const state = status[progress.status] || status.running;
+    const planning = progress.kind === 'planning'; const terminal = terminalStatuses.has(progress.status); const measure = measurable(progress); const state = status[progress.status] || status.running; const warningCount = Number(progress.warningCount || 0); const errorCount = Number(progress.errorCount ?? progress.failed ?? 0); const completed = ['completed', 'completed_with_warnings'].includes(progress.status);
     return `<section class="workflow-progress-card" role="dialog" aria-modal="true" aria-labelledby="workflow-progress-title" aria-describedby="workflow-progress-message">
-      <header><span class="workflow-progress-icon" aria-hidden="true">${state[0]}</span><div><strong id="workflow-progress-title">${planning ? 'Unterrichtsplanerstellung' : 'Dokumentanalyse'} – ${state[1]}</strong><p id="workflow-progress-message">${escape(progress.message || progress.step || 'Auftrag wird vorbereitet')}</p></div></header>
+      <header><span class="workflow-progress-icon" aria-hidden="true">${completed ? '✓' : state[0]}</span><div><strong id="workflow-progress-title">${planning ? 'Unterrichtsplanerstellung' : 'Dokumentanalyse'} – ${completed ? 'Abgeschlossen' : state[1]}</strong><p id="workflow-progress-message">${escape(progress.message || progress.step || 'Auftrag wird vorbereitet')}</p></div></header>
       ${measure ? `<label>Gesamtfortschritt <progress max="100" value="${measure.percent}">${measure.percent}%</progress><span>${measure.percent}%${measure.total ? ` · ${measure.done} von ${measure.total}` : ''}</span></label>` : '<div class="workflow-progress-indeterminate" role="progressbar" aria-label="Fortschritt wird ermittelt"><span></span></div>'}
-      ${!terminal ? '<div class="workflow-progress-indeterminate" aria-hidden="true"><span></span></div>' : ''}
-      <p><strong>Aktueller Arbeitsschritt:</strong> ${escape(progress.phaseLabel || labels[progress.phase] || progress.phase || '-')}</p>
       ${progress.currentDocument ? `<p><strong>Aktuelles Dokument:</strong> ${escape(progress.currentDocument)}</p>` : ''}
       ${progress.totalSegments || progress.segmentTotal ? `<p>Segment ${escape(progress.segmentCompleted || progress.currentSegment || 0)} von ${escape(progress.totalSegments || progress.segmentTotal)}</p>` : ''}
-      <p><strong>Verstrichene Zeit:</strong> ${formatElapsed(progress)} Minuten · <strong>${progress.stale ? 'Status wird erneut geprüft' : terminal ? state[1] : 'Verarbeitung aktiv'}</strong></p>
-      <p>Warnungen: ${Number(progress.warningCount || 0)} · Fehler: ${Number(progress.errorCount ?? progress.failed ?? 0)}</p>
       <ol class="workflow-progress-steps">${renderSteps(progress, terminal)}</ol>
       ${(progress.errors || []).length ? `<details><summary>Fehlerdetails anzeigen</summary><ul>${progress.errors.map((item) => `<li>${escape(item.message || item)}</li>`).join('')}</ul></details>` : ''}
-      <div class="button-row">${!terminal ? '<button class="secondary-button" type="button" data-document-analysis-cancel>Vorgang abbrechen</button>' : ''}${['failed','timed_out'].includes(progress.status) ? '<button class="primary-button" type="button" data-progress-retry>Erneut versuchen</button><button class="secondary-button" type="button" data-progress-back>Zurück</button>' : ''}${['completed','completed_with_warnings'].includes(progress.status) ? '<button class="primary-button" type="button" data-progress-continue>Weiter</button>' : ''}</div>
+      ${progress.status === 'completed_with_warnings' ? `<aside class="workflow-warning-card" role="alert"><span aria-hidden="true">⚠</span><div><strong>Abgeschlossen mit Warnungen</strong><p>${warningCount} Warnung${warningCount === 1 ? '' : 'en'} · ${errorCount} Fehler</p></div></aside>` : ''}
+      <div class="button-row workflow-progress-actions">${!terminal ? '<button class="secondary-button" type="button" data-document-analysis-cancel>Vorgang abbrechen</button>' : ''}${['failed','timed_out'].includes(progress.status) ? '<button class="primary-button" type="button" data-progress-retry>Erneut versuchen</button><button class="secondary-button" type="button" data-progress-back>Zurück</button>' : ''}${completed ? '<button class="primary-button" type="button" data-progress-continue>Weiter</button>' : ''}<output class="workflow-elapsed" aria-live="off">Verstrichene Zeit: ${formatElapsed(progress)}</output></div>
     </section>`;
   }
   globalScope.CourseForgeWorkflowProgress = globalScope.ContentFactoryWorkflowProgress = { render, measurable, labels, status, terminalStatuses, formatElapsed };

@@ -163,6 +163,13 @@ legend { padding: 0 .35rem; font-weight: 800; }
 .secondary-button { color: var(--cf-brand-strong); background: #fff; border-color: #8fbac7; }
 .tertiary-button:hover { background: var(--cf-brand-soft); }
 input:focus-visible, select:focus-visible, textarea:focus-visible { border-color: var(--courseforge-brand-cyan); }
+.field-invalid,
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] { border-color: var(--cf-danger) !important; background: #fffafa; box-shadow: 0 0 0 2px rgb(180 35 24 / 10%); }
+.field-invalid:focus-visible,
+[aria-invalid="true"]:focus-visible { outline-color: var(--cf-danger); box-shadow: 0 0 0 3px rgb(180 35 24 / 18%); }
+.field-error { display: block; color: var(--cf-danger); font-weight: 650; line-height: 1.4; }
 .factory-form-grid textarea, textarea { resize: vertical; }
 .workflow-phase-progress { margin: 0 0 .75rem; font-weight: 700; color: var(--cf-brand-strong); }
 .status-badge { display: inline-flex; align-items: center; min-height: 1.75rem; padding: .2rem .55rem; border-radius: 999px; font-size: .8rem; font-weight: 750; }
@@ -471,5 +478,10 @@ th, td { padding: var(--cf-space-3); text-align: left; overflow-wrap: anywhere; 
 .workflow-progress-steps .step-running { color: var(--cf-brand-strong); background: var(--cf-brand-soft); }
 .workflow-progress-steps .step-failed { color: var(--cf-danger, #b42318); background: #fef3f2; }
 .workflow-progress-steps .step-cancelled { color: var(--cf-muted); background: #f3f4f6; }
+.workflow-progress-actions { align-items: center; }
+.workflow-progress-actions .workflow-elapsed { margin-left: auto; color: var(--cf-muted); font-variant-numeric: tabular-nums; }
+.workflow-warning-card { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: var(--cf-space-3); align-items: center; padding: var(--cf-space-4); color: #854d0e; background: #fef9c3; border: 1px solid #facc15; border-radius: var(--cf-radius-large); }
+.workflow-warning-card > span { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; font-size: 1.6rem; background: #fde047; border-radius: 999px; }
+.workflow-warning-card p { margin: .25rem 0 0; }
 @keyframes workflow-progress-move { from { transform: translateX(-10%); } to { transform: translateX(195%); } }
 .analysis-progress { display: grid; gap: .75rem; padding: 1.25rem; border-radius: 1rem; background: #eef8ff; }

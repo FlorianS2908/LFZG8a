@@ -303,6 +303,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
   }
 
   async function runCoursePlanning(input, project, controller, progress) {
+    const providerTimeoutMs = Number(input.timeoutMs || PLANNING_PROVIDER_TIMEOUT_MS);
     updateProgress(progress, 'running', 'planning_input', 'Bestätigte Themenbasis wird vorbereitet', { overallProgress: 0.05, currentItem: 1 });
     const scaffold = buildUeScaffold(project.structureFrame);
     project.ueScaffold = scaffold;
@@ -310,7 +311,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     progress.completed = 1; progress.queued = 8; updateProgress(progress, 'running', 'provider_request', 'Planungsanfrage wird an den KI-Provider übermittelt', { overallProgress: 0.12, currentItem: 2 });
     setProjectPhase(project, 'topic_distribution', 'running', { progress: 0 }); saveProject(project);
     updateProgress(progress, 'running', 'provider_wait', 'Die KI erstellt den Unterrichtsplan', { overallProgress: 0.2, currentItem: 3 });
-    await withPhaseTimeout(generateCoursePlan({ projectId: project.id, signal: controller.signal, scaffold, onPhase: (phase, message, overallProgress) => updateProgress(progress, 'running', phase, message, { overallProgress }) }), Number(input.timeoutMs || PLANNING_PROVIDER_TIMEOUT_MS), 'COURSE_PLANNING_TIMEOUT', 'Die Unterrichtsplanung hat das Zeitlimit überschritten.', controller);
+    await withPhaseTimeout(generateCoursePlan({ projectId: project.id, signal: controller.signal, scaffold, providerTimeoutMs, onPhase: (phase, message, overallProgress) => updateProgress(progress, 'running', phase, message, { overallProgress }) }), providerTimeoutMs, 'COURSE_PLANNING_TIMEOUT', 'Die Unterrichtsplanung hat das Zeitlimit überschritten.', controller);
     progress.completed = 9; progress.queued = 0; updateProgress(progress, 'running', 'review_preparation', 'Struktur-Review wird vorbereitet', { overallProgress: 0.98, currentItem: 9 });
     const latest = getProject(project.id); setProjectPhase(latest, 'topic_distribution', 'completed', { progress: 100 }); setProjectPhase(latest, 'plan_validation', 'completed', { progress: 100 }); saveProject(latest);
     progress.completed = 10; updateProgress(progress, 'completed', 'completed', 'Unterrichtsplan erstellt', { overallProgress: 1, phaseProgress: 1, currentItem: 10 });
@@ -381,7 +382,8 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     };
     const knownDocumentIds = new Set([...project.uploadedDocuments.map((document) => document.id), ...analyses.map((analysis) => analysis.documentId)]);
     input.onPhase?.('provider_wait', 'Auf KI-Ergebnis warten', 0.25);
-    const providerResult = await provider.generateStructuredCoursePlan(planningInput, { signal: input.signal });
+    const providerOptions = { signal: input.signal, timeoutMs: Number(input.providerTimeoutMs || PLANNING_PROVIDER_TIMEOUT_MS) };
+    const providerResult = await provider.generateStructuredCoursePlan(planningInput, providerOptions);
     if (input.signal?.aborted) throw sourceError('OPERATION_CANCELLED', 'Die Unterrichtsplanung wurde abgebrochen.');
     input.onPhase?.('provider_response', 'KI-Antwort wurde empfangen', 0.65);
     input.onPhase?.('result_parsing', 'KI-Antwort wird verarbeitet', 0.72);
@@ -389,7 +391,7 @@ function createCoursePlanningService({ factoryDir, aiOrchestrator, logger = cons
     input.onPhase?.('plan_validation', 'Unterrichtsplan wird validiert', 0.8);
     let validation = validateCanonicalPlan(raw, structureFrame, knownDocumentIds);
     if (validation.status === 'failed') {
-      const repaired = await provider.generateStructuredCoursePlan({ ...planningInput, repairAttempt: 1, validationErrors: validation.errors }, { signal: input.signal });
+      const repaired = await provider.generateStructuredCoursePlan({ ...planningInput, repairAttempt: 1, validationErrors: validation.errors }, providerOptions);
       if (input.signal?.aborted) throw sourceError('OPERATION_CANCELLED', 'Die Unterrichtsplanung wurde abgebrochen.');
       raw = normalizeCanonicalPlan(deduplicatePlanSources(repaired), { ...structureFrame, courseId: project.id, title: project.title });
       validation = validateCanonicalPlan(raw, structureFrame, knownDocumentIds);
