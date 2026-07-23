@@ -91,6 +91,18 @@ test('Kurstitel und Kurs-ID bleiben getrennt und Zurück bleibt verfügbar', () 
   assert.match(ui, /\[data-wizard-prev\].*data-close-table-workspace/);
 });
 
+test('Zurück führt bei Kursdaten zum Start und behält den Wizard-Entwurf', () => {
+  const ui = fs.readFileSync(path.join(__dirname, '..', 'app', 'renderer', 'tool-center', 'factory.js'), 'utf8');
+  const backBinding = ui.slice(ui.indexOf("$('[data-wizard-prev]')"), ui.indexOf("$('[data-open-course-plan-workspace]')"));
+  const returnToStart = ui.slice(ui.indexOf('function returnFromCourseStepToFactoryStart'), ui.indexOf('function validateCourseFields'));
+  assert.match(backBinding, /state\.wizard\.activeStep === 'course'/);
+  assert.match(backBinding, /returnFromCourseStepToFactoryStart\(\)/);
+  assert.match(backBinding, /moveWizardStep\(-1\)/);
+  assert.match(returnToStart, /showPanel\('home'\)/);
+  assert.match(returnToStart, /renderNextRecommendedAction\(\)/);
+  assert.doesNotMatch(returnToStart, /state\.wizard\s*=/);
+});
+
 test('Themen und Unterrichtsplan verwenden einen gemeinsamen Vollbild-Arbeitsbereich', () => {
   const root = path.join(__dirname, '..', 'app', 'renderer', 'tool-center');
   const ui = fs.readFileSync(path.join(root, 'factory.js'), 'utf8');
