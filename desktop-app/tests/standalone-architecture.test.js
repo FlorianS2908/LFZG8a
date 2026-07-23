@@ -132,10 +132,10 @@ test('Ploglan-Markenbereich steht einmalig über der Seitennavigation und wird p
   const sidebar = html.match(/<nav class="factory-sidebar"[\s\S]*?<\/nav>/)?.[0] || '';
   const packageJson = JSON.parse(fs.readFileSync(path.join(desktopRoot, 'package.json'), 'utf8'));
   assert.match(sidebar, /class="factory-brand"/);
-  assert.match(sidebar, /class="factory-brand-logo" src="assets\/ploglan-logo\.png" alt="Ploglan"/);
+  assert.match(sidebar, /class="factory-brand-logo" src="assets\/branding\/ploglan\/ploglan-logo\.png" alt="PLOGLAN – Ready\. Set\. App\."/);
   assert.equal((html.match(/ploglan-logo\.png/g) || []).length, 1);
-  assert.equal(fs.existsSync(path.join(appRoot, 'renderer', 'tool-center', 'assets', 'ploglan-logo.png')), true);
-  assert.ok(packageJson.build.files.includes('app/renderer/tool-center/assets/ploglan-logo.png'));
+  assert.equal(fs.existsSync(path.join(appRoot, 'renderer', 'tool-center', 'assets', 'branding', 'ploglan', 'ploglan-logo.png')), true);
+  assert.ok(packageJson.build.files.includes('app/renderer/tool-center/assets/branding/ploglan/*'));
 });
 
 test('Leere Startseiten- und Statusbereiche belegen keinen Layoutplatz', () => {

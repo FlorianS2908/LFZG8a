@@ -46,7 +46,7 @@
             "app/renderer/tool-center/content-factory.css",
             "app/renderer/tool-center/workflow-ui/**/*",
             "app/renderer/content-factory/**/*",
-            "app/renderer/tool-center/assets/ploglan-logo.png",
+            "app/renderer/tool-center/assets/branding/ploglan/*",
             "package.json"
         ],
         "extraResources": [

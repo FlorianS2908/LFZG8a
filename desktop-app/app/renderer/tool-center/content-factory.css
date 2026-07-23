@@ -1,18 +1,26 @@
 :root {
-  --cf-brand: #075985;
-  --cf-brand-strong: #0c4a6e;
-  --cf-brand-soft: #e0f2fe;
+  --courseforge-brand-cyan: #1697bd;
+  --courseforge-brand-turquoise: #18d6cf;
+  --courseforge-brand-petrol: #07536b;
+  --courseforge-brand-dark: #061923;
+  --courseforge-brand-navy: #082b3b;
+  --courseforge-brand-blue: #389fe3;
+  --courseforge-brand-violet: #6c6ff5;
+  --courseforge-gradient-brand: linear-gradient(135deg, var(--courseforge-brand-petrol) 0%, var(--courseforge-brand-cyan) 58%, var(--courseforge-brand-turquoise) 100%);
+  --cf-brand: var(--courseforge-brand-cyan);
+  --cf-brand-strong: var(--courseforge-brand-petrol);
+  --cf-brand-soft: #e7f8fb;
   --cf-success: #166534;
   --cf-warning: #92400e;
   --cf-danger: #b91c1c;
-  --cf-ink: #172033;
-  --cf-muted: #526176;
-  --cf-line: #cbd5e1;
+  --cf-ink: #10232d;
+  --cf-muted: #536b76;
+  --cf-line: #cfe0e6;
   --cf-surface: #ffffff;
-  --cf-canvas: #f5f7fa;
-  --cf-surface-soft: #f8fafc;
+  --cf-canvas: #f3f7fa;
+  --cf-surface-soft: #f7fafb;
   --cf-focus: #b45309;
-  --cf-shadow: 0 1px 3px rgba(15, 23, 42, .08);
+  --cf-shadow: 0 10px 28px rgba(6, 25, 35, .08);
   --cf-content-width: 100rem;
   --cf-transition: 160ms ease;
   --cf-radius: .625rem;
@@ -50,24 +58,24 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .workspace-header { min-height: 4.5rem; padding: .75rem 1.25rem; border-bottom: 1px solid var(--cf-line); box-shadow: none; }
 .workspace-title h1 { font-size: 1.2rem; margin: 0; }
 .header-subtitle { margin: .15rem 0 0; color: var(--cf-muted); font-size: .875rem; }
-.factory-brand { display: grid; gap: var(--cf-space-3); min-width: 0; padding: var(--cf-space-2) var(--cf-space-2) var(--cf-space-6); border-bottom: 1px solid var(--cf-line); margin-bottom: var(--cf-space-6); }
+.factory-brand { display: grid; gap: var(--cf-space-3); min-width: 0; padding: var(--cf-space-2) var(--cf-space-2) var(--cf-space-6); border-bottom: 1px solid rgba(255, 255, 255, .14); margin-bottom: var(--cf-space-6); }
 .factory-brand-logo { width: clamp(9.375rem, 13vw, 11.875rem); height: auto; max-height: 4.5rem; object-fit: contain; object-position: left center; }
 .factory-brand-text { display: grid; gap: var(--cf-space-1); min-width: 0; }
-.factory-brand-text strong { color: var(--cf-ink); font-size: 1.2rem; }
-.factory-brand-text small { color: var(--cf-muted); font-size: .875rem; }
+.factory-brand-text strong { color: #fff; font-size: 1.2rem; }
+.factory-brand-text small { color: #b9d7e1; font-size: .875rem; }
 .project-context { color: var(--cf-muted); font-size: .875rem; }
 .tertiary-button { background: transparent; border: 1px solid transparent; color: var(--cf-brand-strong); padding: .5rem .75rem; border-radius: var(--cf-radius); }
 .factory-app-layout { min-height: 0; display: grid; grid-template-columns: 17rem minmax(0, 1fr); }
-.factory-sidebar { padding: var(--cf-space-6) var(--cf-space-4); background: #fff; border-right: 1px solid var(--cf-line); overflow-y: auto; }
+.factory-sidebar { padding: var(--cf-space-6) var(--cf-space-4); background: linear-gradient(180deg, var(--courseforge-brand-dark), var(--courseforge-brand-navy)); border-right: 1px solid #0c4356; overflow-y: auto; }
 .factory-main-column { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); }
 .factory-context-bar { min-height: 3.5rem; display: flex; justify-content: space-between; align-items: center; gap: var(--cf-space-4); padding: var(--cf-space-2) clamp(1.5rem, 3vw, 3rem); background: var(--cf-surface); border-bottom: 1px solid var(--cf-line); }
-.navigation-label { margin: 0 0 .5rem; color: var(--cf-muted); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
-.app-nav-item { display: flex; align-items: center; gap: .65rem; width: 100%; margin: 0 0 .25rem; padding: .65rem .75rem; border: 1px solid transparent; border-radius: var(--cf-radius); background: transparent; color: var(--cf-ink); text-align: left; cursor: pointer; }
-.app-nav-item:hover { background: #f1f5f9; }
-.app-nav-item.is-active, .app-nav-item[aria-current="page"] { background: var(--cf-brand-soft); border-color: #7dd3fc; color: var(--cf-brand-strong); font-weight: 750; }
-.expert-navigation { margin-top: 1.5rem; border-top: 1px solid var(--cf-line); padding-top: 1rem; }
-.expert-navigation summary { display: flex; align-items: center; cursor: pointer; color: var(--cf-brand-strong); font-weight: 700; }
-.expert-navigation p { color: var(--cf-muted); font-size: .8rem; }
+.navigation-label { margin: 0 0 .5rem; color: #91bac8; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.app-nav-item { position: relative; display: flex; align-items: center; gap: .65rem; width: 100%; margin: 0 0 .25rem; padding: .65rem .75rem; border: 1px solid transparent; border-radius: var(--cf-radius); background: transparent; color: #e4f2f6; text-align: left; cursor: pointer; }
+.app-nav-item:hover { background: rgba(255, 255, 255, .09); }
+.app-nav-item.is-active, .app-nav-item[aria-current="page"] { background: rgba(24, 214, 207, .14); border-color: rgba(24, 214, 207, .44); color: #fff; font-weight: 750; box-shadow: inset 3px 0 0 var(--courseforge-brand-turquoise); }
+.expert-navigation { margin-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, .14); padding-top: 1rem; }
+.expert-navigation summary { display: flex; align-items: center; cursor: pointer; color: #c7e6ed; font-weight: 700; }
+.expert-navigation p { color: #91bac8; font-size: .8rem; }
 .expert-navigation .app-nav-item { padding-left: 1rem; font-size: .875rem; }
 .factory-layout { display: block; min-width: 0; overflow-y: auto; padding: var(--cf-page-padding); scroll-padding-top: 1rem; }
 .factory-layout > .sr-status:not([hidden]) { margin: 0 auto var(--cf-space-6); max-width: var(--cf-content-width); }
@@ -76,7 +84,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .page-heading h2 { margin: .2rem 0 .5rem; font-size: clamp(1.5rem, 2vw, 2rem); }
 .page-heading p { color: var(--cf-muted); }
 .eyebrow { margin: 0; color: var(--cf-brand); font-size: .8rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-.dashboard-primary { display: flex; justify-content: space-between; align-items: center; gap: 2rem; padding: 1.5rem; background: var(--cf-brand-soft); border: 1px solid #7dd3fc; border-radius: var(--cf-radius); }
+.courseforge-hero { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) minmax(11rem, 25rem); min-height: 18rem; align-items: center; overflow: hidden; margin-bottom: var(--cf-space-8); padding: clamp(2rem, 5vw, 4.5rem); color: #f4fbfd; background: linear-gradient(120deg, var(--courseforge-brand-dark), var(--courseforge-brand-petrol)); border-radius: var(--cf-radius-large); box-shadow: 0 24px 56px rgba(6, 25, 35, .2); }
+.courseforge-hero-copy { position: relative; z-index: 2; max-width: 46rem; }
+.courseforge-hero h2 { margin: .3rem 0; font-size: clamp(2.4rem, 5vw, 4.8rem); line-height: 1; }
+.courseforge-hero p { max-width: 60ch; color: #d7edf2; line-height: 1.65; }
+.courseforge-hero .eyebrow { color: var(--courseforge-brand-turquoise); }
+.courseforge-tagline { margin: .75rem 0 1.25rem; color: #fff !important; font-size: clamp(1.05rem, 2vw, 1.35rem); font-weight: 750; }
+.courseforge-hero-mark { position: relative; z-index: 2; width: min(100%, 18rem); max-height: 15rem; justify-self: end; object-fit: contain; filter: drop-shadow(0 12px 24px rgba(0, 0, 0, .18)); }
+.courseforge-hero-pattern { position: absolute; z-index: 1; right: -7rem; bottom: -12rem; width: min(48vw, 44rem); opacity: .16; pointer-events: none; user-select: none; }
+.dashboard-primary { position: relative; isolation: isolate; display: flex; justify-content: space-between; align-items: center; gap: 2rem; overflow: hidden; padding: 1.5rem; background: var(--cf-brand-soft); border: 1px solid #8dd8e6; border-radius: var(--cf-radius); }
+.dashboard-primary > :not(.dashboard-pattern) { position: relative; z-index: 1; }
+.dashboard-pattern { position: absolute; right: -3rem; bottom: -6rem; width: 22rem; max-width: 42%; opacity: .09; pointer-events: none; user-select: none; }
 .dashboard-primary h3 { margin-top: 0; }
 .dashboard-primary p { margin-bottom: 0; color: var(--cf-muted); }
 .dashboard-section { margin-top: 2rem; }
@@ -98,6 +116,7 @@ legend { padding: 0 .35rem; font-weight: 800; }
   box-shadow: var(--cf-shadow);
 }
 .workflow-header, .tool-card { padding: var(--cf-card-padding); background: var(--cf-surface); }
+.workflow-header { position: relative; overflow: hidden; border-top: 3px solid var(--courseforge-brand-cyan); }
 .workflow-result-card, .validation-box, .workflow-help { padding: var(--cf-space-4); background: var(--cf-surface-soft); box-shadow: none; }
 .workflow-header { grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
 .workflow-header .workflow-status-strip { grid-column: 1 / -1; }
@@ -134,11 +153,16 @@ legend { padding: 0 .35rem; font-weight: 800; }
 .factory-form-grid, .summary-grid, .wizard-source-options { gap: var(--cf-space-4); align-items: start; }
 .factory-form-grid label { display: grid; gap: var(--cf-space-2); min-width: 0; }
 .factory-form-grid input, .factory-form-grid select, .factory-form-grid textarea { width: 100%; min-width: 0; margin-top: 0; border-color: var(--cf-line); border-radius: var(--cf-radius); }
+.primary-button { color: #fff; background: var(--courseforge-gradient-brand); border-color: transparent; box-shadow: 0 8px 18px rgba(7, 83, 107, .18); }
+.primary-button:hover { filter: brightness(1.06); }
+.secondary-button { color: var(--cf-brand-strong); background: #fff; border-color: #8fbac7; }
+.tertiary-button:hover { background: var(--cf-brand-soft); }
+input:focus-visible, select:focus-visible, textarea:focus-visible { border-color: var(--courseforge-brand-cyan); }
 .factory-form-grid textarea, textarea { resize: vertical; }
 .workflow-phase-progress { margin: 0 0 .75rem; font-weight: 700; color: var(--cf-brand-strong); }
 .status-badge { display: inline-flex; align-items: center; min-height: 1.75rem; padding: .2rem .55rem; border-radius: 999px; font-size: .8rem; font-weight: 750; }
 .status-success { color: var(--cf-success); background: #dcfce7; }
-.factory-action-bar { min-height: 3rem; display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: .6rem 1.25rem; background: #fff; border-top: 1px solid var(--cf-line); color: var(--cf-muted); font-size: .85rem; }
+.factory-action-bar { min-height: 3rem; display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: .6rem 1.25rem; background: var(--courseforge-brand-dark); border-top: 1px solid #0c4356; color: #c7e6ed; font-size: .85rem; }
 .sr-status:empty { display: none; }
 [hidden] { display: none !important; }
 
@@ -290,6 +314,7 @@ th, td { padding: var(--cf-space-3); text-align: left; overflow-wrap: anywhere; 
   .workflow-help { position: static; max-width: none; }
   .wizard-source-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .duration-audience-layout { grid-template-columns: 1fr; }
+  .courseforge-hero { grid-template-columns: minmax(0, 1fr) 12rem; }
 }
 @media (max-width: 800px) {
   .factory-brand-text small, .project-context { display: none; }
@@ -301,7 +326,7 @@ th, td { padding: var(--cf-space-3); text-align: left; overflow-wrap: anywhere; 
   .app-nav-item { flex: 0 0 auto; width: auto; white-space: nowrap; }
   .expert-navigation { flex: 0 0 auto; margin: 0; padding: 0; border: 0; }
   .expert-navigation p { display: none; }
-  .expert-navigation[open] { position: absolute; z-index: 20; right: .5rem; top: 7.75rem; padding: .5rem; background: #fff; border: 1px solid var(--cf-line); border-radius: var(--cf-radius); }
+  .expert-navigation[open] { position: absolute; z-index: 20; right: .5rem; top: 7.75rem; padding: .5rem; background: var(--courseforge-brand-navy); border: 1px solid #1b6075; border-radius: var(--cf-radius); }
   .factory-action-bar { display: none; }
 }
 @media (max-width: 900px) {
@@ -316,6 +341,9 @@ th, td { padding: var(--cf-space-3); text-align: left; overflow-wrap: anywhere; 
   .course-plan-review-table textarea { min-height: 5.5rem; }
 }
 @media (max-width: 640px) {
+  .courseforge-hero { grid-template-columns: 1fr; min-height: auto; padding: 2rem 1.25rem; }
+  .courseforge-hero-mark { width: 8rem; justify-self: start; }
+  .courseforge-hero-pattern, .dashboard-pattern { display: none; }
   .workflow-stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .factory-context-bar { padding-inline: 1rem; }
   .wizard-source-options { grid-template-columns: 1fr; }

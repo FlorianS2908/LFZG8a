@@ -102,7 +102,11 @@ function createWindow() {
         desktopBridge: Boolean(window.courseForgeDesktop),
         factoryBridge: Boolean(window.courseForgeDesktop?.factory),
         startAnalysis: typeof window.courseForgeDesktop?.factory?.startDocumentAnalysis === 'function',
-        getProgress: typeof window.courseForgeDesktop?.factory?.getAnalysisProgress === 'function'
+        getProgress: typeof window.courseForgeDesktop?.factory?.getAnalysisProgress === 'function',
+        brandingAssetsLoaded: Array.from(document.querySelectorAll('.factory-brand-logo,.courseforge-hero-mark,.courseforge-hero-pattern,.dashboard-pattern')).every((image) => image.complete && image.naturalWidth > 0),
+        heroVisible: document.querySelector('.courseforge-hero')?.getBoundingClientRect().height > 0,
+        decorativePatternsIgnoreClicks: Array.from(document.querySelectorAll('.courseforge-hero-pattern,.dashboard-pattern')).every((image) => getComputedStyle(image).pointerEvents === 'none'),
+        noHorizontalOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth
       })`);
       const startButtonNavigation = await mainWindow.webContents.executeJavaScript(`(() => {
         document.querySelector('[data-open-factory-section="plan-wizard"]').click();
@@ -121,7 +125,7 @@ function createWindow() {
           count: document.querySelectorAll('[data-factory-panel].is-active').length
         };
       })()`);
-      if (result.title !== 'CourseForge' || result.mainNavigationItems !== 5 || result.phases !== 6 || !result.navigationModule || result.visiblePanel !== 1 || !result.desktopBridge || !result.factoryBridge || !result.startAnalysis || !result.getProgress || !startButtonNavigation.active || !startButtonNavigation.visible || startButtonNavigation.count !== 1 || !sidebarNavigation.active || !sidebarNavigation.visible || sidebarNavigation.count !== 1) {
+      if (result.title !== 'CourseForge' || result.mainNavigationItems !== 5 || result.phases !== 6 || !result.navigationModule || result.visiblePanel !== 1 || !result.desktopBridge || !result.factoryBridge || !result.startAnalysis || !result.getProgress || !result.brandingAssetsLoaded || !result.heroVisible || !result.decorativePatternsIgnoreClicks || !result.noHorizontalOverflow || !startButtonNavigation.active || !startButtonNavigation.visible || startButtonNavigation.count !== 1 || !sidebarNavigation.active || !sidebarNavigation.visible || sidebarNavigation.count !== 1) {
         console.error('COURSEFORGE_SMOKE_FAILED', JSON.stringify({ result, startButtonNavigation, sidebarNavigation }));
         app.exit(1);
         return;

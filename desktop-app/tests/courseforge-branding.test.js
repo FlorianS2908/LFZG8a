@@ -15,6 +15,21 @@ test('Package-, Fenster-, Installer- und UI-Metadaten verwenden CourseForge', ()
   assert.equal(packageJson.build.executableName, 'CourseForge'); assert.equal(packageJson.build.nsis.shortcutName, 'CourseForge'); assert.match(main, /title: 'CourseForge'/); assert.match(html, /<title>CourseForge<\/title>/); assert.match(html, /The AI-powered Course Compiler/);
 });
 
+test('PLOGLAN-Branding ist offline, zugänglich und für das Packaging erfasst', () => {
+  const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  const html = fs.readFileSync(path.join(root, 'app', 'renderer', 'tool-center', 'factory.html'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'app', 'renderer', 'tool-center', 'content-factory.css'), 'utf8');
+  const assetRoot = path.join(root, 'app', 'renderer', 'tool-center', 'assets', 'branding', 'ploglan');
+  for (const file of ['ploglan-logo.png', 'ploglan-mark-full.png', 'quiz-pattern.png', 'quiz-pattern-tight.png']) {
+    assert.ok(fs.statSync(path.join(assetRoot, file)).size > 0, `${file} fehlt`);
+    assert.match(html, new RegExp(`assets/branding/ploglan/${file.replace('.', '\\.')}`));
+  }
+  assert.ok(packageJson.build.files.includes('app/renderer/tool-center/assets/branding/ploglan/*'));
+  assert.match(html, /alt="PLOGLAN – Ready\. Set\. App\."/);
+  assert.match(html, /class="courseforge-hero-pattern"[^>]+aria-hidden="true"/);
+  assert.match(css, /\.courseforge-hero-pattern[^}]+pointer-events:\s*none/s);
+});
+
 test('Alte Projektdaten werden im Hintergrund kopiert, sofort gelesen und niemals überschrieben', async () => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'courseforge-migration-')); const legacy = path.join(temp, 'legacy'); const current = path.join(temp, 'CourseForge');
   fs.mkdirSync(path.join(legacy, 'projects', 'content-factory', 'course-projects'), { recursive: true }); fs.writeFileSync(path.join(legacy, 'projects', 'content-factory', 'course-projects', 'alt.json'), '{"title":"Alt"}', 'utf8');
