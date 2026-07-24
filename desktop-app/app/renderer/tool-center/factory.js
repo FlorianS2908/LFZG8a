@@ -881,11 +881,11 @@ function renderTopicReviewView(wizard) {
   const conflicts = (project?.documentAnalyses || []).flatMap((item) => item.conflicts || []);
   const missing = (project?.documentAnalyses || []).flatMap((item) => item.missingInformation || []);
   return `<article class="tool-card table-workspace topic-review-view" data-plan-step-content="topicReview">
-    <header class="topic-review-header"><div><p class="eyebrow">Analyseergebnis</p><h3>Erkannte Themen prüfen und bearbeiten</h3><p>Bearbeite die Themenbasis übersichtlich. Änderungen bleiben beim Zurückgehen erhalten.</p></div><button class="secondary-button" type="button" data-close-topic-review>Zurück zur Kursplanung</button></header>
+    <header class="topic-review-header"><div><p class="eyebrow">Analyseergebnis</p><h3>Erkannte Themen prüfen und bearbeiten</h3><p>Bearbeite die Themenbasis übersichtlich. Änderungen bleiben beim Zurückgehen erhalten.</p></div></header>
     <label class="topic-review-mode">Zusammenarbeit mit der KI<select data-interaction-mode aria-label="Interaktionsmodus"><option value="automatic" ${project?.interactionMode === 'automatic' ? 'selected' : ''}>Automatisch</option><option value="guided" ${!project?.interactionMode || project.interactionMode === 'guided' ? 'selected' : ''}>Begleitet (empfohlen)</option><option value="strict" ${project?.interactionMode === 'strict' ? 'selected' : ''}>Streng kontrolliert</option></select></label>
     <div class="topic-review-table" role="region" aria-label="Erkannte Themen" tabindex="0"><table><colgroup><col><col><col><col><col><col><col><col></colgroup><thead><tr><th scope="col">Nr.</th><th scope="col">Titel</th><th scope="col">Unterthemen/Inhalte</th><th scope="col">Lernziele</th><th scope="col">Kompetenzen</th><th scope="col">Niveau</th><th scope="col">Prüfstatus</th><th scope="col">Aktionen</th></tr></thead><tbody>${(review.topics || []).map((topic, index) => renderTopicReviewItem(topic, index, review.topics.length, confirmed, conflicts)).join('')}</tbody></table></div>
     ${renderReviewHints(conflicts, missing)}
-    <div class="workflow-actionbar topic-review-actions"><button class="secondary-button" type="button" data-topic-add ${confirmed ? 'disabled' : ''}>Thema hinzufügen</button><button class="secondary-button" type="button" data-topic-save ${confirmed ? 'disabled' : ''}>Änderungen speichern</button>${confirmed ? '<button class="secondary-button" type="button" data-topic-reopen>Bearbeitung wieder öffnen</button>' : '<button class="primary-button" type="button" data-topic-confirm>Themenbasis bestätigen</button>'}</div>
+    <div class="workflow-actionbar topic-review-actions"><div class="topic-review-edit-actions"><button class="secondary-button" type="button" data-topic-add ${confirmed ? 'disabled' : ''}>Thema hinzufügen</button><button class="secondary-button" type="button" data-topic-save ${confirmed ? 'disabled' : ''}>Änderungen speichern</button></div><div class="topic-review-primary-actions">${confirmed ? '<button class="secondary-button" type="button" data-topic-reopen>Bearbeitung wieder öffnen</button><button class="primary-button" type="button" data-close-topic-review>Zurück zur Kursplanung</button>' : '<button class="primary-button" type="button" data-topic-confirm>Themenbasis bestätigen</button>'}</div></div>
   </article>`;
 }
 
@@ -1657,7 +1657,7 @@ function bindPlanWizardEvents() {
   $all('[data-topic-move-menu]').forEach((select) => select.addEventListener('change', () => { if (select.value) moveTopicReview(Number(select.dataset.topicIndex), select.value); }));
   $('[data-topic-save]')?.addEventListener('click', saveTopicReview);
   $('[data-topic-confirm]')?.addEventListener('click', confirmTopicReview);
-  $('[data-topic-reopen]')?.addEventListener('click', () => { state.wizard.courseProject.topicReview.status = 'edited'; state.wizard.status = 'Bearbeitung der Themenbasis wieder geöffnet.'; renderPlanWizard(); });
+  $('[data-topic-reopen]')?.addEventListener('click', reopenTopicReview);
   $('[data-interaction-mode]')?.addEventListener('change', async (event) => {
     const projectId = state.wizard.courseProject?.id;
     if (!projectId) return;
@@ -2353,6 +2353,13 @@ async function confirmTopicReview() {
   } catch (error) { state.wizard.status = error.message; }
   renderPlanWizard();
   requestAnimationFrame(() => { if (scroller) scroller.scrollTop = scrollTop; $('[data-ai-understanding] summary')?.focus(); });
+}
+async function reopenTopicReview() {
+  try {
+    state.wizard.courseProject = await desktop.factory.updateTopicReview(state.wizard.course.courseId, { topics: state.wizard.courseProject.topicReview.topics });
+    state.wizard.status = 'Bearbeitung der Themenbasis wieder geöffnet.';
+  } catch (error) { state.wizard.status = error.message; }
+  renderPlanWizard();
 }
 
 function retryCurrentOperation() {

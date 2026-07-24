@@ -70,6 +70,21 @@ test('Kurserstellung verwendet eine zentrale Zustandsaktion, Tabellen und korrek
   assert.match(layout, /data-workflow-help-toggle/);
 });
 
+test('Themenreview zeigt breite Auswahlspalten und Rückkehr erst nach Bestätigung', () => {
+  const root = path.join(__dirname, '..', 'app', 'renderer', 'tool-center');
+  const css = fs.readFileSync(path.join(root, 'content-factory.css'), 'utf8');
+  const ui = fs.readFileSync(path.join(root, 'factory.js'), 'utf8');
+  assert.match(css, /col:nth-child\(6\) \{ width: 12rem/);
+  assert.match(css, /col:nth-child\(8\) \{ width: 15rem/);
+  assert.match(css, /\.topic-review-primary-actions \{ display: grid/);
+  const view = ui.slice(ui.indexOf('function renderTopicReviewView'), ui.indexOf('function renderTopicReviewItem'));
+  const header = view.slice(view.indexOf('<header class="topic-review-header"'), view.indexOf('</header>') + 9);
+  assert.doesNotMatch(header, /data-close-topic-review/);
+  assert.match(view, /data-topic-reopen>Bearbeitung wieder öffnen<\/button><button class="primary-button" type="button" data-close-topic-review>Zurück zur Kursplanung/);
+  assert.match(ui, /async function reopenTopicReview/);
+  assert.match(ui, /await desktop\.factory\.updateTopicReview/);
+});
+
 test('Feldvalidierung bleibt fokussiert und Zielgruppenfehler werden getrennt aktualisiert', () => {
   const root = path.join(__dirname, '..', 'app', 'renderer', 'tool-center');
   const ui = fs.readFileSync(path.join(root, 'factory.js'), 'utf8');
@@ -115,7 +130,7 @@ test('Themen und Unterrichtsplan verwenden einen gemeinsamen Vollbild-Arbeitsber
   assert.match(css, /position: fixed/);
   assert.match(css, /height: 100vh/);
   assert.match(css, /overflow: hidden/);
-  assert.match(css, /width: 112rem/);
+  assert.match(css, /width: 125rem/);
   assert.match(css, /overflow: auto/);
   assert.doesNotMatch(css, /\.table-workspace \.topic-review-table,\s*\.table-workspace \.course-plan-review-table \{ width: max-content/);
   assert.match(ui, /class="topic-review-table" role="region" aria-label="Erkannte Themen" tabindex="0"/);

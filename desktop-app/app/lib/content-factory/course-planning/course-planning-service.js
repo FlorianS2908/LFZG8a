@@ -748,7 +748,11 @@ function consolidateTopicCatalog(items = []) {
     const title = String(topic.title || topic.name || topic.value || '').trim(); if (!title) return;
     const key = title.toLocaleLowerCase('de').replace(/[^a-z0-9äöüß]+/g, ' ').trim();
     const existing = topics.get(key) || { id: `topic-${topics.size + 1}`, title, subtopics: [], prerequisites: [], learningObjectives: [], competencies: [], sourceReferences: [], difficulty: 'basic' };
-    existing.subtopics = uniqueValues([...existing.subtopics, ...(topic.subtopics || [])]);
+    existing.subtopics = uniqueValues([
+      ...existing.subtopics,
+      ...listValues(topic.subtopics || topic.contents || topic.content || topic.keywords),
+      ...deriveSubtopics(topic, analysis)
+    ]);
     existing.prerequisites = uniqueValues([...existing.prerequisites, ...(topic.prerequisites || analysis.prerequisites || [])]);
     existing.learningObjectives = uniqueValues([...existing.learningObjectives, ...(analysis.learningObjectives || [])]);
     existing.competencies = uniqueValues([...existing.competencies, ...(analysis.competencies || [])]);
@@ -759,6 +763,17 @@ function consolidateTopicCatalog(items = []) {
   return { schemaVersion: 1, topics: [...topics.values()], conflicts: items.flatMap((item) => item.conflicts || []), unassigned: items.flatMap((item) => item.missingInformation || []), sourceAnalysisVersions: items.map((item) => ({ documentId: item.documentId, analysisVersion: item.analysisVersion })), createdAt: new Date().toISOString() };
 }
 function createTopicReview(catalog = {}, analyses = [], existing = null) { if (existing?.topics?.length) return existing; return { schemaVersion: 1, status: 'pending', confirmedAt: null, confirmedBy: null, version: 1, sourceAnalysisVersions: analyses.map((item) => ({ documentId: item.documentId, analysisVersion: item.analysisVersion })), topics: cloneSerializable(catalog.topics || []).map((topic) => ({ ...topic, reviewStatus: 'ai_proposal' })), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; }
+function listValues(value) { return (Array.isArray(value) ? value : value ? [value] : []).map((item) => typeof item === 'string' ? item.trim() : String(item?.title || item?.name || item?.value || '').trim()).filter(Boolean); }
+function deriveSubtopics(topic, analysis) {
+  const objectives = listValues(topic.learningObjectives?.length ? topic.learningObjectives : analysis.learningObjectives);
+  const derived = objectives.map((objective) => objective
+    .replace(/^(?:die\s+teilnehmenden|teilnehmende|lernende)\s+(?:können|koennen|verstehen|kennen|sind in der lage,?)\s+/i, '')
+    .replace(/^(?:können|koennen|verstehen|kennen|erläutern|erklaeren|beschreiben|anwenden|analysieren|bewerten)\s+/i, '')
+    .replace(/[.!?]+$/, '')
+    .trim())
+    .filter((value) => value.length >= 3);
+  return derived.length ? derived : [String(topic.title || '').trim()].filter(Boolean);
+}
 function buildUeScaffold(frame = {}) {
   if (!frame.valid || !Number.isInteger(Number(frame.totalDays)) || !Number.isInteger(Number(frame.totalUnits))) throw sourceError('UE_SCAFFOLD_INVALID', 'Der bestätigte Kursrahmen ist für ein UE-Gerüst ungültig.');
   const totalDays = Number(frame.totalDays); const totalUnits = Number(frame.totalUnits);
